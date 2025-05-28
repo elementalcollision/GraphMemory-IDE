@@ -10,6 +10,11 @@ passlib[bcrypt]
 # Analytics caching
 redis
 
+# Dashboard and real-time streaming
+sse-starlette
+streamlit
+streamlit-echarts
+
 # Testing
 pytest
 pytest-cov

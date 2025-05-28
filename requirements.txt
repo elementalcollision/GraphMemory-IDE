@@ -4,6 +4,8 @@
 #
 #    pip-compile requirements.in
 #
+altair==4.2.2
+    # via streamlit
 amazon-ion==0.13.0
     # via kestra
 annotated-types==0.7.0
@@ -11,7 +13,12 @@ annotated-types==0.7.0
 anyio==4.9.0
     # via
     #   httpx
+    #   sse-starlette
     #   starlette
+attrs==25.3.0
+    # via
+    #   jsonschema
+    #   referencing
 babel==2.17.0
     # via mkdocs-material
 backrefs==5.8
@@ -23,9 +30,13 @@ bidict==0.23.1
 black==25.1.0
     # via -r requirements.in
 blinker==1.9.0
-    # via flask
+    # via
+    #   flask
+    #   streamlit
 brotli==1.1.0
     # via geventhttpclient
+cachetools==6.0.0
+    # via streamlit
 certifi==2025.4.26
     # via
     #   geventhttpclient
@@ -41,6 +52,7 @@ click==8.2.1
     #   black
     #   flask
     #   mkdocs
+    #   streamlit
     #   uvicorn
 colorama==0.4.6
     # via mkdocs-material
@@ -56,6 +68,8 @@ docker==7.1.0
     # via -r requirements.in
 ecdsa==0.19.1
     # via python-jose
+entrypoints==0.4
+    # via altair
 fastapi==0.115.12
     # via -r requirements.in
 filelock==3.18.0
@@ -87,6 +101,10 @@ geventhttpclient==2.3.3
     # via locust
 ghp-import==2.1.0
     # via mkdocs
+gitdb==4.0.12
+    # via gitpython
+gitpython==3.1.44
+    # via streamlit
 greenlet==3.2.2
     # via
     #   gevent
@@ -112,18 +130,27 @@ idna==3.10
     #   anyio
     #   httpx
     #   requests
+importlib-metadata==8.7.0
+    # via streamlit
 iniconfig==2.1.0
     # via pytest
 itsdangerous==2.2.0
     # via flask
 jinja2==3.1.6
     # via
+    #   altair
     #   flask
     #   mkdocs
     #   mkdocs-material
+    #   pydeck
+    #   pyecharts
     #   torch
 joblib==1.5.1
     # via scikit-learn
+jsonschema==4.24.0
+    # via altair
+jsonschema-specifications==2025.4.1
+    # via jsonschema
 kestra==0.22.0
     # via -r requirements.in
 kuzu==0.10.0
@@ -137,6 +164,8 @@ markdown==3.8
     #   mkdocs
     #   mkdocs-material
     #   pymdown-extensions
+markdown-it-py==3.0.0
+    # via rich
 markupsafe==3.0.2
     # via
     #   flask
@@ -145,6 +174,8 @@ markupsafe==3.0.2
     #   werkzeug
 mccabe==0.7.0
     # via flake8
+mdurl==0.1.2
+    # via markdown-it-py
 mergedeep==1.3.4
     # via
     #   mkdocs
@@ -169,8 +200,12 @@ networkx==3.4.2
     # via torch
 numpy==2.2.6
     # via
+    #   altair
+    #   pandas
+    #   pydeck
     #   scikit-learn
     #   scipy
+    #   streamlit
     #   transformers
 packaging==25.0
     # via
@@ -178,9 +213,14 @@ packaging==25.0
     #   huggingface-hub
     #   mkdocs
     #   pytest
+    #   streamlit
     #   transformers
 paginate==0.5.7
     # via mkdocs-material
+pandas==2.2.3
+    # via
+    #   altair
+    #   streamlit
 passlib[bcrypt]==1.7.4
     # via -r requirements.in
 pathspec==0.12.1
@@ -188,7 +228,9 @@ pathspec==0.12.1
     #   black
     #   mkdocs
 pillow==11.2.1
-    # via sentence-transformers
+    # via
+    #   sentence-transformers
+    #   streamlit
 platformdirs==4.3.8
     # via
     #   black
@@ -198,10 +240,16 @@ playwright==1.52.0
     # via -r requirements.in
 pluggy==1.6.0
     # via pytest
+prettytable==3.16.0
+    # via pyecharts
 prometheus-client==0.22.0
     # via -r requirements.in
+protobuf==3.20.3
+    # via streamlit
 psutil==7.0.0
     # via locust
+pyarrow==20.0.0
+    # via streamlit
 pyasn1==0.4.8
     # via
     #   python-jose
@@ -214,14 +262,22 @@ pydantic==2.11.5
     # via fastapi
 pydantic-core==2.33.2
     # via pydantic
+pydeck==0.9.1
+    # via streamlit
+pyecharts==2.0.8
+    # via streamlit-echarts
 pyee==13.0.0
     # via playwright
 pyflakes==3.3.2
     # via flake8
 pygments==2.19.1
-    # via mkdocs-material
+    # via
+    #   mkdocs-material
+    #   rich
 pymdown-extensions==10.15
     # via mkdocs-material
+pympler==1.1
+    # via streamlit
 pytest==8.3.5
     # via
     #   -r requirements.in
@@ -232,6 +288,8 @@ python-dateutil==2.9.0.post0
     # via
     #   ghp-import
     #   kestra
+    #   pandas
+    #   streamlit
 python-engineio==4.12.1
     # via python-socketio
 python-jose[cryptography]==3.4.0
@@ -240,6 +298,8 @@ python-multipart==0.0.20
     # via -r requirements.in
 python-socketio[client]==5.13.0
     # via locust-cloud
+pytz==2025.2
+    # via pandas
 pyyaml==6.0.2
     # via
     #   huggingface-hub
@@ -252,6 +312,12 @@ pyyaml-env-tag==1.1
     # via mkdocs
 pyzmq==26.4.0
     # via locust
+redis==6.2.0
+    # via -r requirements.in
+referencing==0.36.2
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
 regex==2024.11.6
     # via transformers
 requests==2.32.3
@@ -263,7 +329,14 @@ requests==2.32.3
     #   locust
     #   mkdocs-material
     #   python-socketio
+    #   streamlit
     #   transformers
+rich==14.0.0
+    # via streamlit
+rpds-py==0.25.1
+    # via
+    #   jsonschema
+    #   referencing
 rsa==4.9.1
     # via python-jose
 safetensors==0.5.3
@@ -278,22 +351,46 @@ sentence-transformers==4.1.0
     # via -r requirements.in
 simple-websocket==1.1.0
     # via python-engineio
+simplejson==3.20.1
+    # via
+    #   pyecharts
+    #   streamlit-echarts
 six==1.17.0
     # via
     #   ecdsa
     #   python-dateutil
+smmap==5.0.2
+    # via gitdb
 sniffio==1.3.1
     # via anyio
+sse-starlette==2.3.5
+    # via -r requirements.in
 starlette==0.46.2
-    # via fastapi
+    # via
+    #   fastapi
+    #   sse-starlette
+streamlit==1.22.0
+    # via
+    #   -r requirements.in
+    #   streamlit-echarts
+streamlit-echarts==0.4.0
+    # via -r requirements.in
 sympy==1.14.0
     # via torch
+tenacity==8.5.0
+    # via streamlit
 threadpoolctl==3.6.0
     # via scikit-learn
 tokenizers==0.21.1
     # via transformers
+toml==0.10.2
+    # via streamlit
+toolz==1.0.0
+    # via altair
 torch==2.7.0
     # via sentence-transformers
+tornado==6.5.1
+    # via streamlit
 tqdm==4.67.1
     # via
     #   huggingface-hub
@@ -309,10 +406,15 @@ typing-extensions==4.13.2
     #   pydantic-core
     #   pyee
     #   sentence-transformers
+    #   streamlit
     #   torch
     #   typing-inspection
 typing-inspection==0.4.1
     # via pydantic
+tzdata==2025.2
+    # via pandas
+tzlocal==5.3.1
+    # via streamlit
 urllib3==2.4.0
     # via
     #   docker
@@ -320,8 +422,12 @@ urllib3==2.4.0
     #   requests
 uvicorn==0.34.2
     # via -r requirements.in
+validators==0.35.0
+    # via streamlit
 watchdog==6.0.0
     # via mkdocs
+wcwidth==0.2.13
+    # via prettytable
 websocket-client==1.8.0
     # via python-socketio
 werkzeug==3.1.3
@@ -332,6 +438,8 @@ werkzeug==3.1.3
     #   locust
 wsproto==1.2.0
     # via simple-websocket
+zipp==3.22.0
+    # via importlib-metadata
 zope-event==5.0
     # via gevent
 zope-interface==7.2

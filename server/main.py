@@ -10,12 +10,45 @@ import ast
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 
+# Import routers
+from analytics_routes import router as analytics_router, initialize_analytics_engine, shutdown_analytics_engine
+
 app = FastAPI(title="MCP Server", description="Model Context Protocol server for GraphMemory-IDE")
+
+# Include routers
+app.include_router(analytics_router)
+
+# Try to include dashboard router if dependencies are available
+try:
+    from dashboard.routes import dashboard_router
+    app.include_router(dashboard_router)
+except ImportError:
+    print("Dashboard dependencies not available. Install with: pip install sse-starlette streamlit streamlit-echarts")
 
 # Initialize Kuzu DB connection on startup
 KUZU_DB_PATH = os.environ.get("KUZU_DB_PATH", "./data")
 db = kuzu.Database(KUZU_DB_PATH)
 conn = kuzu.Connection(db)
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    try:
+        # Initialize analytics engine
+        redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+        await initialize_analytics_engine(conn, redis_url)
+        print("Analytics engine initialized successfully")
+    except Exception as e:
+        print(f"Warning: Analytics engine initialization failed: {e}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup services on shutdown"""
+    try:
+        await shutdown_analytics_engine()
+        print("Analytics engine shutdown complete")
+    except Exception as e:
+        print(f"Warning: Analytics engine shutdown failed: {e}")
 
 class TopKQueryRequest(BaseModel):
     query_text: str

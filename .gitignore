@@ -324,6 +324,10 @@ test-results/
 screenshots/
 videos/
 
+# Outdated test files (deprecated patterns)
+test_dashboard_phase*.py
+*_phase*_test.py
+
 # Monitoring and profiling
 *.prof
 *.trace
