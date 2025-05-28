@@ -6,6 +6,9 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "build:cursor": "tsc && cp cursor/server.ts cursor/server.js",
+    "build:windsurf": "tsc && cp windsurf/server.ts windsurf/server.js",
+    "build:all": "npm run build && npm run build:cursor && npm run build:windsurf",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -13,13 +16,13 @@
     "test:integration": "jest --testPathPattern=integration.test.ts",
     "test:performance": "jest --testPathPattern=performance.test.ts --runInBand",
     "test:ci": "jest --ci --coverage --watchAll=false",
-    "lint": "eslint shared/**/*.ts tests/**/*.ts --fix",
-    "format": "prettier --write shared/**/*.ts tests/**/*.ts",
-    "clean": "rm -rf dist coverage",
+    "lint": "eslint shared/**/*.ts tests/**/*.ts cursor/**/*.ts windsurf/**/*.ts --fix",
+    "format": "prettier --write shared/**/*.ts tests/**/*.ts cursor/**/*.ts windsurf/**/*.ts",
+    "clean": "rm -rf dist coverage cursor/server.js windsurf/server.js",
     "dev": "npm run build:watch",
     "package:vscode": "cd vscode && vsce package",
-    "package:cursor": "cd cursor && npm run package",
-    "package:windsurf": "cd windsurf && npm run package"
+    "package:cursor": "npm run build:cursor && cd cursor && npm run package",
+    "package:windsurf": "npm run build:windsurf && cd windsurf && npm run package"
   },
   "keywords": [
     "graphmemory",

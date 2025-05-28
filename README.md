@@ -356,27 +356,26 @@ graph TB
     subgraph "IDE Layer"
         CURSOR[Cursor IDE<br/>✅ Production Ready]
         VSCODE[VSCode<br/>🔄 In Development]
-        WINDSURF[Windsurf<br/>📋 Planned]
+        WINDSURF[Windsurf<br/>✅ Production Ready]
     end
     
-    subgraph "Shared Library"
-        MCP_CLIENT[MCP Client<br/>Protocol Implementation]
-        AUTH[Authentication<br/>JWT + mTLS + API Key]
-        UTILS[Utilities<br/>Caching + Validation]
-        TYPES[TypeScript Types<br/>Schema Definitions]
+    subgraph "Shared Architecture"
+        MCP_CLIENT[MCP Client Library<br/>TypeScript/Node.js]
+        MCP_SERVER[MCP Server<br/>GraphMemory Bridge]
+        UTILS[Utilities & Helpers<br/>Auth, Config, Validation]
+        TYPES[Type Definitions<br/>Shared Interfaces]
     end
     
-    subgraph "GraphMemory Server"
-        MCP_SERVER[MCP Server<br/>FastAPI Backend]
-        TOOLS[10 GraphMemory Tools<br/>Memory + Graph + Knowledge]
-        API[REST API<br/>Full Feature Access]
+    subgraph "GraphMemory Tools"
+        TOOLS[10 GraphMemory Tools<br/>Memory, Graph, Knowledge]
+        AUTH[Authentication Layer<br/>JWT, API Key, mTLS]
+        API[GraphMemory API<br/>REST + WebSocket]
     end
     
     CURSOR --> MCP_CLIENT
     VSCODE --> MCP_CLIENT
     WINDSURF --> MCP_CLIENT
     
-    MCP_CLIENT --> AUTH
     MCP_CLIENT --> UTILS
     MCP_CLIENT --> TYPES
     
@@ -386,7 +385,7 @@ graph TB
     
     style CURSOR fill:#4caf50
     style VSCODE fill:#ff9800
-    style WINDSURF fill:#9e9e9e
+    style WINDSURF fill:#4caf50
     style MCP_CLIENT fill:#e3f2fd
     style MCP_SERVER fill:#f3e5f5
 ```
@@ -403,7 +402,7 @@ graph TB
 **Quick Setup:**
 ```bash
 # Install and configure
-cd ide-plugins && npm install && npm run build
+cd ide-plugins && npm install && npm run build:cursor
 
 # Add to Cursor MCP config (~/.cursor/mcp.json)
 {
@@ -422,17 +421,46 @@ cd ide-plugins && npm install && npm run build
 }
 ```
 
-**Available Tools in Cursor:**
-- `@graphmemory search` - Semantic memory search
-- `@graphmemory create` - Create new memories
-- `@graphmemory relate` - Link memories together
-- `@graphmemory query` - Execute Cypher graph queries
-- `@graphmemory analyze` - Graph structure analysis
-- `@graphmemory cluster` - Find knowledge clusters
-- `@graphmemory insights` - Generate insights from patterns
-- `@graphmemory recommend` - Get contextual recommendations
-
 > 📖 **Complete Setup Guide**: [Cursor Plugin Documentation](ide-plugins/cursor/README.md)
+
+### ✅ Windsurf Plugin (Production Ready)
+
+**Cascade-Optimized Integration** - 400+ lines with agentic workflow support
+- **All 10 GraphMemory Tools**: Full feature parity with Cursor plugin
+- **Cascade Integration**: Native support for Windsurf's agentic capabilities
+- **Turbo Mode Support**: Enhanced performance for automated workflows
+- **Intelligent Formatting**: Results optimized for conversational interface
+- **Comprehensive Documentation**: Setup, usage, and troubleshooting guides
+
+**Quick Setup:**
+```bash
+# Install and configure
+cd ide-plugins && npm install && npm run build:windsurf
+
+# Add to Windsurf MCP config (~/.codeium/windsurf/mcp_config.json)
+{
+  "mcpServers": {
+    "graphmemory": {
+      "command": "node",
+      "args": ["server.js"],
+      "cwd": "/path/to/GraphMemory-IDE/ide-plugins/windsurf",
+      "env": {
+        "GRAPHMEMORY_SERVER_URL": "http://localhost:8000",
+        "GRAPHMEMORY_AUTH_METHOD": "jwt",
+        "GRAPHMEMORY_AUTH_TOKEN": "your-jwt-token"
+      }
+    }
+  }
+}
+```
+
+**Windsurf-Specific Features:**
+- **Cascade Integration**: Access GraphMemory tools through natural language
+- **Agentic Workflows**: Automated knowledge management during development
+- **Context Awareness**: Intelligent memory suggestions based on current work
+- **Turbo Mode**: Rapid knowledge operations with chained tool calls
+
+> 📖 **Complete Setup Guide**: [Windsurf Plugin Documentation](ide-plugins/windsurf/README.md)
 
 ### 🔄 Future IDE Support
 
@@ -442,10 +470,17 @@ cd ide-plugins && npm install && npm run build
 - UI components and commands planned
 - Estimated completion: Q2 2025
 
-**Windsurf Plugin (Planned)**
-- Architecture evaluation in progress
-- Dependent on platform plugin maturity
-- Shared library will enable rapid development
+**Available Tools in Both IDEs:**
+- `memory_search` - Semantic memory search
+- `memory_create` - Create new memories
+- `memory_update` - Update existing memories
+- `memory_delete` - Remove memories
+- `memory_relate` - Link memories together
+- `graph_query` - Execute Cypher graph queries
+- `graph_analyze` - Graph structure analysis
+- `knowledge_cluster` - Find knowledge clusters
+- `knowledge_insights` - Generate insights from patterns
+- `knowledge_recommend` - Get contextual recommendations
 
 ### 🧪 Testing & Quality Assurance
 
