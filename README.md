@@ -656,23 +656,23 @@ mindmap
 ```mermaid
 graph LR
     subgraph "API Endpoints"
-        AUTH[/auth/*<br/>Authentication]
-        MEMORY[/memory/*<br/>Memory Management]
-        GRAPH[/graph/*<br/>Graph Operations]
-        SEARCH[/search/*<br/>Search & Discovery]
-        HEALTH[/health<br/>System Health]
+        AUTH["Authentication<br/>/auth/*"]
+        MEMORY["Memory Management<br/>/memory/*"]
+        GRAPH["Graph Operations<br/>/graph/*"]
+        SEARCH["Search & Discovery<br/>/search/*"]
+        HEALTH["System Health<br/>/health"]
     end
     
     subgraph "Authentication Methods"
-        JWT_AUTH[JWT Tokens<br/>Bearer Auth]
-        MTLS_AUTH[mTLS Certificates<br/>Client Certs]
-        API_KEY[API Keys<br/>Header Auth]
+        JWT_AUTH["JWT Tokens<br/>Bearer Auth"]
+        MTLS_AUTH["mTLS Certificates<br/>Client Certs"]
+        API_KEY["API Keys<br/>Header Auth"]
     end
     
     subgraph "Response Formats"
-        JSON[JSON Responses<br/>Standard Format]
-        STREAM[Streaming<br/>Large Results]
-        BINARY[Binary Data<br/>File Downloads]
+        JSON["JSON Responses<br/>Standard Format"]
+        STREAM["Streaming<br/>Large Results"]
+        BINARY["Binary Data<br/>File Downloads"]
     end
     
     AUTH --> JWT_AUTH
