@@ -344,21 +344,21 @@ flowchart LR
 
 ```mermaid
 graph LR
-    subgraph "Analytics Core"
+    subgraph AnalyticsCore["Analytics Core"]
         Engine[Analytics Engine]
         GPU[GPU Acceleration<br/>NVIDIA cuGraph]
         Monitor[Performance Monitor<br/>Prometheus Metrics]
         Concurrent[Concurrent Processing<br/>Thread/Process Pools]
     end
     
-    subgraph "Algorithm Suite"
+    subgraph AlgorithmSuite["Algorithm Suite"]
         Centrality[5 Centrality Algorithms<br/>PageRank, Betweenness, etc.]
         Community[3 Community Detection<br/>Louvain, Modularity, etc.]
         ML[3 ML Clustering<br/>Spectral, K-means, etc.]
         Anomaly[Anomaly Detection<br/>Isolation Forest]
     end
     
-    subgraph "Production Features"
+    subgraph ProductionFeatures["Production Features"]
         Benchmarks[Performance Benchmarking<br/>GPU vs CPU Comparison]
         Health[Health Monitoring<br/>Component Status]
         Metrics[15+ Prometheus Metrics<br/>Real-time Monitoring]
@@ -379,9 +379,9 @@ graph LR
     Monitor --> Metrics
     Cache --> Engine
     
-    style "Analytics Core" fill:#e8f5e8
-    style "Algorithm Suite" fill:#fff3e0
-    style "Production Features" fill:#fce4ec
+    style AnalyticsCore fill:#e8f5e8
+    style AlgorithmSuite fill:#fff3e0
+    style ProductionFeatures fill:#fce4ec
 ```
 
 **Key Achievements:**
@@ -418,21 +418,21 @@ graph LR
 
 ```mermaid
 graph LR
-    subgraph "Dashboard Architecture"
+    subgraph DashboardArch["Dashboard Architecture"]
         SSE[SSE Server<br/>FastAPI Streaming]
         Adapter[Data Adapter<br/>Validation & Transform]
         Collector[Background Collector<br/>Continuous Data Collection]
         Health[Health Monitor<br/>System Status Tracking]
     end
     
-    subgraph "Frontend Layer"
+    subgraph FrontendLayer["Frontend Layer"]
         Streamlit[Streamlit Dashboard<br/>Interactive UI]
         Charts[Apache ECharts<br/>Real-time Visualization]
         Auth[JWT Authentication<br/>Session Management]
         Fragments[Auto-refresh Fragments<br/>2s/3s/5s intervals]
     end
     
-    subgraph "Data Pipeline"
+    subgraph DataPipeline["Data Pipeline"]
         Analytics[Analytics Engine<br/>TASK-012 Integration]
         Models[Pydantic Models<br/>Type-safe Validation]
         Cache[TTL Caching<br/>Performance Optimization]
@@ -454,9 +454,9 @@ graph LR
     Adapter --> Analytics
     SSE --> Streamlit
     
-    style "Dashboard Architecture" fill:#e8f5e8
-    style "Frontend Layer" fill:#fff3e0
-    style "Data Pipeline" fill:#fce4ec
+    style DashboardArch fill:#e8f5e8
+    style FrontendLayer fill:#fff3e0
+    style DataPipeline fill:#fce4ec
 ```
 
 **Phase 3 Implementation Complete (4 Steps):**
@@ -1148,211 +1148,4 @@ graph TD
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `KUZU_DB_PATH` | Database file path | `/database/kuzu.db` | Yes |
-| `JWT_SECRET_KEY` | JWT signing key | `your-secret-key` | Yes |
-| `JWT_ENABLED` | Enable JWT authentication | `true` | No |
-| `MTLS_ENABLED` | Enable mTLS authentication | `false` | No |
-| `LOG_LEVEL` | Logging level | `INFO` | No |
-| `READ_ONLY_MODE` | Enable read-only mode | `false` | No |
-
-> 📖 **Configuration Documentation**: [OPERATIONS.md](docs/OPERATIONS.md#configuration)
-
-## 🔧 Troubleshooting
-
-### Common Issues & Solutions
-
-```mermaid
-flowchart TD
-    ISSUE[Common Issues] --> STARTUP[Startup Problems]
-    ISSUE --> API[API Errors]
-    ISSUE --> DB[Database Issues]
-    ISSUE --> SECURITY[Security Problems]
-    ISSUE --> PERFORMANCE[Performance Issues]
-    
-    STARTUP --> PORT[Port Conflicts<br/>Check port usage]
-    STARTUP --> DEPS[Missing Dependencies<br/>Install requirements]
-    STARTUP --> PERMS[Permission Errors<br/>Check file permissions]
-    
-    API --> AUTH_ERR[Authentication Errors<br/>Check JWT/mTLS config]
-    API --> TIMEOUT[Request Timeouts<br/>Check resource limits]
-    API --> RATE[Rate Limiting<br/>Check request frequency]
-    
-    DB --> CORRUPT[Database Corruption<br/>Restore from backup]
-    DB --> LOCK[Database Locks<br/>Restart services]
-    DB --> SPACE[Disk Space<br/>Clean up old data]
-    
-    SECURITY --> CERT[Certificate Issues<br/>Regenerate certificates]
-    SECURITY --> FIREWALL[Network Blocks<br/>Check firewall rules]
-    SECURITY --> AUDIT[Security Violations<br/>Check audit logs]
-    
-    PERFORMANCE --> MEMORY[High Memory Usage<br/>Adjust limits]
-    PERFORMANCE --> CPU[High CPU Usage<br/>Scale resources]
-    PERFORMANCE --> SLOW[Slow Queries<br/>Optimize database]
-    
-    style ISSUE fill:#e3f2fd
-    style STARTUP fill:#fff3e0
-    style SECURITY fill:#ffebee
-    style PERFORMANCE fill:#e8f5e8
-```
-
-### Quick Diagnostic Commands
-
-```bash
-# Check service health
-curl http://localhost:8080/health
-
-# View container logs
-docker compose logs -f mcp-server
-
-# Monitor resource usage
-docker stats --no-stream
-
-# Test authentication
-curl -X POST http://localhost:8080/auth/token \
-  -d "username=testuser&password=testpassword"
-
-# Run security validation
-./monitoring/resource-monitor.sh
-```
-
-> 📖 **Troubleshooting Guide**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-
-## 🤝 Contributing
-
-### Contribution Workflow
-
-```mermaid
-flowchart LR
-    FORK[Fork Repository] --> CLONE[Clone Fork]
-    CLONE --> BRANCH[Create Feature Branch]
-    BRANCH --> CODE[Write Code]
-    CODE --> TEST[Run Tests]
-    TEST --> COMMIT[Commit Changes]
-    COMMIT --> PUSH[Push to Fork]
-    PUSH --> PR[Create Pull Request]
-    PR --> REVIEW[Code Review]
-    REVIEW --> MERGE[Merge to Main]
-    
-    subgraph "Quality Gates"
-        LINT[Code Linting]
-        SECURITY[Security Scan]
-        COVERAGE[Test Coverage]
-        DOCS[Documentation]
-    end
-    
-    TEST --> LINT
-    TEST --> SECURITY
-    TEST --> COVERAGE
-    TEST --> DOCS
-    
-    style FORK fill:#e3f2fd
-    style TEST fill:#e8f5e8
-    style REVIEW fill:#f3e5f5
-```
-
-### Development Standards
-
-- **Code Style**: Follow PEP 8, use type hints, maintain >90% test coverage
-- **Security**: All changes must pass security scans and validation
-- **Documentation**: Update relevant documentation for all changes
-- **Testing**: Write comprehensive tests for new features and bug fixes
-
-> 📖 **Contributing Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
-
-## 📊 Project Status
-
-### Implementation Status
-
-```mermaid
-gantt
-    title GraphMemory-IDE Implementation Status
-    dateFormat  YYYY-MM-DD
-    section Core Features
-    MCP Server           :done, core1, 2024-01-01, 2024-02-15
-    Graph Database       :done, core2, 2024-01-15, 2024-02-28
-    Authentication       :done, core3, 2024-02-01, 2024-02-20
-    API Documentation    :done, core4, 2024-02-15, 2024-03-01
-    
-    section Security
-    Container Hardening  :done, sec1, 2024-02-01, 2024-02-25
-    mTLS Implementation  :done, sec2, 2024-02-15, 2024-03-05
-    Security Monitoring  :done, sec3, 2024-02-20, 2024-03-10
-    Security Testing     :done, sec4, 2024-02-25, 2024-03-15
-    
-    section Documentation
-    User Documentation   :done, doc1, 2024-03-01, 2024-03-20
-    Developer Guides     :done, doc2, 2024-03-05, 2024-03-25
-    Tutorial System      :done, doc3, 2024-03-10, 2024-03-30
-    API Reference        :done, doc4, 2024-03-15, 2024-04-01
-    
-    section IDE Integration
-    Cursor Plugin        :done, ide1, 2024-04-01, 2024-04-15
-    VSCode Extension     :done, ide2, 2024-04-15, 2024-05-01
-    Windsurf Plugin      :done, ide3, 2024-05-01, 2024-05-15
-    Shared Library       :done, ide4, 2024-04-01, 2024-04-10
-    Testing Framework    :done, ide5, 2024-04-05, 2024-04-15
-    
-    section Future Work
-    Additional IDEs      :active, future1, 2024-06-01, 2024-08-01
-    Advanced Analytics   :future2, 2024-04-15, 2024-06-01
-    Cloud Integration    :future3, 2024-05-01, 2024-07-01
-    Enterprise Features  :future4, 2024-06-01, 2024-08-01
-```
-
-### Feature Completion
-
-- ✅ **Core Platform**: MCP Server, Graph Database, Authentication
-- ✅ **Security**: Container hardening, mTLS, monitoring, testing
-- ✅ **Documentation**: Complete documentation suite with tutorials
-- ✅ **Deployment**: Docker, security hardening, monitoring
-- ✅ **Testing**: Comprehensive test coverage and CI/CD
-- ✅ **IDE Integration**: Cursor, VSCode, and Windsurf plugins with MCP protocol
-- ✅ **Multi-IDE Support**: Three production-ready IDE integrations
-- 🔄 **Analytics**: Advanced graph analytics and insights
-- 📋 **Planned**: Additional IDE support, cloud deployment, enterprise features
-
-## 📞 Support & Community
-
-### Getting Help
-
-```mermaid
-flowchart TD
-    HELP[Need Help?] --> DOCS[Check Documentation]
-    HELP --> SEARCH[Search Issues]
-    HELP --> COMMUNITY[Community Support]
-    HELP --> ENTERPRISE[Enterprise Support]
-    
-    DOCS --> README[README.md<br/>Quick Start]
-    DOCS --> GUIDES[User Guides<br/>Detailed Help]
-    DOCS --> TROUBLESHOOT[Troubleshooting<br/>Common Issues]
-    
-    SEARCH --> GITHUB[GitHub Issues<br/>Known Problems]
-    SEARCH --> DISCUSSIONS[GitHub Discussions<br/>Q&A Forum]
-    
-    COMMUNITY --> DISCORD[Discord Server<br/>Real-time Chat]
-    COMMUNITY --> FORUM[Community Forum<br/>Long-form Discussion]
-    
-    ENTERPRISE --> SUPPORT[Professional Support<br/>SLA Guaranteed]
-    ENTERPRISE --> CONSULTING[Implementation Consulting<br/>Expert Guidance]
-    
-    style HELP fill:#e3f2fd
-    style DOCS fill:#e8f5e8
-    style COMMUNITY fill:#f3e5f5
-    style ENTERPRISE fill:#fff3e0
-```
-
-### Support Channels
-
-1. **📖 Documentation**: Start with our comprehensive documentation
-2. **🔍 GitHub Issues**: Search existing issues or create new ones
-3. **💬 Discussions**: Join community discussions for Q&A
-4. **🚀 Enterprise**: Contact us for professional support
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-**Built with ❤️ using FastAPI, Kuzu GraphDB, Docker, and comprehensive security hardening.**
-
-> 🚀 **Ready to get started?** Follow our [Getting Started Tutorial](docs/tutorials/getting-started.md) for a step-by-step introduction to GraphMemory-IDE. 
+| `JWT_SECRET_KEY` | JWT signing key | `
