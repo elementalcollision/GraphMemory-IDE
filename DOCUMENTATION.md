@@ -8,18 +8,21 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 
 ### For New Users
 1. **[Main README](README.md)** - Start here for project overview and quick setup
-2. **[Docker Quick Start](docker/README.md#quick-start)** - Get running in 5 minutes
-3. **[API Documentation](server/README.md#api-endpoints)** - Understand the API
+2. **[User Guide](docs/USER_GUIDE.md)** - Complete user documentation and features
+3. **[Getting Started Tutorial](docs/tutorials/getting-started.md)** - Step-by-step first-time setup
+4. **[Docker Quick Start](docker/README.md#quick-start)** - Get running in 5 minutes
 
 ### For Developers
-1. **[Development Setup](README.md#development)** - Local development environment
-2. **[Server Documentation](server/README.md)** - MCP server development
-3. **[Testing Guide](README.md#testing)** - Running and writing tests
+1. **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Complete development environment setup
+2. **[API Guide](docs/API_GUIDE.md)** - Comprehensive API documentation with examples
+3. **[Plugin Development](docs/PLUGIN_DEVELOPMENT.md)** - Build custom integrations
+4. **[CLI Documentation](cli/README.md)** - Command-line interface guide
 
 ### For DevOps/Production
-1. **[Docker Deployment](docker/README.md)** - Production deployment guide
-2. **[Volume Management](docker/VOLUME_MANAGEMENT.md)** - Backup and storage
-3. **[Troubleshooting](README.md#troubleshooting)** - Common issues and solutions
+1. **[Operations Guide](docs/OPERATIONS.md)** - Production deployment and monitoring
+2. **[Security Guide](SECURITY.md)** - Security implementation and best practices
+3. **[CI/CD Guide](docs/CICD.md)** - Continuous integration and deployment
+4. **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Comprehensive problem-solving guide
 
 ## 📋 Documentation by Category
 
@@ -28,32 +31,44 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [Main README](README.md) | Project overview, architecture, quick start | All users |
+| [Developer Guide](docs/DEVELOPER_GUIDE.md) | Complete development setup and architecture | Developers |
+| [API Guide](docs/API_GUIDE.md) | Comprehensive API documentation with diagrams | Developers, Integrators |
 | [Product Requirements](PRD%20-%20GraphMemory-IDE%20-%20Combined.md) | Original PRD with detailed requirements | Product, Engineering |
-| [Volume Research Summary](docker/VOLUME_RESEARCH_SUMMARY.md) | Docker volume strategy research and decisions | DevOps, Engineering |
+
+### 📖 User Documentation
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [User Guide](docs/USER_GUIDE.md) | Complete feature documentation | End users |
+| [Tutorials](docs/tutorials/README.md) | Step-by-step learning guides | New users |
+| [Getting Started](docs/tutorials/getting-started.md) | First-time setup tutorial | Beginners |
+| [Memory Management](docs/tutorials/memory-management.md) | Advanced organization techniques | Intermediate users |
 
 ### 🛠️ Development
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [Server README](server/README.md) | Complete MCP server documentation | Backend developers |
-| [API Examples](server/README.md#api-client-examples) | Python and JavaScript client examples | Frontend developers |
-| [Testing Guide](README.md#testing) | Test suite and coverage information | QA, Developers |
+| [Developer Guide](docs/DEVELOPER_GUIDE.md) | Development environment and workflows | Backend developers |
+| [API Guide](docs/API_GUIDE.md) | Complete API reference with examples | API developers |
+| [Plugin Development](docs/PLUGIN_DEVELOPMENT.md) | Custom plugin and integration development | Extension developers |
+| [CLI Documentation](cli/README.md) | Command-line interface and enterprise features | CLI users, DevOps |
 
 ### 🐳 Deployment & Operations
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [Docker README](docker/README.md) | Complete Docker deployment guide | DevOps, SRE |
-| [Volume Management](docker/VOLUME_MANAGEMENT.md) | Backup, restore, and volume operations | DevOps, SRE |
-| [Backup Script Guide](docker/backup-volumes.sh) | Automated backup system | Operations |
+| [Operations Guide](docs/OPERATIONS.md) | Production deployment and monitoring | DevOps, SRE |
+| [Security Guide](SECURITY.md) | Security hardening and mTLS implementation | Security engineers |
+| [CI/CD Guide](docs/CICD.md) | Continuous integration and deployment | DevOps, Release engineers |
+| [Docker README](docker/README.md) | Container deployment guide | DevOps, SRE |
 
 ### 🔧 Configuration & Troubleshooting
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [Troubleshooting Guide](TROUBLESHOOTING.md) | Comprehensive problem-solving guide | Support, Users, DevOps |
 | [Configuration Guide](README.md#configuration) | Environment variables and settings | All users |
-| [Troubleshooting](README.md#troubleshooting) | Common issues and solutions | Support, Users |
-| [Debug Commands](docker/README.md#troubleshooting) | Advanced debugging techniques | DevOps, Support |
+| [Security Configuration](SECURITY.md#configuration) | Security-specific configuration | Security engineers |
 
 ### 📊 Project Management
 
@@ -67,37 +82,40 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 ### 🆕 First-Time Setup
 
 1. **Read Overview**: [Main README](README.md) - Understand what GraphMemory-IDE does
-2. **Check Prerequisites**: [Quick Start](README.md#quick-start) - Ensure system requirements
-3. **Start Services**: [Docker Quick Start](docker/README.md#quick-start) - Get running
-4. **Test API**: [API Examples](README.md#example-usage) - Verify functionality
-5. **Explore Features**: [API Documentation](server/README.md#api-endpoints) - Learn capabilities
+2. **Follow Tutorial**: [Getting Started](docs/tutorials/getting-started.md) - Step-by-step setup
+3. **Check Prerequisites**: [User Guide](docs/USER_GUIDE.md#installation) - System requirements
+4. **Start Services**: [Docker Quick Start](docker/README.md#quick-start) - Get running
+5. **Learn Organization**: [Memory Management Tutorial](docs/tutorials/memory-management.md) - Best practices
 
 ### 🔧 Development Workflow
 
-1. **Setup Environment**: [Local Development](README.md#development) - Configure dev environment
-2. **Understand Architecture**: [Server Documentation](server/README.md#architecture) - Learn system design
-3. **Run Tests**: [Testing Guide](README.md#testing) - Verify code quality
-4. **Make Changes**: [Contributing Guide](README.md#contributing) - Development best practices
-5. **Deploy Changes**: [Docker Development](docker/README.md#development) - Test in containers
+1. **Setup Environment**: [Developer Guide](docs/DEVELOPER_GUIDE.md#development-environment) - Configure dev environment
+2. **Understand Architecture**: [Developer Guide](docs/DEVELOPER_GUIDE.md#architecture) - Learn system design
+3. **API Development**: [API Guide](docs/API_GUIDE.md) - Complete API reference
+4. **Run Tests**: [Developer Guide](docs/DEVELOPER_GUIDE.md#testing) - Verify code quality
+5. **Build Plugins**: [Plugin Development](docs/PLUGIN_DEVELOPMENT.md) - Extend functionality
 
 ### 🚀 Production Deployment
 
-1. **Plan Deployment**: [Production Guide](docker/README.md#production-deployment) - Understand requirements
-2. **Configure Environment**: [Configuration](README.md#configuration) - Set environment variables
-3. **Setup Volumes**: [Volume Management](docker/VOLUME_MANAGEMENT.md) - Configure persistent storage
-4. **Deploy Services**: [Docker Deployment](docker/README.md) - Start production stack
-5. **Setup Monitoring**: [Health Monitoring](README.md#health-monitoring) - Monitor system health
-6. **Configure Backups**: [Backup System](docker/VOLUME_MANAGEMENT.md#backup--restore) - Ensure data safety
+1. **Plan Deployment**: [Operations Guide](docs/OPERATIONS.md#deployment) - Understand requirements
+2. **Security Setup**: [Security Guide](SECURITY.md) - Implement security hardening
+3. **Configure Environment**: [Operations Guide](docs/OPERATIONS.md#configuration) - Set environment variables
+4. **Deploy Services**: [Operations Guide](docs/OPERATIONS.md#deployment) - Start production stack
+5. **Setup Monitoring**: [Operations Guide](docs/OPERATIONS.md#monitoring) - Monitor system health
+6. **Configure CI/CD**: [CI/CD Guide](docs/CICD.md) - Automate deployments
 
 ### 🔍 Troubleshooting Journey
 
-1. **Check Status**: [Health Monitoring](README.md#health-monitoring) - Verify service health
-2. **Review Logs**: [Debug Commands](docker/README.md#debugging) - Examine system logs
-3. **Common Issues**: [Troubleshooting](README.md#troubleshooting) - Known problems and solutions
-4. **Advanced Debug**: [Docker Troubleshooting](docker/README.md#troubleshooting) - Deep debugging
-5. **Get Support**: [Support](README.md#support) - Contact options
+1. **Quick Reference**: [Troubleshooting Guide](TROUBLESHOOTING.md#quick-reference) - Emergency commands
+2. **Check Status**: [Troubleshooting Guide](TROUBLESHOOTING.md#debugging-workflows) - Verify service health
+3. **Common Issues**: [Troubleshooting Guide](TROUBLESHOOTING.md#common-issues) - Known problems and solutions
+4. **Advanced Debug**: [Troubleshooting Guide](TROUBLESHOOTING.md#debugging-workflows) - Deep debugging
+5. **Get Support**: [Troubleshooting Guide](TROUBLESHOOTING.md#getting-help) - Contact options
 
 ## 📖 API Documentation
+
+### Comprehensive API Guide
+- **[Complete API Guide](docs/API_GUIDE.md)** - Full API documentation with examples and diagrams
 
 ### Interactive Documentation
 - **Swagger UI**: http://localhost:8080/docs (when running)
@@ -108,42 +126,81 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 
 | Category | Endpoints | Documentation |
 |----------|-----------|---------------|
-| **Authentication** | `/auth/token` | [JWT Authentication](server/README.md#authentication) |
-| **Telemetry** | `/telemetry/*` | [Telemetry Management](server/README.md#telemetry-management) |
-| **Vector Search** | `/tools/topk` | [Vector Search](server/README.md#vector-search) |
-| **Health** | `/docs`, `/openapi.json` | [Health & Documentation](server/README.md#health--documentation) |
+| **Authentication** | `/auth/*` | [API Guide - Authentication](docs/API_GUIDE.md#authentication--security) |
+| **Memory Management** | `/memory/*` | [API Guide - Memory Endpoints](docs/API_GUIDE.md#core-endpoints) |
+| **Graph Operations** | `/graph/*` | [API Guide - Graph Endpoints](docs/API_GUIDE.md#core-endpoints) |
+| **Search** | `/search/*` | [API Guide - Search Endpoints](docs/API_GUIDE.md#core-endpoints) |
+| **Health** | `/health`, `/docs` | [API Guide - Health Endpoints](docs/API_GUIDE.md#core-endpoints) |
 
-### Client Libraries
-- **Python Client**: [Python Examples](server/README.md#python-client)
-- **JavaScript Client**: [JavaScript Examples](server/README.md#javascript-client)
-- **Authentication Examples**: [JWT Usage](README.md#authentication)
+### Client Libraries & SDKs
+- **Python SDK**: [API Guide - Python Examples](docs/API_GUIDE.md#sdk--client-libraries)
+- **JavaScript SDK**: [API Guide - JavaScript Examples](docs/API_GUIDE.md#sdk--client-libraries)
+- **CLI Tool**: [CLI Documentation](cli/README.md)
+
+## 🎓 Learning Resources
+
+### Tutorials (Step-by-Step Learning)
+
+| Tutorial | Time | Prerequisites | Description |
+|----------|------|---------------|-------------|
+| [Getting Started](docs/tutorials/getting-started.md) | 15 min | None | Basic setup and first memories |
+| [Memory Management](docs/tutorials/memory-management.md) | 20 min | Getting Started | Advanced organization techniques |
+| [Graph Operations](docs/tutorials/graph-operations.md) | 30 min | Memory Management | Complex queries and analytics |
+| [Advanced Configuration](docs/tutorials/advanced-configuration.md) | 25 min | Graph Operations | Production setup and optimization |
+| [Integration Tutorial](docs/tutorials/integration.md) | 45 min | Advanced Config | Custom integrations and workflows |
+
+### How-To Guides (Task-Oriented)
+
+| Guide | Description | Audience |
+|-------|-------------|----------|
+| [User Guide](docs/USER_GUIDE.md) | Complete feature documentation | End users |
+| [Plugin Development](docs/PLUGIN_DEVELOPMENT.md) | Build custom extensions | Developers |
+| [Operations Guide](docs/OPERATIONS.md) | Production deployment and monitoring | DevOps |
+| [CI/CD Guide](docs/CICD.md) | Automated deployment setup | DevOps |
+
+### Reference Documentation
+
+| Document | Description | Audience | Status |
+|----------|-------------|----------|---------|
+| **[API_GUIDE.md](docs/API_GUIDE.md)** | Complete API reference with examples | Developers | ✅ Complete |
+| **[SECURITY.md](SECURITY.md)** | Security implementation and hardening | Security Teams | ✅ Complete |
+| **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** | Comprehensive problem-solving guide | Support Teams | ✅ Complete |
+| **[PLUGIN_DEVELOPMENT.md](docs/PLUGIN_DEVELOPMENT.md)** | Custom plugin development guide | Plugin Developers | ✅ Complete |
+
+### Explanation Documentation
+
+| Document | Description | Purpose |
+|----------|-------------|---------|
+| [Developer Guide](docs/DEVELOPER_GUIDE.md) | Architecture and design decisions | Understanding system design |
+| [Security Guide](SECURITY.md) | Security architecture and rationale | Understanding security model |
 
 ## 🐳 Docker Documentation
 
 ### Core Files
 - **[docker-compose.yml](docker/docker-compose.yml)** - Main service configuration
-- **[Dockerfile](docker/mcp-server/Dockerfile)** - MCP server container build
-- **[backup-volumes.sh](docker/backup-volumes.sh)** - Volume backup script
+- **[Security Dockerfile](docker/mcp-server/Dockerfile)** - Hardened container build
+- **[Security Profile](docker/security/seccomp-profile.json)** - Seccomp security profile
 
-### Volume Strategy
-- **[Volume Management](docker/VOLUME_MANAGEMENT.md)** - Complete volume guide
-- **[Research Summary](docker/VOLUME_RESEARCH_SUMMARY.md)** - Why we chose our approach
-- **[Backup Guide](docker/README.md#volume-management)** - Backup and restore procedures
+### Security & Hardening
+- **[Security Guide](SECURITY.md)** - Complete security implementation
+- **[mTLS Setup](scripts/setup-mtls.sh)** - Certificate generation and mTLS configuration
+- **[Security Monitoring](monitoring/resource-monitor.sh)** - Security validation and monitoring
 
 ## 🧪 Testing Documentation
 
 ### Test Categories
+- **Security Tests**: [Security Test Suite](tests/test_security.py) - Container and mTLS testing
 - **Unit Tests**: [Server Tests](server/test_main.py) - API endpoint testing
 - **Integration Tests**: [Docker Testing](docker/README.md#testing-changes) - Container integration
-- **Manual Tests**: [Manual Testing](README.md#manual-testing) - User acceptance testing
+- **CLI Tests**: [CLI Testing](cli/README.md#testing) - Command-line interface testing
 
 ### Coverage Areas
-- ✅ Telemetry ingestion and querying
-- ✅ Vector search functionality
-- ✅ JWT authentication and token validation
-- ✅ Read-only mode enforcement
-- ✅ Database error handling
-- ✅ Docker volume persistence
+- ✅ Memory management and graph operations
+- ✅ Authentication and authorization (JWT, mTLS)
+- ✅ Security hardening validation
+- ✅ Container security and resource limits
+- ✅ CLI update system and rollback mechanisms
+- ✅ Database operations and migrations
 
 ## 🔧 Configuration Reference
 
@@ -152,77 +209,69 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 | Variable | Default | Description | Documentation |
 |----------|---------|-------------|---------------|
 | `KUZU_DB_PATH` | `./data` | Database file location | [Configuration](README.md#configuration) |
-| `KUZU_READ_ONLY` | `false` | Enable read-only mode | [Read-Only Mode](README.md#read-only-mode) |
-| `JWT_SECRET_KEY` | `your-secret-key-change-in-production` | JWT token signing key | [JWT Configuration](README.md#jwt-authentication-configuration) |
-| `JWT_ALGORITHM` | `HS256` | JWT signing algorithm | [JWT Configuration](README.md#jwt-authentication-configuration) |
-| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Token expiration time | [JWT Configuration](README.md#jwt-authentication-configuration) |
-| `JWT_ENABLED` | `true` | Enable/disable authentication | [JWT Configuration](README.md#jwt-authentication-configuration) |
-| `GITHUB_TOKEN` | - | GitHub API token | [Docker Config](docker/README.md#environment-configuration) |
+| `JWT_SECRET_KEY` | `your-secret-key` | JWT token signing key | [Security Guide](SECURITY.md#jwt-configuration) |
+| `MTLS_ENABLED` | `false` | Enable mTLS authentication | [Security Guide](SECURITY.md#mtls-configuration) |
+| `MTLS_CERT_DIR` | `./certs` | mTLS certificate directory | [Security Guide](SECURITY.md#mtls-configuration) |
+| `MTLS_PORT` | `50051` | mTLS secure port | [Security Guide](SECURITY.md#mtls-configuration) |
+| `API_DEBUG` | `false` | Enable debug logging | [Troubleshooting](TROUBLESHOOTING.md#api--server-issues) |
 
 ### Service Ports
 
 | Service | Port | Purpose | Documentation |
 |---------|------|---------|---------------|
-| MCP Server | 8080 | HTTP API | [Server Documentation](server/README.md) |
-| MCP Server | 50051 | gRPC (future) | [Server Documentation](server/README.md) |
-| Kestra | 8081 | CI/CD Web UI | [Docker Documentation](docker/README.md) |
+| MCP Server | 8080 | HTTP API | [API Guide](docs/API_GUIDE.md) |
+| MCP Server | 50051 | mTLS Secure API | [Security Guide](SECURITY.md) |
+| Kestra | 8081 | CI/CD Web UI | [CI/CD Guide](docs/CICD.md) |
 
 ## 📊 Project Status & Roadmap
 
 ### Current Status
 - ✅ **Core Features**: All basic functionality implemented
-- ✅ **Documentation**: Comprehensive documentation complete
-- ✅ **Testing**: Full test coverage
-- ✅ **Docker**: Production-ready deployment
-- ✅ **Volume Management**: Research-driven storage strategy
+- ✅ **Documentation**: Comprehensive documentation suite complete
+- ✅ **Security**: Container hardening and mTLS implementation
+- ✅ **CLI**: Enterprise-grade update system with rollback
+- ✅ **Testing**: Full test coverage including security validation
+- ✅ **Tutorials**: Step-by-step learning guides
+
+### Recently Completed
+- ✅ **Security Hardening**: Read-only filesystems, Seccomp profiles, mTLS
+- ✅ **CLI Update System**: Blue-Green deployment, signature verification, atomic operations
+- ✅ **Comprehensive Documentation**: API guide, troubleshooting, tutorials
+- ✅ **Advanced Monitoring**: Resource monitoring and security validation
 
 ### In Progress
-- 🔄 **CI/CD Integration**: Kestra workflow development
 - 🔄 **Performance Optimization**: Query and indexing improvements
+- 🔄 **Advanced Integrations**: IDE plugins and external tool connections
 
 ### Planned
 - 📋 **IDE Plugins**: VS Code, IntelliJ, etc.
-- ✅ **Authentication**: JWT token-based authentication (COMPLETED)
+- 📋 **Advanced Analytics**: Graph analytics and insights
 - 📋 **Monitoring**: Prometheus and Grafana integration
 
 ## 🤝 Contributing to Documentation
 
 ### Documentation Standards
 - **Clarity**: Write for your audience (beginner, intermediate, expert)
-- **Examples**: Include working code examples
+- **Examples**: Include working code examples and Mermaid diagrams
 - **Cross-References**: Link to related documentation
 - **Maintenance**: Keep documentation up-to-date with code changes
+- **Visual Aids**: Use Mermaid diagrams for complex concepts
 
 ### Documentation Types
-- **README Files**: Overview and quick start information
-- **API Docs**: Detailed endpoint documentation
-- **Guides**: Step-by-step instructions
-- **Reference**: Configuration and troubleshooting
+- **Tutorials**: Learning-oriented, step-by-step guides
+- **How-To Guides**: Task-oriented, problem-solving documentation
+- **Reference**: Information-oriented, comprehensive details
+- **Explanation**: Understanding-oriented, conceptual documentation
 
-### Update Process
-1. **Make Changes**: Update relevant documentation files
-2. **Test Examples**: Verify all code examples work
-3. **Update Index**: Add new documentation to this index
-4. **Review**: Ensure consistency and clarity
-
-## 📞 Getting Help
-
-### Self-Service Resources
-1. **Search Documentation**: Use this index to find relevant docs
-2. **Check Examples**: Look for similar use cases in examples
-3. **Review Issues**: Search existing GitHub issues
-
-### Support Channels
-1. **GitHub Issues**: For bugs and feature requests
-2. **Discussions**: For questions and community support
-3. **Documentation**: For comprehensive guides and references
-
-### Contributing
-1. **Documentation**: Improve existing docs or add new ones
-2. **Examples**: Add more client examples and use cases
-3. **Testing**: Help improve test coverage and documentation
+### Documentation Locations
+- **Root Level**: Main guides (API, Security, Troubleshooting)
+- **docs/**: User and developer documentation
+- **docs/tutorials/**: Step-by-step learning guides
+- **Component READMEs**: Component-specific documentation
 
 ---
+
+*This documentation index follows the [Diátaxis framework](https://diataxis.fr/) for comprehensive, user-oriented documentation.*
 
 ## 📝 Documentation Maintenance
 

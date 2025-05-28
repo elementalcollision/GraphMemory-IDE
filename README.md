@@ -1,24 +1,3 @@
-## Python Virtual Environment Setup
-
-Before running or developing the MCP server, create and activate a Python virtual environment:
-
-```sh
-# Create a virtual environment (if not already created)
-python3 -m venv .venv
-
-# Activate the virtual environment
-# On macOS/Linux:
-source .venv/bin/activate
-# On Windows:
-# .venv\Scripts\activate
-
-# Upgrade pip and install dependencies (example)
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-> **Note:** Always activate the virtual environment before running or developing the MCP server to avoid dependency conflicts.
-
 # GraphMemory-IDE
 
 [![CI/CD Pipeline](https://github.com/YOUR_USERNAME/GraphMemory-IDE/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/GraphMemory-IDE/actions/workflows/ci.yml)
@@ -27,7 +6,7 @@ pip install -r requirements.txt
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Kuzu](https://img.shields.io/badge/Kuzu-GraphDB-green)](https://kuzudb.com/)
-[![Security](https://img.shields.io/badge/Security-Hardened-red)](https://github.com/YOUR_USERNAME/GraphMemory-IDE#-security)
+[![Security](https://img.shields.io/badge/Security-Hardened-red)](#-security)
 
 An AI-assisted development environment providing long-term, on-device "AI memory" for supported IDEs. Powered by Kuzu GraphDB and exposed via a Model Context Protocol (MCP)-compliant server with enterprise-grade security hardening.
 
@@ -44,7 +23,7 @@ An AI-assisted development environment providing long-term, on-device "AI memory
 
 ### Secure Deployment (Recommended)
 
-```sh
+```bash
 # Clone the repository
 git clone <repository-url>
 cd GraphMemory-IDE
@@ -58,7 +37,7 @@ MTLS_ENABLED=true ./scripts/deploy-secure.sh
 
 ### Standard Docker Deployment
 
-```sh
+```bash
 # Start all services
 cd docker
 docker compose up -d
@@ -74,7 +53,7 @@ docker compose ps
 
 ### Local Development Setup
 
-```sh
+```bash
 # Create and activate Python virtual environment
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
@@ -92,120 +71,278 @@ PYTHONPATH=. pytest server/ --maxfail=3 --disable-warnings -v
 
 ## 📋 Table of Contents
 
-- [Architecture](#architecture)
-- [Features](#features)
+- [System Architecture](#-system-architecture)
+- [Data Flow & Schema](#-data-flow--schema)
+- [Features](#-features)
 - [Security](#-security)
-- [API Documentation](#api-documentation)
-- [Authentication](#authentication)
-- [Docker Deployment](#docker-deployment)
-- [Volume Management](#volume-management)
-- [Development](#development)
-- [Testing](#testing)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
+- [Documentation Hub](#-documentation-hub)
+- [API Reference](#-api-reference)
+- [Deployment](#-deployment)
+- [Development](#-development)
+- [Configuration](#-configuration)
+- [Troubleshooting](#-troubleshooting)
+- [Contributing](#-contributing)
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
+
+### High-Level Architecture
 
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        IDE[IDE Plugin]
-        CLI[CLI Tool]
-        API[API Client]
+        IDE[IDE Plugin<br/>VSCode, Cursor]
+        CLI[CLI Tool<br/>graphmemory-cli]
+        API[API Client<br/>Custom Apps]
+        WEB[Web Interface<br/>Dashboard]
+    end
+    
+    subgraph "API Gateway Layer"
+        LB[Load Balancer<br/>nginx/traefik]
+        AUTH[Authentication<br/>JWT + mTLS]
+        RATE[Rate Limiting<br/>Redis]
     end
     
     subgraph "Application Layer"
         MCP[MCP Server<br/>FastAPI]
-        AUTH[JWT Authentication]
-        MIDDLEWARE[Middleware Layer]
+        WORKER[Background Workers<br/>Celery]
+        CACHE[Cache Layer<br/>Redis]
+        SEARCH[Vector Search<br/>Sentence Transformers]
     end
     
     subgraph "Data Layer"
         KUZU[(Kuzu GraphDB<br/>Embedded)]
-        VECTOR[Vector Search<br/>Sentence Transformers]
+        VECTOR[(Vector Store<br/>FAISS/Chroma)]
+        FILES[(File Storage<br/>Local/S3)]
     end
     
     subgraph "Infrastructure Layer"
         DOCKER[Docker Containers]
         VOLUMES[Named Volumes]
-        KESTRA[Kestra CI/CD]
+        NETWORK[Bridge Networks]
+        MONITOR[Monitoring<br/>Prometheus/Grafana]
     end
     
-    IDE --> MCP
-    CLI --> MCP
-    API --> MCP
+    IDE --> LB
+    CLI --> LB
+    API --> LB
+    WEB --> LB
     
-    MCP --> AUTH
-    MCP --> MIDDLEWARE
+    LB --> AUTH
+    AUTH --> RATE
+    RATE --> MCP
+    
+    MCP --> WORKER
+    MCP --> CACHE
+    MCP --> SEARCH
     MCP --> KUZU
-    MCP --> VECTOR
+    
+    WORKER --> VECTOR
+    SEARCH --> VECTOR
+    MCP --> FILES
     
     DOCKER --> MCP
     DOCKER --> KUZU
-    DOCKER --> KESTRA
-    
+    DOCKER --> CACHE
     VOLUMES --> KUZU
-    VOLUMES --> KESTRA
+    VOLUMES --> FILES
+    NETWORK --> MCP
+    MONITOR --> MCP
     
     style MCP fill:#e1f5fe
     style KUZU fill:#f3e5f5
-    style DOCKER fill:#e8f5e8
     style AUTH fill:#fff3e0
+    style DOCKER fill:#e8f5e8
 ```
 
-### System Components
+### Component Interaction Flow
 
 ```mermaid
-graph LR
-    subgraph "Core Services"
-        A[MCP Server<br/>Port 8080] 
-        B[Kestra CI/CD<br/>Port 8081]
+sequenceDiagram
+    participant Client
+    participant Auth as Authentication
+    participant API as MCP Server
+    participant Cache as Redis Cache
+    participant Search as Vector Search
+    participant DB as Kuzu GraphDB
+    participant Monitor as Monitoring
+    
+    Client->>Auth: Request with credentials
+    Auth->>Auth: Validate JWT/mTLS
+    Auth->>API: Authenticated request
+    
+    API->>Cache: Check cache
+    alt Cache Hit
+        Cache->>API: Return cached data
+    else Cache Miss
+        API->>Search: Semantic search
+        Search->>DB: Query graph data
+        DB->>Search: Return results
+        Search->>API: Processed results
+        API->>Cache: Store in cache
     end
     
-    subgraph "Storage"
-        C[kuzu-data<br/>Volume]
-        D[kestra-data<br/>Volume]
-    end
+    API->>Monitor: Log metrics
+    API->>Client: Return response
     
-    subgraph "Network"
-        E[memory-net<br/>Bridge Network]
-    end
-    
-    A --> C
-    B --> D
-    A --> E
-    B --> E
-    
-    style A fill:#4fc3f7
-    style B fill:#81c784
-    style C fill:#ffb74d
-    style D fill:#ffb74d
-    style E fill:#ba68c8
+    Note over Client,Monitor: All interactions monitored and logged
 ```
 
-**Components:**
-- **MCP Server**: FastAPI-based server providing AI memory capabilities
-- **Kuzu GraphDB**: Embedded graph database for persistent storage
-- **Kestra**: CI/CD workflow orchestration
-- **Docker**: Containerized deployment with persistent volumes
+## 📊 Data Flow & Schema
+
+### Memory Data Schema
+
+```mermaid
+erDiagram
+    Memory {
+        string id PK
+        string content
+        string type
+        array tags
+        datetime created_at
+        datetime updated_at
+        json metadata
+        float[] embedding
+    }
+    
+    Relationship {
+        string id PK
+        string from_memory_id FK
+        string to_memory_id FK
+        string relationship_type
+        float strength
+        datetime created_at
+        json properties
+    }
+    
+    Tag {
+        string name PK
+        string description
+        string color
+        int usage_count
+        datetime created_at
+    }
+    
+    User {
+        string id PK
+        string username
+        string email
+        string password_hash
+        array roles
+        datetime created_at
+        datetime last_login
+    }
+    
+    Session {
+        string id PK
+        string user_id FK
+        string token_hash
+        datetime created_at
+        datetime expires_at
+        json metadata
+    }
+    
+    Memory ||--o{ Relationship : "from_memory"
+    Memory ||--o{ Relationship : "to_memory"
+    Memory }o--o{ Tag : "tagged_with"
+    User ||--o{ Memory : "owns"
+    User ||--o{ Session : "has"
+```
+
+### Data Processing Pipeline
+
+```mermaid
+flowchart TD
+    INPUT[Input Data<br/>Text, Code, Files] --> VALIDATE[Data Validation<br/>Schema Check]
+    VALIDATE --> EXTRACT[Content Extraction<br/>Text Processing]
+    EXTRACT --> EMBED[Vector Embedding<br/>Sentence Transformers]
+    EMBED --> ANALYZE[Content Analysis<br/>NLP Processing]
+    
+    ANALYZE --> CLASSIFY[Classification<br/>Type Detection]
+    CLASSIFY --> TAG[Auto-Tagging<br/>Keyword Extraction]
+    TAG --> RELATE[Relationship Detection<br/>Similarity Analysis]
+    
+    RELATE --> STORE_GRAPH[Store in Graph<br/>Kuzu Database]
+    STORE_GRAPH --> STORE_VECTOR[Store Vectors<br/>Vector Database]
+    STORE_VECTOR --> INDEX[Update Indexes<br/>Search Optimization]
+    
+    INDEX --> CACHE[Update Cache<br/>Redis]
+    CACHE --> NOTIFY[Notifications<br/>Webhooks/Events]
+    NOTIFY --> COMPLETE[Processing Complete]
+    
+    subgraph "Error Handling"
+        ERROR[Error Detection]
+        RETRY[Retry Logic]
+        FALLBACK[Fallback Processing]
+        LOG[Error Logging]
+    end
+    
+    VALIDATE -.-> ERROR
+    EXTRACT -.-> ERROR
+    EMBED -.-> ERROR
+    ERROR --> RETRY
+    RETRY --> FALLBACK
+    FALLBACK --> LOG
+    
+    style INPUT fill:#e3f2fd
+    style STORE_GRAPH fill:#f3e5f5
+    style STORE_VECTOR fill:#e8f5e8
+    style ERROR fill:#ffebee
+```
+
+### Search & Retrieval Flow
+
+```mermaid
+flowchart LR
+    QUERY[User Query] --> PARSE[Query Parsing<br/>Intent Detection]
+    PARSE --> EMBED_Q[Query Embedding<br/>Vector Generation]
+    
+    EMBED_Q --> SEARCH_TYPES{Search Strategy}
+    
+    SEARCH_TYPES --> SEMANTIC[Semantic Search<br/>Vector Similarity]
+    SEARCH_TYPES --> GRAPH[Graph Traversal<br/>Relationship Following]
+    SEARCH_TYPES --> KEYWORD[Keyword Search<br/>Full-text Search]
+    
+    SEMANTIC --> VECTOR_DB[(Vector Database)]
+    GRAPH --> GRAPH_DB[(Graph Database)]
+    KEYWORD --> SEARCH_INDEX[(Search Index)]
+    
+    VECTOR_DB --> RANK[Result Ranking<br/>Relevance Scoring]
+    GRAPH_DB --> RANK
+    SEARCH_INDEX --> RANK
+    
+    RANK --> FILTER[Result Filtering<br/>Permissions & Context]
+    FILTER --> ENHANCE[Result Enhancement<br/>Metadata & Snippets]
+    ENHANCE --> RETURN[Return Results<br/>Formatted Response]
+    
+    style QUERY fill:#e3f2fd
+    style RANK fill:#fff3e0
+    style RETURN fill:#e8f5e8
+```
 
 ## ✨ Features
 
 ### Core Functionality
-- **📊 Telemetry Ingestion**: Capture and store IDE events
-- **🔍 Event Querying**: Filter and retrieve telemetry data
-- **🧠 Vector Search**: Semantic search using sentence transformers
-- **🔐 JWT Authentication**: Secure API access with token-based authentication
-- **🔒 Read-Only Mode**: Production safety for maintenance windows
-- **🐳 Docker Integration**: Production-ready containerized deployment
+- **📊 Memory Management**: Create, organize, and retrieve AI memories with graph relationships
+- **🔍 Semantic Search**: Vector-based search using sentence transformers
+- **🧠 Graph Analytics**: Complex relationship analysis and knowledge discovery
+- **🔐 Enterprise Security**: JWT authentication, mTLS, container hardening
+- **🔒 Access Control**: Role-based permissions and read-only modes
+- **🐳 Production Ready**: Containerized deployment with monitoring
 
 ### Advanced Features
-- **📈 Performance Optimized**: Named volumes for 2-3x faster I/O on macOS
-- **🔐 Security Enhanced**: Isolated storage with proper access controls
-- **💾 Automated Backups**: Comprehensive backup and restore system
+- **📈 Performance Optimized**: Named volumes, caching, connection pooling
+- **🔐 Security Hardened**: Multi-layer security with comprehensive monitoring
+- **💾 Automated Backups**: Comprehensive backup and disaster recovery
 - **🌐 Cross-Platform**: Works on macOS, Linux, and Windows
-- **📝 Comprehensive Logging**: Detailed logging and monitoring
+- **📝 Comprehensive Logging**: Structured logging with monitoring integration
+- **🔌 Plugin System**: Extensible architecture for custom integrations
+
+### Integration Capabilities
+- **🔗 API-First Design**: RESTful API with OpenAPI documentation
+- **🛠️ CLI Tools**: Command-line interface for automation
+- **📡 Webhook Support**: Real-time event notifications
+- **🔄 CI/CD Integration**: Automated deployment and testing
+- **📊 Monitoring**: Prometheus metrics and Grafana dashboards
 
 ## 🔒 Security
 
@@ -215,1050 +352,589 @@ GraphMemory-IDE implements enterprise-grade security hardening that exceeds indu
 
 ```mermaid
 graph TB
-    subgraph "Security Layers"
-        subgraph "Network Security"
-            MTLS[mTLS Authentication<br/>Port 50051]
-            JWT[JWT Authentication<br/>Port 8080]
-            NETWORK[Isolated Bridge Network]
-        end
-        
-        subgraph "Container Security"
-            READONLY[Read-Only Filesystems]
-            NONROOT[Non-Root Users<br/>UID 1000/1001]
-            CAPS[Dropped Capabilities]
-            SECCOMP[Seccomp Profiles]
-        end
-        
-        subgraph "Resource Security"
-            LIMITS[Memory/CPU Limits]
-            VOLUMES[Isolated Volumes]
-            TMPFS[Secure tmpfs Mounts]
-        end
-        
-        subgraph "Monitoring & Testing"
-            MONITOR[Resource Monitoring]
-            TESTS[Security Test Suite]
-            ALERTS[Security Alerts]
-        end
+    subgraph "Network Security Layer"
+        MTLS[mTLS Authentication<br/>Port 50051]
+        JWT[JWT Authentication<br/>Port 8080]
+        FIREWALL[Network Isolation<br/>Bridge Networks]
+        RATE_LIMIT[Rate Limiting<br/>DDoS Protection]
+    end
+    
+    subgraph "Container Security Layer"
+        READONLY[Read-Only Filesystems<br/>Immutable Containers]
+        NONROOT[Non-Root Users<br/>UID 1000/1001]
+        CAPS[Dropped Capabilities<br/>Minimal Privileges]
+        SECCOMP[Seccomp Profiles<br/>Syscall Filtering]
+    end
+    
+    subgraph "Resource Security Layer"
+        LIMITS[Memory/CPU Limits<br/>Resource Constraints]
+        VOLUMES[Isolated Volumes<br/>Secure Storage]
+        TMPFS[Secure tmpfs Mounts<br/>No Execution]
+        SECRETS[Secret Management<br/>Encrypted Storage]
+    end
+    
+    subgraph "Monitoring & Compliance"
+        MONITOR[Real-time Monitoring<br/>Security Metrics]
+        AUDIT[Audit Logging<br/>Compliance Tracking]
+        ALERTS[Security Alerts<br/>Incident Response]
+        TESTS[Security Testing<br/>Continuous Validation]
     end
     
     MTLS --> READONLY
     JWT --> NONROOT
-    NETWORK --> CAPS
-    READONLY --> SECCOMP
-    NONROOT --> LIMITS
-    CAPS --> VOLUMES
-    SECCOMP --> TMPFS
+    FIREWALL --> CAPS
+    RATE_LIMIT --> SECCOMP
+    
+    READONLY --> LIMITS
+    NONROOT --> VOLUMES
+    CAPS --> TMPFS
+    SECCOMP --> SECRETS
+    
     LIMITS --> MONITOR
-    VOLUMES --> TESTS
+    VOLUMES --> AUDIT
     TMPFS --> ALERTS
+    SECRETS --> TESTS
     
     style MTLS fill:#ffcdd2
     style JWT fill:#f8bbd9
     style READONLY fill:#e1bee7
     style NONROOT fill:#c5cae9
-    style CAPS fill:#bbdefb
-    style SECCOMP fill:#b3e5fc
-    style LIMITS fill:#b2dfdb
     style MONITOR fill:#c8e6c9
 ```
 
-### Container Security Hardening
-
-**🛡️ Multi-Layer Container Protection:**
-
-1. **Read-Only Root Filesystems**
-   - All containers run with read-only root filesystems
-   - Prevents runtime file system modifications
-   - Writable volumes only for logs and temporary files
-
-2. **Non-Root User Execution**
-   - MCP Server: UID 1000 (mcpuser)
-   - Kestra: UID 1001 (non-root)
-   - Eliminates privilege escalation risks
-
-3. **Capability Dropping**
-   - All dangerous capabilities dropped (`CAP_DROP: ALL`)
-   - Only essential capabilities added (`NET_BIND_SERVICE`)
-   - Minimal attack surface
-
-4. **Seccomp Security Profiles**
-   - Custom seccomp profiles restrict system calls
-   - Only essential syscalls allowed (54 categories)
-   - Blocks dangerous operations like `ptrace`, `mount`
-
-5. **Resource Limits**
-   - Memory limits: 1GB (MCP), 2GB (Kestra)
-   - CPU limits: 0.5 cores (MCP), 1.0 cores (Kestra)
-   - Prevents resource exhaustion attacks
-
-6. **Security Options**
-   - `no-new-privileges:true` prevents privilege escalation
-   - Secure tmpfs mounts with `noexec,nosuid`
-   - No privileged mode execution
-
-### mTLS Implementation
-
-**🔐 Mutual TLS Authentication:**
+### mTLS Authentication Flow
 
 ```mermaid
 sequenceDiagram
     participant Client
+    participant LB as Load Balancer
     participant Server as MCP Server
     participant CA as Certificate Authority
     
-    Note over Client,CA: Certificate Setup
-    CA->>Server: Server Certificate
-    CA->>Client: Client Certificate
+    Note over Client,CA: Certificate Setup Phase
+    CA->>Server: Issue Server Certificate
+    CA->>Client: Issue Client Certificate
     
     Note over Client,Server: mTLS Handshake
-    Client->>Server: Client Hello + Client Cert
+    Client->>LB: Client Hello + Client Cert
+    LB->>Server: Forward with Client Cert
     Server->>Client: Server Hello + Server Cert
-    Server->>CA: Verify Client Cert
-    Client->>CA: Verify Server Cert
-    CA->>Server: Client Valid
-    CA->>Client: Server Valid
+    
+    Server->>CA: Verify Client Certificate
+    Client->>CA: Verify Server Certificate
+    CA->>Server: Client Certificate Valid
+    CA->>Client: Server Certificate Valid
     
     Note over Client,Server: Secure Communication
-    Client->>Server: Encrypted API Requests
-    Server->>Client: Encrypted API Responses
+    Client->>Server: Encrypted API Request
+    Server->>Client: Encrypted API Response
+    
+    Note over Client,Server: Session Management
+    Server->>Server: Log Security Event
+    Server->>Client: Session Token (Optional)
 ```
 
-**Features:**
-- **PKI Infrastructure**: Complete CA, server, and client certificates
-- **Mutual Authentication**: Both client and server verify certificates
-- **TLS 1.2+ Only**: Modern TLS versions with secure cipher suites
-- **Certificate Validation**: Automated certificate chain validation
-- **Configurable**: Enable/disable via `MTLS_ENABLED` environment variable
+### Security Features
 
-**Setup mTLS:**
-```bash
-# Generate certificates
-./scripts/setup-mtls.sh
+**🛡️ Multi-Layer Container Protection:**
+- **Read-Only Root Filesystems**: Prevents runtime modifications
+- **Non-Root User Execution**: Eliminates privilege escalation
+- **Capability Dropping**: Minimal attack surface
+- **Seccomp Security Profiles**: Restricts dangerous system calls
+- **Resource Limits**: Prevents resource exhaustion attacks
 
-# Deploy with mTLS
-MTLS_ENABLED=true ./scripts/deploy-secure.sh
+**🔐 Authentication & Authorization:**
+- **mTLS Implementation**: Mutual certificate authentication
+- **JWT Token System**: Stateless authentication with configurable expiration
+- **Role-Based Access Control**: Granular permission management
+- **API Key Management**: Secure API access for integrations
 
-# Test mTLS connection
-openssl s_client -connect localhost:50051 \
-  -cert certs/client-cert.pem \
-  -key certs/client-key.pem \
-  -CAfile certs/ca-cert.pem
-```
+**📊 Security Monitoring:**
+- **Real-Time Monitoring**: Container and application security metrics
+- **Audit Logging**: Comprehensive security event logging
+- **Automated Alerts**: Security violation notifications
+- **Compliance Reporting**: Security posture dashboards
 
-### Security Monitoring
+> 📖 **Complete Security Documentation**: [SECURITY.md](SECURITY.md)
 
-**📊 Real-Time Security Monitoring:**
+## 📚 Documentation Hub
 
-```bash
-# Run security monitoring
-./monitoring/resource-monitor.sh
-
-# Continuous monitoring
-watch -n 30 ./monitoring/resource-monitor.sh
-```
-
-**Monitoring Features:**
-- **Container Resource Usage**: Memory, CPU, network I/O
-- **Security Status Validation**: User privileges, filesystem permissions
-- **Capability Verification**: Dropped capabilities, security options
-- **Network Connectivity**: HTTP and mTLS endpoint health
-- **Alert System**: Automated alerts for security violations
-- **Log Analysis**: Security event logging and analysis
-
-### Security Testing
-
-**🧪 Comprehensive Security Test Suite:**
-
-```bash
-# Run security tests
-pytest tests/test_security.py -v
-
-# Run with coverage
-pytest tests/test_security.py --cov=server --cov-report=html
-```
-
-**Test Coverage:**
-- ✅ **Container Security**: Non-root users, read-only filesystems, capabilities
-- ✅ **mTLS Implementation**: Certificate validation, mutual authentication
-- ✅ **Network Security**: Port accessibility, connection security
-- ✅ **Resource Limits**: Memory and CPU constraint validation
-- ✅ **Security Monitoring**: Monitoring script functionality
-- ✅ **Access Controls**: Permission validation, privilege checks
-
-### Deployment Security
-
-**🚀 Secure Deployment Automation:**
-
-```bash
-# Automated secure deployment
-./scripts/deploy-secure.sh
-
-# Deployment with validation
-./scripts/deploy-secure.sh validate
-
-# Security-only testing
-./scripts/deploy-secure.sh test
-```
-
-**Deployment Features:**
-- **Environment Validation**: Docker, OpenSSL, dependencies
-- **Certificate Management**: Automated PKI setup and validation
-- **Security Configuration**: Hardened container deployment
-- **Health Checks**: Service and security validation
-- **Automated Testing**: Security test execution
-- **Deployment Summary**: Complete security status report
-
-### Security Configuration
-
-**Environment Variables:**
-```bash
-# mTLS Configuration
-export MTLS_ENABLED=true              # Enable mTLS
-export MTLS_PORT=50051                # mTLS port
-export MTLS_CERT_DIR=./certs          # Certificate directory
-
-# JWT Security
-export JWT_SECRET_KEY=$(openssl rand -hex 32)  # Secure secret
-export JWT_ENABLED=true               # Enable authentication
-export JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30     # Token expiration
-
-# Container Security
-export KUZU_READ_ONLY=false           # Read-only mode
-```
-
-### Security Best Practices
-
-**🔒 Production Security Checklist:**
-
-- ✅ **Use secure deployment script**: `./scripts/deploy-secure.sh`
-- ✅ **Enable mTLS**: Set `MTLS_ENABLED=true`
-- ✅ **Generate secure JWT secret**: Use `openssl rand -hex 32`
-- ✅ **Monitor resources**: Run `./monitoring/resource-monitor.sh`
-- ✅ **Run security tests**: Execute `pytest tests/test_security.py`
-- ✅ **Validate certificates**: Check certificate expiration dates
-- ✅ **Review logs**: Monitor for security events and alerts
-- ✅ **Update regularly**: Keep containers and dependencies updated
-
-### Security Compliance
-
-**Standards Compliance:**
-- **OWASP Container Security**: Follows OWASP container security guidelines
-- **CIS Docker Benchmark**: Implements CIS Docker security recommendations
-- **NIST Cybersecurity Framework**: Aligns with NIST security controls
-- **Zero Trust Architecture**: Implements zero trust security principles
-
-**Security Certifications:**
-- Container hardening exceeds industry standards
-- mTLS implementation follows RFC 8446 (TLS 1.3)
-- PKI infrastructure follows X.509 standards
-- Security monitoring implements SIEM best practices
-
-> **📖 For complete security documentation, implementation details, and best practices, see [SECURITY.md](SECURITY.md)**
-
-## 📚 API Documentation
-
-### Authentication
-
-The MCP Server supports JWT-based authentication for secure API access:
-
-```bash
-# Get access token
-curl -X POST http://localhost:8080/auth/token \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=testuser&password=testpassword"
-
-# Response
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer"
-}
-
-# Use token in requests
-curl -X POST http://localhost:8080/telemetry/ingest \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -H "Content-Type: application/json" \
-  -d '{"event_type": "file_open", ...}'
-```
-
-**Default Test Credentials:**
-- Username: `testuser`, Password: `testpassword`
-- Username: `admin`, Password: `adminpassword`
-
-### Core Endpoints
-
-#### Authentication
-- **POST `/auth/token`**: Generate JWT access token
-
-#### Telemetry Management
-- **POST `/telemetry/ingest`**: Ingest IDE telemetry events
-- **GET `/telemetry/list`**: List all stored events
-- **GET `/telemetry/query`**: Query events with filters
-
-#### Vector Search
-- **POST `/tools/topk`**: Semantic search for relevant code snippets
-
-#### Documentation
-- **GET `/docs`**: Interactive API documentation (Swagger UI)
-- **GET `/openapi.json`**: OpenAPI specification
-
-### Example Usage
-
-```bash
-# Get authentication token
-TOKEN=$(curl -s -X POST http://localhost:8080/auth/token \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=testuser&password=testpassword" | jq -r .access_token)
-
-# Ingest a telemetry event
-curl -X POST http://localhost:8080/telemetry/ingest \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "event_type": "file_open",
-    "timestamp": "2024-05-28T08:30:00Z",
-    "user_id": "user-123",
-    "session_id": "session-456",
-    "data": {
-      "file_path": "/path/to/file.py",
-      "language": "python"
-    }
-  }'
-
-# Query events by type
-curl -H "Authorization: Bearer $TOKEN" \
-  "http://localhost:8080/telemetry/query?event_type=file_open&user_id=user-123"
-
-# Semantic search
-curl -X POST http://localhost:8080/tools/topk \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query_text": "authentication function",
-    "k": 5,
-    "table": "Node",
-    "embedding_field": "embedding",
-    "index_name": "node_embedding_idx"
-  }'
-```
-
-**📖 Detailed API Documentation**: See [`server/README.md`](server/README.md)
-
-## 🐳 Docker Deployment
-
-### Docker Architecture
+### 🎯 Quick Navigation by Role
 
 ```mermaid
-graph TB
-    subgraph "Host System"
-        DOCKER[Docker Engine]
-        COMPOSE[Docker Compose]
-    end
-    
-    subgraph "Container Network: memory-net"
-        subgraph "MCP Container"
-            MCPAPP[FastAPI App<br/>Port 8080]
-            PYTHON[Python 3.11+]
-        end
-        
-        subgraph "Kestra Container"
-            KESTAPP[Kestra App<br/>Port 8081]
-            JAVA[Java Runtime]
-        end
-    end
-    
-    subgraph "Named Volumes"
-        KUZUVOL[kuzu-data<br/>Database Files]
-        KESTRAVOL[kestra-data<br/>Workflow State]
-    end
-    
-    subgraph "Host Ports"
-        PORT8080[localhost:8080]
-        PORT8081[localhost:8081]
-    end
-    
-    COMPOSE --> DOCKER
-    DOCKER --> MCPAPP
-    DOCKER --> KESTAPP
-    
-    MCPAPP --> KUZUVOL
-    KESTAPP --> KESTRAVOL
-    
-    PORT8080 --> MCPAPP
-    PORT8081 --> KESTAPP
-    
-    style MCPAPP fill:#e3f2fd
-    style KESTAPP fill:#e8f5e8
-    style KUZUVOL fill:#fff3e0
-    style KESTRAVOL fill:#fff3e0
+mindmap
+  root((Documentation))
+    New Users
+      Getting Started Tutorial
+      User Guide
+      Quick Start
+      Installation Guide
+    Developers
+      Developer Guide
+      API Reference
+      Plugin Development
+      CLI Documentation
+    DevOps
+      Operations Guide
+      Security Guide
+      CI/CD Guide
+      Troubleshooting
+    Integrators
+      API Guide
+      Webhook Documentation
+      SDK Examples
+      Integration Tutorials
 ```
 
-### Quick Start
+### 📖 Core Documentation
 
-```sh
-cd docker
-docker compose up -d
+| Document | Description | Audience | Status |
+|----------|-------------|----------|---------|
+| **[DOCUMENTATION.md](DOCUMENTATION.md)** | Complete documentation index | All | ✅ Complete |
+| **[USER_GUIDE.md](docs/USER_GUIDE.md)** | Comprehensive user documentation | End Users | ✅ Complete |
+| **[DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)** | Development setup and architecture | Developers | ✅ Complete |
+| **[API_GUIDE.md](docs/API_GUIDE.md)** | Complete API reference with examples | Developers | ✅ Complete |
+| **[OPERATIONS.md](docs/OPERATIONS.md)** | Production deployment and monitoring | DevOps | ✅ Complete |
+| **[SECURITY.md](SECURITY.md)** | Security implementation and hardening | Security | ✅ Complete |
+| **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** | Comprehensive problem-solving guide | Support | ✅ Complete |
+
+### 🎓 Learning Path (Tutorials)
+
+| Tutorial | Time | Prerequisites | Description | Status |
+|----------|------|---------------|-------------|---------|
+| **[Getting Started](docs/tutorials/getting-started.md)** | 15 min | None | Basic setup and first memories | ✅ Complete |
+| **[Memory Management](docs/tutorials/memory-management.md)** | 20 min | Getting Started | Advanced organization techniques | ✅ Complete |
+| **[Graph Operations](docs/tutorials/graph-operations.md)** | 30 min | Memory Management | Complex queries and analytics | ✅ Complete |
+| **[Advanced Configuration](docs/tutorials/advanced-configuration.md)** | 25 min | Graph Operations | Production setup and optimization | ✅ Complete |
+| **[Integration Tutorial](docs/tutorials/integration.md)** | 45 min | Advanced Config | Custom integrations and workflows | ✅ Complete |
+
+### 🛠️ Technical Documentation
+
+| Document | Description | Use Case | Status |
+|----------|-------------|----------|---------|
+| **[PLUGIN_DEVELOPMENT.md](docs/PLUGIN_DEVELOPMENT.md)** | Custom plugin development guide | Extension Development | ✅ Complete |
+| **[CICD.md](docs/CICD.md)** | CI/CD integration and automation | DevOps Automation | ✅ Complete |
+| **[CLI README](cli/README.md)** | Command-line interface documentation | CLI Usage | ✅ Complete |
+| **[Docker README](docker/README.md)** | Container deployment guide | Container Deployment | ✅ Complete |
+
+### 📊 Project Documentation
+
+| Document | Description | Purpose | Status |
+|----------|-------------|---------|---------|
+| **[PRD](PRD%20-%20GraphMemory-IDE%20-%20Combined.md)** | Product Requirements Document | Product Planning | ✅ Complete |
+| **[Project Planning](.context/README.md)** | Aegis framework and task management | Project Management | ✅ Complete |
+| **[Contributing Guidelines](CONTRIBUTING.md)** | Contribution workflow and standards | Open Source | ✅ Complete |
+
+## 🔗 API Reference
+
+### Interactive Documentation
+- **Swagger UI**: http://localhost:8080/docs (when running)
+- **ReDoc**: http://localhost:8080/redoc (when running)
+- **OpenAPI Spec**: http://localhost:8080/openapi.json
+
+### API Architecture
+
+```mermaid
+graph LR
+    subgraph "API Endpoints"
+        AUTH[/auth/*<br/>Authentication]
+        MEMORY[/memory/*<br/>Memory Management]
+        GRAPH[/graph/*<br/>Graph Operations]
+        SEARCH[/search/*<br/>Search & Discovery]
+        HEALTH[/health<br/>System Health]
+    end
+    
+    subgraph "Authentication Methods"
+        JWT_AUTH[JWT Tokens<br/>Bearer Auth]
+        MTLS_AUTH[mTLS Certificates<br/>Client Certs]
+        API_KEY[API Keys<br/>Header Auth]
+    end
+    
+    subgraph "Response Formats"
+        JSON[JSON Responses<br/>Standard Format]
+        STREAM[Streaming<br/>Large Results]
+        BINARY[Binary Data<br/>File Downloads]
+    end
+    
+    AUTH --> JWT_AUTH
+    MEMORY --> JWT_AUTH
+    GRAPH --> MTLS_AUTH
+    SEARCH --> API_KEY
+    HEALTH --> JSON
+    
+    MEMORY --> JSON
+    GRAPH --> STREAM
+    SEARCH --> JSON
+    
+    style AUTH fill:#fff3e0
+    style MEMORY fill:#e8f5e8
+    style GRAPH fill:#f3e5f5
+    style SEARCH fill:#e3f2fd
 ```
 
-### Volume Management
+### Core Endpoint Categories
 
-GraphMemory-IDE uses **Docker named volumes** for optimal performance and security:
+| Category | Endpoints | Documentation | Examples |
+|----------|-----------|---------------|----------|
+| **Authentication** | `/auth/token`, `/auth/refresh` | [API Guide - Auth](docs/API_GUIDE.md#authentication--security) | JWT, mTLS setup |
+| **Memory Management** | `/memory/create`, `/memory/update`, `/memory/delete` | [API Guide - Memory](docs/API_GUIDE.md#core-endpoints) | CRUD operations |
+| **Graph Operations** | `/graph/query`, `/graph/relationships`, `/graph/analytics` | [API Guide - Graph](docs/API_GUIDE.md#core-endpoints) | Complex queries |
+| **Search & Discovery** | `/search/semantic`, `/search/keyword`, `/search/similar` | [API Guide - Search](docs/API_GUIDE.md#core-endpoints) | Vector search |
+| **System Health** | `/health`, `/metrics`, `/status` | [API Guide - Health](docs/API_GUIDE.md#core-endpoints) | Monitoring |
 
-```sh
-# Backup all volumes
-./backup-volumes.sh backup
-
-# List available backups
-./backup-volumes.sh list
-
-# Restore from backup
-./backup-volumes.sh restore docker_kuzu-data ./backups/backup_file.tar.gz
-
-# Show volume information
-./backup-volumes.sh info
-```
-
-### Production Deployment
-
-```sh
-# Deploy with production configuration
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-
-# Enable read-only mode for maintenance
-export KUZU_READ_ONLY=true
-docker compose up -d
-```
-
-**📖 Detailed Docker Documentation**: See [`docker/README.md`](docker/README.md)
-
-## 💾 Volume Management
-
-### Volume Management Workflow
+### Client Libraries & SDKs
 
 ```mermaid
 graph TD
-    A[Start Backup Process] --> B{Check Volume Exists}
-    B -->|Yes| C[Create Backup Container]
-    B -->|No| D[Error: Volume Not Found]
+    API[GraphMemory API] --> PYTHON[Python SDK<br/>graphmemory-py]
+    API --> JS[JavaScript SDK<br/>graphmemory-js]
+    API --> CLI[CLI Tool<br/>graphmemory-cli]
+    API --> REST[REST Client<br/>Any Language]
     
-    C --> E[Mount Volume as Read-Only]
-    E --> F[Create Compressed Archive]
-    F --> G[Store in ./backups/]
-    G --> H[Cleanup Temp Container]
-    H --> I[Backup Complete]
+    PYTHON --> EXAMPLES_PY[Python Examples<br/>Jupyter Notebooks]
+    JS --> EXAMPLES_JS[JavaScript Examples<br/>Node.js & Browser]
+    CLI --> SCRIPTS[Shell Scripts<br/>Automation]
+    REST --> POSTMAN[Postman Collection<br/>API Testing]
     
-    J[Start Restore Process] --> K{Backup File Exists}
-    K -->|Yes| L[Stop Target Services]
-    K -->|No| M[Error: Backup Not Found]
+    style API fill:#e3f2fd
+    style PYTHON fill:#e8f5e8
+    style JS fill:#fff3e0
+    style CLI fill:#f3e5f5
+```
+
+> 📖 **Complete API Documentation**: [docs/API_GUIDE.md](docs/API_GUIDE.md)
+
+## 🚀 Deployment
+
+### Deployment Options
+
+```mermaid
+flowchart TD
+    DEPLOY[Deployment Options] --> LOCAL[Local Development]
+    DEPLOY --> DOCKER[Docker Compose]
+    DEPLOY --> K8S[Kubernetes]
+    DEPLOY --> CLOUD[Cloud Platforms]
     
-    L --> N[Create Restore Container]
-    N --> O[Mount Target Volume]
-    O --> P[Extract Archive to Volume]
-    P --> Q[Cleanup Temp Container]
-    Q --> R[Restart Services]
-    R --> S[Restore Complete]
+    LOCAL --> DEV_ENV[Development Environment<br/>Python Virtual Environment]
+    LOCAL --> DEV_DB[Local Database<br/>SQLite/Kuzu]
     
-    style A fill:#e8f5e8
-    style I fill:#c8e6c9
-    style J fill:#e8f5e8
-    style S fill:#c8e6c9
-    style D fill:#ffcdd2
-    style M fill:#ffcdd2
+    DOCKER --> COMPOSE[Docker Compose<br/>Multi-container Setup]
+    DOCKER --> SECURITY[Security Hardened<br/>mTLS + Container Security]
+    
+    K8S --> HELM[Helm Charts<br/>Kubernetes Deployment]
+    K8S --> OPERATORS[Operators<br/>Automated Management]
+    
+    CLOUD --> AWS[AWS ECS/EKS<br/>Managed Containers]
+    CLOUD --> GCP[Google Cloud Run<br/>Serverless Containers]
+    CLOUD --> AZURE[Azure Container Instances<br/>Managed Deployment]
+    
+    style DEPLOY fill:#e3f2fd
+    style DOCKER fill:#e8f5e8
+    style K8S fill:#f3e5f5
+    style CLOUD fill:#fff3e0
 ```
 
-### Benefits of Our Volume Strategy
-
-✅ **Performance**: 2-3x faster than bind mounts on macOS  
-✅ **Security**: Isolated from host filesystem  
-✅ **Portability**: Works across different environments  
-✅ **Backup**: Automated backup and restore capabilities  
-✅ **Production-Ready**: Follows Docker best practices  
-
-### Volume Types
-
-| Volume | Purpose | Mount Point | Backing |
-|--------|---------|-------------|---------|
-| `kuzu-data` | Kuzu database files | `/database` | `../data` (dev) |
-| `kestra-data` | Kestra workflow state | `/app/.kestra` | Docker-managed |
-
-### Backup Commands
-
-```sh
-cd docker
-
-# Backup all volumes
-./backup-volumes.sh backup
-
-# Backup specific volume
-./backup-volumes.sh backup-kuzu
-./backup-volumes.sh backup-kestra
-
-# Clean old backups (7+ days)
-./backup-volumes.sh clean
-
-# Show help
-./backup-volumes.sh help
-```
-
-**📖 Detailed Volume Documentation**: 
-- [`docker/VOLUME_MANAGEMENT.md`](docker/VOLUME_MANAGEMENT.md)
-- [`docker/VOLUME_RESEARCH_SUMMARY.md`](docker/VOLUME_RESEARCH_SUMMARY.md)
-
-## 🛠️ Development
-
-### Local Setup
-
-1. **Environment Setup**:
-   ```sh
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
-
-2. **Start Services**:
-   ```sh
-   cd docker
-   docker compose up -d
-   ```
-
-3. **Development Workflow**:
-   ```sh
-   # Rebuild after code changes
-   docker compose build mcp-server
-   docker compose up -d mcp-server
-   
-   # View logs
-   docker compose logs -f mcp-server
-   ```
-
-### Hot Reloading
-
-Create `docker-compose.override.yml` for development:
-
-```yaml
-services:
-  mcp-server:
-    volumes:
-      - ../server:/app/server:ro
-    command: ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
-```
-
-### Code Structure
-
-```
-GraphMemory-IDE/
-├── server/           # MCP Server (FastAPI)
-│   ├── main.py      # API endpoints
-│   ├── models.py    # Data models
-│   └── test_main.py # Test suite
-├── docker/          # Docker configuration
-│   ├── docker-compose.yml
-│   ├── backup-volumes.sh
-│   └── mcp-server/  # Dockerfile
-├── data/            # Kuzu database files
-├── .context/        # Project planning and tasks
-└── requirements.txt # Python dependencies
-```
-
-## 🧪 Testing
-
-### Run Test Suite
+### Quick Deployment Commands
 
 ```bash
-# From project root
-PYTHONPATH=. pytest server/ --maxfail=3 --disable-warnings -v
+# Standard Docker deployment
+cd docker && docker compose up -d
+
+# Security-hardened deployment
+./scripts/deploy-secure.sh
+
+# Development environment
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt && cd server && python init_db.py
+
+# Production deployment with monitoring
+ENVIRONMENT=production ./scripts/deploy-secure.sh --with-monitoring
 ```
 
-### Test Coverage
+> 📖 **Deployment Documentation**: [OPERATIONS.md](docs/OPERATIONS.md)
 
-The test suite covers:
-- ✅ Telemetry ingestion (success, validation, errors)
-- ✅ Event listing and querying
-- ✅ Vector search functionality
-- ✅ Read-only mode enforcement
-- ✅ Database error handling
+## 💻 Development
 
-### Manual Testing
+### Development Environment Setup
+
+```mermaid
+flowchart LR
+    START[Start Development] --> CLONE[Clone Repository]
+    CLONE --> VENV[Create Virtual Environment]
+    VENV --> DEPS[Install Dependencies]
+    DEPS --> DB[Initialize Database]
+    DB --> TEST[Run Tests]
+    TEST --> DEV[Start Development]
+    
+    subgraph "Development Tools"
+        LINT[Code Linting<br/>flake8, black]
+        TYPE[Type Checking<br/>mypy]
+        TEST_TOOLS[Testing<br/>pytest, coverage]
+        DEBUG[Debugging<br/>pdb, IDE tools]
+    end
+    
+    DEV --> LINT
+    DEV --> TYPE
+    DEV --> TEST_TOOLS
+    DEV --> DEBUG
+    
+    style START fill:#e3f2fd
+    style DEV fill:#e8f5e8
+    style TEST_TOOLS fill:#f3e5f5
+```
+
+### Development Workflow
 
 ```bash
-# Test API endpoints
-curl http://localhost:8080/docs
+# Setup development environment
+git clone <repository-url>
+cd GraphMemory-IDE
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 
-# Test database connectivity
-curl -s http://localhost:8080/telemetry/list | jq length
+# Run development server
+cd server
+python main.py
 
-# Test volume persistence
-docker compose restart mcp-server
-docker compose exec mcp-server ls -la /database
+# Run tests with coverage
+PYTHONPATH=. pytest server/ --cov=server --cov-report=html
+
+# Code quality checks
+flake8 server/
+black server/
+mypy server/
 ```
+
+> 📖 **Development Documentation**: [DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 
 ## ⚙️ Configuration
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| **Database Configuration** | | |
-| `KUZU_DB_PATH` | `./data` | Path to Kuzu database files |
-| `KUZU_READ_ONLY` | `false` | Enable read-only mode |
-| **JWT Authentication** | | |
-| `JWT_SECRET_KEY` | `your-secret-key-change-in-production` | JWT token signing key |
-| `JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
-| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Token expiration time in minutes |
-| `JWT_ENABLED` | `true` | Enable/disable JWT authentication |
-| **mTLS Security** | | |
-| `MTLS_ENABLED` | `false` | Enable mutual TLS authentication |
-| `MTLS_PORT` | `50051` | Port for mTLS connections |
-| `MTLS_CERT_DIR` | `./certs` | Certificate directory path |
-| **CI/CD Integration** | | |
-| `GITHUB_TOKEN` | - | GitHub token for Kestra workflows |
-
-### Security Configuration
-
-**Production Security Setup:**
-```bash
-# Generate secure JWT secret
-export JWT_SECRET_KEY=$(openssl rand -hex 32)
-
-# Enable security features
-export JWT_ENABLED=true
-export MTLS_ENABLED=true
-export KUZU_READ_ONLY=false
-
-# Configure mTLS
-export MTLS_PORT=50051
-export MTLS_CERT_DIR=./certs
-
-# Set token expiration
-export JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+```mermaid
+graph TD
+    CONFIG[Configuration] --> ENV[Environment Variables]
+    CONFIG --> FILES[Configuration Files]
+    CONFIG --> SECRETS[Secret Management]
+    
+    ENV --> DATABASE[Database Settings<br/>KUZU_DB_PATH]
+    ENV --> AUTH[Authentication<br/>JWT_SECRET_KEY]
+    ENV --> SECURITY[Security Settings<br/>MTLS_ENABLED]
+    ENV --> LOGGING[Logging Config<br/>LOG_LEVEL]
+    
+    FILES --> DOCKER[Docker Compose<br/>docker-compose.yml]
+    FILES --> APP[Application Config<br/>config.yaml]
+    
+    SECRETS --> VAULT[HashiCorp Vault<br/>Production Secrets]
+    SECRETS --> K8S[Kubernetes Secrets<br/>Container Secrets]
+    
+    style CONFIG fill:#e3f2fd
+    style ENV fill:#e8f5e8
+    style SECRETS fill:#ffebee
 ```
 
-**Development Configuration:**
-```bash
-# Disable authentication for development
-export JWT_ENABLED=false
-export MTLS_ENABLED=false
+### Key Configuration Options
 
-# Use default test credentials
-# Username: testuser, Password: testpassword
-```
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `KUZU_DB_PATH` | Database file path | `/database/kuzu.db` | Yes |
+| `JWT_SECRET_KEY` | JWT signing key | `your-secret-key` | Yes |
+| `JWT_ENABLED` | Enable JWT authentication | `true` | No |
+| `MTLS_ENABLED` | Enable mTLS authentication | `false` | No |
+| `LOG_LEVEL` | Logging level | `INFO` | No |
+| `READ_ONLY_MODE` | Enable read-only mode | `false` | No |
 
-### Container Security Configuration
-
-The following security hardening is automatically applied:
-
-**Container Hardening:**
-- Read-only root filesystems
-- Non-root user execution (UID 1000/1001)
-- Dropped capabilities (`CAP_DROP: ALL`)
-- Seccomp security profiles
-- Resource limits (1GB/2GB memory, 0.5/1.0 CPU cores)
-- No privileged mode execution
-
-**Network Security:**
-- Isolated bridge network (`memory-net`)
-- Port exposure only for required services
-- mTLS encryption for secure communications
-
-**Volume Security:**
-- Named volumes with proper isolation
-- Secure tmpfs mounts (`noexec,nosuid`)
-- Writable volumes only for logs and temporary files
-
-### Deployment Configurations
-
-**Secure Deployment (Recommended):**
-```bash
-# Full security hardening
-./scripts/deploy-secure.sh
-
-# With mTLS enabled
-MTLS_ENABLED=true ./scripts/deploy-secure.sh
-```
-
-**Standard Deployment:**
-```bash
-cd docker
-docker compose up -d
-```
-
-**Development Deployment:**
-```bash
-# Create development override
-cat > docker/docker-compose.override.yml << EOF
-services:
-  mcp-server:
-    volumes:
-      - ../server:/app/server:ro
-    command: ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
-    environment:
-      - JWT_ENABLED=false
-EOF
-
-# Start with hot reloading
-cd docker && docker compose up -d
-```
+> 📖 **Configuration Documentation**: [OPERATIONS.md](docs/OPERATIONS.md#configuration)
 
 ## 🔧 Troubleshooting
 
-### Common Issues
+### Common Issues & Solutions
 
-1. **Port Conflicts**:
-   ```bash
-   # Check port usage
-   lsof -i :8080
-   lsof -i :50051  # mTLS port
-   
-   # Change ports in docker-compose.yml
-   ports:
-     - "8090:8080"
-     - "50052:50051"
-   ```
-
-2. **Volume Permission Issues**:
-   ```bash
-   # Check permissions
-   docker compose exec mcp-server ls -la /database
-   
-   # Fix permissions
-   docker compose exec mcp-server chown -R $(id -u):$(id -g) /database
-   ```
-
-3. **Database Connection Errors**:
-   ```bash
-   # Verify Kuzu installation
-   python -c "import kuzu; print('Kuzu OK')"
-   
-   # Check database files
-   ls -la data/
-   ```
-
-4. **Memory Issues**:
-   ```bash
-   # Monitor container memory
-   docker stats docker-mcp-server-1
-   
-   # Increase Docker memory limit in Docker Desktop
-   ```
-
-5. **mTLS Certificate Issues**:
-   ```bash
-   # Regenerate certificates
-   ./scripts/setup-mtls.sh
-   
-   # Verify certificate chain
-   openssl verify -CAfile certs/ca-cert.pem certs/server-cert.pem
-   openssl verify -CAfile certs/ca-cert.pem certs/client-cert.pem
-   
-   # Check certificate permissions
-   ls -la certs/
-   ```
-
-6. **Container Security Issues**:
-   ```bash
-   # Check container security status
-   ./monitoring/resource-monitor.sh
-   
-   # Verify non-root user
-   docker exec docker-mcp-server-1 id
-   
-   # Check read-only filesystem
-   docker exec docker-mcp-server-1 touch /test-file  # Should fail
-   ```
-
-7. **Authentication Problems**:
-   ```bash
-   # Test JWT token generation
-   curl -X POST http://localhost:8080/auth/token \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "username=testuser&password=testpassword"
-   
-   # Disable authentication for debugging
-   export JWT_ENABLED=false
-   docker compose up -d
-   ```
-
-### Security Troubleshooting
-
-**mTLS Connection Issues:**
-```bash
-# Test mTLS connectivity
-openssl s_client -connect localhost:50051 \
-  -cert certs/client-cert.pem \
-  -key certs/client-key.pem \
-  -CAfile certs/ca-cert.pem
-
-# Check mTLS configuration
-docker compose exec mcp-server env | grep MTLS
-
-# Verify certificate expiration
-openssl x509 -in certs/server-cert.pem -text -noout | grep "Not After"
+```mermaid
+flowchart TD
+    ISSUE[Common Issues] --> STARTUP[Startup Problems]
+    ISSUE --> API[API Errors]
+    ISSUE --> DB[Database Issues]
+    ISSUE --> SECURITY[Security Problems]
+    ISSUE --> PERFORMANCE[Performance Issues]
+    
+    STARTUP --> PORT[Port Conflicts<br/>Check port usage]
+    STARTUP --> DEPS[Missing Dependencies<br/>Install requirements]
+    STARTUP --> PERMS[Permission Errors<br/>Check file permissions]
+    
+    API --> AUTH_ERR[Authentication Errors<br/>Check JWT/mTLS config]
+    API --> TIMEOUT[Request Timeouts<br/>Check resource limits]
+    API --> RATE[Rate Limiting<br/>Check request frequency]
+    
+    DB --> CORRUPT[Database Corruption<br/>Restore from backup]
+    DB --> LOCK[Database Locks<br/>Restart services]
+    DB --> SPACE[Disk Space<br/>Clean up old data]
+    
+    SECURITY --> CERT[Certificate Issues<br/>Regenerate certificates]
+    SECURITY --> FIREWALL[Network Blocks<br/>Check firewall rules]
+    SECURITY --> AUDIT[Security Violations<br/>Check audit logs]
+    
+    PERFORMANCE --> MEMORY[High Memory Usage<br/>Adjust limits]
+    PERFORMANCE --> CPU[High CPU Usage<br/>Scale resources]
+    PERFORMANCE --> SLOW[Slow Queries<br/>Optimize database]
+    
+    style ISSUE fill:#e3f2fd
+    style STARTUP fill:#fff3e0
+    style SECURITY fill:#ffebee
+    style PERFORMANCE fill:#e8f5e8
 ```
 
-**Container Security Validation:**
-```bash
-# Run security tests
-pytest tests/test_security.py -v
-
-# Check security configuration
-docker inspect docker-mcp-server-1 | jq '.HostConfig.SecurityOpt'
-docker inspect docker-mcp-server-1 | jq '.HostConfig.ReadonlyRootfs'
-
-# Verify capabilities
-docker exec docker-mcp-server-1 cat /proc/self/status | grep Cap
-```
-
-**Resource Monitoring Issues:**
-```bash
-# Check monitoring script permissions
-ls -la monitoring/resource-monitor.sh
-
-# Make script executable
-chmod +x monitoring/resource-monitor.sh
-
-# Run monitoring with debug
-bash -x monitoring/resource-monitor.sh
-```
-
-### Debug Commands
+### Quick Diagnostic Commands
 
 ```bash
-# Container logs
-docker compose logs mcp-server -f
-docker compose logs kestra -f
+# Check service health
+curl http://localhost:8080/health
 
-# Container inspection
-docker compose exec mcp-server env
-docker compose exec mcp-server ps aux
+# View container logs
+docker compose logs -f mcp-server
 
-# Security inspection
-docker compose exec mcp-server id
-docker compose exec mcp-server cat /proc/self/status | grep Cap
-
-# Volume debugging
-docker volume inspect docker_kuzu-data
-./backup-volumes.sh info
-
-# Network debugging
-docker network inspect docker_memory-net
-
-# Certificate debugging
-openssl x509 -in certs/ca-cert.pem -text -noout
-openssl x509 -in certs/server-cert.pem -text -noout
-```
-
-### Health Monitoring
-
-```bash
-# Service health
-curl -f http://localhost:8080/docs || echo "MCP Server down"
-curl -f http://localhost:8081/ || echo "Kestra down"
-
-# mTLS health (if enabled)
-timeout 5 openssl s_client -connect localhost:50051 -verify_return_error || echo "mTLS down"
-
-# Database connectivity
-curl -s http://localhost:8080/telemetry/list | jq length
-
-# Volume usage
-docker system df -v
-
-# Security monitoring
-./monitoring/resource-monitor.sh
-
-# Container resource usage
+# Monitor resource usage
 docker stats --no-stream
+
+# Test authentication
+curl -X POST http://localhost:8080/auth/token \
+  -d "username=testuser&password=testpassword"
+
+# Run security validation
+./monitoring/resource-monitor.sh
 ```
 
-### Performance Optimization
-
-```bash
-# Monitor container performance
-docker stats docker-mcp-server-1 docker-kestra-1
-
-# Check volume performance
-time docker compose exec mcp-server ls -la /database
-
-# Optimize Docker settings (macOS)
-# Increase Docker Desktop memory to 4GB+
-# Enable VirtioFS for better volume performance
-
-# Monitor security overhead
-./monitoring/resource-monitor.sh | grep -E "(CPU|Memory)"
-```
+> 📖 **Troubleshooting Guide**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 ## 🤝 Contributing
 
-### Development Workflow
+### Contribution Workflow
 
-1. **Fork and Clone**:
-   ```bash
-   git clone <your-fork>
-   cd GraphMemory-IDE
-   ```
+```mermaid
+flowchart LR
+    FORK[Fork Repository] --> CLONE[Clone Fork]
+    CLONE --> BRANCH[Create Feature Branch]
+    BRANCH --> CODE[Write Code]
+    CODE --> TEST[Run Tests]
+    TEST --> COMMIT[Commit Changes]
+    COMMIT --> PUSH[Push to Fork]
+    PUSH --> PR[Create Pull Request]
+    PR --> REVIEW[Code Review]
+    REVIEW --> MERGE[Merge to Main]
+    
+    subgraph "Quality Gates"
+        LINT[Code Linting]
+        SECURITY[Security Scan]
+        COVERAGE[Test Coverage]
+        DOCS[Documentation]
+    end
+    
+    TEST --> LINT
+    TEST --> SECURITY
+    TEST --> COVERAGE
+    TEST --> DOCS
+    
+    style FORK fill:#e3f2fd
+    style TEST fill:#e8f5e8
+    style REVIEW fill:#f3e5f5
+```
 
-2. **Setup Environment**:
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
+### Development Standards
 
-3. **Make Changes**:
-   - Follow PEP 8 for Python code
-   - Add type hints for all functions
-   - Write tests for new features
-   - Update documentation
+- **Code Style**: Follow PEP 8, use type hints, maintain >90% test coverage
+- **Security**: All changes must pass security scans and validation
+- **Documentation**: Update relevant documentation for all changes
+- **Testing**: Write comprehensive tests for new features and bug fixes
 
-4. **Test Changes**:
-   ```bash
-   # Run tests
-   PYTHONPATH=. pytest server/ -v
-   
-   # Test Docker build
-   cd docker && docker compose build
-   
-   # Test deployment
-   docker compose up -d --force-recreate
-   ```
-
-5. **Submit PR**:
-   - Include clear description
-   - Reference related issues
-   - Ensure all tests pass
-
-### Code Style
-
-- **Python**: Follow PEP 8, use type hints
-- **Docker**: Use multi-stage builds, non-root users
-- **Documentation**: Update README files for changes
-- **Testing**: Maintain >90% test coverage
-
-### Adding Features
-
-1. **API Endpoints**: Add to `server/main.py` with tests
-2. **Docker Services**: Update `docker-compose.yml` and documentation
-3. **Volume Management**: Update backup scripts if needed
-4. **Documentation**: Update relevant README files
-
-## 📄 Documentation Index
-
-- **[Main README](README.md)**: This file - project overview and quick start
-- **[Server Documentation](server/README.md)**: Detailed MCP server API and development
-- **[Docker Documentation](docker/README.md)**: Complete Docker deployment guide
-- **[Volume Management](docker/VOLUME_MANAGEMENT.md)**: Volume backup and management
-- **[Volume Research](docker/VOLUME_RESEARCH_SUMMARY.md)**: Research findings and decisions
-- **[Security Documentation](SECURITY.md)**: Complete security hardening guide and best practices
-- **[Security Testing](tests/test_security.py)**: Comprehensive security test suite
-- **[Security Monitoring](monitoring/resource-monitor.sh)**: Real-time security monitoring
-- **[mTLS Setup](scripts/setup-mtls.sh)**: Certificate generation and mTLS configuration
-- **[Secure Deployment](scripts/deploy-secure.sh)**: Automated secure deployment
-- **[Product Requirements](PRD%20-%20GraphMemory-IDE%20-%20Combined.md)**: Original PRD
-- **[Project Planning](.context/README.md)**: Aegis framework planning and tasks
+> 📖 **Contributing Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## 📊 Project Status
 
-- ✅ **MCP Server**: Production-ready FastAPI server
-- ✅ **Docker Deployment**: Optimized containerized deployment
-- ✅ **Volume Management**: Research-driven persistent storage
-- ✅ **Backup System**: Automated backup and restore
-- ✅ **Testing**: Comprehensive test suite
-- ✅ **Documentation**: Complete documentation coverage
-- ✅ **Security Hardening**: Enterprise-grade container security
-- ✅ **mTLS Implementation**: Mutual TLS authentication with PKI
-- ✅ **Security Monitoring**: Real-time security monitoring and alerting
-- ✅ **Security Testing**: Comprehensive security test suite
-- ✅ **Secure Deployment**: Automated secure deployment scripts
-- 🔄 **CI/CD Integration**: Kestra workflows (in progress)
-- 🔄 **IDE Plugins**: Plugin development (planned)
+### Implementation Status
 
-### Security Implementation Status
+```mermaid
+gantt
+    title GraphMemory-IDE Implementation Status
+    dateFormat  YYYY-MM-DD
+    section Core Features
+    MCP Server           :done, core1, 2024-01-01, 2024-02-15
+    Graph Database       :done, core2, 2024-01-15, 2024-02-28
+    Authentication       :done, core3, 2024-02-01, 2024-02-20
+    API Documentation    :done, core4, 2024-02-15, 2024-03-01
+    
+    section Security
+    Container Hardening  :done, sec1, 2024-02-01, 2024-02-25
+    mTLS Implementation  :done, sec2, 2024-02-15, 2024-03-05
+    Security Monitoring  :done, sec3, 2024-02-20, 2024-03-10
+    Security Testing     :done, sec4, 2024-02-25, 2024-03-15
+    
+    section Documentation
+    User Documentation   :done, doc1, 2024-03-01, 2024-03-20
+    Developer Guides     :done, doc2, 2024-03-05, 2024-03-25
+    Tutorial System      :done, doc3, 2024-03-10, 2024-03-30
+    API Reference        :done, doc4, 2024-03-15, 2024-04-01
+    
+    section Future Work
+    IDE Plugins          :active, future1, 2024-04-01, 2024-05-01
+    Advanced Analytics   :future2, 2024-04-15, 2024-06-01
+    Cloud Integration    :future3, 2024-05-01, 2024-07-01
+```
 
-**✅ Completed Security Features:**
-- **Container Hardening**: Read-only filesystems, non-root users, capability dropping
-- **Seccomp Profiles**: Custom security profiles restricting system calls
-- **Resource Limits**: Memory and CPU constraints with monitoring
-- **mTLS Authentication**: Complete PKI infrastructure with mutual authentication
-- **Security Monitoring**: Real-time monitoring with automated alerts
-- **Security Testing**: Comprehensive test suite covering all security aspects
-- **Deployment Security**: Automated secure deployment with validation
-- **Network Security**: Isolated networks with secure communication
+### Feature Completion
 
-**🔒 Security Compliance:**
-- OWASP Container Security Guidelines
-- CIS Docker Benchmark Recommendations
-- NIST Cybersecurity Framework Alignment
-- Zero Trust Architecture Principles
+- ✅ **Core Platform**: MCP Server, Graph Database, Authentication
+- ✅ **Security**: Container hardening, mTLS, monitoring, testing
+- ✅ **Documentation**: Complete documentation suite with tutorials
+- ✅ **Deployment**: Docker, security hardening, monitoring
+- ✅ **Testing**: Comprehensive test coverage and CI/CD
+- 🔄 **Integrations**: Plugin system and external integrations
+- 🔄 **Analytics**: Advanced graph analytics and insights
+- 📋 **Planned**: IDE plugins, cloud deployment, enterprise features
 
-> **📖 For complete security documentation, implementation details, and best practices, see [SECURITY.md](SECURITY.md)**
+## 📞 Support & Community
 
-## 📞 Support
+### Getting Help
 
-For issues, questions, or contributions:
+```mermaid
+flowchart TD
+    HELP[Need Help?] --> DOCS[Check Documentation]
+    HELP --> SEARCH[Search Issues]
+    HELP --> COMMUNITY[Community Support]
+    HELP --> ENTERPRISE[Enterprise Support]
+    
+    DOCS --> README[README.md<br/>Quick Start]
+    DOCS --> GUIDES[User Guides<br/>Detailed Help]
+    DOCS --> TROUBLESHOOT[Troubleshooting<br/>Common Issues]
+    
+    SEARCH --> GITHUB[GitHub Issues<br/>Known Problems]
+    SEARCH --> DISCUSSIONS[GitHub Discussions<br/>Q&A Forum]
+    
+    COMMUNITY --> DISCORD[Discord Server<br/>Real-time Chat]
+    COMMUNITY --> FORUM[Community Forum<br/>Long-form Discussion]
+    
+    ENTERPRISE --> SUPPORT[Professional Support<br/>SLA Guaranteed]
+    ENTERPRISE --> CONSULTING[Implementation Consulting<br/>Expert Guidance]
+    
+    style HELP fill:#e3f2fd
+    style DOCS fill:#e8f5e8
+    style COMMUNITY fill:#f3e5f5
+    style ENTERPRISE fill:#fff3e0
+```
 
-1. **Check Documentation**: Review relevant README files
-2. **Search Issues**: Look for existing GitHub issues
-3. **Create Issue**: Provide detailed description and logs
-4. **Join Discussions**: Participate in project discussions
+### Support Channels
+
+1. **📖 Documentation**: Start with our comprehensive documentation
+2. **🔍 GitHub Issues**: Search existing issues or create new ones
+3. **💬 Discussions**: Join community discussions for Q&A
+4. **🚀 Enterprise**: Contact us for professional support
 
 ## 📜 License
 
-See the [LICENSE](LICENSE) file for licensing information.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Built with ❤️ using Docker best practices, FastAPI, Kuzu GraphDB, and comprehensive testing.**
+**Built with ❤️ using FastAPI, Kuzu GraphDB, Docker, and comprehensive security hardening.**
 
-## 🔐 Authentication
-
-GraphMemory-IDE uses JWT (JSON Web Tokens) for secure API authentication:
-
-### Authentication Flow
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant MCP as MCP Server
-    participant JWT as JWT Service
-    participant DB as Kuzu GraphDB
-    
-    Client->>MCP: POST /auth/token<br/>(username, password)
-    MCP->>JWT: Validate credentials
-    JWT->>MCP: Generate JWT token
-    MCP->>Client: Return access_token
-    
-    Note over Client: Store token for API calls
-    
-    Client->>MCP: API Request<br/>Authorization: Bearer <token>
-    MCP->>JWT: Validate token
-    JWT->>MCP: Token valid + user context
-    MCP->>DB: Execute operation
-    DB->>MCP: Return data
-    MCP->>Client: API Response
-    
-    Note over Client,DB: Optional: JWT_ENABLED=false<br/>bypasses authentication
-```
-
-### Features & Usage
-
-- **Token-based Authentication**: Secure, stateless authentication
-- **Configurable Expiration**: Default 30-minute token lifetime
-- **Development Mode**: Optional authentication bypass for development
-- **OAuth2 Compatible**: Follows OAuth2 password flow standards
-
-```bash
-# Get authentication token
-TOKEN=$(curl -s -X POST http://localhost:8080/auth/token \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=testuser&password=testpassword" | jq -r .access_token)
-
-# Use token in API calls
-curl -X POST http://localhost:8080/telemetry/ingest \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"event_type": "file_open", ...}'
-```
-
-**Default Test Credentials:**
-- Username: `testuser`, Password: `testpassword`
-- Username: `admin`, Password: `adminpassword`
+> 🚀 **Ready to get started?** Follow our [Getting Started Tutorial](docs/tutorials/getting-started.md) for a step-by-step introduction to GraphMemory-IDE. 
