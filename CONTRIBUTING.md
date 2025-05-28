@@ -7,7 +7,7 @@ Thank you for your interest in contributing to GraphMemory-IDE! This document pr
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/GraphMemory-IDE.git
+   git clone https://github.com/elementalcollision/GraphMemory-IDE.git
    cd GraphMemory-IDE
    ```
 3. **Set up development environment**:

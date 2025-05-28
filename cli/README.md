@@ -629,7 +629,7 @@ npm run test:watch
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/GraphMemory-IDE.git
+git clone https://github.com/elementalcollision/GraphMemory-IDE.git
 cd GraphMemory-IDE
 
 # Install dependencies

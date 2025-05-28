@@ -1,6 +1,6 @@
 # GraphMemory-IDE
 
-[![CI/CD Pipeline](https://github.com/YOUR_USERNAME/GraphMemory-IDE/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/GraphMemory-IDE/actions/workflows/ci.yml)
+[![CI/CD Pipeline](https://github.com/elementalcollision/GraphMemory-IDE/actions/workflows/ci.yml/badge.svg)](https://github.com/elementalcollision/GraphMemory-IDE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
@@ -25,7 +25,7 @@ An AI-assisted development environment providing long-term, on-device "AI memory
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/elementalcollision/GraphMemory-IDE.git
 cd GraphMemory-IDE
 
 # Deploy with security hardening
@@ -687,7 +687,7 @@ flowchart LR
 
 ```bash
 # Setup development environment
-git clone <repository-url>
+git clone https://github.com/elementalcollision/GraphMemory-IDE.git
 cd GraphMemory-IDE
 python3 -m venv .venv
 source .venv/bin/activate

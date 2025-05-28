@@ -32,7 +32,7 @@ Before you begin, ensure you have:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/GraphMemory-IDE.git
+git clone https://github.com/elementalcollision/GraphMemory-IDE.git
 cd GraphMemory-IDE
 
 # 2. Set up Python environment
@@ -865,7 +865,7 @@ export async function upgrade(options, deps) {
 1. **Fork the Repository**:
    ```bash
    # Fork on GitHub, then clone your fork
-   git clone https://github.com/YOUR_USERNAME/GraphMemory-IDE.git
+   git clone https://github.com/elementalcollision/GraphMemory-IDE.git
    cd GraphMemory-IDE
    ```
 
