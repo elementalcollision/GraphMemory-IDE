@@ -1,0 +1,35 @@
+# Core server
+fastapi
+uvicorn
+kuzu
+
+# Testing
+pytest
+pytest-cov
+
+# Async support
+httpx
+
+# E2E and performance (Python side)
+playwright
+locust
+
+# Observability
+prometheus-client
+
+# Workflow orchestration (if Python client needed)
+kestra
+
+# Linting and formatting (optional, for best practice)
+black
+flake8
+
+# Documentation (optional, for mkdocs)
+mkdocs
+mkdocs-material
+
+# Other utilities
+requests
+
+# Embeddings for Top-K endpoint
+sentence-transformers 

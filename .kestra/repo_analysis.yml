@@ -1,0 +1,113 @@
+id: github-repo-analysis
+namespace: dev
+
+description: |
+  Batch clone and analyze GitHub repositories, then ingest results into the MCP server.
+  Handles public/private repos, runs static analysis, and aggregates/report results.
+
+inputs:
+  - id: repo_urls
+    type: ARRAY
+    itemType: STRING
+    description: List of GitHub repository URLs to analyze
+    required: true
+
+variables:
+  temp_dir: /tmp/kestra-github-analysis
+  mcp_ingest_url: http://mcp-server:8080/ingest
+
+# Main flow
+tasks:
+  # Ensure temp directory exists
+  - id: ensure-temp-dir
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands:
+      - mkdir -p {{ vars.temp_dir }}
+
+  # Map over each repo URL
+  - id: analyze-repos
+    type: io.kestra.plugin.core.flow.EachSequential
+    value: "{{ inputs.repo_urls }}"
+    tasks:
+      # Validate repo URL
+      - id: validate-url
+        type: io.kestra.plugin.scripts.python.Script
+        script: |
+          import sys, re
+          url = "{{ taskrun.value }}"
+          if not re.match(r'^https://github.com/[^/]+/[^/]+$', url):
+              print(f"Invalid GitHub repo URL: {url}")
+              sys.exit(1)
+
+      - id: debug-token
+        type: io.kestra.plugin.scripts.shell.Commands
+        env:
+          GITHUB_TOKEN: "{{ secret('GITHUB_TOKEN') }}"
+        commands:
+          - echo "Token configured"
+
+      # Clone the repo and output as artifact
+      - id: git-clone
+        type: io.kestra.plugin.scripts.shell.Commands
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+        env:
+          GITHUB_TOKEN: "{{ secret('GITHUB_TOKEN') }}"
+        commands:
+          - |
+            apt-get update && apt-get install -y git
+            url="{{ taskrun.value }}"
+            repo_name=$(basename "$url")
+            set -x
+            if [ -z "$GITHUB_TOKEN" ]; then
+              git clone --depth 1 "$url" "/data/repo"
+            else
+              git clone --depth 1 "https://$GITHUB_TOKEN@github.com/${url#https://github.com/}" "/data/repo"
+            fi
+            ls -l /data
+            ls -l /data/repo || echo 'repo dir missing'
+
+      # Run static analysis (example: Semgrep)
+      - id: static-analysis
+        type: io.kestra.plugin.scripts.shell.Commands
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+        commands:
+          - |
+            ls -l /data
+            cd /data/repo
+            semgrep --config=auto --json > /data/repo-analysis.json || exit 1
+
+      # Transform and POST results to MCP
+      - id: post-results
+        type: io.kestra.plugin.scripts.python.Script
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+        script: |
+          import requests, json, sys
+          repo_name = "{{ taskrun.value.split('/')[-1] }}"
+          with open("/data/repo-analysis.json") as f:
+              data = json.load(f)
+          # Transform as needed for MCP
+          payload = {"repo": repo_name, "analysis": data}
+          url = "{{ vars.mcp_ingest_url }}"
+          try:
+              r = requests.post(url, json=payload)
+              r.raise_for_status()
+              print(f"Ingested {repo_name} successfully")
+          except Exception as e:
+              print(f"Failed to ingest {repo_name}: {e}")
+              sys.exit(1)
+
+      # Clean up temp files for this repo (optional, since artifacts are ephemeral)
+      - id: cleanup
+        type: io.kestra.plugin.scripts.shell.Commands
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+        commands:
+          - rm -rf /data/repo /data/repo-analysis.json
+
+  # Aggregate/report results (summary)
+  - id: summary
+    type: io.kestra.plugin.core.log.Log
+    message: "GitHub repo analysis complete. See logs for per-repo results and errors." 

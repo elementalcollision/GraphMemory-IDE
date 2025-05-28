@@ -1,0 +1,27 @@
+id: graphmemory.lint
+namespace: dev
+
+inputs: {}
+
+tasks:
+  - id: python-black
+    type: io.kestra.core.tasks.scripts.Bash
+    commands:
+      - source .venv/bin/activate
+      - black --check .
+
+  - id: python-flake8
+    type: io.kestra.core.tasks.scripts.Bash
+    commands:
+      - source .venv/bin/activate
+      - flake8 .
+
+  - id: node-eslint
+    type: io.kestra.core.tasks.scripts.Bash
+    commands:
+      - npx eslint . --ext .ts,.js
+
+  - id: node-prettier
+    type: io.kestra.core.tasks.scripts.Bash
+    commands:
+      - npx prettier --check . 

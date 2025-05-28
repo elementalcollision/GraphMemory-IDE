@@ -1,0 +1,22 @@
+id: graphmemory.e2e-tests
+namespace: dev
+
+inputs: {}
+
+tasks:
+  - id: docker-compose-up
+    type: io.kestra.core.tasks.scripts.Bash
+    commands:
+      - docker compose -f docker/docker-compose.yml up -d
+
+  - id: playwright-e2e
+    type: io.kestra.core.tasks.scripts.Bash
+    commands:
+      - source .venv/bin/activate
+      - npx playwright install --with-deps
+      - npx playwright test
+
+  - id: docker-compose-down
+    type: io.kestra.core.tasks.scripts.Bash
+    commands:
+      - docker compose -f docker/docker-compose.yml down 

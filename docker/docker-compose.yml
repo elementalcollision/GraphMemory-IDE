@@ -1,0 +1,45 @@
+services:
+  mcp-server:
+    build: 
+      context: ..
+      dockerfile: docker/mcp-server/Dockerfile
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    environment:
+      - KUZU_DB_PATH=/database
+    volumes:
+      - kuzu-data:/database
+    networks:
+      - memory-net
+
+  kestra:
+    image: kestra/kestra:latest
+    command: server local -c /app/kestra.yml
+    ports:
+      - "8081:8080"
+    user: root
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    volumes:
+      - kestra-data:/app/.kestra
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp:/tmp
+      - kuzu-data:/data
+      - ../kestra.yml:/app/kestra.yml:ro
+    networks:
+      - memory-net
+
+networks:
+  memory-net:
+    driver: bridge
+
+volumes:
+  kuzu-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/../data
+  kestra-data:
+    driver: local 

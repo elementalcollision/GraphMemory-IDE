@@ -1,0 +1,18 @@
+id: graphmemory.unit-tests
+namespace: dev
+
+inputs: {}
+
+tasks:
+  - id: python-pytest
+    type: io.kestra.core.tasks.scripts.Bash
+    commands:
+      - source .venv/bin/activate
+      - pytest --cov=.
+
+  - id: node-vitest
+    type: io.kestra.core.tasks.scripts.Bash
+    commands:
+      # Run Vitest with coverage; CI env var skips CLI integration test
+      - CI=1 npx vitest run --coverage
+      # Integration test for CLI is skipped in CI/headless environments (see cli/index.test.mjs) 

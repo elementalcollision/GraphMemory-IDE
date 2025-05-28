@@ -1,0 +1,8 @@
+kestra:
+  plugins:
+    configurations:
+      - type: io.kestra.plugin.scripts.runner.docker.Docker
+        values:
+          volume-enabled: true
+          volumes:
+            - /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE/data:/data 
