@@ -240,9 +240,33 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
+    "lint:fix": "eslint src --ext ts --fix",
     "test": "node ./out/test/runTest.js",
+    "test:unit": "npm run test -- --grep 'unit'",
+    "test:integration": "npm run test -- --grep 'integration'",
+    "test:watch": "npm run test -- --watch",
+    "test:coverage": "nyc npm run test",
     "build": "npm run compile",
-    "package": "vsce package"
+    "build:prod": "npm run clean && npm run compile && npm run package",
+    "package": "vsce package",
+    "package:pre": "vsce package --pre-release",
+    "publish": "vsce publish",
+    "publish:pre": "vsce publish --pre-release",
+    "clean": "rimraf out dist *.vsix",
+    "format": "prettier --write src/**/*.ts",
+    "format:check": "prettier --check src/**/*.ts",
+    "typecheck": "tsc --noEmit",
+    "dev": "npm run watch",
+    "install:local": "code --install-extension graphmemory-vscode-*.vsix",
+    "uninstall:local": "code --uninstall-extension graphmemory.graphmemory-vscode",
+    "debug": "npm run compile && code --extensionDevelopmentPath=. --disable-extensions",
+    "validate": "npm run typecheck && npm run lint && npm run test",
+    "ci": "npm run validate && npm run build:prod",
+    "docs": "typedoc --out docs src",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "version:patch": "npm version patch && npm run changelog",
+    "version:minor": "npm version minor && npm run changelog",
+    "version:major": "npm version major && npm run changelog"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
@@ -250,9 +274,22 @@
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.50.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
     "typescript": "^5.2.0",
     "@vscode/test-electron": "^2.3.0",
-    "vsce": "^2.15.0"
+    "vsce": "^2.15.0",
+    "prettier": "^3.0.0",
+    "rimraf": "^5.0.0",
+    "nyc": "^15.1.0",
+    "typedoc": "^0.25.0",
+    "conventional-changelog-cli": "^4.1.0",
+    "mocha": "^10.2.0",
+    "chai": "^4.3.0",
+    "@types/mocha": "^10.0.0",
+    "@types/chai": "^4.3.0",
+    "glob": "^10.3.0",
+    "@types/glob": "^8.1.0"
   },
   "dependencies": {
     "@graphmemory/ide-plugins": "file:../",
@@ -273,5 +310,55 @@
   "galleryBanner": {
     "color": "#1e1e1e",
     "theme": "dark"
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2,
+    "useTabs": false
+  },
+  "eslintConfig": {
+    "extends": [
+      "@typescript-eslint/recommended",
+      "prettier"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint",
+      "prettier"
+    ],
+    "rules": {
+      "prettier/prettier": "error",
+      "@typescript-eslint/no-unused-vars": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/explicit-module-boundary-types": "off"
+    },
+    "env": {
+      "node": true,
+      "es6": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 2020,
+      "sourceType": "module"
+    }
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "out/**/*",
+      "src/test/**/*"
+    ],
+    "reporter": [
+      "text",
+      "html",
+      "lcov"
+    ],
+    "all": true
   }
 } 
