@@ -7,6 +7,9 @@ kuzu
 python-jose[cryptography]
 passlib[bcrypt]
 
+# Analytics caching
+redis
+
 # Testing
 pytest
 pytest-cov
