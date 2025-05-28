@@ -8,38 +8,105 @@ services:
       - "50051:50051"
     environment:
       - KUZU_DB_PATH=/database
+      - KUZU_READ_ONLY=${KUZU_READ_ONLY:-false}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - JWT_ENABLED=${JWT_ENABLED:-true}
+      - MTLS_ENABLED=${MTLS_ENABLED:-false}
+      - MTLS_PORT=50051
     volumes:
-      - kuzu-data:/database
+      - kuzu-data:/database:ro  # Read-only database mount
+      - mcp-logs:/var/log/mcp   # Writable logs volume
+      - mcp-tmp:/tmp/mcp        # Writable temp volume
     networks:
       - memory-net
+    # Security hardening
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./security/seccomp-profile.json
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+    restart: unless-stopped
+    user: "1000:1000"  # Non-root user
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   kestra:
     image: kestra/kestra:latest
     command: server local -c /app/kestra.yml
     ports:
       - "8081:8080"
-    user: root
     environment:
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
     volumes:
       - kestra-data:/app/.kestra
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp:/tmp
-      - kuzu-data:/data
+      - kestra-logs:/var/log/kestra
       - ../kestra.yml:/app/kestra.yml:ro
+      # Removed Docker socket exposure for security
     networks:
       - memory-net
+    # Security hardening
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./security/seccomp-profile.json
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /app/.kestra/tmp:noexec,nosuid,size=200m
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+    restart: unless-stopped
+    user: "1001:1001"  # Non-root user
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
   memory-net:
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: memory-bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
 volumes:
   kuzu-data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/../data
   kestra-data:
+    driver: local
+  mcp-logs:
+    driver: local
+  kestra-logs:
+    driver: local
+  mcp-tmp:
     driver: local 

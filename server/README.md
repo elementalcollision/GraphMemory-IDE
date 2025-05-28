@@ -2,7 +2,7 @@
 
 ## Overview
 
-The MCP (Model Context Protocol) Server is a FastAPI-based service that provides AI memory capabilities for IDEs. It uses Kuzu GraphDB for persistent storage and offers telemetry ingestion, querying, and vector-based semantic search.
+The MCP (Model Context Protocol) Server is a FastAPI-based service that provides AI memory capabilities for IDEs. It uses Kuzu GraphDB for persistent storage and offers telemetry ingestion, querying, vector-based semantic search, and JWT-based authentication.
 
 ## Architecture
 
@@ -15,6 +15,7 @@ The MCP (Model Context Protocol) Server is a FastAPI-based service that provides
 
 ## Features
 
+- **JWT Authentication**: Secure token-based authentication for API access
 - **Telemetry Ingestion**: Capture IDE events and store them in graph database
 - **Event Querying**: Filter and retrieve telemetry events by various criteria
 - **Vector Search**: Semantic search using sentence transformers and HNSW indexing
@@ -22,6 +23,42 @@ The MCP (Model Context Protocol) Server is a FastAPI-based service that provides
 - **Docker Integration**: Containerized deployment with persistent volumes
 
 ## API Endpoints
+
+### Authentication
+
+#### POST `/auth/token`
+Generate a JWT access token for authentication.
+
+**Request Body (Form Data):**
+```
+username=testuser&password=testpassword
+```
+
+**Response:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
+}
+```
+
+**Default Test Credentials:**
+- Username: `testuser`, Password: `testpassword`
+- Username: `admin`, Password: `adminpassword`
+
+**Usage:**
+```bash
+# Get token
+curl -X POST http://localhost:8080/auth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=testuser&password=testpassword"
+
+# Use token in subsequent requests
+curl -X POST http://localhost:8080/telemetry/ingest \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"event_type": "file_open", ...}'
+```
 
 ### Health & Documentation
 
@@ -32,6 +69,8 @@ The MCP (Model Context Protocol) Server is a FastAPI-based service that provides
 
 #### POST `/telemetry/ingest`
 Ingest a telemetry event from an IDE plugin.
+
+**Authentication:** Required (JWT Bearer token)
 
 **Request Body:**
 ```json
@@ -65,6 +104,8 @@ Ingest a telemetry event from an IDE plugin.
 #### GET `/telemetry/list`
 List all telemetry events stored in the database.
 
+**Authentication:** Optional (configurable via JWT_ENABLED)
+
 **Response:**
 ```json
 [
@@ -84,6 +125,8 @@ List all telemetry events stored in the database.
 #### GET `/telemetry/query`
 Query telemetry events with filters.
 
+**Authentication:** Optional (configurable via JWT_ENABLED)
+
 **Query Parameters:**
 - `event_type` (optional): Filter by event type
 - `user_id` (optional): Filter by user ID
@@ -91,13 +134,16 @@ Query telemetry events with filters.
 
 **Example:**
 ```bash
-curl "http://localhost:8080/telemetry/query?event_type=file_open&user_id=user-123"
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://localhost:8080/telemetry/query?event_type=file_open&user_id=user-123"
 ```
 
 ### Vector Search
 
 #### POST `/tools/topk`
 Retrieve top-K relevant nodes/snippets using vector search.
+
+**Authentication:** Required (JWT Bearer token)
 
 **Request Body:**
 ```json
@@ -149,6 +195,33 @@ Retrieve top-K relevant nodes/snippets using vector search.
 |----------|---------|-------------|
 | `KUZU_DB_PATH` | `./data` | Path to Kuzu database files |
 | `KUZU_READ_ONLY` | `false` | Enable read-only mode |
+| `JWT_SECRET_KEY` | `your-secret-key-change-in-production` | JWT token signing key |
+| `JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Token expiration time in minutes |
+| `JWT_ENABLED` | `true` | Enable/disable JWT authentication |
+
+### JWT Authentication
+
+The server supports JWT-based authentication with the following features:
+
+- **Token-based Security**: Stateless authentication using JWT tokens
+- **Configurable Expiration**: Default 30-minute token lifetime
+- **Development Mode**: Optional authentication bypass via `JWT_ENABLED=false`
+- **OAuth2 Compatible**: Follows OAuth2 password flow standards
+
+**Production Setup:**
+```bash
+# Generate secure secret key
+export JWT_SECRET_KEY=$(openssl rand -hex 32)
+export JWT_ENABLED="true"
+export JWT_ACCESS_TOKEN_EXPIRE_MINUTES="30"
+```
+
+**Development Setup:**
+```bash
+# Disable authentication for development
+export JWT_ENABLED="false"
+```
 
 ### Read-Only Mode
 

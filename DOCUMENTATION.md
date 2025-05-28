@@ -108,6 +108,7 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 
 | Category | Endpoints | Documentation |
 |----------|-----------|---------------|
+| **Authentication** | `/auth/token` | [JWT Authentication](server/README.md#authentication) |
 | **Telemetry** | `/telemetry/*` | [Telemetry Management](server/README.md#telemetry-management) |
 | **Vector Search** | `/tools/topk` | [Vector Search](server/README.md#vector-search) |
 | **Health** | `/docs`, `/openapi.json` | [Health & Documentation](server/README.md#health--documentation) |
@@ -115,6 +116,7 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 ### Client Libraries
 - **Python Client**: [Python Examples](server/README.md#python-client)
 - **JavaScript Client**: [JavaScript Examples](server/README.md#javascript-client)
+- **Authentication Examples**: [JWT Usage](README.md#authentication)
 
 ## 🐳 Docker Documentation
 
@@ -138,6 +140,7 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 ### Coverage Areas
 - ✅ Telemetry ingestion and querying
 - ✅ Vector search functionality
+- ✅ JWT authentication and token validation
 - ✅ Read-only mode enforcement
 - ✅ Database error handling
 - ✅ Docker volume persistence
@@ -150,6 +153,10 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 |----------|---------|-------------|---------------|
 | `KUZU_DB_PATH` | `./data` | Database file location | [Configuration](README.md#configuration) |
 | `KUZU_READ_ONLY` | `false` | Enable read-only mode | [Read-Only Mode](README.md#read-only-mode) |
+| `JWT_SECRET_KEY` | `your-secret-key-change-in-production` | JWT token signing key | [JWT Configuration](README.md#jwt-authentication-configuration) |
+| `JWT_ALGORITHM` | `HS256` | JWT signing algorithm | [JWT Configuration](README.md#jwt-authentication-configuration) |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Token expiration time | [JWT Configuration](README.md#jwt-authentication-configuration) |
+| `JWT_ENABLED` | `true` | Enable/disable authentication | [JWT Configuration](README.md#jwt-authentication-configuration) |
 | `GITHUB_TOKEN` | - | GitHub API token | [Docker Config](docker/README.md#environment-configuration) |
 
 ### Service Ports
@@ -175,7 +182,7 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 
 ### Planned
 - 📋 **IDE Plugins**: VS Code, IntelliJ, etc.
-- 📋 **Authentication**: JWT and API key support
+- ✅ **Authentication**: JWT token-based authentication (COMPLETED)
 - 📋 **Monitoring**: Prometheus and Grafana integration
 
 ## 🤝 Contributing to Documentation

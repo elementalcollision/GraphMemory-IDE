@@ -1,6 +1,9 @@
-from fastapi import FastAPI, HTTPException, Query, Body, Depends
-from server.models import TelemetryEvent
+from fastapi import FastAPI, HTTPException, Query, Body, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm
+from models import TelemetryEvent, Token, User
+from auth import authenticate_user, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_optional_current_user
 from typing import Any, List, Optional
+from datetime import timedelta
 import kuzu
 import os
 import ast
@@ -26,11 +29,45 @@ def enforce_read_only():
     if os.environ.get("KUZU_READ_ONLY", "false").lower() == "true":
         raise HTTPException(status_code=403, detail="Read-only mode enabled.")
 
+# Authentication Endpoints
+@app.post("/auth/token", response_model=Token, summary="Generate JWT access token")
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
+    """
+    Generate a JWT access token for authentication.
+    
+    Use this endpoint to obtain a token for accessing protected endpoints.
+    The token should be included in the Authorization header as 'Bearer <token>'.
+    
+    Default test credentials:
+    - Username: testuser, Password: testpassword
+    - Username: admin, Password: adminpassword
+    """
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return Token(access_token=access_token, token_type="bearer")
+
 @app.post("/telemetry/ingest", summary="Ingest IDE telemetry event", response_model=dict)
-async def ingest_telemetry(event: TelemetryEvent, _: Any = Depends(enforce_read_only)) -> Any:
+async def ingest_telemetry(
+    event: TelemetryEvent, 
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    _: Any = Depends(enforce_read_only)
+) -> Any:
     """
     Ingest a telemetry event from an IDE plugin.
     Validates and stores the event in the Kuzu database.
+    
+    Authentication: Optional (respects JWT_ENABLED setting)
+    - If JWT_ENABLED=false: No authentication required
+    - If JWT_ENABLED=true: Optional Bearer token authentication
     """
     try:
         query = (
@@ -50,9 +87,15 @@ async def ingest_telemetry(event: TelemetryEvent, _: Any = Depends(enforce_read_
         raise HTTPException(status_code=500, detail=f"Failed to store event: {e}")
 
 @app.get("/telemetry/list", summary="List all telemetry events", response_model=List[dict])
-async def list_telemetry_events() -> Any:
+async def list_telemetry_events(
+    current_user: Optional[User] = Depends(get_optional_current_user)
+) -> Any:
     """
     List all telemetry events stored in the Kuzu database.
+    
+    Authentication: Optional (respects JWT_ENABLED setting)
+    - If JWT_ENABLED=false: No authentication required
+    - If JWT_ENABLED=true: Optional Bearer token authentication
     """
     try:
         query = "MATCH (e:TelemetryEvent) RETURN e"
@@ -80,9 +123,14 @@ async def query_telemetry_events(
     event_type: Optional[str] = Query(None),
     user_id: Optional[str] = Query(None),
     session_id: Optional[str] = Query(None),
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ) -> Any:
     """
     Query telemetry events by event_type, user_id, or session_id.
+    
+    Authentication: Optional (respects JWT_ENABLED setting)
+    - If JWT_ENABLED=false: No authentication required
+    - If JWT_ENABLED=true: Optional Bearer token authentication
     """
     try:
         filters = []
@@ -120,12 +168,17 @@ async def query_telemetry_events(
 @app.post("/tools/topk", summary="Top-K relevant node/snippet query", response_model=list)
 async def topk_query(
     req: TopKQueryRequest = Body(...),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     _: Any = Depends(enforce_read_only)
 ):
     """
     Retrieve the top-K relevant nodes/snippets using Kuzu's native vector search.
     Accepts query_text, k, table, embedding_field, index_name, and optional filters.
     Auto-creates the vector index if it does not exist.
+    
+    Authentication: Optional (respects JWT_ENABLED setting)
+    - If JWT_ENABLED=false: No authentication required
+    - If JWT_ENABLED=true: Optional Bearer token authentication
     """
     try:
         # Load embedding model

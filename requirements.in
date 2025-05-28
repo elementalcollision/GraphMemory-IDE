@@ -3,9 +3,16 @@ fastapi
 uvicorn
 kuzu
 
+# Authentication
+python-jose[cryptography]
+passlib[bcrypt]
+
 # Testing
 pytest
 pytest-cov
+
+# Security testing
+docker
 
 # Async support
 httpx
@@ -32,4 +39,5 @@ mkdocs-material
 requests
 
 # Embeddings for Top-K endpoint
-sentence-transformers 
+sentence-transformers
+python-multipart
