@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "graphmemory": {
+      "command": "node",
+      "args": ["server.js"],
+      "cwd": "./ide-plugins/cursor",
+      "env": {
+        "GRAPHMEMORY_SERVER_URL": "http://localhost:8000",
+        "GRAPHMEMORY_AUTH_METHOD": "jwt",
+        "GRAPHMEMORY_AUTH_TOKEN": "${GRAPHMEMORY_JWT_TOKEN}",
+        "GRAPHMEMORY_DEBUG": "false"
+      }
+    }
+  }
+} 

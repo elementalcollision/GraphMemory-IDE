@@ -7,6 +7,9 @@
 GITHUB_SETUP.md
 GITHUB_READY_SUMMARY.md
 
+# Development and Enhancement Files
+enhancements/
+
 # Python
 __pycache__/
 *.py[cod]
