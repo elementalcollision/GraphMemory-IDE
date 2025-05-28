@@ -484,10 +484,40 @@ graph LR
 - **Data Aggregation**: Time window summaries (1min, 5min, 15min, 1hour)
 
 **Technical Architecture:**
-```
-Analytics Engine → Data Adapter → Background Collector → SSE Server → Streamlit Dashboard
-      ↓              ↓                    ↓                ↓              ↓
-  Health Checks → Validation → Data Buffering → Real-time Streaming → Interactive UI
+
+```mermaid
+flowchart LR
+    subgraph MainFlow["Data Processing Pipeline"]
+        AnalyticsEngine[Analytics Engine<br/>TASK-012 Integration]
+        DataAdapter[Data Adapter<br/>Validation & Transform]
+        BackgroundCollector[Background Collector<br/>Continuous Collection]
+        SSEServer[SSE Server<br/>FastAPI Streaming]
+        StreamlitDashboard[Streamlit Dashboard<br/>Interactive UI]
+    end
+    
+    subgraph UnderlyingProcesses["Underlying Processes"]
+        HealthChecks[Health Checks<br/>System Monitoring]
+        Validation[Validation<br/>Pydantic Models]
+        DataBuffering[Data Buffering<br/>Rolling Time Series]
+        RealtimeStreaming[Real-time Streaming<br/>SSE Events]
+        InteractiveUI[Interactive UI<br/>Apache ECharts]
+    end
+    
+    AnalyticsEngine --> DataAdapter
+    DataAdapter --> BackgroundCollector
+    BackgroundCollector --> SSEServer
+    SSEServer --> StreamlitDashboard
+    
+    AnalyticsEngine -.-> HealthChecks
+    DataAdapter -.-> Validation
+    BackgroundCollector -.-> DataBuffering
+    SSEServer -.-> RealtimeStreaming
+    StreamlitDashboard -.-> InteractiveUI
+    
+    style MainFlow fill:#e8f5e8
+    style UnderlyingProcesses fill:#fff3e0
+    style AnalyticsEngine fill:#e3f2fd
+    style StreamlitDashboard fill:#f3e5f5
 ```
 
 **API Endpoints:**
