@@ -447,3 +447,5 @@ zope-interface==7.2
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
+aiohttp>=3.9.0
+aiosqlite>=0.20.0

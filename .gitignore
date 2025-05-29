@@ -3,6 +3,9 @@
 # Local Project Management (Aegis Framework)
 .context/
 
+# Summary Files (generated content, local only)
+Summary/
+
 # GitHub Setup Files (local use only)
 GITHUB_SETUP.md
 GITHUB_READY_SUMMARY.md

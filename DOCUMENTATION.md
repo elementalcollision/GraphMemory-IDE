@@ -33,6 +33,9 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 | [Main README](README.md) | Project overview, architecture, quick start | All users |
 | [Developer Guide](docs/DEVELOPER_GUIDE.md) | Complete development setup and architecture | Developers |
 | [API Guide](docs/API_GUIDE.md) | Comprehensive API documentation with diagrams | Developers, Integrators |
+| [Code Paths](docs/CODE_PATHS.md) | Complete system code paths and component interactions | Developers |
+| [Step 8 Alerting System](docs/STEP8_ALERTING_SYSTEM.md) | Enterprise alerting platform (10,000+ lines) | Developers, DevOps |
+| [Analytics Engine Guide](server/analytics/README.md) | GPU-accelerated analytics platform | Developers, Data Scientists |
 | [Product Requirements](PRD%20-%20GraphMemory-IDE%20-%20Combined.md) | Original PRD with detailed requirements | Product, Engineering |
 
 ### 📖 User Documentation
@@ -52,11 +55,14 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 | [API Guide](docs/API_GUIDE.md) | Complete API reference with examples | API developers |
 | [Plugin Development](docs/PLUGIN_DEVELOPMENT.md) | Custom plugin and integration development | Extension developers |
 | [CLI Documentation](cli/README.md) | Command-line interface and enterprise features | CLI users, DevOps |
+| [Step 8 Alerting System](docs/STEP8_ALERTING_SYSTEM.md) | Enterprise alerting platform implementation | Alert system developers |
+| [Analytics Engine Guide](server/analytics/README.md) | GPU-accelerated analytics development | Analytics developers |
 
 ### 🐳 Deployment & Operations
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [Deployment Guide](docs/DEPLOYMENT_GUIDE.md) | Complete deployment scenarios from dev to enterprise | DevOps, SRE |
 | [Operations Guide](docs/OPERATIONS.md) | Production deployment and monitoring | DevOps, SRE |
 | [Security Guide](SECURITY.md) | Security hardening and mTLS implementation | Security engineers |
 | [CI/CD Guide](docs/CICD.md) | Continuous integration and deployment | DevOps, Release engineers |
@@ -70,12 +76,29 @@ This document serves as a comprehensive index to all GraphMemory-IDE documentati
 | [Configuration Guide](README.md#configuration) | Environment variables and settings | All users |
 | [Security Configuration](SECURITY.md#configuration) | Security-specific configuration | Security engineers |
 
+### ⚡ Performance & Monitoring
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [Performance Tuning Guide](docs/PERFORMANCE_TUNING.md) | Complete optimization strategies for all components | Performance engineers, DevOps |
+| [Monitoring Guide](docs/MONITORING_GUIDE.md) | Comprehensive observability and monitoring setup | SRE, DevOps |
+| [Alert System Performance](docs/STEP8_ALERTING_SYSTEM.md#performance-metrics) | Step 8 alerting system performance optimization | Alert system engineers |
+| [Analytics Performance](server/analytics/README.md#performance) | GPU-accelerated analytics optimization | Data engineers |
+
 ### 📊 Project Management
 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [Project Planning](.context/README.md) | Aegis framework and task management | Project managers |
 | [AI Instructions](.context/AI_INSTRUCTIONS.md) | Framework for AI-assisted development | AI developers |
+
+### 📈 Project Planning & Enhancement
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [Enhancement PRD](enhancements/Consolidated%20Enhancement%20PRD_%20GraphMemoryIDE.md) | Original enhancement requirements | Product, Engineering |
+| [Current Enhancement Status](enhancements/CURRENT_ENHANCEMENT_STATUS.md) | Implementation status and roadmap | All stakeholders |
+| [Session Summary](SESSION_SUMMARY_MAY29_2025.md) | Latest development session summary | Development Team |
 
 ## 🎯 Documentation by User Journey
 

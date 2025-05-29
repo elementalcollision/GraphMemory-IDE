@@ -1,0 +1,49 @@
+{
+  "validation_summary": {
+    "start_time": 1748506483.929836,
+    "end_time": 1748506484.061579,
+    "total_duration": 0.1317439079284668,
+    "overall_status": "FAILED",
+    "test_categories_passed": 0,
+    "test_categories_total": 9
+  },
+  "pytest_results": {
+    "exit_code": 4,
+    "stdout": "",
+    "stderr": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --json-report --json-report-file=test_results.json\n  inifile: /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE/pytest.ini\n  rootdir: /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE\n\n",
+    "success": false
+  },
+  "custom_validation": {
+    "gpu_acceleration": {
+      "success": false,
+      "error": "No module named 'server'"
+    },
+    "performance_monitoring": {
+      "success": false,
+      "error": "No module named 'server'"
+    },
+    "concurrent_processing": {
+      "success": false,
+      "error": "No module named 'server'"
+    },
+    "analytics_engine": {
+      "success": false,
+      "error": "No module named 'server'"
+    },
+    "api_endpoints": {
+      "success": false,
+      "error": "No module named 'server'"
+    }
+  },
+  "performance_benchmarks": {
+    "error": "No module named 'server'",
+    "success": false
+  },
+  "system_info": {
+    "platform": "macOS-15.5-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.3",
+    "cpu_count": 12,
+    "memory_total_gb": 24.0,
+    "disk_total_gb": 460.4317207336426
+  }
+}

@@ -71,6 +71,11 @@ graph TB
     SYNC --> FILES
     
     KUZU --> CACHE
+    
+    style CLI fill:#00bf7d,color:#000000
+    style AUTH fill:#0073e6,color:#ffffff
+    style MEMORY fill:#2546f0,color:#ffffff
+    style KUZU fill:#5928ed,color:#ffffff
 ```
 
 ### Request Flow
@@ -212,55 +217,322 @@ DELETE /api/v1/memories/{memory_id}
 Authorization: Bearer <token>
 ```
 
-### Graph Operations
+### 🚨 Alert System (Step 8 Enterprise Features)
 
-#### Query Graph
+#### Create Alert
 
 ```http
-POST /api/v1/graph/query
+POST /api/v1/alerts
 Content-Type: application/json
 Authorization: Bearer <token>
 
 {
-  "query": "MATCH (m:Memory)-[r:RELATES_TO]->(t:Topic) WHERE t.name = 'AI' RETURN m, r, t",
-  "parameters": {
-    "limit": 50
-  }
+  "name": "High CPU Usage Alert",
+  "description": "Triggers when CPU usage exceeds 90%",
+  "metric": "system.cpu.usage",
+  "threshold": 90.0,
+  "operator": "greater_than",
+  "severity": "HIGH",
+  "evaluation_window": "5m",
+  "notification_channels": ["websocket", "email"],
+  "escalation_policy": "critical_escalation"
 }
 ```
 
-#### Create Relationship
+**Response:**
+```json
+{
+  "id": "alert_789012",
+  "name": "High CPU Usage Alert",
+  "status": "ACTIVE",
+  "severity": "HIGH",
+  "threshold": 90.0,
+  "created_at": "2025-01-29T12:41:19Z",
+  "last_evaluation": "2025-01-29T12:41:19Z",
+  "notification_channels": ["websocket", "email"]
+}
+```
+
+#### Alert Lifecycle Management
 
 ```http
-POST /api/v1/graph/relationships
+# Acknowledge Alert
+POST /api/v1/alerts/{alert_id}/acknowledge
+Authorization: Bearer <token>
+
+# Resolve Alert
+POST /api/v1/alerts/{alert_id}/resolve
+Authorization: Bearer <token>
+
+# Suppress Alert
+POST /api/v1/alerts/{alert_id}/suppress
 Content-Type: application/json
 Authorization: Bearer <token>
 
 {
-  "from_id": "mem_123456",
-  "to_id": "mem_789012",
-  "relationship_type": "BUILDS_ON",
-  "properties": {
-    "strength": 0.8,
-    "context": "project_development"
+  "duration": "1h",
+  "reason": "Maintenance window"
+}
+```
+
+#### Bulk Alert Operations
+
+```http
+# Bulk Acknowledge
+POST /api/v1/alerts/bulk/acknowledge
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "alert_ids": ["alert_1", "alert_2", "alert_3"],
+  "reason": "Mass acknowledgment"
+}
+
+# Bulk Resolve
+POST /api/v1/alerts/bulk/resolve
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "alert_ids": ["alert_1", "alert_2"],
+  "resolution_note": "Issue resolved"
+}
+```
+
+#### Alert Correlation
+
+```http
+# Trigger Alert Correlation
+POST /api/v1/alerts/correlate
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "alert_id": "alert_123",
+  "correlation_strategies": ["temporal", "spatial", "semantic"],
+  "confidence_threshold": 0.6
+}
+```
+
+**Response:**
+```json
+{
+  "correlation_id": "corr_456789",
+  "alert_id": "alert_123",
+  "correlations": [
+    {
+      "related_alert_id": "alert_124",
+      "confidence": 0.85,
+      "strategy": "temporal",
+      "reasoning": "Alerts occurred within 30 seconds"
+    }
+  ],
+  "incident_created": true,
+  "incident_id": "inc_987654"
+}
+```
+
+### 🎯 Incident Management
+
+#### Create Incident
+
+```http
+POST /api/v1/incidents
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "title": "Database Performance Degradation",
+  "description": "Multiple alerts indicating database performance issues",
+  "priority": "HIGH",
+  "category": "PERFORMANCE",
+  "alert_ids": ["alert_123", "alert_124"],
+  "assigned_to": "team_sre"
+}
+```
+
+#### Incident Lifecycle
+
+```http
+# Escalate Incident
+POST /api/v1/incidents/{incident_id}/escalate
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "escalation_level": "MANAGER",
+  "reason": "No response after 30 minutes"
+}
+
+# Resolve Incident
+POST /api/v1/incidents/{incident_id}/resolve
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "resolution_summary": "Database performance optimized",
+  "root_cause": "Query optimization needed"
+}
+
+# Merge Incidents
+POST /api/v1/incidents/{incident_id}/merge
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "merge_with_incident_id": "inc_555666",
+  "merge_reason": "Duplicate incidents for same issue"
+}
+```
+
+#### Incident Timeline
+
+```http
+GET /api/v1/incidents/{incident_id}/timeline
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "incident_id": "inc_987654",
+  "timeline": [
+    {
+      "timestamp": "2025-01-29T12:41:19Z",
+      "event_type": "CREATED",
+      "description": "Incident created from alert correlation",
+      "user": "system"
+    },
+    {
+      "timestamp": "2025-01-29T12:45:00Z",
+      "event_type": "ACKNOWLEDGED",
+      "description": "Incident acknowledged by SRE team",
+      "user": "sre_engineer"
+    }
+  ]
+}
+```
+
+### 📊 Alert Analytics & Monitoring
+
+#### Performance Metrics
+
+```http
+GET /api/v1/alerts/metrics/performance
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "period": "24h",
+  "metrics": {
+    "total_alerts": 1250,
+    "alerts_by_severity": {
+      "CRITICAL": 15,
+      "HIGH": 85,
+      "MEDIUM": 450,
+      "LOW": 700
+    },
+    "average_processing_time_ms": 45,
+    "correlation_success_rate": 0.78,
+    "notification_delivery_rate": 0.997
   }
 }
 ```
 
-### Search Operations
-
-#### Semantic Search
+#### Notification Delivery Statistics
 
 ```http
-GET /api/v1/search?q=machine%20learning&type=semantic&limit=20
+GET /api/v1/alerts/metrics/delivery
 Authorization: Bearer <token>
 ```
 
-#### Full-text Search
+#### Escalation Analytics
 
 ```http
-GET /api/v1/search?q=project%20insights&type=fulltext&limit=10
+GET /api/v1/alerts/metrics/escalation
 Authorization: Bearer <token>
+```
+
+#### Alert Trend Analysis
+
+```http
+GET /api/v1/alerts/trends/analysis
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "period": "7d",
+  "trends": {
+    "alert_volume_trend": "INCREASING",
+    "top_alert_sources": [
+      {"source": "system_metrics", "count": 450},
+      {"source": "application_logs", "count": 320}
+    ],
+    "resolution_time_trend": {
+      "average_minutes": 15.5,
+      "trend": "IMPROVING"
+    },
+    "escalation_rate": 0.12
+  }
+}
+```
+
+#### SLA Compliance Dashboard
+
+```http
+GET /api/v1/alerts/sla/dashboard
+Authorization: Bearer <token>
+```
+
+### 🔄 Real-time Streaming Endpoints
+
+#### Alert Stream (Server-Sent Events)
+
+```http
+GET /api/v1/alerts/stream
+Authorization: Bearer <token>
+Accept: text/event-stream
+```
+
+**Response Stream:**
+```
+data: {"type": "alert_created", "alert": {"id": "alert_789", "severity": "HIGH"}}
+
+data: {"type": "alert_acknowledged", "alert": {"id": "alert_789", "acknowledged_by": "user_123"}}
+
+data: {"type": "incident_created", "incident": {"id": "inc_456", "priority": "HIGH"}}
+```
+
+#### Incident Stream
+
+```http
+GET /api/v1/incidents/stream
+Authorization: Bearer <token>
+Accept: text/event-stream
+```
+
+#### Metrics Stream
+
+```http
+GET /api/v1/metrics/stream
+Authorization: Bearer <token>
+Accept: text/event-stream
+```
+
+#### WebSocket Notifications
+
+```javascript
+// WebSocket connection for real-time notifications
+const ws = new WebSocket('wss://api.graphmemory.com/notifications/ws');
+
+ws.onmessage = function(event) {
+    const notification = JSON.parse(event.data);
+    console.log('Received notification:', notification);
+};
 ```
 
 ## 📊 Data Models & Schemas
