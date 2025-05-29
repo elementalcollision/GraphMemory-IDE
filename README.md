@@ -155,11 +155,11 @@ graph TB
     NETWORK --> MCP
     MONITOR --> MCP
     
-    style MCP fill:#e1f5fe
-    style KUZU fill:#f3e5f5
-    style AUTH fill:#fff3e0
-    style DOCKER fill:#e8f5e8
-    style DASHBOARD fill:#e8f5e8
+    style MCP fill:#0073e6
+    style KUZU fill:#2546f0
+    style AUTH fill:#00b4c5
+    style DOCKER fill:#00bf7d
+    style DASHBOARD fill:#00bf7d
 ```
 
 ### Component Interaction Flow
@@ -291,10 +291,10 @@ flowchart TD
     RETRY --> FALLBACK
     FALLBACK --> LOG
     
-    style INPUT fill:#e3f2fd
-    style STORE_GRAPH fill:#f3e5f5
-    style STORE_VECTOR fill:#e8f5e8
-    style ERROR fill:#ffebee
+    style INPUT fill:#0073e6
+    style STORE_GRAPH fill:#2546f0
+    style STORE_VECTOR fill:#00bf7d
+    style ERROR fill:#5928ed
 ```
 
 ### Search & Retrieval Flow
@@ -322,9 +322,9 @@ flowchart LR
     FILTER --> ENHANCE[Result Enhancement<br/>Metadata & Snippets]
     ENHANCE --> RETURN[Return Results<br/>Formatted Response]
     
-    style QUERY fill:#e3f2fd
-    style RANK fill:#fff3e0
-    style RETURN fill:#e8f5e8
+    style QUERY fill:#0073e6
+    style RANK fill:#00b4c5
+    style RETURN fill:#00bf7d
 ```
 
 ## ✨ Features
@@ -379,9 +379,9 @@ graph LR
     Monitor --> Metrics
     Cache --> Engine
     
-    style AnalyticsCore fill:#e8f5e8
-    style AlgorithmSuite fill:#fff3e0
-    style ProductionFeatures fill:#fce4ec
+    style AnalyticsCore fill:#00bf7d
+    style AlgorithmSuite fill:#00b4c5
+    style ProductionFeatures fill:#5928ed
 ```
 
 **Key Achievements:**
@@ -454,9 +454,9 @@ graph LR
     Adapter --> Analytics
     SSE --> Streamlit
     
-    style DashboardArch fill:#e8f5e8
-    style FrontendLayer fill:#fff3e0
-    style DataPipeline fill:#fce4ec
+    style DashboardArch fill:#00bf7d
+    style FrontendLayer fill:#00b4c5
+    style DataPipeline fill:#5928ed
 ```
 
 **Phase 3 Implementation Complete (4 Steps):**
@@ -514,10 +514,10 @@ flowchart LR
     SSEServer -.-> RealtimeStreaming
     StreamlitDashboard -.-> InteractiveUI
     
-    style MainFlow fill:#e8f5e8
-    style UnderlyingProcesses fill:#fff3e0
-    style AnalyticsEngine fill:#e3f2fd
-    style StreamlitDashboard fill:#f3e5f5
+    style MainFlow fill:#00bf7d
+    style UnderlyingProcesses fill:#00b4c5
+    style AnalyticsEngine fill:#0073e6
+    style StreamlitDashboard fill:#2546f0
 ```
 
 **API Endpoints:**
@@ -611,11 +611,11 @@ graph TB
     MCP_SERVER --> TOOLS
     TOOLS --> API
     
-    style CURSOR fill:#4caf50
-    style VSCODE fill:#4caf50
-    style WINDSURF fill:#4caf50
-    style MCP_CLIENT fill:#e3f2fd
-    style MCP_SERVER fill:#f3e5f5
+    style CURSOR fill:#00bf7d
+    style VSCODE fill:#00bf7d
+    style WINDSURF fill:#00bf7d
+    style MCP_CLIENT fill:#0073e6
+    style MCP_SERVER fill:#2546f0
 ```
 
 ### ✅ Cursor IDE Plugin (Production Ready)
@@ -834,11 +834,11 @@ graph TB
     TMPFS --> ALERTS
     SECRETS --> TESTS
     
-    style MTLS fill:#ffcdd2
-    style JWT fill:#f8bbd9
-    style READONLY fill:#e1bee7
-    style NONROOT fill:#c5cae9
-    style MONITOR fill:#c8e6c9
+    style MTLS fill:#5928ed
+    style JWT fill:#2546f0
+    style READONLY fill:#2546f0
+    style NONROOT fill:#0073e6
+    style MONITOR fill:#00bf7d
 ```
 
 ### mTLS Authentication Flow
@@ -1005,10 +1005,10 @@ graph LR
     GRAPH --> STREAM
     SEARCH --> JSON
     
-    style AUTH fill:#fff3e0
-    style MEMORY fill:#e8f5e8
-    style GRAPH fill:#f3e5f5
-    style SEARCH fill:#e3f2fd
+    style AUTH fill:#00b4c5
+    style MEMORY fill:#00bf7d
+    style GRAPH fill:#2546f0
+    style SEARCH fill:#0073e6
 ```
 
 ### Core Endpoint Categories
@@ -1035,10 +1035,10 @@ graph TD
     CLI --> SCRIPTS[Shell Scripts<br/>Automation]
     REST --> POSTMAN[Postman Collection<br/>API Testing]
     
-    style API fill:#e3f2fd
-    style PYTHON fill:#e8f5e8
-    style JS fill:#fff3e0
-    style CLI fill:#f3e5f5
+    style API fill:#0073e6
+    style PYTHON fill:#00bf7d
+    style JS fill:#00b4c5
+    style CLI fill:#2546f0
 ```
 
 > 📖 **Complete API Documentation**: [docs/API_GUIDE.md](docs/API_GUIDE.md)
@@ -1067,10 +1067,10 @@ flowchart TD
     CLOUD --> GCP[Google Cloud Run<br/>Serverless Containers]
     CLOUD --> AZURE[Azure Container Instances<br/>Managed Deployment]
     
-    style DEPLOY fill:#e3f2fd
-    style DOCKER fill:#e8f5e8
-    style K8S fill:#f3e5f5
-    style CLOUD fill:#fff3e0
+    style DEPLOY fill:#0073e6
+    style DOCKER fill:#00bf7d
+    style K8S fill:#2546f0
+    style CLOUD fill:#00b4c5
 ```
 
 ### Quick Deployment Commands
@@ -1117,9 +1117,9 @@ flowchart LR
     DEV --> TEST_TOOLS
     DEV --> DEBUG
     
-    style START fill:#e3f2fd
-    style DEV fill:#e8f5e8
-    style TEST_TOOLS fill:#f3e5f5
+    style START fill:#0073e6
+    style DEV fill:#00bf7d
+    style TEST_TOOLS fill:#2546f0
 ```
 
 ### Development Workflow
@@ -1168,9 +1168,9 @@ graph TD
     SECRETS --> VAULT[HashiCorp Vault<br/>Production Secrets]
     SECRETS --> K8S[Kubernetes Secrets<br/>Container Secrets]
     
-    style CONFIG fill:#e3f2fd
-    style ENV fill:#e8f5e8
-    style SECRETS fill:#ffebee
+    style CONFIG fill:#0073e6
+    style ENV fill:#00bf7d
+    style SECRETS fill:#5928ed
 ```
 
 ### Key Configuration Options
