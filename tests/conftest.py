@@ -1,283 +1,375 @@
 # tests/conftest.py
 """
-Central pytest configuration for GraphMemory-IDE Integration Testing
-Modern async testing infrastructure with comprehensive fixtures and utilities.
+Production-Ready Async Testing Infrastructure for GraphMemory-IDE
+================================================================
+
+Based on industry best practices from:
+- TestDriven.io: Function-level scoping, async testing patterns
+- FastAPI Official: AsyncClient with HTTPX integration  
+- Pytest-asyncio: Modern async testing patterns
+- LoadForge: Performance testing optimization
+
+Features:
+- Function-level fixture scoping for maximum test isolation
+- Real database testing with Kuzu integration
+- DigitalOcean cloud testing support
+- Performance-optimized async patterns
+- Realistic data factories for testing
 """
 
 import asyncio
 import os
-import sys
-import tempfile
 import warnings
 from pathlib import Path
-from typing import AsyncGenerator, Dict, Any, Optional
-
+from typing import AsyncGenerator, Dict, Any, Optional, Generator
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
+import kuzu
 
 # Add project root to Python path for imports
 project_root = Path(__file__).parent.parent
+import sys
 sys.path.insert(0, str(project_root))
 
-# Import all fixture modules
-from tests.fixtures.application import *  # FastAPI app fixtures
-from tests.fixtures.database import *     # Database isolation fixtures  
-from tests.fixtures.clients import *      # HTTP/WebSocket client fixtures
-from tests.fixtures.authentication import *  # Auth and user fixtures
-from tests.fixtures.data_factories import *  # Test data generation
-from tests.fixtures.services import *     # External service mocks/toggles
+# Suppress warnings for cleaner test output
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# Import utilities
-from tests.utils.test_helpers import *
-from tests.utils.cleanup import *
+# Import application components
+from server.main import app
+from server.analytics.models import (
+    AnalyticsRequest, AnalyticsResponse, AnalyticsType,
+    CentralityRequest, CommunityRequest, ClusteringRequest,
+    PathAnalysisRequest, GraphMetrics, NodeMetrics
+)
 
-# Configure warnings for clean test output
-warnings.filterwarnings("ignore", category=DeprecationWarning, module="httpx")
-warnings.filterwarnings("ignore", category=DeprecationWarning, module="starlette")
-warnings.filterwarnings("ignore", category=ResourceWarning)
+# Test database configuration
+TEST_DATABASE_PATH = os.getenv("TEST_KUZU_DB_PATH", "./test_data")
+CLOUD_TEST_ENABLED = os.getenv("CLOUD_TEST_ENABLED", "false").lower() == "true"
+DIGITALOCEAN_TEST_ENDPOINT = os.getenv("DIGITALOCEAN_TEST_ENDPOINT")
 
-# Test environment configuration
-TEST_ENV = os.getenv("TEST_ENV", "local")
-USE_REAL_SERVICES = os.getenv("USE_REAL_SERVICES", "false").lower() == "true"
-DEBUG_TESTS = os.getenv("DEBUG_TESTS", "false").lower() == "true"
 
-# Global test configuration
-pytest_plugins = [
-    "pytest_asyncio",
-    "pytest_cov",
-    "pytest_timeout",
-]
-
-# Test session configuration
-def pytest_configure(config):
-    """Configure pytest session with custom settings."""
-    # Set test environment markers
-    config.addinivalue_line("markers", f"env_{TEST_ENV}: Tests for {TEST_ENV} environment")
-    
-    # Configure asyncio for proper event loop handling
-    if hasattr(asyncio, 'set_event_loop_policy'):
-        if sys.platform == 'win32':
-            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-        else:
-            asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
-
-def pytest_sessionstart(session):
-    """Actions to perform at the start of test session."""
-    print(f"\n🚀 Starting GraphMemory-IDE Integration Tests")
-    print(f"   Environment: {TEST_ENV}")
-    print(f"   Real Services: {USE_REAL_SERVICES}")
-    print(f"   Debug Mode: {DEBUG_TESTS}")
-    print(f"   Python: {sys.version}")
-    print(f"   Working Directory: {os.getcwd()}")
-
-def pytest_sessionfinish(session, exitstatus):
-    """Actions to perform at the end of test session."""
-    print(f"\n✅ Integration Test Session Complete (Exit Code: {exitstatus})")
-
-# Async event loop configuration for 2025 best practices
 @pytest_asyncio.fixture(scope="function")
-async def event_loop():
-    """Create a new event loop for each test function."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+async def kuzu_db() -> AsyncGenerator[kuzu.Database, None]:
+    """
+    Create Kuzu database instance with function-level scoping.
+    
+    Based on best practices for test isolation.
+    Each test gets a fresh database that's cleaned up after.
+    """
+    # Ensure test directory exists
+    os.makedirs(TEST_DATABASE_PATH, exist_ok=True)
+    
+    # Create database
+    db = kuzu.Database(TEST_DATABASE_PATH)
+    
+    yield db
+    
+    # Cleanup - remove test database files
+    db.close()
+    import shutil
+    if os.path.exists(TEST_DATABASE_PATH):
+        shutil.rmtree(TEST_DATABASE_PATH, ignore_errors=True)
+
+
+@pytest_asyncio.fixture(scope="function")
+async def kuzu_connection(kuzu_db: kuzu.Database) -> AsyncGenerator[kuzu.Connection, None]:
+    """
+    Provide Kuzu database connection.
+    
+    Creates connection to test database with proper cleanup.
+    """
+    conn = kuzu.Connection(kuzu_db)
+    
+    # Initialize basic schema for testing
     try:
-        yield loop
-    finally:
-        # Clean up any pending tasks
-        pending = asyncio.all_tasks(loop)
-        if pending:
-            for task in pending:
-                task.cancel()
-            await asyncio.gather(*pending, return_exceptions=True)
+        # Create basic node tables for testing
+        conn.execute("CREATE NODE TABLE IF NOT EXISTS MemoryNode(id STRING, type STRING, content STRING, metadata STRING, PRIMARY KEY(id))")
+        conn.execute("CREATE NODE TABLE IF NOT EXISTS Concept(id STRING, name STRING, description STRING, PRIMARY KEY(id))")
         
-        loop.close()
-
-# Test environment fixtures
-@pytest.fixture(scope="function")
-def test_env() -> str:
-    """Get the current test environment."""
-    return TEST_ENV
-
-@pytest.fixture(scope="function")
-def use_real_services() -> bool:
-    """Determine if tests should use real external services."""
-    return USE_REAL_SERVICES
-
-@pytest.fixture(scope="function")
-def debug_mode() -> bool:
-    """Determine if tests are running in debug mode."""
-    return DEBUG_TESTS
-
-# Temporary directory fixture for test isolation
-@pytest.fixture(scope="function")
-def temp_dir() -> Path:
-    """Create a temporary directory for test data."""
-    with tempfile.TemporaryDirectory(prefix="graphmemory_test_") as tmp_dir:
-        yield Path(tmp_dir)
-
-# Test data directory fixture
-@pytest.fixture(scope="function")
-def test_data_dir() -> Path:
-    """Get the test data directory."""
-    test_data_path = Path(__file__).parent / "data"
-    test_data_path.mkdir(exist_ok=True)
-    return test_data_path
-
-# Performance monitoring fixture
-@pytest.fixture(scope="function", autouse=True)
-async def monitor_test_performance(request):
-    """Monitor test performance and resource usage."""
-    import time
-    import psutil
-    
-    start_time = time.time()
-    start_memory = psutil.Process().memory_info().rss
-    
-    yield
-    
-    end_time = time.time()
-    end_memory = psutil.Process().memory_info().rss
-    
-    duration = end_time - start_time
-    memory_delta = end_memory - start_memory
-    
-    # Log performance metrics for slow tests
-    if duration > 5.0:  # Log tests taking more than 5 seconds
-        print(f"\n⚠️  Slow Test: {request.node.name}")
-        print(f"   Duration: {duration:.2f}s")
-        print(f"   Memory Delta: {memory_delta / 1024 / 1024:.2f}MB")
-
-# Test isolation fixture (autouse ensures it runs for every test)
-@pytest.fixture(scope="function", autouse=True)
-async def ensure_test_isolation():
-    """Ensure proper test isolation and cleanup."""
-    # Pre-test setup
-    original_env = dict(os.environ)
-    
-    yield
-    
-    # Post-test cleanup
-    # Restore original environment variables
-    os.environ.clear()
-    os.environ.update(original_env)
-    
-    # Force garbage collection
-    import gc
-    gc.collect()
-
-# Error handling and reporting
-@pytest.fixture(scope="function", autouse=True)
-def capture_test_errors(request):
-    """Capture and log detailed error information."""
-    yield
-    
-    if request.node.rep_call.failed:
-        print(f"\n❌ Test Failed: {request.node.name}")
-        print(f"   Error: {request.node.rep_call.longrepr}")
-
-def pytest_runtest_makereport(item, call):
-    """Generate detailed test reports."""
-    if "rep_" + call.when not in item:
-        setattr(item, "rep_" + call.when, call)
-
-# Custom test markers for dynamic configuration
-def pytest_collection_modifyitems(config, items):
-    """Modify test collection to add dynamic markers."""
-    for item in items:
-        # Add environment-specific markers
-        item.add_marker(pytest.mark.env(TEST_ENV))
+        # Create relationship tables
+        conn.execute("CREATE REL TABLE IF NOT EXISTS RELATES(FROM MemoryNode TO MemoryNode, strength DOUBLE, relation_type STRING)")
+        conn.execute("CREATE REL TABLE IF NOT EXISTS IMPLEMENTS(FROM MemoryNode TO Concept)")
         
-        # Add service type markers
-        if USE_REAL_SERVICES:
-            item.add_marker(pytest.mark.real_services)
-        else:
-            item.add_marker(pytest.mark.mock_services)
-        
-        # Add component markers based on test file location
-        test_file = str(item.fspath)
-        if "analytics" in test_file:
-            item.add_marker(pytest.mark.analytics)
-        elif "dashboard" in test_file:
-            item.add_marker(pytest.mark.dashboard)
-        elif "alerts" in test_file:
-            item.add_marker(pytest.mark.alerts)
-        elif "auth" in test_file:
-            item.add_marker(pytest.mark.authentication)
+    except Exception as e:
+        # Schema might already exist, continue
+        pass
+    
+    yield conn
+    
+    conn.close()
 
-# Integration test utilities
-@pytest.fixture(scope="function")
-def integration_config() -> Dict[str, Any]:
-    """Get configuration for integration tests."""
+
+@pytest_asyncio.fixture(scope="function") 
+async def async_client(kuzu_connection: kuzu.Connection) -> AsyncGenerator[AsyncClient, None]:
+    """
+    Provide FastAPI test client with database override.
+    
+    Based on FastAPI official docs and TestDriven.io patterns.
+    Uses HTTPX AsyncClient for authentic async testing.
+    """
+    # Override the database connection in the app
+    original_conn = getattr(app.state, 'kuzu_connection', None)
+    app.state.kuzu_connection = kuzu_connection
+    
+    # Create async client with ASGI transport
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://testserver"
+    ) as client:
+        yield client
+    
+    # Restore original connection
+    if original_conn:
+        app.state.kuzu_connection = original_conn
+
+
+@pytest_asyncio.fixture(scope="function")
+async def sample_memory_data(kuzu_connection: kuzu.Connection) -> Dict[str, Any]:
+    """
+    Create sample memory data for testing.
+    
+    Provides realistic test data based on GraphMemory-IDE patterns.
+    """
+    # Insert sample nodes
+    sample_nodes = [
+        {
+            "id": "node_001",
+            "type": "function", 
+            "content": "async def process_query(query: str) -> QueryResult:",
+            "metadata": '{"file_path": "src/query_processor.py", "complexity": "medium"}'
+        },
+        {
+            "id": "node_002",
+            "type": "class",
+            "content": "class AnalyticsEngine:",
+            "metadata": '{"file_path": "src/analytics/engine.py", "complexity": "high"}'
+        },
+        {
+            "id": "node_003", 
+            "type": "concept",
+            "content": "Graph traversal algorithm for memory relationships",
+            "metadata": '{"domain": "algorithms", "difficulty": "advanced"}'
+        }
+    ]
+    
+    # Insert nodes
+    for node in sample_nodes:
+        kuzu_connection.execute(
+            "CREATE (n:MemoryNode {id: $id, type: $type, content: $content, metadata: $metadata})",
+            node
+        )
+    
+    # Insert sample relationships
+    relationships = [
+        {
+            "from_id": "node_001",
+            "to_id": "node_002", 
+            "strength": 0.8,
+            "relation_type": "uses"
+        },
+        {
+            "from_id": "node_002",
+            "to_id": "node_003",
+            "strength": 0.9,
+            "relation_type": "implements"
+        }
+    ]
+    
+    for rel in relationships:
+        kuzu_connection.execute(
+            "MATCH (a:MemoryNode {id: $from_id}), (b:MemoryNode {id: $to_id}) CREATE (a)-[:RELATES {strength: $strength, relation_type: $relation_type}]->(b)",
+            rel
+        )
+    
     return {
-        "test_env": TEST_ENV,
-        "use_real_services": USE_REAL_SERVICES,
-        "debug_mode": DEBUG_TESTS,
-        "timeout": 300,
-        "max_retries": 3,
-        "cleanup_timeout": 30,
+        "nodes": sample_nodes,
+        "relationships": relationships
     }
 
-# Health check fixture for external dependencies
+
+# Cloud testing fixtures for DigitalOcean integration
 @pytest_asyncio.fixture(scope="session")
-async def health_check_external_services():
-    """Check health of external services before running tests."""
-    if not USE_REAL_SERVICES:
-        return True
+async def cloud_client() -> AsyncGenerator[AsyncClient, None]:
+    """
+    Provide client for DigitalOcean cloud testing.
     
-    health_checks = []
+    Only available when CLOUD_TEST_ENABLED=true and endpoint is configured.
+    Allows testing against real cloud infrastructure.
+    """
+    if not CLOUD_TEST_ENABLED or not DIGITALOCEAN_TEST_ENDPOINT:
+        pytest.skip("Cloud testing not enabled or endpoint not configured")
     
-    # Add health checks for external services here
-    # For example: Redis, external APIs, etc.
+    # Ensure endpoint is a proper URL string
+    endpoint = str(DIGITALOCEAN_TEST_ENDPOINT)
     
-    return all(health_checks) if health_checks else True
+    async with AsyncClient(
+        base_url=endpoint,
+        timeout=30.0  # Extended timeout for cloud requests
+    ) as client:
+        yield client
 
-# Test data cleanup
-@pytest.fixture(scope="function", autouse=True)
-async def cleanup_test_data():
-    """Ensure test data is cleaned up after each test."""
+
+@pytest.fixture(scope="session")
+def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
+    """
+    Create event loop for session.
+    
+    Required for session-scoped async fixtures.
+    Based on pytest-asyncio best practices.
+    """
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
+
+
+# Performance testing utilities
+class PerformanceTracker:
+    """Track performance metrics during testing."""
+    
+    def __init__(self):
+        self.response_times = []
+        self.memory_usage = []
+        self.errors = []
+    
+    def record_response_time(self, time_ms: float):
+        self.response_times.append(time_ms)
+    
+    def record_memory_usage(self, usage_mb: float):
+        self.memory_usage.append(usage_mb)
+    
+    def record_error(self, error: str):
+        self.errors.append(error)
+    
+    @property
+    def avg_response_time(self) -> float:
+        return sum(self.response_times) / len(self.response_times) if self.response_times else 0
+    
+    @property
+    def error_rate(self) -> float:
+        total_requests = len(self.response_times) + len(self.errors)
+        return len(self.errors) / total_requests if total_requests > 0 else 0
+
+
+@pytest_asyncio.fixture(scope="function")
+async def performance_tracker() -> PerformanceTracker:
+    """Provide performance tracking for tests."""
+    return PerformanceTracker()
+
+
+# Database health check utilities  
+async def check_kuzu_health(connection: kuzu.Connection) -> bool:
+    """Check if Kuzu database is accessible and responsive."""
+    try:
+        result = connection.execute("RETURN 1 AS test")
+        # Kuzu returns a QueryResult object, check if we got results
+        return result is not None and len(list(result)) > 0
+    except Exception:
+        return False
+
+
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def ensure_database_health(kuzu_connection: kuzu.Connection):
+    """Ensure database is healthy before each test."""
+    if not await check_kuzu_health(kuzu_connection):
+        pytest.fail("Kuzu database health check failed")
+
+
+# Realistic data factories based on research patterns
+class ProjectDataFactory:
+    """Factory for creating realistic project test data."""
+    
+    @staticmethod
+    def create_realistic_dataset(
+        connection: kuzu.Connection,
+        size: str = "small"
+    ) -> Dict[str, Any]:
+        """
+        Create realistic project dataset for testing.
+        
+        Args:
+            connection: Kuzu database connection
+            size: Dataset size - "small", "medium", "large", "enterprise"
+        
+        Returns:
+            Dictionary containing created data references
+        """
+        size_configs = {
+            "small": {"nodes": 10, "relations": 15},
+            "medium": {"nodes": 100, "relations": 150}, 
+            "large": {"nodes": 1000, "relations": 1500},
+            "enterprise": {"nodes": 10000, "relations": 15000}
+        }
+        
+        config = size_configs.get(size, size_configs["small"])
+        
+        # Create nodes with realistic content
+        created_nodes = []
+        for i in range(config["nodes"]):
+            node_data = {
+                "id": f"test_node_{i:06d}",
+                "type": ["function", "class", "concept", "file"][i % 4],
+                "content": f"Test content for node {i}",
+                "metadata": f'{{"test_id": {i}, "batch": "{size}", "synthetic": true}}'
+            }
+            
+            connection.execute(
+                "CREATE (n:MemoryNode {id: $id, type: $type, content: $content, metadata: $metadata})",
+                node_data
+            )
+            created_nodes.append(node_data)
+        
+        # Create relations
+        created_relations = []
+        for i in range(config["relations"]):
+            source_idx = i % len(created_nodes)
+            target_idx = (i + 1) % len(created_nodes)
+            
+            relation_data = {
+                "from_id": created_nodes[source_idx]["id"],
+                "to_id": created_nodes[target_idx]["id"],
+                "strength": 0.5 + (i % 5) * 0.1,
+                "relation_type": ["uses", "implements", "contains", "extends"][i % 4]
+            }
+            
+            connection.execute(
+                "MATCH (a:MemoryNode {id: $from_id}), (b:MemoryNode {id: $to_id}) CREATE (a)-[:RELATES {strength: $strength, relation_type: $relation_type}]->(b)",
+                relation_data
+            )
+            created_relations.append(relation_data)
+        
+        return {
+            "nodes": created_nodes,
+            "relations": created_relations,
+            "config": config
+        }
+
+
+@pytest_asyncio.fixture(scope="function")
+async def project_data_factory() -> ProjectDataFactory:
+    """Provide project data factory for tests."""
+    return ProjectDataFactory()
+
+
+# Memory usage monitoring
+def get_memory_usage() -> float:
+    """Get current memory usage in MB."""
+    try:
+        import psutil
+        process = psutil.Process()
+        return process.memory_info().rss / 1024 / 1024
+    except ImportError:
+        # Fallback if psutil not available
+        return 0.0
+
+
+@pytest.fixture(autouse=True)
+def monitor_memory_usage():
+    """Monitor memory usage for each test."""
+    initial_memory = get_memory_usage()
     yield
+    final_memory = get_memory_usage()
+    peak = max(initial_memory, final_memory)
     
-    # Cleanup logic will be implemented in individual fixture modules
-    # This fixture serves as a coordination point for cleanup
-    pass
-
-# Logging configuration for tests
-@pytest.fixture(scope="session", autouse=True)
-def configure_logging():
-    """Configure logging for test session."""
-    import logging
-    
-    # Set up test-specific logging
-    logging.basicConfig(
-        level=logging.DEBUG if DEBUG_TESTS else logging.INFO,
-        format="%(asctime)s [%(levelname)8s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
-    
-    # Suppress noisy loggers
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("asyncio").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-
-# Memory leak detection
-@pytest.fixture(scope="function", autouse=True)
-def detect_memory_leaks():
-    """Detect potential memory leaks in tests."""
-    import gc
-    import tracemalloc
-    
-    # Start tracing memory allocations
-    tracemalloc.start()
-    gc.collect()
-    
-    yield
-    
-    # Check for memory leaks
-    gc.collect()
-    current, peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-    
-    # Log if memory usage is high
-    if peak > 100 * 1024 * 1024:  # 100MB
-        print(f"\n⚠️  High memory usage detected: {peak / 1024 / 1024:.2f}MB peak") 
+    if peak > 100:  # 100MB threshold
+        print(f"\n⚠️  High memory usage detected: {peak:.2f}MB peak") 

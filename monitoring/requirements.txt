@@ -1,0 +1,41 @@
+# OpenTelemetry Core
+opentelemetry-api==1.22.0
+opentelemetry-sdk==1.22.0
+
+# OpenTelemetry Auto-Instrumentation
+opentelemetry-auto-instrumentation==0.43b0
+
+# OpenTelemetry Instrumentation Libraries
+opentelemetry-instrumentation-fastapi==0.43b0
+opentelemetry-instrumentation-sqlalchemy==0.43b0
+opentelemetry-instrumentation-redis==0.43b0
+opentelemetry-instrumentation-requests==0.43b0
+opentelemetry-instrumentation-httpx==0.43b0
+opentelemetry-instrumentation-asyncio==0.43b0
+opentelemetry-instrumentation-psycopg2==0.43b0
+
+# OpenTelemetry Exporters
+opentelemetry-exporter-otlp==1.22.0
+opentelemetry-exporter-otlp-proto-grpc==1.22.0
+opentelemetry-exporter-prometheus==1.12.0rc1
+opentelemetry-exporter-console==1.22.0
+
+# OpenTelemetry Propagators
+opentelemetry-propagator-b3==1.22.0
+opentelemetry-propagator-jaeger==1.22.0
+
+# Prometheus Client
+prometheus-client==0.19.0
+prometheus-fastapi-instrumentator==6.1.0
+
+# Grafana/Loki Integration
+python-json-logger==2.0.7
+
+# Machine Learning for Anomaly Detection
+scikit-learn==1.4.0
+numpy==1.26.3
+pandas==2.2.0
+
+# Additional Monitoring Tools
+psutil==5.9.7
+httpx==0.26.0 

@@ -1,0 +1,45 @@
+name: graphmemory-ide-staging
+services:
+  - name: api
+    source_dir: /
+    github:
+      repo: your-org/graphmemory-ide
+      branch: develop
+    run_command: gunicorn --worker-tmp-dir /dev/shm --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8080 server.main:app
+    environment_slug: python
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    health_check:
+      http_path: /health
+    envs:
+      - key: ENVIRONMENT
+        value: staging
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: KUZU_DATABASE_PATH
+        value: /tmp/kuzu_db
+      - key: REDIS_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: LOG_LEVEL
+        value: DEBUG
+      - key: CORS_ORIGINS
+        value: "https://staging.graphmemory-ide.com"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "500"
+      - key: CACHE_TTL
+        value: "300"
+databases:
+  - name: graphmemory-staging-db
+    engine: PG
+    version: "14"
+    size: basic-xs
+static_sites:
+  - name: dashboard
+    source_dir: /dashboard
+    github:
+      repo: your-org/graphmemory-ide
+      branch: develop
+    build_command: npm run build
+    output_dir: /build 

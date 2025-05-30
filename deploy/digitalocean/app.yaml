@@ -1,0 +1,45 @@
+name: graphmemory-ide
+services:
+  - name: api
+    source_dir: /
+    github:
+      repo: your-org/graphmemory-ide
+      branch: main
+    run_command: gunicorn --worker-tmp-dir /dev/shm --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8080 server.main:app
+    environment_slug: python
+    instance_count: 2
+    instance_size_slug: basic-xxs
+    health_check:
+      http_path: /health
+    envs:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: KUZU_DATABASE_PATH
+        value: /tmp/kuzu_db
+      - key: REDIS_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CORS_ORIGINS
+        value: "https://graphmemory-ide.com"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "1000"
+      - key: CACHE_TTL
+        value: "600"
+databases:
+  - name: graphmemory-db
+    engine: PG
+    version: "14"
+    size: basic-xs
+static_sites:
+  - name: dashboard
+    source_dir: /dashboard
+    github:
+      repo: your-org/graphmemory-ide
+      branch: main
+    build_command: npm run build
+    output_dir: /build 

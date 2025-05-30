@@ -1,0 +1,273 @@
+name: DigitalOcean Deployment Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_graphmemory
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+      
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio httpx pytest-mock
+      
+      - name: Set up test environment
+        run: |
+          cp .env.example .env.test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_graphmemory
+          REDIS_URL: redis://localhost:6379/0
+          ENVIRONMENT: testing
+      
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ -v --tb=short --maxfail=5
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_graphmemory
+          REDIS_URL: redis://localhost:6379/0
+          ENVIRONMENT: testing
+      
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ -v --tb=short --maxfail=3
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_graphmemory
+          REDIS_URL: redis://localhost:6379/0
+          ENVIRONMENT: testing
+      
+      - name: Run light load tests
+        run: |
+          pytest tests/load_testing/ -v -k "light_concurrent_load" --tb=short
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_graphmemory
+          REDIS_URL: redis://localhost:6379/0
+          ENVIRONMENT: testing
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+      
+      - name: Build dashboard
+        run: |
+          cd dashboard
+          npm ci
+          npm run build
+      
+      - name: Validate build artifacts
+        run: |
+          echo "Validating Python application structure..."
+          python -c "import server.main; print('✅ Server imports successfully')"
+          
+          echo "Validating dashboard build..."
+          test -d dashboard/build && echo "✅ Dashboard build directory exists"
+          test -f dashboard/build/index.html && echo "✅ Dashboard index.html exists"
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dashboard/build/
+            server/
+          retention-days: 1
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
+    environment: staging
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+      
+      - name: Deploy to DigitalOcean Staging
+        uses: digitalocean/app_action/deploy@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          app_spec_location: deploy/digitalocean/staging-app.yaml
+      
+      - name: Wait for staging deployment
+        run: |
+          echo "Waiting for staging deployment to complete..."
+          sleep 90
+      
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio httpx
+      
+      - name: Validate staging deployment
+        run: |
+          pytest tests/cloud/test_digitalocean_deployment.py::TestDigitalOceanDeployment::test_staging_deployment_validation -v
+        env:
+          DO_STAGING_URL: ${{ secrets.DO_STAGING_URL }}
+          DO_REGION: ${{ secrets.DO_REGION }}
+      
+      - name: Run staging smoke tests
+        run: |
+          pytest tests/smoke/ -v --maxfail=1
+        env:
+          TEST_BASE_URL: ${{ secrets.DO_STAGING_URL }}
+      
+      - name: Staging deployment summary
+        run: |
+          echo "✅ Staging deployment completed successfully"
+          echo "🔗 Staging URL: ${{ secrets.DO_STAGING_URL }}"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+      
+      - name: Deploy to DigitalOcean Production
+        uses: digitalocean/app_action/deploy@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          app_spec_location: deploy/digitalocean/app.yaml
+      
+      - name: Wait for production deployment
+        run: |
+          echo "Waiting for production deployment to complete..."
+          sleep 120
+      
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio httpx
+      
+      - name: Validate production deployment
+        run: |
+          pytest tests/cloud/test_digitalocean_deployment.py::TestDigitalOceanDeployment::test_production_deployment_validation -v
+        env:
+          DO_PRODUCTION_URL: ${{ secrets.DO_PRODUCTION_URL }}
+          DO_REGION: ${{ secrets.DO_REGION }}
+      
+      - name: Run production health checks
+        run: |
+          pytest tests/cloud/test_digitalocean_deployment.py::TestDigitalOceanDeployment::test_deployment_performance_benchmarks -v
+        env:
+          DO_PRODUCTION_URL: ${{ secrets.DO_PRODUCTION_URL }}
+          DO_REGION: ${{ secrets.DO_REGION }}
+      
+      - name: Run production smoke tests
+        run: |
+          pytest tests/smoke/ -v --maxfail=1
+        env:
+          TEST_BASE_URL: ${{ secrets.DO_PRODUCTION_URL }}
+      
+      - name: Production deployment summary
+        run: |
+          echo "🚀 Production deployment completed successfully"
+          echo "🔗 Production URL: ${{ secrets.DO_PRODUCTION_URL }}"
+          echo "📊 All health checks and performance benchmarks passed"
+
+  rollback:
+    name: Emergency Rollback
+    runs-on: ubuntu-latest
+    if: failure() && github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Trigger emergency rollback
+        run: |
+          echo "🚨 Production deployment failed - initiating emergency rollback"
+          echo "This would trigger DigitalOcean App Platform rollback to previous version"
+          # In a real scenario, you would use DigitalOcean API to rollback
+          # curl -X POST "https://api.digitalocean.com/v2/apps/${APP_ID}/rollback" \
+          #   -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
+      
+      - name: Notify team
+        run: |
+          echo "📧 Notifying team of production rollback"
+          # In a real scenario, integrate with Slack, email, or incident management 

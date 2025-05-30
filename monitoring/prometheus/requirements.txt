@@ -1,0 +1,86 @@
+# Core monitoring dependencies
+prometheus-client==0.21.1
+prometheus-fastapi-instrumentator==7.0.0
+
+# OpenTelemetry stack for production observability
+opentelemetry-api==1.28.2
+opentelemetry-sdk==1.28.2
+opentelemetry-instrumentation-fastapi==0.49b2
+opentelemetry-instrumentation-requests==0.49b2
+opentelemetry-instrumentation-sqlalchemy==0.49b2
+opentelemetry-exporter-otlp==1.28.2
+opentelemetry-exporter-prometheus==0.49b2
+opentelemetry-propagator-b3==1.28.2
+opentelemetry-propagator-jaeger==1.28.2
+
+# Async HTTP client for monitoring endpoints
+httpx==0.28.1
+
+# Data processing and analytics
+pandas==2.2.3
+numpy==1.26.4
+
+# Core ML dependencies for anomaly detection
+scikit-learn==1.5.2
+
+# Redis for caching and state management
+redis==5.2.0
+
+# System monitoring
+psutil==6.1.0
+
+# Structured logging for production
+structlog==24.4.0
+
+# Configuration and validation
+pydantic==2.10.3
+pydantic-settings==2.7.0
+
+# Time series analysis
+statsmodels==0.14.4
+
+# Optional ML dependencies for advanced features
+# Install with: pip install -r requirements.txt -r optional-requirements.txt
+
+# Production monitoring and alerting
+slack-sdk==3.33.4
+
+# Error tracking and performance monitoring
+sentry-sdk==2.18.0
+
+# Enhanced HTTP client for external integrations
+aiohttp==3.11.10
+
+# JSON logging and structured data
+orjson==3.10.12
+
+# Rate limiting for monitoring APIs
+slowapi==0.1.9
+
+# Async task queue for background monitoring
+celery==5.4.0
+
+# Health checks and service discovery
+consul-client==1.1.0
+
+# Advanced caching
+cachetools==5.5.0
+
+# Metrics collection and aggregation
+statsd==4.0.1
+
+# Advanced time series forecasting (optional)
+# prophet==1.1.6  # Commented out - requires additional system dependencies
+
+# Note: TensorFlow is optional for LSTM-based anomaly detection
+# To enable LSTM features, install:
+# tensorflow>=2.17.0,<3.0.0
+# or
+# tensorflow-cpu>=2.17.0,<3.0.0  # For CPU-only version
+
+# For Kubernetes integration (optional):
+# kubernetes>=31.0.0
+
+# For advanced security monitoring (optional):
+# cryptography>=43.0.0
+# PyJWT>=2.10.0 
