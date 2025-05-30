@@ -1,0 +1,720 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: graphmemory-elasticsearch
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/instance: graphmemory
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/component: logging
+spec:
+  version: 8.12.0
+  
+  # HTTP configuration with TLS
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: false
+        subjectAltNames:
+          - ip: 127.0.0.1
+          - dns: elasticsearch.monitoring-production.svc.cluster.local
+          - dns: graphmemory-elasticsearch-es-http.monitoring-production.svc.cluster.local
+    service:
+      metadata:
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-type: nlb
+      spec:
+        type: LoadBalancer
+        loadBalancerClass: service.k8s.aws/nlb
+  
+  # Transport configuration
+  transport:
+    tls:
+      selfSignedCertificate:
+        disabled: false
+  
+  # Multi-node cluster configuration with tier-based architecture
+  nodeSets:
+    # Master nodes for cluster coordination
+    - name: master
+      count: 3
+      config:
+        # Master node configuration
+        node.roles: ["master"]
+        cluster.name: graphmemory-production
+        cluster.initial_master_nodes: ["graphmemory-elasticsearch-es-master-0", "graphmemory-elasticsearch-es-master-1", "graphmemory-elasticsearch-es-master-2"]
+        cluster.max_shards_per_node: 1000
+        
+        # Performance tuning
+        bootstrap.memory_lock: false
+        indices.memory.index_buffer_size: "20%"
+        indices.memory.min_index_buffer_size: "48mb"
+        thread_pool.write.queue_size: 1000
+        
+        # Security configuration
+        xpack.security.enabled: true
+        xpack.security.enrollment.enabled: true
+        xpack.security.http.ssl.enabled: true
+        xpack.security.transport.ssl.enabled: true
+        
+        # Monitoring and alerting
+        xpack.monitoring.collection.enabled: true
+        xpack.watcher.enabled: true
+        
+        # Index lifecycle management
+        xpack.ilm.enabled: true
+        xpack.rollup.enabled: true
+        
+        # Cross-cluster replication
+        xpack.ccr.enabled: true
+        
+        # Machine learning
+        xpack.ml.enabled: true
+        xpack.ml.max_machine_memory_percent: 30
+        
+        # Graph exploration
+        xpack.graph.enabled: true
+        
+        # SQL support
+        xpack.sql.enabled: true
+        
+        # Async search
+        search.max_async_search_response_size: "10mb"
+        
+        # Circuit breaker settings
+        indices.breaker.total.limit: "70%"
+        indices.breaker.fielddata.limit: "40%"
+        indices.breaker.request.limit: "40%"
+        
+      podTemplate:
+        metadata:
+          labels:
+            node-type: master
+        spec:
+          # Priority class for master nodes
+          priorityClassName: elasticsearch-master
+          
+          # Security context
+          securityContext:
+            fsGroup: 1000
+            runAsUser: 1000
+            runAsNonRoot: true
+          
+          # Affinity and anti-affinity
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      elasticsearch.k8s.elastic.co/cluster-name: graphmemory-elasticsearch
+                  topologyKey: kubernetes.io/hostname
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node.kubernetes.io/instance-type
+                        operator: In
+                        values: ["c5.large", "c5.xlarge", "m5.large", "m5.xlarge"]
+          
+          # Tolerations for dedicated nodes
+          tolerations:
+            - key: "elasticsearch"
+              operator: "Equal"
+              value: "master"
+              effect: "NoSchedule"
+          
+          # Init containers for system tuning
+          initContainers:
+            - name: sysctl
+              securityContext:
+                privileged: true
+                runAsUser: 0
+              image: registry.k8s.io/busybox:1.35
+              command: ['sh', '-c']
+              args:
+                - |
+                  sysctl -w vm.max_map_count=262144
+                  sysctl -w fs.file-max=65536
+                  ulimit -n 65536
+                  ulimit -u 4096
+          
+          containers:
+            - name: elasticsearch
+              # Resource limits for master nodes
+              resources:
+                requests:
+                  memory: "2Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "4Gi"
+                  cpu: "2000m"
+              
+              # Environment variables
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms2g -Xmx2g -XX:+UseG1GC -XX:G1HeapRegionSize=4m -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap"
+                - name: READINESS_PROBE_TIMEOUT
+                  value: "10"
+              
+              # Health checks
+              readinessProbe:
+                exec:
+                  command:
+                    - bash
+                    - -c
+                    - /mnt/elastic-internal/scripts/readiness-probe-script.sh
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 12
+                successThreshold: 1
+                timeoutSeconds: 12
+              
+              # Volume mounts
+              volumeMounts:
+                - name: elasticsearch-data
+                  mountPath: /usr/share/elasticsearch/data
+      
+      # Volume claim template for master nodes
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 50Gi
+            storageClassName: gp3-fast
+    
+    # Data nodes for indexing and searching
+    - name: data
+      count: 3
+      config:
+        # Data node configuration
+        node.roles: ["data", "ingest"]
+        node.attr.data: "hot"
+        
+        # Performance tuning for data nodes
+        indices.query.bool.max_clause_count: 10000
+        search.max_buckets: 100000
+        action.auto_create_index: "+otel-*,+logstash-*,+graphmemory-*,-*"
+        
+        # Indexing performance
+        index.number_of_shards: 1
+        index.number_of_replicas: 1
+        index.refresh_interval: "30s"
+        index.translog.durability: "async"
+        index.translog.sync_interval: "5s"
+        
+        # Search performance
+        search.default_search_timeout: "60s"
+        search.max_open_scroll_context: 1000
+        
+        # Caching
+        indices.queries.cache.size: "20%"
+        indices.fielddata.cache.size: "40%"
+        
+      podTemplate:
+        metadata:
+          labels:
+            node-type: data
+        spec:
+          priorityClassName: elasticsearch-data
+          
+          securityContext:
+            fsGroup: 1000
+            runAsUser: 1000
+            runAsNonRoot: true
+          
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchLabels:
+                        node-type: data
+                    topologyKey: kubernetes.io/hostname
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node.kubernetes.io/instance-type
+                        operator: In
+                        values: ["r5.large", "r5.xlarge", "r5.2xlarge", "i3.large", "i3.xlarge"]
+          
+          tolerations:
+            - key: "elasticsearch"
+              operator: "Equal"
+              value: "data"
+              effect: "NoSchedule"
+          
+          initContainers:
+            - name: sysctl
+              securityContext:
+                privileged: true
+                runAsUser: 0
+              image: registry.k8s.io/busybox:1.35
+              command: ['sh', '-c']
+              args:
+                - |
+                  sysctl -w vm.max_map_count=262144
+                  sysctl -w vm.swappiness=1
+                  sysctl -w fs.file-max=131072
+                  ulimit -n 131072
+                  ulimit -u 8192
+          
+          containers:
+            - name: elasticsearch
+              resources:
+                requests:
+                  memory: "8Gi"
+                  cpu: "2000m"
+                limits:
+                  memory: "16Gi"
+                  cpu: "4000m"
+              
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms8g -Xmx8g -XX:+UseG1GC -XX:G1HeapRegionSize=16m -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:+UseStringDeduplication"
+                - name: READINESS_PROBE_TIMEOUT
+                  value: "10"
+      
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 500Gi
+            storageClassName: gp3-high-iops
+    
+    # Warm data nodes for older logs
+    - name: warm
+      count: 2
+      config:
+        node.roles: ["data_warm", "data_content"]
+        node.attr.data: "warm"
+        
+        # Warm node specific settings
+        index.codec: "best_compression"
+        index.merge.policy.max_merged_segment: "5gb"
+        index.merge.scheduler.max_thread_count: 1
+        
+      podTemplate:
+        metadata:
+          labels:
+            node-type: warm
+        spec:
+          priorityClassName: elasticsearch-warm
+          
+          securityContext:
+            fsGroup: 1000
+            runAsUser: 1000
+            runAsNonRoot: true
+          
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchLabels:
+                        node-type: warm
+                    topologyKey: kubernetes.io/hostname
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node.kubernetes.io/instance-type
+                        operator: In
+                        values: ["d2.xlarge", "d2.2xlarge", "h1.2xlarge", "h1.4xlarge"]
+          
+          tolerations:
+            - key: "elasticsearch"
+              operator: "Equal"
+              value: "warm"
+              effect: "NoSchedule"
+          
+          initContainers:
+            - name: sysctl
+              securityContext:
+                privileged: true
+                runAsUser: 0
+              image: registry.k8s.io/busybox:1.35
+              command: ['sh', '-c']
+              args:
+                - |
+                  sysctl -w vm.max_map_count=262144
+                  sysctl -w vm.swappiness=1
+          
+          containers:
+            - name: elasticsearch
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "1000m"
+                limits:
+                  memory: "8Gi"
+                  cpu: "2000m"
+              
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms4g -Xmx4g -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap"
+      
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Ti
+            storageClassName: gp3-standard
+  
+  # Pod disruption budget
+  podDisruptionBudget:
+    spec:
+      minAvailable: 2
+      selector:
+        matchLabels:
+          elasticsearch.k8s.elastic.co/cluster-name: graphmemory-elasticsearch
+
+---
+# Priority Classes for Elasticsearch nodes
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: elasticsearch-master
+  labels:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/component: priority-class
+value: 1000
+globalDefault: false
+description: "Priority class for Elasticsearch master nodes"
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: elasticsearch-data
+  labels:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/component: priority-class
+value: 900
+globalDefault: false
+description: "Priority class for Elasticsearch data nodes"
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: elasticsearch-warm
+  labels:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/component: priority-class
+value: 800
+globalDefault: false
+description: "Priority class for Elasticsearch warm nodes"
+
+---
+# Index Lifecycle Management Policy
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-ilm-policies
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/component: configuration
+data:
+  graphmemory-logs-policy.json: |
+    {
+      "policy": {
+        "phases": {
+          "hot": {
+            "min_age": "0ms",
+            "actions": {
+              "rollover": {
+                "max_size": "10gb",
+                "max_age": "1d",
+                "max_docs": 1000000
+              },
+              "set_priority": {
+                "priority": 100
+              }
+            }
+          },
+          "warm": {
+            "min_age": "7d",
+            "actions": {
+              "set_priority": {
+                "priority": 50
+              },
+              "allocate": {
+                "number_of_replicas": 1,
+                "include": {
+                  "data": "warm"
+                },
+                "exclude": {
+                  "data": "hot"
+                }
+              },
+              "forcemerge": {
+                "max_num_segments": 1
+              }
+            }
+          },
+          "cold": {
+            "min_age": "30d",
+            "actions": {
+              "set_priority": {
+                "priority": 0
+              },
+              "allocate": {
+                "number_of_replicas": 0,
+                "include": {
+                  "data": "cold"
+                }
+              }
+            }
+          },
+          "delete": {
+            "min_age": "90d",
+            "actions": {
+              "delete": {}
+            }
+          }
+        }
+      }
+    }
+  
+  graphmemory-metrics-policy.json: |
+    {
+      "policy": {
+        "phases": {
+          "hot": {
+            "min_age": "0ms",
+            "actions": {
+              "rollover": {
+                "max_size": "5gb",
+                "max_age": "1d",
+                "max_docs": 500000
+              },
+              "set_priority": {
+                "priority": 100
+              }
+            }
+          },
+          "warm": {
+            "min_age": "3d",
+            "actions": {
+              "set_priority": {
+                "priority": 50
+              },
+              "allocate": {
+                "number_of_replicas": 1,
+                "include": {
+                  "data": "warm"
+                }
+              },
+              "forcemerge": {
+                "max_num_segments": 1
+              }
+            }
+          },
+          "cold": {
+            "min_age": "14d",
+            "actions": {
+              "set_priority": {
+                "priority": 0
+              },
+              "allocate": {
+                "number_of_replicas": 0
+              }
+            }
+          },
+          "delete": {
+            "min_age": "30d",
+            "actions": {
+              "delete": {}
+            }
+          }
+        }
+      }
+    }
+
+---
+# Index Templates for GraphMemory logs
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-index-templates
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/component: configuration
+data:
+  graphmemory-logs-template.json: |
+    {
+      "index_patterns": ["graphmemory-logs-*"],
+      "template": {
+        "settings": {
+          "number_of_shards": 1,
+          "number_of_replicas": 1,
+          "index.lifecycle.name": "graphmemory-logs-policy",
+          "index.lifecycle.rollover_alias": "graphmemory-logs",
+          "index.refresh_interval": "30s",
+          "index.translog.durability": "async",
+          "index.translog.sync_interval": "5s",
+          "index.mapping.total_fields.limit": 2000,
+          "index.max_result_window": 100000,
+          "analysis": {
+            "analyzer": {
+              "graphmemory_analyzer": {
+                "type": "custom",
+                "tokenizer": "standard",
+                "filter": ["lowercase", "stop", "snowball"]
+              }
+            }
+          }
+        },
+        "mappings": {
+          "properties": {
+            "@timestamp": {
+              "type": "date",
+              "format": "strict_date_optional_time||epoch_millis"
+            },
+            "log.level": {
+              "type": "keyword"
+            },
+            "service.name": {
+              "type": "keyword"
+            },
+            "service.version": {
+              "type": "keyword"
+            },
+            "kubernetes.namespace": {
+              "type": "keyword"
+            },
+            "kubernetes.pod.name": {
+              "type": "keyword"
+            },
+            "kubernetes.container.name": {
+              "type": "keyword"
+            },
+            "trace.id": {
+              "type": "keyword"
+            },
+            "span.id": {
+              "type": "keyword"
+            },
+            "message": {
+              "type": "text",
+              "analyzer": "graphmemory_analyzer",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "error.message": {
+              "type": "text",
+              "analyzer": "graphmemory_analyzer"
+            },
+            "error.stack_trace": {
+              "type": "text",
+              "index": false
+            },
+            "http.method": {
+              "type": "keyword"
+            },
+            "http.status_code": {
+              "type": "long"
+            },
+            "http.url": {
+              "type": "keyword"
+            },
+            "user.id": {
+              "type": "keyword"
+            },
+            "session.id": {
+              "type": "keyword"
+            },
+            "graphmemory.operation": {
+              "type": "keyword"
+            },
+            "graphmemory.memory.type": {
+              "type": "keyword"
+            },
+            "graphmemory.performance.duration_ms": {
+              "type": "long"
+            }
+          }
+        }
+      },
+      "priority": 500,
+      "composed_of": [],
+      "version": 1,
+      "_meta": {
+        "description": "Template for GraphMemory-IDE application logs"
+      }
+    }
+  
+  otel-logs-template.json: |
+    {
+      "index_patterns": ["otel-logs-*"],
+      "template": {
+        "settings": {
+          "number_of_shards": 1,
+          "number_of_replicas": 1,
+          "index.lifecycle.name": "graphmemory-logs-policy",
+          "index.refresh_interval": "30s",
+          "index.mapping.total_fields.limit": 3000
+        },
+        "mappings": {
+          "properties": {
+            "@timestamp": {
+              "type": "date"
+            },
+            "body": {
+              "type": "text",
+              "analyzer": "standard"
+            },
+            "severity_text": {
+              "type": "keyword"
+            },
+            "severity_number": {
+              "type": "long"
+            },
+            "trace_id": {
+              "type": "keyword"
+            },
+            "span_id": {
+              "type": "keyword"
+            },
+            "attributes": {
+              "type": "object",
+              "dynamic": true
+            },
+            "resources": {
+              "type": "object",
+              "dynamic": true
+            }
+          }
+        }
+      },
+      "priority": 400,
+      "version": 1,
+      "_meta": {
+        "description": "Template for OpenTelemetry logs"
+      }
+    } 

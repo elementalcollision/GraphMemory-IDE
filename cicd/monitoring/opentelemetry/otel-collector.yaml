@@ -1,0 +1,656 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: graphmemory-otel-collector
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: graphmemory
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/component: observability
+spec:
+  mode: deployment
+  replicas: 2
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.92.0
+  
+  # Resource configuration for production workloads
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  
+  # Auto-scaling configuration
+  autoscaler:
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilization: 70
+    targetMemoryUtilization: 80
+  
+  # Pod configuration
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8888"
+    prometheus.io/path: "/metrics"
+    
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values: ["graphmemory"]
+            topologyKey: kubernetes.io/hostname
+  
+  # Environment variables for dynamic configuration
+  env:
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: JAEGER_ENDPOINT
+      value: "jaeger-collector.monitoring-production.svc.cluster.local:14250"
+    - name: PROMETHEUS_REMOTE_WRITE_ENDPOINT
+      value: "http://prometheus-k8s.monitoring-production.svc.cluster.local:9090/api/v1/write"
+  
+  # Comprehensive OpenTelemetry configuration
+  config: |
+    # Extensions for health checking and performance profiling
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+      pprof:
+        endpoint: 0.0.0.0:1777
+      zpages:
+        endpoint: 0.0.0.0:55679
+      memory_ballast:
+        size_mib: 512
+      
+    # Receivers for collecting telemetry data
+    receivers:
+      # OTLP receiver for direct instrumentation
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+            max_recv_msg_size: 67108864  # 64MB
+          http:
+            endpoint: 0.0.0.0:4318
+            cors:
+              allowed_origins:
+                - "https://grafana.graphmemory.dev"
+                - "https://graphmemory.dev"
+      
+      # Jaeger receiver for legacy compatibility
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:14250
+          thrift_http:
+            endpoint: 0.0.0.0:14268
+          thrift_compact:
+            endpoint: 0.0.0.0:6831
+          thrift_binary:
+            endpoint: 0.0.0.0:6832
+      
+      # Zipkin receiver
+      zipkin:
+        endpoint: 0.0.0.0:9411
+      
+      # Prometheus receiver for metrics
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'otel-collector'
+              scrape_interval: 30s
+              static_configs:
+                - targets: ['0.0.0.0:8888']
+            - job_name: 'graphmemory-fastapi'
+              scrape_interval: 15s
+              kubernetes_sd_configs:
+                - role: endpoints
+                  namespaces:
+                    names:
+                      - graphmemory-production
+                      - graphmemory-staging
+              relabel_configs:
+                - source_labels: [__meta_kubernetes_service_name]
+                  action: keep
+                  regex: fastapi-backend
+                - source_labels: [__meta_kubernetes_endpoint_port_name]
+                  action: keep
+                  regex: metrics
+      
+      # Kubernetes events receiver
+      k8sevents:
+        auth_type: "serviceAccount"
+        namespaces: [graphmemory-production, graphmemory-staging, monitoring-production]
+      
+      # Host metrics for infrastructure monitoring
+      hostmetrics:
+        collection_interval: 30s
+        scrapers:
+          cpu:
+            metrics:
+              system.cpu.utilization:
+                enabled: true
+          memory:
+            metrics:
+              system.memory.utilization:
+                enabled: true
+          disk:
+            metrics:
+              system.disk.io.time:
+                enabled: true
+          filesystem:
+            metrics:
+              system.filesystem.utilization:
+                enabled: true
+          network:
+            metrics:
+              system.network.dropped:
+                enabled: true
+          load:
+          processes:
+      
+      # File log receiver for application logs
+      filelog:
+        include:
+          - /var/log/pods/graphmemory-*/*/*.log
+        exclude:
+          - /var/log/pods/*/sidecar/*.log
+        start_at: end
+        include_file_path: true
+        include_file_name: false
+        operators:
+          - type: json_parser
+            id: parser-docker
+            output: extract_metadata_from_filepath
+            timestamp:
+              parse_from: attributes.time
+              layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+          - type: regex_parser
+            id: extract_metadata_from_filepath
+            regex: '^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]{36})\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$'
+            parse_from: attributes["log.file.path"]
+          - type: move
+            from: attributes.stream
+            to: attributes["log.iostream"]
+          - type: move
+            from: attributes.log
+            to: body
+    
+    # Processors for data transformation and enrichment
+    processors:
+      # Memory limiter to prevent OOM
+      memory_limiter:
+        limit_mib: 3584  # 3.5GB limit
+        spike_limit_mib: 512
+        check_interval: 5s
+      
+      # Batch processor for efficient data handling
+      batch:
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        timeout: 10s
+      
+      # Resource processor to add environment metadata
+      resource:
+        attributes:
+          - key: service.name
+            from_attribute: k8s.pod.name
+            action: upsert
+          - key: service.version
+            value: "1.0.0"
+            action: upsert
+          - key: deployment.environment
+            value: "production"
+            action: upsert
+          - key: k8s.cluster.name
+            value: "graphmemory-production"
+            action: upsert
+      
+      # K8s attributes processor for Kubernetes metadata enrichment
+      k8sattributes:
+        auth_type: "serviceAccount"
+        passthrough: false
+        filter:
+          node_from_env_var: KUBE_NODE_NAME
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.deployment.name
+            - k8s.statefulset.name
+            - k8s.daemonset.name
+            - k8s.cronjob.name
+            - k8s.job.name
+            - k8s.node.name
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.pod.start_time
+          labels:
+            - tag_name: app.kubernetes.io/name
+              key: k8s.app.name
+              from: pod
+            - tag_name: app.kubernetes.io/version
+              key: k8s.app.version
+              from: pod
+            - tag_name: app.kubernetes.io/component
+              key: k8s.app.component
+              from: pod
+        pod_association:
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.ip
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.uid
+          - sources:
+              - from: connection
+      
+      # Attributes processor for custom attribute manipulation
+      attributes:
+        actions:
+          # Add GraphMemory-IDE specific attributes
+          - key: graphmemory.component
+            from_attribute: k8s.app.component
+            action: upsert
+          - key: graphmemory.namespace
+            from_attribute: k8s.namespace.name
+            action: upsert
+          # Remove sensitive information
+          - key: k8s.pod.uid
+            action: delete
+          # Hash email addresses for privacy
+          - key: user.email
+            action: hash
+      
+      # Probabilistic sampler for trace sampling
+      probabilistic_sampler:
+        hash_seed: 22
+        sampling_percentage: 20  # Sample 20% of traces
+      
+      # Tail sampling for intelligent trace sampling
+      tail_sampling:
+        decision_wait: 30s
+        num_traces: 50000
+        expected_new_traces_per_sec: 10
+        policies:
+          # Always sample error traces
+          - name: errors-policy
+            type: status_code
+            status_code:
+              status_codes: [ERROR]
+          # Sample slow traces
+          - name: latency-policy
+            type: latency
+            latency:
+              threshold_ms: 1000
+          # Sample GraphMemory specific services at higher rate
+          - name: graphmemory-service-policy
+            type: string_attribute
+            string_attribute:
+              key: service.name
+              values: [fastapi-backend, streamlit-dashboard]
+              enabledRegexMatching: true
+              invert_match: false
+            probabilistic_sampler:
+              sampling_percentage: 50
+          # Default sampling for other traces
+          - name: default-policy
+            type: probabilistic
+            probabilistic:
+              sampling_percentage: 5
+      
+      # Transform processor for metrics transformation
+      transform:
+        metric_statements:
+          - context: metric
+            statements:
+              # Add environment labels to all metrics
+              - set(attributes["environment"], "production")
+              - set(attributes["cluster"], "graphmemory-production")
+          - context: datapoint
+            statements:
+              # Convert memory metrics to MB
+              - set(metric.gauge.data_points[0].value, metric.gauge.data_points[0].value / 1024 / 1024) where metric.name == "system.memory.usage"
+      
+      # Filter processor to reduce noise
+      filter:
+        error_mode: ignore
+        metrics:
+          metric:
+            # Filter out noisy metrics
+            - 'name == "up" and resource.attributes["job"] != "fastapi-backend"'
+            - 'name == "scrape_duration_seconds"'
+            - 'name == "scrape_samples_scraped"'
+        traces:
+          span:
+            # Filter out health check traces
+            - 'attributes["http.route"] == "/health"'
+            - 'attributes["http.route"] == "/ready"'
+            - 'attributes["http.route"] == "/metrics"'
+        logs:
+          log_record:
+            # Filter out debug logs in production
+            - 'severity_text == "DEBUG"'
+            - 'body contains "health check"'
+    
+    # Exporters for sending data to various backends
+    exporters:
+      # Prometheus exporter for metrics
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+        namespace: graphmemory
+        const_labels:
+          cluster: graphmemory-production
+          environment: production
+        send_timestamps: true
+        metric_expiration: 180m
+        enable_open_metrics: true
+      
+      # Prometheus remote write exporter
+      prometheusremotewrite:
+        endpoint: ${env:PROMETHEUS_REMOTE_WRITE_ENDPOINT}
+        timeout: 10s
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+        queue:
+          enabled: true
+          num_consumers: 10
+          queue_size: 5000
+        headers:
+          X-Prometheus-Remote-Write-Version: "0.1.0"
+          X-GraphMemory-Source: "otel-collector"
+      
+      # OTLP exporter for traces to Jaeger
+      otlp/jaeger:
+        endpoint: ${env:JAEGER_ENDPOINT}
+        tls:
+          insecure: true
+        timeout: 30s
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 120s
+        queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 100
+      
+      # Elasticsearch exporter for logs
+      elasticsearch:
+        endpoints: ["https://elasticsearch.monitoring-production.svc.cluster.local:9200"]
+        index: "otel-logs-{now/d}"
+        pipeline: "otel-logs-pipeline"
+        timeout: 90s
+        retry:
+          enabled: true
+          max_requests: 5
+          initial_interval: 100ms
+          max_interval: 1s
+        mapping:
+          mode: "ecs"
+        auth:
+          authenticator: "basic"
+          basic:
+            username: "elastic"
+            password: "${env:ELASTICSEARCH_PASSWORD}"
+        tls:
+          insecure_skip_verify: false
+          ca_file: "/etc/ssl/certs/ca-certificates.crt"
+      
+      # Kafka exporter for high-volume log streaming
+      kafka:
+        brokers: ["kafka.monitoring-production.svc.cluster.local:9092"]
+        topic: "otel-logs"
+        protocol_version: "2.8.0"
+        producer:
+          max_message_bytes: 1000000
+          compression: "gzip"
+          flush_frequency: 10ms
+          batch_size: 100
+        metadata:
+          full: false
+          retry:
+            max: 3
+            backoff: 250ms
+        encoding: "otlp_json"
+      
+      # Debug exporter for troubleshooting
+      debug:
+        verbosity: basic
+        sampling_initial: 5
+        sampling_thereafter: 200
+    
+    # Service configuration defining the telemetry pipelines
+    service:
+      extensions: [health_check, pprof, zpages, memory_ballast]
+      
+      pipelines:
+        # Traces pipeline
+        traces:
+          receivers: [otlp, jaeger, zipkin]
+          processors: [memory_limiter, k8sattributes, resource, attributes, tail_sampling, batch]
+          exporters: [otlp/jaeger, debug]
+        
+        # Metrics pipeline for Prometheus
+        metrics:
+          receivers: [otlp, prometheus, hostmetrics]
+          processors: [memory_limiter, k8sattributes, resource, attributes, transform, filter, batch]
+          exporters: [prometheus, prometheusremotewrite]
+        
+        # Logs pipeline for ELK stack
+        logs:
+          receivers: [otlp, filelog, k8sevents]
+          processors: [memory_limiter, k8sattributes, resource, attributes, filter, batch]
+          exporters: [elasticsearch, kafka, debug]
+      
+      # Telemetry configuration for the collector itself
+      telemetry:
+        logs:
+          level: "info"
+          development: false
+          sampling:
+            initial: 5
+            thereafter: 200
+        metrics:
+          level: detailed
+          address: 0.0.0.0:8888
+          
+  # Volume mounts for log collection
+  volumeMounts:
+    - name: varlogpods
+      mountPath: /var/log/pods
+      readOnly: true
+    - name: varlibdockercontainers
+      mountPath: /var/lib/docker/containers
+      readOnly: true
+  
+  volumes:
+    - name: varlogpods
+      hostPath:
+        path: /var/log/pods
+    - name: varlibdockercontainers
+      hostPath:
+        path: /var/lib/docker/containers
+
+---
+# ServiceMonitor for Prometheus to scrape OpenTelemetry Collector metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: graphmemory-otel-collector
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: graphmemory
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-collector
+      app.kubernetes.io/instance: graphmemory.graphmemory-otel-collector
+  endpoints:
+    - port: monitoring
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: true
+    - port: promexporter
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: true
+
+---
+# Horizontal Pod Autoscaler for OpenTelemetry Collector
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: graphmemory-otel-collector-hpa
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: graphmemory
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: graphmemory-otel-collector-collector
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+
+---
+# Network Policy for OpenTelemetry Collector
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: graphmemory-otel-collector
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: graphmemory
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-collector
+      app.kubernetes.io/instance: graphmemory.graphmemory-otel-collector
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from GraphMemory applications
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: graphmemory-production
+        - namespaceSelector:
+            matchLabels:
+              name: graphmemory-staging
+      ports:
+        - protocol: TCP
+          port: 4317  # OTLP gRPC
+        - protocol: TCP
+          port: 4318  # OTLP HTTP
+        - protocol: TCP
+          port: 14250 # Jaeger gRPC
+        - protocol: TCP
+          port: 14268 # Jaeger HTTP
+        - protocol: TCP
+          port: 9411  # Zipkin
+    # Allow Prometheus scraping
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring-production
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 8888  # Collector metrics
+        - protocol: TCP
+          port: 8889  # Prometheus exporter
+  egress:
+    # Allow connections to Jaeger
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring-production
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: jaeger
+      ports:
+        - protocol: TCP
+          port: 14250
+    # Allow connections to Elasticsearch
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring-production
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: elasticsearch
+      ports:
+        - protocol: TCP
+          port: 9200
+    # Allow connections to Prometheus
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring-production
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9090
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow HTTPS for external services
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443 

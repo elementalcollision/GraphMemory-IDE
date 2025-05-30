@@ -1,0 +1,113 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: graphmemory-staging
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: graphmemory
+    app.kubernetes.io/environment: staging
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    notifications.argoproj.io/subscribe.on-deployed.slack: staging-deployments
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: staging-alerts
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: graphmemory
+  
+  source:
+    repoURL: https://github.com/elementalcollision/GraphMemory-IDE.git
+    targetRevision: develop
+    path: cicd/argocd/environments/staging
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: graphmemory-staging
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+        
+  revisionHistoryLimit: 10
+  
+  info:
+    - name: Environment
+      value: Staging
+    - name: Team
+      value: Platform Engineering
+    - name: Contact
+      value: platform@graphmemory.dev
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: graphmemory-production
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: graphmemory
+    app.kubernetes.io/environment: production
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    notifications.argoproj.io/subscribe.on-deployed.slack: production-deployments
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: production-alerts
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: production-alerts
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: graphmemory
+  
+  source:
+    repoURL: https://github.com/elementalcollision/GraphMemory-IDE.git
+    targetRevision: main
+    path: cicd/argocd/environments/production
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: graphmemory-production
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false  # Manual approval for production
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+        
+  revisionHistoryLimit: 20
+  
+  info:
+    - name: Environment
+      value: Production
+    - name: Team
+      value: Platform Engineering
+    - name: Contact
+      value: platform@graphmemory.dev
+    - name: Runbook
+      value: https://docs.graphmemory.dev/runbooks/production 

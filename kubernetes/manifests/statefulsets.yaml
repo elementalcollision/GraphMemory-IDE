@@ -1,0 +1,513 @@
+# GraphMemory-IDE StatefulSets for Persistent Database Services
+# PostgreSQL and Redis with production-grade persistent storage
+# Based on 2025 Kubernetes StatefulSet best practices
+
+---
+# StorageClass for high-performance SSD storage
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: graphmemory-fast-ssd
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: storage
+  annotations:
+    storageclass.kubernetes.io/description: "High-performance SSD storage for GraphMemory-IDE databases"
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: kubernetes.io/gce-pd  # Adjust for your cloud provider
+parameters:
+  type: pd-ssd                     # GCP: pd-ssd, AWS: gp3, Azure: Premium_LRS
+  replication-type: regional-pd    # High availability
+  zones: us-central1-a,us-central1-b,us-central1-c
+reclaimPolicy: Retain             # Preserve data on deletion
+allowVolumeExpansion: true        # Allow storage expansion
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# StorageClass for standard persistent storage
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: graphmemory-standard
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: storage
+  annotations:
+    storageclass.kubernetes.io/description: "Standard persistent storage for GraphMemory-IDE"
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-standard               # Standard disk
+  replication-type: regional-pd
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# PostgreSQL StatefulSet for primary analytics database
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: graphmemory-postgresql
+    app.kubernetes.io/version: "16.1"
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/managed-by: helm
+    tier: database
+spec:
+  serviceName: postgresql-headless
+  replicas: 1  # Single primary for analytics workload
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: graphmemory-postgresql
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/instance: graphmemory-postgresql
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: graphmemory-ide
+        tier: database
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: graphmemory-service-account
+      securityContext:
+        runAsUser: 999        # postgres user
+        runAsGroup: 999       # postgres group
+        fsGroup: 999          # File system group
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      
+      # Pod anti-affinity for high availability (when scaled)
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: postgresql
+              topologyKey: kubernetes.io/hostname
+      
+      containers:
+      - name: postgresql
+        image: postgres:16.1-alpine
+        imagePullPolicy: IfNotPresent
+        
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # PostgreSQL needs write access
+          runAsNonRoot: true
+          runAsUser: 999
+          capabilities:
+            drop: ["ALL"]
+        
+        # Environment variables
+        env:
+        - name: POSTGRES_DB
+          value: "graphmemory"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-secret
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-secret
+              key: password
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        - name: POSTGRES_INITDB_ARGS
+          value: "--auth-host=md5 --auth-local=trust"
+        
+        # Resource limits and requests
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+        
+        # Health checks
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        # Startup probe for slow initialization
+        startupProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30  # 5 minutes max startup time
+        
+        # Ports
+        ports:
+        - name: postgresql
+          containerPort: 5432
+          protocol: TCP
+        
+        # Volume mounts
+        volumeMounts:
+        - name: postgresql-data
+          mountPath: /var/lib/postgresql/data
+        - name: postgresql-config
+          mountPath: /etc/postgresql/postgresql.conf
+          subPath: postgresql.conf
+          readOnly: true
+        - name: postgresql-init
+          mountPath: /docker-entrypoint-initdb.d
+          readOnly: true
+      
+      # PostgreSQL Exporter for Prometheus monitoring
+      - name: postgres-exporter
+        image: prometheuscommunity/postgres-exporter:v0.15.0
+        imagePullPolicy: IfNotPresent
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534  # nobody
+          capabilities:
+            drop: ["ALL"]
+        
+        env:
+        - name: DATA_SOURCE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-secret
+              key: exporter-dsn
+        
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "100m"
+            memory: "128Mi"
+        
+        ports:
+        - name: metrics
+          containerPort: 9187
+          protocol: TCP
+        
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 9187
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 9187
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      
+      # Volumes
+      volumes:
+      - name: postgresql-config
+        configMap:
+          name: postgresql-config
+      - name: postgresql-init
+        configMap:
+          name: postgresql-init-scripts
+  
+  # VolumeClaimTemplate for persistent storage
+  volumeClaimTemplates:
+  - metadata:
+      name: postgresql-data
+      labels:
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/component: database
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: graphmemory-fast-ssd
+      resources:
+        requests:
+          storage: 20Gi
+
+---
+# Redis StatefulSet for caching and session storage
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: graphmemory-redis
+    app.kubernetes.io/version: "7.2"
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/managed-by: helm
+    tier: cache
+spec:
+  serviceName: redis-headless
+  replicas: 1  # Single instance for analytics caching
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/instance: graphmemory-redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/instance: graphmemory-redis
+        app.kubernetes.io/component: cache
+        app.kubernetes.io/part-of: graphmemory-ide
+        tier: cache
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9121"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: graphmemory-service-account
+      securityContext:
+        runAsUser: 999        # redis user
+        runAsGroup: 999       # redis group
+        fsGroup: 999
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      
+      # Pod anti-affinity for availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: redis
+              topologyKey: kubernetes.io/hostname
+      
+      containers:
+      - name: redis
+        image: redis:7.2-alpine
+        imagePullPolicy: IfNotPresent
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # Redis needs write access
+          runAsNonRoot: true
+          runAsUser: 999
+          capabilities:
+            drop: ["ALL"]
+        
+        # Command with custom configuration
+        command:
+        - redis-server
+        - /etc/redis/redis.conf
+        
+        # Environment variables
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
+        
+        # Resource limits
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+        
+        # Health checks
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        startupProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 20
+        
+        # Ports
+        ports:
+        - name: redis
+          containerPort: 6379
+          protocol: TCP
+        
+        # Volume mounts
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config
+          mountPath: /etc/redis/redis.conf
+          subPath: redis.conf
+          readOnly: true
+      
+      # Redis Exporter for Prometheus monitoring
+      - name: redis-exporter
+        image: oliver006/redis_exporter:v1.56.0
+        imagePullPolicy: IfNotPresent
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          capabilities:
+            drop: ["ALL"]
+        
+        env:
+        - name: REDIS_ADDR
+          value: "redis://localhost:6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
+        
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "50m"
+            memory: "64Mi"
+        
+        ports:
+        - name: metrics
+          containerPort: 9121
+          protocol: TCP
+        
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 9121
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 9121
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      
+      volumes:
+      - name: redis-config
+        configMap:
+          name: redis-config
+  
+  # VolumeClaimTemplate for Redis persistence
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+      labels:
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/component: cache
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: graphmemory-fast-ssd
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+# Headless Service for PostgreSQL StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-headless
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+  - name: postgresql
+    port: 5432
+    targetPort: postgresql
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: graphmemory-postgresql
+
+---
+# Headless Service for Redis StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-headless
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: graphmemory-redis 

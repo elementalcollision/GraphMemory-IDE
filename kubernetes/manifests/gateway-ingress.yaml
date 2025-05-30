@@ -1,0 +1,509 @@
+# GraphMemory-IDE Gateway API and Ingress Configuration
+# Modern Gateway API with NGINX ingress controller for production routing
+# Based on 2025 Gateway API best practices and security
+
+---
+# GatewayClass for NGINX Gateway Fabric
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: nginx-gateway-class
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: gateway
+spec:
+  controllerName: gateway.nginx.org/nginx-gateway-controller
+  description: "NGINX Gateway Fabric controller for GraphMemory-IDE production"
+
+---
+# Production Gateway for GraphMemory-IDE
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: graphmemory-gateway
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: gateway
+    app.kubernetes.io/instance: graphmemory-gateway
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/managed-by: helm
+  annotations:
+    gateway.nginx.org/load-balancer-class: "nginx"
+    gateway.nginx.org/rate-limiting: "enabled"
+spec:
+  gatewayClassName: nginx-gateway-class
+  
+  # Infrastructure configuration
+  infrastructure:
+    labels:
+      environment: production
+      app: graphmemory-ide
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"  # AWS
+      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:..."  # TLS cert ARN
+  
+  listeners:
+  # HTTP listener for redirects
+  - name: http
+    hostname: "graphmemory.example.com"
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            shared-gateway-access: "true"
+  
+  # HTTPS listener for secure traffic
+  - name: https
+    hostname: "graphmemory.example.com"
+    port: 443
+    protocol: HTTPS
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        group: ""
+        name: graphmemory-tls-cert
+        namespace: graphmemory-prod
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            shared-gateway-access: "true"
+  
+  # API-specific HTTPS listener
+  - name: api-https
+    hostname: "api.graphmemory.example.com"
+    port: 443
+    protocol: HTTPS
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        group: ""
+        name: graphmemory-api-tls-cert
+        namespace: graphmemory-prod
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            shared-gateway-access: "true"
+
+---
+# HTTPRoute for HTTP to HTTPS redirect
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-redirect
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: httproute
+    app.kubernetes.io/component: redirect
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  parentRefs:
+  - name: graphmemory-gateway
+    sectionName: http
+  
+  hostnames:
+  - "graphmemory.example.com"
+  - "api.graphmemory.example.com"
+  
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    filters:
+    - type: RequestRedirect
+      requestRedirect:
+        scheme: https
+        statusCode: 301
+
+---
+# HTTPRoute for Streamlit Dashboard
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: dashboard-route
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: httproute
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/part-of: graphmemory-ide
+  annotations:
+    gateway.nginx.org/rate-limiting: |
+      rate: 100r/m
+      burst: 20
+      key: $remote_addr
+spec:
+  parentRefs:
+  - name: graphmemory-gateway
+    sectionName: https
+  
+  hostnames:
+  - "graphmemory.example.com"
+  
+  rules:
+  # Dashboard root and assets
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    - path:
+        type: PathPrefix
+        value: /_stcore
+    - path:
+        type: PathPrefix
+        value: /static
+    - path:
+        type: PathPrefix
+        value: /healthz
+    backendRefs:
+    - name: streamlit-service
+      port: 8501
+      weight: 100
+    filters:
+    - type: ResponseHeaderModifier
+      responseHeaderModifier:
+        add:
+        - name: X-Frame-Options
+          value: DENY
+        - name: X-Content-Type-Options
+          value: nosniff
+        - name: X-XSS-Protection
+          value: "1; mode=block"
+        - name: Strict-Transport-Security
+          value: "max-age=31536000; includeSubDomains"
+  
+  # WebSocket connections for Streamlit
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /_stcore/stream
+    backendRefs:
+    - name: streamlit-service
+      port: 8501
+    filters:
+    - type: ExtensionRef
+      extensionRef:
+        group: gateway.nginx.org
+        kind: NginxHTTPRoute
+        name: websocket-config
+
+---
+# HTTPRoute for FastAPI Backend
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api-route
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: httproute
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: graphmemory-ide
+  annotations:
+    gateway.nginx.org/rate-limiting: |
+      rate: 300r/m
+      burst: 50
+      key: $remote_addr
+spec:
+  parentRefs:
+  - name: graphmemory-gateway
+    sectionName: api-https
+  
+  hostnames:
+  - "api.graphmemory.example.com"
+  
+  rules:
+  # API endpoints
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api/v1
+    - path:
+        type: PathPrefix
+        value: /docs
+    - path:
+        type: PathPrefix
+        value: /redoc
+    - path:
+        type: PathPrefix
+        value: /health
+    - path:
+        type: PathPrefix
+        value: /metrics
+    backendRefs:
+    - name: fastapi-service
+      port: 8000
+      weight: 100
+    filters:
+    - type: ResponseHeaderModifier
+      responseHeaderModifier:
+        add:
+        - name: X-API-Version
+          value: "v1.0.0"
+        - name: X-Content-Type-Options
+          value: nosniff
+        - name: Strict-Transport-Security
+          value: "max-age=31536000; includeSubDomains"
+        - name: Access-Control-Allow-Origin
+          value: "https://graphmemory.example.com"
+        - name: Access-Control-Allow-Methods
+          value: "GET, POST, PUT, DELETE, OPTIONS"
+        - name: Access-Control-Allow-Headers
+          value: "Origin, Authorization, Content-Type, X-Requested-With"
+  
+  # Analytics endpoints with higher rate limits
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api/v1/analytics
+    backendRefs:
+    - name: analytics-service
+      port: 8080
+      weight: 100
+    filters:
+    - type: ResponseHeaderModifier
+      responseHeaderModifier:
+        add:
+        - name: Cache-Control
+          value: "public, max-age=300"  # 5-minute cache
+        - name: X-Analytics-Engine
+          value: "GraphMemory-IDE"
+
+---
+# NGINX-specific configuration for WebSocket support
+apiVersion: gateway.nginx.org/v1alpha1
+kind: NginxHTTPRoute
+metadata:
+  name: websocket-config
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: nginx-config
+    app.kubernetes.io/component: websocket
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  upstream:
+    proxySetHeaders:
+    - name: Connection
+      value: "upgrade"
+    - name: Upgrade
+      value: "$http_upgrade"
+    - name: Host
+      value: "$host"
+    - name: X-Real-IP
+      value: "$remote_addr"
+    - name: X-Forwarded-For
+      value: "$proxy_add_x_forwarded_for"
+    - name: X-Forwarded-Proto
+      value: "$scheme"
+  
+  proxyTimeout: 60s
+  proxyReadTimeout: 60s
+  proxySendTimeout: 60s
+
+---
+# TLS Certificate Secret (placeholder - replace with actual cert)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: graphmemory-tls-cert
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: tls-cert
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: graphmemory-ide
+type: kubernetes.io/tls
+data:
+  # Replace with actual base64-encoded certificate and key
+  tls.crt: LS0tLS1CRUdJTi... # Base64 encoded certificate
+  tls.key: LS0tLS1CRUdJTi... # Base64 encoded private key
+
+---
+# API TLS Certificate Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: graphmemory-api-tls-cert
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: tls-cert
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: graphmemory-ide
+type: kubernetes.io/tls
+data:
+  # Replace with actual base64-encoded certificate and key
+  tls.crt: LS0tLS1CRUdJTi... # Base64 encoded certificate
+  tls.key: LS0tLS1CRUdJTi... # Base64 encoded private key
+
+---
+# Alternative: Traditional Ingress (if Gateway API not available)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: graphmemory-ingress
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: ingress
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: graphmemory-ide
+  annotations:
+    # NGINX Ingress Controller annotations
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "20"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    
+    # CORS configuration
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://graphmemory.example.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Origin, Authorization, Content-Type, X-Requested-With"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options DENY;
+      add_header X-Content-Type-Options nosniff;
+      add_header X-XSS-Protection "1; mode=block";
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
+    
+    # WebSocket support
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/websocket-services: "streamlit-service"
+    
+    # Load balancing
+    nginx.ingress.kubernetes.io/load-balance: "ewma"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+    
+    # Monitoring
+    nginx.ingress.kubernetes.io/enable-access-log: "true"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "true"
+
+spec:
+  ingressClassName: nginx
+  
+  tls:
+  - hosts:
+    - graphmemory.example.com
+    - api.graphmemory.example.com
+    secretName: graphmemory-tls-cert
+  
+  rules:
+  # Main dashboard
+  - host: graphmemory.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: streamlit-service
+            port:
+              number: 8501
+  
+  # API endpoints
+  - host: api.graphmemory.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: fastapi-service
+            port:
+              number: 8000
+      - path: /analytics
+        pathType: Prefix
+        backend:
+          service:
+            name: analytics-service
+            port:
+              number: 8080
+
+---
+# Service Monitor for Prometheus metrics collection
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: graphmemory-ingress-metrics
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: servicemonitor
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx-ingress
+  endpoints:
+  - port: prometheus
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+    - ingress-nginx
+    - gateway-system
+
+---
+# Network Policy for ingress traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: graphmemory-ingress-policy
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: graphmemory-ide
+  policyTypes:
+  - Ingress
+  
+  ingress:
+  # Allow traffic from ingress controllers
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - namespaceSelector:
+        matchLabels:
+          name: gateway-system
+    ports:
+    - protocol: TCP
+      port: 8000  # FastAPI
+    - protocol: TCP
+      port: 8501  # Streamlit
+    - protocol: TCP
+      port: 8080  # Analytics
+  
+  # Allow internal service-to-service communication
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/part-of: graphmemory-ide
+    ports:
+    - protocol: TCP
+      port: 8000
+    - protocol: TCP
+      port: 8501
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 5432  # PostgreSQL
+    - protocol: TCP
+      port: 6379  # Redis 

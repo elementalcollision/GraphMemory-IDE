@@ -1,0 +1,650 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: graphmemory-kibana
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: kibana
+    app.kubernetes.io/instance: graphmemory
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/component: logging
+spec:
+  version: 8.12.0
+  count: 2
+  
+  # Elasticsearch reference
+  elasticsearchRef:
+    name: graphmemory-elasticsearch
+    namespace: monitoring-production
+  
+  # HTTP configuration with TLS
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: false
+        subjectAltNames:
+          - dns: kibana.monitoring-production.svc.cluster.local
+          - dns: graphmemory-kibana-kb-http.monitoring-production.svc.cluster.local
+          - dns: kibana.graphmemory.dev
+    service:
+      metadata:
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-type: nlb
+          external-dns.alpha.kubernetes.io/hostname: kibana.graphmemory.dev
+      spec:
+        type: LoadBalancer
+        loadBalancerClass: service.k8s.aws/nlb
+  
+  # Pod template with production configurations
+  podTemplate:
+    metadata:
+      labels:
+        app: kibana
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5601"
+        prometheus.io/path: "/api/status"
+    spec:
+      # Security context
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true
+      
+      # Affinity for high availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    kibana.k8s.elastic.co/name: graphmemory-kibana
+                topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node.kubernetes.io/instance-type
+                    operator: In
+                    values: ["m5.large", "m5.xlarge", "c5.large", "c5.xlarge"]
+      
+      # Resource specifications
+      containers:
+        - name: kibana
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+          
+          # Environment variables
+          env:
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=3584"
+            - name: KIBANA_SYSTEM_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: graphmemory-elasticsearch-es-elastic-user
+                  key: elastic
+          
+          # Health checks
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: 5601
+              scheme: HTTPS
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: 5601
+              scheme: HTTPS
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 3
+  
+  # Kibana configuration
+  config:
+    # Server configuration
+    server.name: "graphmemory-kibana"
+    server.host: "0.0.0.0"
+    server.port: 5601
+    server.publicBaseUrl: "https://kibana.graphmemory.dev"
+    server.maxPayload: 1048576
+    server.keepaliveTimeout: 120000
+    server.socketTimeout: 120000
+    
+    # Elasticsearch configuration
+    elasticsearch.hosts: ["https://graphmemory-elasticsearch-es-http.monitoring-production.svc.cluster.local:9200"]
+    elasticsearch.username: "elastic"
+    elasticsearch.ssl.verificationMode: "certificate"
+    elasticsearch.requestTimeout: 90000
+    elasticsearch.shardTimeout: 30000
+    
+    # Security configuration
+    xpack.security.enabled: true
+    xpack.security.encryptionKey: "${KIBANA_ENCRYPTION_KEY}"
+    xpack.security.session.idleTimeout: "8h"
+    xpack.security.session.lifespan: "24h"
+    
+    # Authentication providers
+    xpack.security.authc.providers:
+      basic.basic1:
+        order: 0
+        enabled: true
+      oidc.oidc1:
+        order: 1
+        realm: "oidc"
+        description: "GraphMemory OIDC"
+        icon: "https://graphmemory.dev/favicon.ico"
+    
+    # Space management
+    xpack.spaces.enabled: true
+    xpack.spaces.maxSpaces: 1000
+    
+    # Canvas and maps
+    xpack.canvas.enabled: true
+    xpack.maps.enabled: true
+    xpack.maps.showMapVisualizationTypes: true
+    
+    # Machine learning
+    xpack.ml.enabled: true
+    
+    # Alerting and actions
+    xpack.alerting.enabled: true
+    xpack.actions.enabled: true
+    xpack.actions.allowedHosts: ["*"]
+    
+    # Monitoring
+    xpack.monitoring.enabled: true
+    xpack.monitoring.kibana.collection.enabled: true
+    xpack.monitoring.ui.enabled: true
+    
+    # Reporting
+    xpack.reporting.enabled: true
+    xpack.reporting.encryptionKey: "${KIBANA_REPORTING_KEY}"
+    xpack.reporting.kibanaServer.hostname: "kibana.graphmemory.dev"
+    xpack.reporting.capture.browser.chromium.disableSandbox: true
+    
+    # APM integration
+    xpack.apm.enabled: true
+    xpack.apm.ui.enabled: true
+    
+    # GraphMemory-specific settings
+    logging.level: "info"
+    logging.dest: "stdout"
+    logging.json: true
+    
+    # Performance tuning
+    elasticsearch.maxSockets: 100
+    elasticsearch.compression: true
+    ops.interval: 30000
+    
+    # Index patterns and data views
+    kibana.index: ".kibana-graphmemory"
+    kibana.defaultAppId: "dashboard"
+    
+    # Feature flags for GraphMemory-IDE
+    uiSettings.overrides:
+      "theme:darkMode": true
+      "defaultIndex": "graphmemory-logs-*"
+      "discover:sampleSize": 10000
+      "histogram:barTarget": 50
+      "visualization:tileMap:maxPrecision": 12
+      "csv:separator": ","
+      "dateFormat:tz": "UTC"
+      "format:defaultTypeMap": |
+        {
+          "ip": { "id": "ip", "params": {} },
+          "date": { "id": "date", "params": {} },
+          "number": { "id": "number", "params": {} },
+          "boolean": { "id": "boolean", "params": {} },
+          "_source": { "id": "_source", "params": {} },
+          "_default_": { "id": "string", "params": {} }
+        }
+
+---
+# Logstash configuration for log processing
+apiVersion: logstash.k8s.elastic.co/v1alpha1
+kind: Logstash
+metadata:
+  name: graphmemory-logstash
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: logstash
+    app.kubernetes.io/instance: graphmemory
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/component: logging
+spec:
+  version: 8.12.0
+  count: 3
+  
+  # Elasticsearch reference
+  elasticsearchRefs:
+    - name: graphmemory-elasticsearch
+      namespace: monitoring-production
+  
+  # Pipeline configuration
+  pipelines:
+    - pipeline.id: "graphmemory-logs"
+      config.string: |
+        input {
+          # Beats input for Filebeat
+          beats {
+            port => 5044
+            codec => json
+          }
+          
+          # HTTP input for webhook logs
+          http {
+            port => 8080
+            codec => json
+            additional_codecs => {
+              "application/json" => "json"
+              "text/plain" => "plain"
+            }
+          }
+          
+          # Kafka input for high-volume streaming
+          kafka {
+            bootstrap_servers => "kafka.monitoring-production.svc.cluster.local:9092"
+            topics => ["graphmemory-logs", "otel-logs"]
+            codec => json
+            group_id => "logstash-graphmemory"
+            consumer_threads => 3
+            auto_offset_reset => "latest"
+          }
+          
+          # Redis input for buffering
+          redis {
+            host => "redis.monitoring-production.svc.cluster.local"
+            port => 6379
+            data_type => "list"
+            key => "logstash:graphmemory"
+            codec => json
+          }
+        }
+        
+        filter {
+          # Parse timestamp
+          if ![timestamp] and [@timestamp] {
+            mutate {
+              copy => { "@timestamp" => "timestamp" }
+            }
+          }
+          
+          date {
+            match => [ "timestamp", "ISO8601", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" ]
+            target => "@timestamp"
+          }
+          
+          # Parse Kubernetes metadata
+          if [kubernetes] {
+            mutate {
+              add_field => {
+                "k8s_namespace" => "%{[kubernetes][namespace]}"
+                "k8s_pod" => "%{[kubernetes][pod][name]}"
+                "k8s_container" => "%{[kubernetes][container][name]}"
+                "k8s_node" => "%{[kubernetes][node][name]}"
+              }
+            }
+          }
+          
+          # Parse JSON messages
+          if [message] =~ /^\{.*\}$/ {
+            json {
+              source => "message"
+              target => "parsed"
+            }
+            
+            if [parsed] {
+              mutate {
+                copy => {
+                  "[parsed][level]" => "log_level"
+                  "[parsed][msg]" => "log_message"
+                  "[parsed][error]" => "error_message"
+                  "[parsed][trace_id]" => "trace_id"
+                  "[parsed][span_id]" => "span_id"
+                  "[parsed][user_id]" => "user_id"
+                  "[parsed][session_id]" => "session_id"
+                  "[parsed][operation]" => "graphmemory_operation"
+                  "[parsed][memory_type]" => "graphmemory_memory_type"
+                  "[parsed][duration_ms]" => "performance_duration_ms"
+                }
+              }
+            }
+          }
+          
+          # Normalize log levels
+          if [log_level] {
+            translate {
+              field => "log_level"
+              destination => "log_level_normalized"
+              dictionary => {
+                "TRACE" => "debug"
+                "DEBUG" => "debug"
+                "INFO" => "info"
+                "WARN" => "warning"
+                "WARNING" => "warning"
+                "ERROR" => "error"
+                "FATAL" => "critical"
+                "CRITICAL" => "critical"
+              }
+              fallback => "unknown"
+            }
+          }
+          
+          # Extract HTTP information
+          if [message] =~ /HTTP/ {
+            grok {
+              match => {
+                "message" => [
+                  "%{IPORHOST:client_ip} - - \[%{HTTPDATE:timestamp}\] \"%{WORD:http_method} %{URIPATH:http_path}(?:%{URIPARAM:http_params})? HTTP/%{NUMBER:http_version}\" %{INT:http_status} %{INT:response_size} \"%{DATA:http_referer}\" \"%{DATA:http_user_agent}\" %{NUMBER:response_time_ms}",
+                  "\"%{WORD:http_method} %{URIPATH:http_path} HTTP/%{NUMBER:http_version}\" %{INT:http_status} %{NUMBER:response_time_ms}"
+                ]
+              }
+            }
+            
+            if [http_status] {
+              mutate {
+                convert => { 
+                  "http_status" => "integer"
+                  "response_time_ms" => "float"
+                  "response_size" => "integer"
+                }
+              }
+              
+              # Categorize HTTP status codes
+              if [http_status] >= 200 and [http_status] < 300 {
+                mutate { add_field => { "http_status_category" => "success" } }
+              } else if [http_status] >= 300 and [http_status] < 400 {
+                mutate { add_field => { "http_status_category" => "redirect" } }
+              } else if [http_status] >= 400 and [http_status] < 500 {
+                mutate { add_field => { "http_status_category" => "client_error" } }
+              } else if [http_status] >= 500 {
+                mutate { add_field => { "http_status_category" => "server_error" } }
+              }
+            }
+          }
+          
+          # Parse GraphMemory-specific operations
+          if [graphmemory_operation] {
+            mutate {
+              add_field => { "application" => "graphmemory-ide" }
+            }
+            
+            # Performance classification
+            if [performance_duration_ms] {
+              mutate {
+                convert => { "performance_duration_ms" => "integer" }
+              }
+              
+              if [performance_duration_ms] < 100 {
+                mutate { add_field => { "performance_category" => "fast" } }
+              } else if [performance_duration_ms] < 1000 {
+                mutate { add_field => { "performance_category" => "normal" } }
+              } else if [performance_duration_ms] < 5000 {
+                mutate { add_field => { "performance_category" => "slow" } }
+              } else {
+                mutate { add_field => { "performance_category" => "very_slow" } }
+              }
+            }
+          }
+          
+          # Geo IP enrichment for external IPs
+          if [client_ip] and [client_ip] !~ /^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)/ {
+            geoip {
+              source => "client_ip"
+              target => "geoip"
+              add_field => {
+                "client_country" => "%{[geoip][country_name]}"
+                "client_city" => "%{[geoip][city_name]}"
+                "client_location" => "%{[geoip][latitude]},%{[geoip][longitude]}"
+              }
+            }
+          }
+          
+          # User agent parsing
+          if [http_user_agent] {
+            useragent {
+              source => "http_user_agent"
+              target => "user_agent"
+            }
+          }
+          
+          # Error detection and classification
+          if [log_level_normalized] == "error" or [http_status_category] == "server_error" or [error_message] {
+            mutate {
+              add_field => { "has_error" => true }
+              add_tag => ["error"]
+            }
+            
+            # Extract stack traces
+            if [message] =~ /Traceback|Exception|Error:|at [a-zA-Z]/ {
+              mutate {
+                add_field => { "has_stack_trace" => true }
+                add_tag => ["stack_trace"]
+              }
+            }
+          }
+          
+          # Security event detection
+          if [message] =~ /(authentication|login|logout|unauthorized|forbidden|sql injection|xss|csrf)/i {
+            mutate {
+              add_field => { "security_event" => true }
+              add_tag => ["security"]
+            }
+          }
+          
+          # Remove sensitive information
+          mutate {
+            remove_field => ["password", "token", "api_key", "secret", "private_key"]
+          }
+          
+          # Add metadata
+          mutate {
+            add_field => {
+              "log_pipeline" => "logstash-graphmemory"
+              "processed_at" => "%{[@timestamp]}"
+              "data_source" => "kubernetes"
+            }
+          }
+        }
+        
+        output {
+          # Primary output to Elasticsearch
+          elasticsearch {
+            hosts => ["https://graphmemory-elasticsearch-es-http.monitoring-production.svc.cluster.local:9200"]
+            user => "elastic"
+            password => "${ELASTICSEARCH_PASSWORD}"
+            ssl => true
+            ssl_certificate_verification => true
+            ca_file => "/usr/share/logstash/config/elasticsearch-ca.crt"
+            
+            # Index routing based on log type and age
+            index => "graphmemory-logs-%{+YYYY.MM.dd}"
+            
+            # Template management
+            template_name => "graphmemory-logs"
+            template_pattern => "graphmemory-logs-*"
+            template_overwrite => true
+            
+            # Performance tuning
+            pool_max => 10
+            pool_max_per_route => 2
+            timeout => 90
+            retry_max_interval => 5
+            retry_max_times => 3
+          }
+          
+          # Dead letter queue for failed events
+          if "_elasticsearch_output_failure" in [tags] {
+            kafka {
+              bootstrap_servers => "kafka.monitoring-production.svc.cluster.local:9092"
+              topic_id => "logstash-dlq"
+              codec => json
+            }
+          }
+          
+          # Metrics output for monitoring
+          if [graphmemory_operation] {
+            statsd {
+              host => "statsd.monitoring-production.svc.cluster.local"
+              port => 8125
+              namespace => "graphmemory.logs"
+              sender => "logstash"
+              increment => [
+                "operations.%{graphmemory_operation}.count",
+                "total.operations.count"
+              ]
+              timing => {
+                "operations.%{graphmemory_operation}.duration" => "%{performance_duration_ms}"
+              }
+            }
+          }
+          
+          # Debug output for development
+          if [@metadata][debug] {
+            stdout {
+              codec => rubydebug {
+                metadata => true
+              }
+            }
+          }
+        }
+  
+  # Pod template
+  podTemplate:
+    metadata:
+      labels:
+        app: logstash
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9600"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true
+      
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    logstash.k8s.elastic.co/name: graphmemory-logstash
+                topologyKey: kubernetes.io/hostname
+      
+      containers:
+        - name: logstash
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "1000m"
+            limits:
+              memory: "8Gi"
+              cpu: "4000m"
+          
+          env:
+            - name: LS_JAVA_OPTS
+              value: "-Xms4g -Xmx4g -XX:+UseG1GC"
+            - name: ELASTICSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: graphmemory-elasticsearch-es-elastic-user
+                  key: elastic
+          
+          # Health checks
+          readinessProbe:
+            httpGet:
+              path: "/"
+              port: 9600
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          
+          livenessProbe:
+            httpGet:
+              path: "/"
+              port: 9600
+            initialDelaySeconds: 300
+            periodSeconds: 30
+  
+  # Services configuration
+  services:
+    - name: beats
+      service:
+        spec:
+          type: ClusterIP
+          ports:
+            - port: 5044
+              name: beats
+              protocol: TCP
+    - name: http
+      service:
+        spec:
+          type: ClusterIP
+          ports:
+            - port: 8080
+              name: http
+              protocol: TCP
+
+---
+# ConfigMap for Kibana saved objects and dashboards
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kibana-saved-objects
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: kibana
+    app.kubernetes.io/component: configuration
+data:
+  graphmemory-index-pattern.json: |
+    {
+      "objects": [
+        {
+          "id": "graphmemory-logs-*",
+          "type": "index-pattern",
+          "attributes": {
+            "title": "graphmemory-logs-*",
+            "timeFieldName": "@timestamp",
+            "fields": "[{\"name\":\"@timestamp\",\"type\":\"date\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"log_level\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"message\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":false},{\"name\":\"service.name\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"kubernetes.namespace\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"trace_id\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"graphmemory_operation\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"performance_duration_ms\",\"type\":\"number\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"http_status\",\"type\":\"number\",\"searchable\":true,\"aggregatable\":true}]"
+          }
+        }
+      ]
+    }
+  
+  graphmemory-dashboard.json: |
+    {
+      "objects": [
+        {
+          "id": "graphmemory-overview-dashboard",
+          "type": "dashboard",
+          "attributes": {
+            "title": "GraphMemory-IDE Overview",
+            "description": "Overview dashboard for GraphMemory-IDE application monitoring",
+            "panelsJSON": "[{\"gridData\":{\"x\":0,\"y\":0,\"w\":24,\"h\":15},\"panelIndex\":\"1\",\"embeddableConfig\":{},\"panelRefName\":\"panel_1\"},{\"gridData\":{\"x\":24,\"y\":0,\"w\":24,\"h\":15},\"panelIndex\":\"2\",\"embeddableConfig\":{},\"panelRefName\":\"panel_2\"},{\"gridData\":{\"x\":0,\"y\":15,\"w\":48,\"h\":15},\"panelIndex\":\"3\",\"embeddableConfig\":{},\"panelRefName\":\"panel_3\"}]",
+            "optionsJSON": "{\"useMargins\":true,\"syncColors\":false,\"hidePanelTitles\":false}",
+            "version": 1,
+            "timeRestore": false,
+            "kibanaSavedObjectMeta": {
+              "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+            }
+          }
+        }
+      ]
+    } 

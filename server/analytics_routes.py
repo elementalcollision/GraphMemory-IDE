@@ -6,11 +6,14 @@ Enhanced with Phase 3 endpoints for GPU acceleration, performance monitoring, an
 
 import asyncio
 import logging
+import time
 import uuid
-from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Depends
-from fastapi.responses import StreamingResponse
+from datetime import datetime
+from typing import Dict, Any, Optional, List, Union
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Depends, Query, Body, BackgroundTasks
+from fastapi.responses import StreamingResponse, JSONResponse
 import kuzu
+import redis.asyncio as redis
 
 from .analytics.models import (
     AnalyticsRequest, AnalyticsResponse, AnalyticsType,
@@ -36,6 +39,13 @@ logger = logging.getLogger(__name__)
 analytics_engine: Optional[AnalyticsEngine] = None
 realtime_analytics: Optional[RealtimeAnalytics] = None
 
+# Global variables for analytics engine state
+analytics_engine_initialized = False
+kuzu_connection = None
+redis_client = None
+analytics_cache = {}
+service_start_time = time.time()
+
 def get_analytics_engine() -> AnalyticsEngine:
     """Dependency to get analytics engine instance"""
     global analytics_engine
@@ -50,34 +60,49 @@ def get_realtime_analytics() -> RealtimeAnalytics:
         raise HTTPException(status_code=503, detail="Real-time analytics not initialized")
     return realtime_analytics
 
-async def initialize_analytics_engine(kuzu_connection: kuzu.Connection, redis_url: str = "redis://localhost:6379"):
-    """Initialize the global analytics engine"""
-    global analytics_engine, realtime_analytics
+async def initialize_analytics_engine(kuzu_conn, redis_url: str):
+    """Initialize the analytics engine"""
+    global analytics_engine, analytics_engine_initialized, kuzu_connection
     
     try:
-        analytics_engine = AnalyticsEngine(kuzu_connection, redis_url)
-        await analytics_engine.initialize()
+        logger.info("Initializing analytics engine...")
         
-        realtime_analytics = analytics_engine.realtime
+        kuzu_connection = kuzu_conn
+        analytics_engine = AnalyticsEngine(kuzu_conn, redis_url)
         
-        # Initialize Phase 3 components if available
-        if PHASE3_AVAILABLE:
-            await benchmark_suite.initialize()
+        # Initialize the engine
+        success = await analytics_engine.initialize()
         
-        logger.info("Analytics engine initialized successfully")
+        if success:
+            analytics_engine_initialized = True
+            logger.info("Analytics engine initialized successfully")
+        else:
+            logger.error("Analytics engine initialization failed")
+            
+        return success
+        
     except Exception as e:
-        logger.error(f"Failed to initialize analytics engine: {e}")
-        raise
+        logger.error(f"Analytics engine initialization error: {e}")
+        analytics_engine_initialized = False
+        return False
 
 async def shutdown_analytics_engine():
-    """Shutdown the global analytics engine"""
-    global analytics_engine, realtime_analytics
+    """Shutdown the analytics engine"""
+    global analytics_engine, analytics_engine_initialized
     
-    if analytics_engine:
-        await analytics_engine.shutdown()
+    try:
+        logger.info("Shutting down analytics engine...")
+        
+        if analytics_engine and analytics_engine.redis_client:
+            await analytics_engine.redis_client.close()
+        
+        analytics_engine_initialized = False
         analytics_engine = None
-        realtime_analytics = None
+        
         logger.info("Analytics engine shutdown complete")
+        
+    except Exception as e:
+        logger.error(f"Analytics engine shutdown error: {e}")
 
 # Create router
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -322,15 +347,12 @@ async def publish_update(
 
 # Health check endpoint
 @router.get("/health")
-async def health_check() -> Dict[str, Any]:
-    """Health check for analytics service"""
-    global analytics_engine
-    
+async def get_analytics_health():
+    """Get analytics service health status"""
     return {
-        "status": "healthy" if analytics_engine and analytics_engine.initialized else "unhealthy",
-        "service": "analytics",
-        "version": "1.0.0",
-        "timestamp": "2025-05-28T15:47:15"  # Current timestamp
+        "status": "healthy" if analytics_engine_initialized else "unhealthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "uptime_seconds": time.time() - service_start_time
     }
 
 # Phase 3 Endpoints
@@ -479,8 +501,8 @@ async def get_monitoring_health() -> Dict[str, Any]:
             "overall_status": "basic",
             "components": {
                 "analytics_engine": {
-                    "healthy": analytics_engine is not None and analytics_engine.initialized,
-                    "status": "operational" if analytics_engine else "not_initialized"
+                    "healthy": analytics_engine_initialized,
+                    "status": "operational" if analytics_engine_initialized else "not_initialized"
                 }
             },
             "phase3_available": False

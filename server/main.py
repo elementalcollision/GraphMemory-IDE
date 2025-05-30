@@ -13,10 +13,31 @@ from sentence_transformers import SentenceTransformer
 # Import routers
 from analytics_routes import router as analytics_router, initialize_analytics_engine, shutdown_analytics_engine
 
+# Import streaming analytics
+try:
+    from streaming import (
+        initialize_streaming_analytics, 
+        shutdown_streaming_analytics,
+        create_analytics_router,
+        produce_memory_operation_event,
+        produce_user_interaction_event,
+        produce_system_metric_event,
+        OperationType
+    )
+    STREAMING_AVAILABLE = True
+except ImportError as e:
+    print(f"Streaming analytics not available: {e}")
+    STREAMING_AVAILABLE = False
+
 app = FastAPI(title="MCP Server", description="Model Context Protocol server for GraphMemory-IDE")
 
 # Include routers
 app.include_router(analytics_router)
+
+# Include streaming analytics router if available
+if STREAMING_AVAILABLE:
+    streaming_router = create_analytics_router()
+    app.mount("/streaming", streaming_router)
 
 # Try to include dashboard router if dependencies are available
 try:
@@ -38,17 +59,53 @@ async def startup_event():
         redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
         await initialize_analytics_engine(conn, redis_url)
         print("Analytics engine initialized successfully")
+        
+        # Initialize streaming analytics pipeline
+        if STREAMING_AVAILABLE:
+            try:
+                await initialize_streaming_analytics()
+                print("🚀 Streaming Analytics Pipeline initialized successfully")
+                print("📊 Real-time analytics and DragonflyDB are now available")
+                
+                # Send startup metrics
+                await produce_system_metric_event(
+                    metric_name="server_startup",
+                    metric_value=1.0,
+                    metric_unit="event",
+                    additional_data={"component": "mcp_server"}
+                )
+                
+            except Exception as e:
+                print(f"⚠️ Streaming analytics initialization failed: {e}")
+                print("Server will continue without streaming analytics")
+        
     except Exception as e:
-        print(f"Warning: Analytics engine initialization failed: {e}")
+        print(f"Warning: Services initialization failed: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup services on shutdown"""
     try:
+        # Send shutdown metrics before stopping
+        if STREAMING_AVAILABLE:
+            try:
+                await produce_system_metric_event(
+                    metric_name="server_shutdown",
+                    metric_value=1.0,
+                    metric_unit="event",
+                    additional_data={"component": "mcp_server"}
+                )
+                
+                await shutdown_streaming_analytics()
+                print("🛑 Streaming Analytics Pipeline shutdown complete")
+            except Exception as e:
+                print(f"Warning: Streaming analytics shutdown failed: {e}")
+        
         await shutdown_analytics_engine()
         print("Analytics engine shutdown complete")
+        
     except Exception as e:
-        print(f"Warning: Analytics engine shutdown failed: {e}")
+        print(f"Warning: Services shutdown failed: {e}")
 
 class TopKQueryRequest(BaseModel):
     query_text: str
@@ -102,6 +159,9 @@ async def ingest_telemetry(
     - If JWT_ENABLED=false: No authentication required
     - If JWT_ENABLED=true: Optional Bearer token authentication
     """
+    import time
+    start_time = time.time()
+    
     try:
         query = (
             "CREATE (e:TelemetryEvent {event_type: $event_type, timestamp: $timestamp, "
@@ -115,8 +175,60 @@ async def ingest_telemetry(
             "data": str(event.data),  # Serialize dict to string for storage
         }
         conn.execute(query, params)
-        return {"status": "ok", "message": "Event ingested"}
+        
+        processing_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+        
+        # Stream telemetry event to analytics pipeline
+        if STREAMING_AVAILABLE:
+            try:
+                # Map telemetry event to user interaction
+                await produce_user_interaction_event(
+                    interaction_type=event.event_type,
+                    target_resource="telemetry_endpoint",
+                    user_id=event.user_id,
+                    session_id=event.session_id,
+                    duration_ms=processing_time,
+                    additional_data={
+                        "event_data": event.data,
+                        "timestamp": event.timestamp
+                    }
+                )
+                
+                # Track processing performance
+                await produce_system_metric_event(
+                    metric_name="telemetry_processing_time",
+                    metric_value=processing_time,
+                    metric_unit="milliseconds",
+                    additional_data={
+                        "event_type": event.event_type,
+                        "user_id": event.user_id
+                    }
+                )
+                
+            except Exception as stream_error:
+                print(f"Warning: Failed to stream telemetry event: {stream_error}")
+        
+        return {"status": "ok", "message": "Event ingested", "processing_time_ms": processing_time}
+        
     except Exception as e:
+        processing_time = (time.time() - start_time) * 1000
+        
+        # Stream error event
+        if STREAMING_AVAILABLE:
+            try:
+                await produce_system_metric_event(
+                    metric_name="telemetry_ingestion_error",
+                    metric_value=1.0,
+                    metric_unit="count",
+                    additional_data={
+                        "error": str(e),
+                        "event_type": event.event_type,
+                        "processing_time_ms": processing_time
+                    }
+                )
+            except Exception:
+                pass  # Don't fail the original request due to streaming errors
+        
         raise HTTPException(status_code=500, detail=f"Failed to store event: {e}")
 
 @app.get("/telemetry/list", summary="List all telemetry events", response_model=List[dict])
@@ -130,6 +242,9 @@ async def list_telemetry_events(
     - If JWT_ENABLED=false: No authentication required
     - If JWT_ENABLED=true: Optional Bearer token authentication
     """
+    import time
+    start_time = time.time()
+    
     try:
         query = "MATCH (e:TelemetryEvent) RETURN e"
         result = conn.execute(query)
@@ -147,7 +262,26 @@ async def list_telemetry_events(
             except Exception:
                 pass
             events.append(event["e"])
+        
+        processing_time = (time.time() - start_time) * 1000
+        
+        # Stream query metrics
+        if STREAMING_AVAILABLE:
+            try:
+                await produce_system_metric_event(
+                    metric_name="telemetry_query_time",
+                    metric_value=processing_time,
+                    metric_unit="milliseconds",
+                    additional_data={
+                        "query_type": "list_all",
+                        "result_count": len(events)
+                    }
+                )
+            except Exception:
+                pass
+        
         return events
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list events: {e}")
 
@@ -165,6 +299,9 @@ async def query_telemetry_events(
     - If JWT_ENABLED=false: No authentication required
     - If JWT_ENABLED=true: Optional Bearer token authentication
     """
+    import time
+    start_time = time.time()
+    
     try:
         filters = []
         params = {}
@@ -194,7 +331,27 @@ async def query_telemetry_events(
             except Exception:
                 pass
             events.append(event["e"])
+        
+        processing_time = (time.time() - start_time) * 1000
+        
+        # Stream query metrics
+        if STREAMING_AVAILABLE:
+            try:
+                await produce_system_metric_event(
+                    metric_name="telemetry_query_time",
+                    metric_value=processing_time,
+                    metric_unit="milliseconds",
+                    additional_data={
+                        "query_type": "filtered",
+                        "filters": list(params.keys()),
+                        "result_count": len(events)
+                    }
+                )
+            except Exception:
+                pass
+        
         return events
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to query events: {e}")
 

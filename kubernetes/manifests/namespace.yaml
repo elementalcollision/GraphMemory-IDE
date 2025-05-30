@@ -1,0 +1,261 @@
+# GraphMemory-IDE Production Namespace and RBAC Configuration
+# Based on 2025 Kubernetes security best practices
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/version: "v1.0.0"
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/managed-by: helm
+    environment: production
+    security-policy: strict
+    shared-gateway-access: "true"  # Enable Gateway API access
+  annotations:
+    kubernetes.io/description: "Production namespace for GraphMemory-IDE analytics dashboard platform"
+    security.policy/isolation-level: "strict"
+    network.policy/ingress: "restricted"
+    resource.quota/enabled: "true"
+
+---
+# Service Account for GraphMemory-IDE services
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: graphmemory-service-account
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: serviceaccount
+  annotations:
+    kubernetes.io/description: "Service account for GraphMemory-IDE production services"
+automountServiceAccountToken: false  # Security: explicit token mounting only when needed
+
+---
+# ClusterRole for GraphMemory-IDE operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: graphmemory-cluster-role
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: rbac
+rules:
+# Read access to nodes for system metrics collection
+- apiGroups: [""]
+  resources: ["nodes", "nodes/metrics", "nodes/stats"]
+  verbs: ["get", "list", "watch"]
+# Read access to pods for container metrics
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "pods/status"]
+  verbs: ["get", "list", "watch"]
+# Metrics access for analytics
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["nodes", "pods"]
+  verbs: ["get", "list"]
+
+---
+# Role for namespace-specific operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: graphmemory-namespace-role
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: rbac
+rules:
+# ConfigMap and Secret management
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+# Service and endpoint management
+- apiGroups: [""]
+  resources: ["services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+# Pod management for health checks
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch", "create", "delete"]
+# Event access for debugging
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "list", "watch"]
+
+---
+# ClusterRoleBinding for cluster-level permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: graphmemory-cluster-binding
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: rbac
+subjects:
+- kind: ServiceAccount
+  name: graphmemory-service-account
+  namespace: graphmemory-prod
+roleRef:
+  kind: ClusterRole
+  name: graphmemory-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# RoleBinding for namespace-level permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: graphmemory-namespace-binding
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: rbac
+subjects:
+- kind: ServiceAccount
+  name: graphmemory-service-account
+  namespace: graphmemory-prod
+roleRef:
+  kind: Role
+  name: graphmemory-namespace-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Resource Quota for production environment
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: graphmemory-resource-quota
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: quota
+spec:
+  hard:
+    # Compute resources
+    requests.cpu: "4"      # 4 CPU cores total
+    requests.memory: "8Gi" # 8GB memory total
+    limits.cpu: "8"        # 8 CPU cores max
+    limits.memory: "16Gi"  # 16GB memory max
+    
+    # Storage
+    requests.storage: "100Gi"    # 100GB storage
+    persistentvolumeclaims: "10" # Max 10 PVCs
+    
+    # Objects
+    pods: "20"                # Max 20 pods
+    services: "10"            # Max 10 services
+    secrets: "20"             # Max 20 secrets
+    configmaps: "20"          # Max 20 configmaps
+    replicationcontrollers: "0" # Disable RCs (use Deployments)
+    
+    # Load balancers
+    services.loadbalancers: "3"
+    services.nodeports: "5"
+
+---
+# Limit Range for default resource constraints
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: graphmemory-limit-range
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: limits
+spec:
+  limits:
+  # Container limits
+  - type: Container
+    default:
+      cpu: "500m"     # Default CPU limit
+      memory: "1Gi"   # Default memory limit
+    defaultRequest:
+      cpu: "100m"     # Default CPU request
+      memory: "128Mi" # Default memory request
+    max:
+      cpu: "2"        # Max CPU per container
+      memory: "4Gi"   # Max memory per container
+    min:
+      cpu: "50m"      # Min CPU per container
+      memory: "64Mi"  # Min memory per container
+  
+  # Pod limits
+  - type: Pod
+    max:
+      cpu: "4"        # Max CPU per pod
+      memory: "8Gi"   # Max memory per pod
+  
+  # PVC limits
+  - type: PersistentVolumeClaim
+    max:
+      storage: "50Gi" # Max storage per PVC
+    min:
+      storage: "1Gi"  # Min storage per PVC
+
+---
+# Network Policy for security isolation
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: graphmemory-network-policy
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: graphmemory-ide
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: graphmemory-ide
+  policyTypes:
+  - Ingress
+  - Egress
+  
+  ingress:
+  # Allow traffic from other GraphMemory-IDE pods
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/part-of: graphmemory-ide
+  
+  # Allow traffic from ingress controllers
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - namespaceSelector:
+        matchLabels:
+          name: gateway-system
+  
+  # Allow monitoring traffic
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8080  # Metrics port
+  
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  
+  # Allow HTTPS for external APIs
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+  
+  # Allow internal GraphMemory-IDE communication
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/part-of: graphmemory-ide 

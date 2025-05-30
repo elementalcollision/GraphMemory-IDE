@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    container_name: graphmemory-dragonfly
+    hostname: dragonfly
+    command: >
+      dragonfly 
+      --logtostderr 
+      --dbfilename=''
+      --conn_use_incoming_cpu
+      --proactor_threads=8
+      --port=6379
+      --bind=0.0.0.0
+      --maxmemory=2gb
+      --save_schedule=''
+      --snapshot_cron=''
+      --keys_output_limit=8192
+      --tcp_keepalive=300
+    ports:
+      - "6379:6379"
+    volumes:
+      - dragonfly_data:/data
+    environment:
+      - DRAGONFLY_PASSWORD=${DRAGONFLY_PASSWORD:-}
+    networks:
+      - graphmemory-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2.5G
+        reservations:
+          memory: 1G
+    labels:
+      - "traefik.enable=false"
+      - "com.graphmemory.service=dragonfly"
+      - "com.graphmemory.description=High-performance Redis-compatible data store"
+
+  # DragonflyDB Exporter for Prometheus monitoring
+  dragonfly-exporter:
+    image: oliver006/redis_exporter
+    container_name: graphmemory-dragonfly-exporter
+    command: 
+      - "--redis.addr=redis://dragonfly:6379"
+      - "--web.listen-address=0.0.0.0:9121"
+      - "--redis.check-keys=*"
+    ports:
+      - "9121:9121"
+    depends_on:
+      dragonfly:
+        condition: service_healthy
+    networks:
+      - graphmemory-network
+    restart: unless-stopped
+    labels:
+      - "com.graphmemory.service=dragonfly-exporter"
+      - "com.graphmemory.description=DragonflyDB metrics exporter"
+
+volumes:
+  dragonfly_data:
+    driver: local
+    name: graphmemory_dragonfly_data
+
+networks:
+  graphmemory-network:
+    driver: bridge
+    name: graphmemory-network 

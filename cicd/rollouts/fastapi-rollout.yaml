@@ -1,0 +1,358 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: fastapi-backend
+  namespace: graphmemory-production
+  labels:
+    app: fastapi-backend
+    component: backend
+    version: stable
+  annotations:
+    rollout.argoproj.io/revision: "1"
+    notifications.argoproj.io/subscribe.on-rollout-completed.slack: production-deployments
+    notifications.argoproj.io/subscribe.on-rollout-aborted.slack: production-alerts
+spec:
+  replicas: 3
+  strategy:
+    # Canary deployment strategy with traffic splitting
+    canary:
+      # Initial traffic percentage for canary
+      canaryService: fastapi-backend-canary
+      stableService: fastapi-backend-stable
+      
+      # Traffic routing (requires Istio or NGINX Gateway)
+      trafficRouting:
+        nginx:
+          stableIngress: fastapi-backend-stable
+          annotationPrefix: nginx.ingress.kubernetes.io
+          additionalIngressAnnotations:
+            canary-by-header: "x-canary"
+            canary-by-header-value: "true"
+      
+      # Canary deployment steps
+      steps:
+        # Step 1: Deploy canary with 10% traffic
+        - setWeight: 10
+        - pause:
+            duration: 2m
+        
+        # Step 2: Run analysis
+        - analysis:
+            templates:
+              - templateName: success-rate
+              - templateName: latency-check
+            args:
+              - name: service-name
+                value: fastapi-backend-canary
+            
+        # Step 3: Increase to 25% traffic
+        - setWeight: 25
+        - pause:
+            duration: 5m
+            
+        # Step 4: Continue analysis
+        - analysis:
+            templates:
+              - templateName: success-rate
+              - templateName: latency-check
+            args:
+              - name: service-name
+                value: fastapi-backend-canary
+        
+        # Step 5: Increase to 50% traffic
+        - setWeight: 50
+        - pause:
+            duration: 10m
+            
+        # Step 6: Final analysis before full rollout
+        - analysis:
+            templates:
+              - templateName: success-rate
+              - templateName: latency-check
+              - templateName: error-rate
+            args:
+              - name: service-name
+                value: fastapi-backend-canary
+        
+        # Step 7: Promote to 100%
+        - setWeight: 100
+        - pause:
+            duration: 2m
+      
+      # Analysis configuration
+      analysis:
+        templates:
+          - templateName: success-rate
+          - templateName: latency-check
+        args:
+          - name: service-name
+            value: fastapi-backend-canary
+      
+      # Anti-affinity for canary pods
+      antiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution: {}
+        preferredDuringSchedulingIgnoredDuringExecution:
+          weight: 1
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: fastapi-backend
+            topologyKey: kubernetes.io/hostname
+      
+      # Canary metadata
+      canaryMetadata:
+        labels:
+          deployment: canary
+        annotations:
+          role: canary
+      
+      # Stable metadata
+      stableMetadata:
+        labels:
+          deployment: stable
+        annotations:
+          role: stable
+  
+  # Selector for pods
+  selector:
+    matchLabels:
+      app: fastapi-backend
+  
+  # Pod template
+  template:
+    metadata:
+      labels:
+        app: fastapi-backend
+        component: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: fastapi-backend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      
+      containers:
+        - name: fastapi-backend
+          image: ghcr.io/elementalcollision/graphmemory-ide/fastapi-backend:latest
+          imagePullPolicy: Always
+          
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          
+          # Environment variables
+          env:
+            - name: ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: WORKERS
+              value: "4"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "8080"
+            - name: METRICS_PORT
+              value: "9090"
+            
+            # Database configuration
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: database-credentials
+                  key: url
+            
+            # Redis configuration
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: redis-credentials
+                  key: url
+            
+            # JWT configuration
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: secret
+          
+          # Resource limits and requests
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          
+          # Health checks
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+          
+          # Startup probe for slow-starting applications
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+            successThreshold: 1
+          
+          # Volume mounts
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      
+      # Volumes
+      volumes:
+        - name: config
+          configMap:
+            name: fastapi-backend-config
+        - name: tmp
+          emptyDir: {}
+      
+      # Node scheduling
+      nodeSelector:
+        role: application
+      
+      tolerations:
+        - key: "application"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+      
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: fastapi-backend
+                topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values: ["amd64", "arm64"]
+      
+      # Termination settings
+      terminationGracePeriodSeconds: 30
+      
+      # Image pull secrets
+      imagePullSecrets:
+        - name: ghcr-secret
+  
+  # Rollout configuration
+  revisionHistoryLimit: 5
+  progressDeadlineSeconds: 600
+  
+  # Workload reference for HPA
+  workloadRef:
+    apiVersion: apps/v1
+    kind: ReplicaSet
+    name: fastapi-backend
+
+---
+# Services for canary and stable deployments
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-backend-stable
+  namespace: graphmemory-production
+  labels:
+    app: fastapi-backend
+    service: stable
+spec:
+  selector:
+    app: fastapi-backend
+    # This selector will be managed by Argo Rollouts
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-backend-canary
+  namespace: graphmemory-production
+  labels:
+    app: fastapi-backend
+    service: canary
+spec:
+  selector:
+    app: fastapi-backend
+    # This selector will be managed by Argo Rollouts
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+  type: ClusterIP
+
+---
+# Main service for external access
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-backend
+  namespace: graphmemory-production
+  labels:
+    app: fastapi-backend
+    service: main
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+spec:
+  selector:
+    app: fastapi-backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  type: LoadBalancer 

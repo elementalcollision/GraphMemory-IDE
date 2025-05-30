@@ -1,0 +1,210 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: graphmemory
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: graphmemory-project
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/project-description: "GraphMemory-IDE Application Project"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "GraphMemory-IDE project for managing staging and production deployments"
+  
+  # Source repositories allowed for this project
+  sourceRepos:
+    - 'https://github.com/elementalcollision/GraphMemory-IDE.git'
+    - 'https://charts.helm.sh/stable'
+    - 'https://prometheus-community.github.io/helm-charts'
+    - 'https://grafana.github.io/helm-charts'
+    - 'https://kubernetes.github.io/ingress-nginx'
+    - 'https://argoproj.github.io/argo-helm'
+  
+  # Destination clusters and namespaces
+  destinations:
+    # Staging environment
+    - namespace: graphmemory-staging
+      server: https://kubernetes.default.svc
+    - namespace: monitoring-staging
+      server: https://kubernetes.default.svc
+    
+    # Production environment  
+    - namespace: graphmemory-production
+      server: https://kubernetes.default.svc
+    - namespace: monitoring-production
+      server: https://kubernetes.default.svc
+    
+    # System namespaces for infrastructure
+    - namespace: kube-system
+      server: https://kubernetes.default.svc
+    - namespace: istio-system
+      server: https://kubernetes.default.svc
+  
+  # Cluster resource allow/deny lists
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: storage.k8s.io
+      kind: StorageClass
+    - group: policy
+      kind: PodSecurityPolicy
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+    - group: gateway.networking.k8s.io
+      kind: GatewayClass
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+    - group: argoproj.io
+      kind: Rollout
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+    - group: monitoring.coreos.com
+      kind: PrometheusRule
+  
+  # Namespace resource allow/deny lists
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ServiceAccount
+    - group: ''
+      kind: PersistentVolumeClaim
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: StatefulSet
+    - group: apps
+      kind: DaemonSet
+    - group: apps
+      kind: ReplicaSet
+    - group: batch
+      kind: Job
+    - group: batch
+      kind: CronJob
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: autoscaling.k8s.io
+      kind: VerticalPodAutoscaler
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: argoproj.io
+      kind: Rollout
+    - group: argoproj.io
+      kind: AnalysisTemplate
+    - group: argoproj.io
+      kind: AnalysisRun
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+    - group: monitoring.coreos.com
+      kind: PrometheusRule
+  
+  # Denied cluster resources
+  clusterResourceBlacklist:
+    - group: ''
+      kind: Node
+    - group: storage.k8s.io
+      kind: VolumeSnapshot
+    - group: snapshot.storage.k8s.io
+      kind: VolumeSnapshotClass
+  
+  # Roles for project members
+  roles:
+    # Developers role - can view and sync applications
+    - name: developers
+      description: Developers with read access and sync permissions
+      policies:
+        - p, proj:graphmemory:developers, applications, get, graphmemory/*, allow
+        - p, proj:graphmemory:developers, applications, sync, graphmemory/*, allow
+        - p, proj:graphmemory:developers, applications, action/*, graphmemory/*, allow
+        - p, proj:graphmemory:developers, logs, get, graphmemory/*, allow
+        - p, proj:graphmemory:developers, exec, create, graphmemory/*, deny
+      groups:
+        - graphmemory:developers
+        - graphmemory:team
+    
+    # DevOps role - full application management
+    - name: devops
+      description: DevOps engineers with full application management
+      policies:
+        - p, proj:graphmemory:devops, applications, *, graphmemory/*, allow
+        - p, proj:graphmemory:devops, logs, get, graphmemory/*, allow
+        - p, proj:graphmemory:devops, exec, create, graphmemory/*, allow
+        - p, proj:graphmemory:devops, repositories, *, *, allow
+      groups:
+        - graphmemory:devops
+        - graphmemory:platform-engineering
+    
+    # Production admins - production environment access
+    - name: production-admins
+      description: Production administrators with production-only access
+      policies:
+        - p, proj:graphmemory:production-admins, applications, *, graphmemory-production/*, allow
+        - p, proj:graphmemory:production-admins, applications, get, graphmemory-staging/*, allow
+        - p, proj:graphmemory:production-admins, logs, get, graphmemory/*, allow
+      groups:
+        - graphmemory:production-admins
+        - graphmemory:sre
+  
+  # Sync windows - when automatic sync is allowed
+  syncWindows:
+    # Staging can sync anytime
+    - kind: allow
+      schedule: '* * * * *'
+      duration: 24h
+      applications:
+        - 'graphmemory-staging'
+      manualSync: true
+    
+    # Production sync windows - business hours only
+    - kind: allow
+      schedule: '0 9-17 * * 1-5'  # 9 AM to 5 PM, Monday to Friday
+      duration: 8h
+      applications:
+        - 'graphmemory-production'
+      manualSync: true
+      timeZone: 'America/New_York'
+    
+    # Production maintenance window
+    - kind: deny
+      schedule: '0 2-4 * * 0'  # 2 AM to 4 AM on Sundays
+      duration: 2h
+      applications:
+        - '*'
+      manualSync: false
+      timeZone: 'America/New_York'
+  
+  # Signature keys for signed commits (optional)
+  signatureKeys:
+    - keyID: 1234567890ABCDEF
+  
+  # Orphaned resources monitoring
+  orphanedResources:
+    warn: true
+    ignore:
+      - group: ''
+        kind: ConfigMap
+        name: kube-root-ca.crt
+      - group: ''
+        kind: Secret
+        name: default-token-*
+      - group: apps
+        kind: ReplicaSet
+        name: '*' 

@@ -1,0 +1,544 @@
+# GraphMemory-IDE Auto-scaling Configuration
+# HPA and VPA for production workload scaling
+# Based on 2025 Kubernetes auto-scaling best practices
+
+---
+# Horizontal Pod Autoscaler for FastAPI Backend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fastapi-hpa
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: hpa
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/managed-by: helm
+    target-service: fastapi
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fastapi
+  
+  minReplicas: 2   # Minimum for high availability
+  maxReplicas: 10  # Maximum for cost control
+  
+  # Scaling behavior configuration
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5 minutes
+      policies:
+      - type: Percent
+        value: 25    # Scale down by max 25% of current replicas
+        periodSeconds: 60
+      - type: Pods
+        value: 2     # Scale down by max 2 pods
+        periodSeconds: 60
+      selectPolicy: Min
+    
+    scaleUp:
+      stabilizationWindowSeconds: 60   # 1 minute
+      policies:
+      - type: Percent
+        value: 50    # Scale up by max 50% of current replicas
+        periodSeconds: 30
+      - type: Pods
+        value: 4     # Scale up by max 4 pods
+        periodSeconds: 30
+      selectPolicy: Max
+  
+  # Metrics for scaling decisions
+  metrics:
+  # CPU utilization
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Scale when CPU > 70%
+  
+  # Memory utilization
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # Scale when memory > 80%
+  
+  # Custom metric: Request rate
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "50"  # Scale when > 50 RPS per pod
+  
+  # Custom metric: Response time
+  - type: Pods
+    pods:
+      metric:
+        name: http_request_duration_seconds
+      target:
+        type: AverageValue
+        averageValue: "500m"  # Scale when response time > 500ms
+
+---
+# Horizontal Pod Autoscaler for Analytics Engine
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: analytics-hpa
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: hpa
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: graphmemory-ide
+    target-service: analytics
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analytics
+  
+  minReplicas: 2   # Minimum for processing availability
+  maxReplicas: 8   # Analytics workload doesn't need as many replicas
+  
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 600  # 10 minutes (analytics takes time to settle)
+      policies:
+      - type: Percent
+        value: 20    # Conservative scale down
+        periodSeconds: 120
+      - type: Pods
+        value: 1     # One pod at a time
+        periodSeconds: 120
+      selectPolicy: Min
+    
+    scaleUp:
+      stabilizationWindowSeconds: 120  # 2 minutes
+      policies:
+      - type: Percent
+        value: 100   # Double when needed for analytics load
+        periodSeconds: 60
+      - type: Pods
+        value: 2     # Add up to 2 pods
+        periodSeconds: 60
+      selectPolicy: Max
+  
+  metrics:
+  # CPU utilization (analytics is CPU intensive)
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75  # Scale when CPU > 75%
+  
+  # Memory utilization (analytics uses significant memory)
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 85  # Scale when memory > 85%
+  
+  # Custom metric: Analytics queue depth
+  - type: Pods
+    pods:
+      metric:
+        name: analytics_queue_depth
+      target:
+        type: AverageValue
+        averageValue: "100"  # Scale when queue > 100 items per pod
+
+---
+# Horizontal Pod Autoscaler for Streamlit Dashboard
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: streamlit-hpa
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: hpa
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: graphmemory-ide
+    target-service: streamlit
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: streamlit
+  
+  minReplicas: 2   # Minimum for frontend availability
+  maxReplicas: 6   # Frontend doesn't need as many replicas
+  
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 180  # 3 minutes
+      policies:
+      - type: Percent
+        value: 30    # Scale down more aggressively for frontend
+        periodSeconds: 60
+      - type: Pods
+        value: 1     # One pod at a time
+        periodSeconds: 60
+      selectPolicy: Min
+    
+    scaleUp:
+      stabilizationWindowSeconds: 60   # 1 minute
+      policies:
+      - type: Percent
+        value: 50    # Scale up reasonably for frontend load
+        periodSeconds: 30
+      - type: Pods
+        value: 2     # Add up to 2 pods
+        periodSeconds: 30
+      selectPolicy: Max
+  
+  metrics:
+  # CPU utilization
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60  # Lower threshold for frontend
+  
+  # Memory utilization
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70  # Frontend uses less memory
+  
+  # Custom metric: Active WebSocket connections
+  - type: Pods
+    pods:
+      metric:
+        name: streamlit_websocket_connections
+      target:
+        type: AverageValue
+        averageValue: "25"  # Scale when > 25 connections per pod
+
+---
+# Vertical Pod Autoscaler for FastAPI Backend
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: fastapi-vpa
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: vpa
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: graphmemory-ide
+    target-service: fastapi
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fastapi
+  
+  updatePolicy:
+    updateMode: "Auto"  # Automatically apply recommendations
+  
+  resourcePolicy:
+    containerPolicies:
+    - containerName: fastapi
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+      maxAllowed:
+        cpu: 2000m
+        memory: 4Gi
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+
+---
+# Vertical Pod Autoscaler for Analytics Engine
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: analytics-vpa
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: vpa
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: graphmemory-ide
+    target-service: analytics
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analytics
+  
+  updatePolicy:
+    updateMode: "Auto"
+  
+  resourcePolicy:
+    containerPolicies:
+    - containerName: analytics
+      minAllowed:
+        cpu: 200m
+        memory: 512Mi
+      maxAllowed:
+        cpu: 4000m    # Analytics can use more CPU
+        memory: 8Gi   # Analytics can use more memory
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+
+---
+# Vertical Pod Autoscaler for Streamlit Dashboard
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: streamlit-vpa
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: vpa
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: graphmemory-ide
+    target-service: streamlit
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: streamlit
+  
+  updatePolicy:
+    updateMode: "Auto"
+  
+  resourcePolicy:
+    containerPolicies:
+    - containerName: streamlit
+      minAllowed:
+        cpu: 50m
+        memory: 128Mi
+      maxAllowed:
+        cpu: 1000m    # Frontend needs less CPU
+        memory: 2Gi   # Frontend needs less memory
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+
+---
+# Pod Disruption Budget for FastAPI Backend
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fastapi-pdb
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: pdb
+    app.kubernetes.io/component: availability
+    app.kubernetes.io/part-of: graphmemory-ide
+    target-service: fastapi
+spec:
+  minAvailable: 2  # Always keep at least 2 pods running
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fastapi
+      app.kubernetes.io/instance: graphmemory-fastapi
+
+---
+# Pod Disruption Budget for Analytics Engine
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: analytics-pdb
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: pdb
+    app.kubernetes.io/component: availability
+    app.kubernetes.io/part-of: graphmemory-ide
+    target-service: analytics
+spec:
+  minAvailable: 1  # Keep at least 1 analytics pod running
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: analytics
+      app.kubernetes.io/instance: graphmemory-analytics
+
+---
+# Pod Disruption Budget for Streamlit Dashboard
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: streamlit-pdb
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: pdb
+    app.kubernetes.io/component: availability
+    app.kubernetes.io/part-of: graphmemory-ide
+    target-service: streamlit
+spec:
+  minAvailable: 1  # Keep at least 1 frontend pod running
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: streamlit
+      app.kubernetes.io/instance: graphmemory-streamlit
+
+---
+# Service Monitor for HPA Custom Metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: hpa-custom-metrics
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: servicemonitor
+    app.kubernetes.io/component: autoscaling-metrics
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: graphmemory-ide
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 15s  # Frequent collection for auto-scaling
+    scrapeTimeout: 10s
+
+---
+# Custom Metrics API Configuration (Prometheus Adapter)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: adapter-config
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: configmap
+    app.kubernetes.io/component: metrics-adapter
+    app.kubernetes.io/part-of: graphmemory-ide
+data:
+  config.yaml: |
+    rules:
+    # HTTP request rate metric
+    - seriesQuery: 'http_requests_total{namespace!="",pod!=""}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        matches: "^http_requests_total"
+        as: "http_requests_per_second"
+      metricsQuery: 'rate(http_requests_total{<<.LabelMatchers>>}[2m])'
+    
+    # HTTP request duration metric
+    - seriesQuery: 'http_request_duration_seconds{namespace!="",pod!=""}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        matches: "^http_request_duration_seconds"
+        as: "http_request_duration_seconds"
+      metricsQuery: 'rate(http_request_duration_seconds_sum{<<.LabelMatchers>>}[2m]) / rate(http_request_duration_seconds_count{<<.LabelMatchers>>}[2m])'
+    
+    # Analytics queue depth metric
+    - seriesQuery: 'analytics_queue_depth{namespace!="",pod!=""}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        matches: "^analytics_queue_depth"
+        as: "analytics_queue_depth"
+      metricsQuery: 'analytics_queue_depth{<<.LabelMatchers>>}'
+    
+    # Streamlit WebSocket connections metric
+    - seriesQuery: 'streamlit_websocket_connections{namespace!="",pod!=""}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        matches: "^streamlit_websocket_connections"
+        as: "streamlit_websocket_connections"
+      metricsQuery: 'streamlit_websocket_connections{<<.LabelMatchers>>}'
+
+---
+# KEDA ScaledObject for event-driven autoscaling (alternative/additional to HPA)
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: analytics-scaledobject
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: scaledobject
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: graphmemory-ide
+spec:
+  scaleTargetRef:
+    name: analytics
+  pollingInterval: 30   # Check every 30 seconds
+  cooldownPeriod: 300   # 5 minutes cooldown
+  idleReplicaCount: 1   # Scale to 1 when idle
+  minReplicaCount: 2
+  maxReplicaCount: 8
+  
+  triggers:
+  # Redis queue length trigger
+  - type: redis
+    metadata:
+      address: redis-service.graphmemory-prod.svc.cluster.local:6379
+      listName: analytics_queue
+      listLength: "10"    # Scale when queue > 10 items
+      passwordFromEnv: REDIS_PASSWORD
+  
+  # PostgreSQL connection pool trigger
+  - type: postgresql
+    metadata:
+      connectionFromEnv: DATABASE_URL
+      query: "SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'"
+      targetQueryValue: "50"  # Scale when > 50 active connections
+
+---
+# Cluster Autoscaler Configuration (Node-level scaling)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-autoscaler-config
+  namespace: graphmemory-prod
+  labels:
+    app.kubernetes.io/name: configmap
+    app.kubernetes.io/component: cluster-autoscaling
+    app.kubernetes.io/part-of: graphmemory-ide
+data:
+  # Node group configuration for different workload types
+  node-groups.yaml: |
+    nodeGroups:
+      # General purpose nodes for FastAPI and Streamlit
+      - name: general-purpose
+        minSize: 2
+        maxSize: 10
+        instanceTypes: ["m5.large", "m5.xlarge"]
+        labels:
+          workload-type: general
+        taints: []
+      
+      # Memory-optimized nodes for Analytics
+      - name: analytics-optimized
+        minSize: 1
+        maxSize: 5
+        instanceTypes: ["r5.large", "r5.xlarge", "r5.2xlarge"]
+        labels:
+          workload-type: analytics
+        taints:
+        - key: workload-type
+          value: analytics
+          effect: NoSchedule
+      
+      # Database nodes for StatefulSets
+      - name: database-optimized
+        minSize: 1
+        maxSize: 3
+        instanceTypes: ["m5.large", "m5.xlarge"]
+        labels:
+          workload-type: database
+        taints:
+        - key: workload-type
+          value: database
+          effect: NoSchedule 

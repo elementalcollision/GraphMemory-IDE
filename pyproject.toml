@@ -1,0 +1,96 @@
+[tool.pytest.ini_options]
+# GraphMemory-IDE Integration Testing Configuration
+# Modern pytest-asyncio setup for 2025 best practices
+
+# Async configuration - 2025 best practices
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+# Test discovery and execution
+minversion = "7.0"
+testpaths = ["tests", "server/dashboard"]
+python_files = ["test_*.py", "*_test.py", "integration_test_*.py"]
+python_classes = ["Test*", "Integration*"]
+python_functions = ["test_*", "integration_test_*"]
+
+# Output and reporting
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=server",
+    "--cov=dashboard",
+    "--cov-report=html:htmlcov",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "--cov-fail-under=85",
+    "--durations=10",
+    "--timeout=300"
+]
+
+# Test markers for organization and filtering
+markers = [
+    # Test types
+    "unit: Unit tests for individual components",
+    "integration: Integration tests across multiple components",
+    "e2e: End-to-end tests for complete user scenarios",
+    
+    # Async testing
+    "asyncio: Asynchronous test functions",
+    "websocket: WebSocket connection testing",
+    "sse: Server-sent events testing",
+    
+    # Component testing
+    "api: API endpoint testing",
+    "database: Database integration testing",
+    "authentication: Authentication and authorization testing",
+    "analytics: Analytics engine testing",
+    "alerts: Alert system testing (Step 8)",
+    "dashboard: Dashboard component testing",
+    
+    # Data usage
+    "real_data: Tests using real analytics engine data",
+    "mock_data: Tests using mock/synthetic data",
+    
+    # Performance and reliability
+    "slow: Tests that take longer than 5 seconds",
+    "performance: Performance and load testing",
+    "stress: Stress testing with high load",
+    
+    # External dependencies
+    "external: Tests requiring external services",
+    "network: Tests requiring network connectivity",
+    "gpu: Tests requiring GPU acceleration",
+    
+    # CI/CD and environments
+    "local: Tests for local development only",
+    "ci: Tests suitable for CI/CD pipelines",
+    "staging: Tests for staging environment",
+    "production: Tests safe for production validation"
+]
+
+# Timeout configuration
+timeout = 300
+timeout_method = "thread"
+
+# Logging configuration
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s (%(filename)s:%(lineno)d)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+
+# Filterwarnings - suppress known issues
+filterwarnings = [
+    "ignore::DeprecationWarning:httpx.*",
+    "ignore::DeprecationWarning:starlette.*",
+    "ignore::PendingDeprecationWarning",
+    "ignore:.*unclosed.*:ResourceWarning",
+    "error::UserWarning"
+]
+
+# Console output
+console_output_style = "progress"
+
+# Cache configuration
+cache_dir = ".pytest_cache" 

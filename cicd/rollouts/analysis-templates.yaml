@@ -1,0 +1,409 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+  namespace: graphmemory-production
+  labels:
+    app: graphmemory
+    component: analysis
+spec:
+  args:
+    - name: service-name
+      value: fastapi-backend-canary
+    - name: prometheus-url
+      value: http://prometheus.monitoring-production.svc.cluster.local:9090
+  
+  metrics:
+    - name: success-rate
+      interval: 60s
+      successCondition: result[0] >= 0.95
+      failureCondition: result[0] < 0.90
+      failureLimit: 3
+      inconclusiveLimit: 5
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            sum(rate(http_requests_total{service="{{args.service-name}}", status!~"5.."}[2m])) /
+            sum(rate(http_requests_total{service="{{args.service-name}}"}[2m]))
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: latency-check
+  namespace: graphmemory-production
+  labels:
+    app: graphmemory
+    component: analysis
+spec:
+  args:
+    - name: service-name
+      value: fastapi-backend-canary
+    - name: prometheus-url
+      value: http://prometheus.monitoring-production.svc.cluster.local:9090
+  
+  metrics:
+    - name: latency-p95
+      interval: 60s
+      successCondition: result[0] <= 500
+      failureCondition: result[0] > 1000
+      failureLimit: 3
+      inconclusiveLimit: 5
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{service="{{args.service-name}}"}[2m])) by (le)
+            ) * 1000
+    
+    - name: latency-p99
+      interval: 60s
+      successCondition: result[0] <= 1000
+      failureCondition: result[0] > 2000
+      failureLimit: 3
+      inconclusiveLimit: 5
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket{service="{{args.service-name}}"}[2m])) by (le)
+            ) * 1000
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: error-rate
+  namespace: graphmemory-production
+  labels:
+    app: graphmemory
+    component: analysis
+spec:
+  args:
+    - name: service-name
+      value: fastapi-backend-canary
+    - name: prometheus-url
+      value: http://prometheus.monitoring-production.svc.cluster.local:9090
+  
+  metrics:
+    - name: error-rate
+      interval: 60s
+      successCondition: result[0] <= 0.05
+      failureCondition: result[0] > 0.10
+      failureLimit: 3
+      inconclusiveLimit: 5
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            sum(rate(http_requests_total{service="{{args.service-name}}", status=~"5.."}[2m])) /
+            sum(rate(http_requests_total{service="{{args.service-name}}"}[2m]))
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: cpu-memory-utilization
+  namespace: graphmemory-production
+  labels:
+    app: graphmemory
+    component: analysis
+spec:
+  args:
+    - name: service-name
+      value: fastapi-backend-canary
+    - name: prometheus-url
+      value: http://prometheus.monitoring-production.svc.cluster.local:9090
+  
+  metrics:
+    - name: cpu-utilization
+      interval: 60s
+      successCondition: result[0] <= 80
+      failureCondition: result[0] > 95
+      failureLimit: 3
+      inconclusiveLimit: 5
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            sum(rate(container_cpu_usage_seconds_total{pod=~"{{args.service-name}}-.*"}[2m])) by (pod) * 100
+    
+    - name: memory-utilization
+      interval: 60s
+      successCondition: result[0] <= 85
+      failureCondition: result[0] > 95
+      failureLimit: 3
+      inconclusiveLimit: 5
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            (sum(container_memory_working_set_bytes{pod=~"{{args.service-name}}-.*"}) by (pod) /
+             sum(container_spec_memory_limit_bytes{pod=~"{{args.service-name}}-.*"}) by (pod)) * 100
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: database-connection-health
+  namespace: graphmemory-production
+  labels:
+    app: graphmemory
+    component: analysis
+spec:
+  args:
+    - name: service-name
+      value: fastapi-backend-canary
+    - name: prometheus-url
+      value: http://prometheus.monitoring-production.svc.cluster.local:9090
+  
+  metrics:
+    - name: db-connection-count
+      interval: 60s
+      successCondition: result[0] <= 50
+      failureCondition: result[0] > 80
+      failureLimit: 3
+      inconclusiveLimit: 5
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            sum(db_connections_active{service="{{args.service-name}}"})
+    
+    - name: db-query-duration
+      interval: 60s
+      successCondition: result[0] <= 100
+      failureCondition: result[0] > 500
+      failureLimit: 3
+      inconclusiveLimit: 5
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(db_query_duration_seconds_bucket{service="{{args.service-name}}"}[2m])) by (le)
+            ) * 1000
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: custom-business-metrics
+  namespace: graphmemory-production
+  labels:
+    app: graphmemory
+    component: analysis
+spec:
+  args:
+    - name: service-name
+      value: fastapi-backend-canary
+    - name: prometheus-url
+      value: http://prometheus.monitoring-production.svc.cluster.local:9090
+    - name: baseline-service
+      value: fastapi-backend-stable
+  
+  metrics:
+    - name: memory-operations-rate
+      interval: 120s
+      successCondition: result[0] >= 10
+      failureCondition: result[0] < 5
+      failureLimit: 2
+      inconclusiveLimit: 3
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            sum(rate(memory_operations_total{service="{{args.service-name}}"}[5m]))
+    
+    - name: graph-query-performance
+      interval: 120s
+      successCondition: result[0] <= 200
+      failureCondition: result[0] > 500
+      failureLimit: 2
+      inconclusiveLimit: 3
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            histogram_quantile(0.90,
+              sum(rate(graph_query_duration_seconds_bucket{service="{{args.service-name}}"}[5m])) by (le)
+            ) * 1000
+    
+    - name: comparison-with-stable
+      interval: 180s
+      successCondition: result[0] >= 0.95
+      failureCondition: result[0] < 0.80
+      failureLimit: 2
+      inconclusiveLimit: 3
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            (
+              sum(rate(http_requests_total{service="{{args.service-name}}", status!~"5.."}[5m])) /
+              sum(rate(http_requests_total{service="{{args.service-name}}"}[5m]))
+            ) /
+            (
+              sum(rate(http_requests_total{service="{{args.baseline-service}}", status!~"5.."}[5m])) /
+              sum(rate(http_requests_total{service="{{args.baseline-service}}"}[5m]))
+            )
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: web-analytics
+  namespace: graphmemory-production
+  labels:
+    app: graphmemory
+    component: analysis
+spec:
+  args:
+    - name: service-name
+      value: fastapi-backend-canary
+    - name: webhook-url
+      value: https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
+  
+  metrics:
+    - name: external-health-check
+      interval: 300s
+      successCondition: result == "1"
+      failureCondition: result == "0"
+      failureLimit: 2
+      inconclusiveLimit: 3
+      provider:
+        web:
+          url: "https://api.graphmemory.dev/health"
+          headers:
+            - key: "User-Agent"
+              value: "ArgoRollouts-HealthCheck/1.0"
+          jsonPath: "{$.status}"
+          timeoutSeconds: 10
+    
+    - name: synthetic-transaction
+      interval: 300s
+      successCondition: result[0] <= 2000
+      failureCondition: result[0] > 5000
+      failureLimit: 2
+      inconclusiveLimit: 3
+      provider:
+        web:
+          url: "https://api.graphmemory.dev/memory/search"
+          headers:
+            - key: "Content-Type"
+              value: "application/json"
+            - key: "Authorization"
+              value: "Bearer {{args.test-token}}"
+          method: POST
+          body: |
+            {
+              "query": "test query",
+              "limit": 10
+            }
+          jsonPath: "{$.response_time_ms}"
+          timeoutSeconds: 30
+
+---
+# ClusterAnalysisTemplate for cross-namespace analysis
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterAnalysisTemplate
+metadata:
+  name: load-test-validation
+  labels:
+    app: graphmemory
+    component: analysis
+spec:
+  args:
+    - name: service-name
+    - name: load-test-namespace
+      value: load-testing
+    - name: prometheus-url
+      value: http://prometheus.monitoring-production.svc.cluster.local:9090
+  
+  metrics:
+    - name: load-test-success-rate
+      interval: 180s
+      successCondition: result[0] >= 0.95
+      failureCondition: result[0] < 0.85
+      failureLimit: 2
+      inconclusiveLimit: 3
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            sum(rate(http_requests_total{namespace="{{args.load-test-namespace}}", target_service="{{args.service-name}}", status!~"5.."}[5m])) /
+            sum(rate(http_requests_total{namespace="{{args.load-test-namespace}}", target_service="{{args.service-name}}"}[5m]))
+    
+    - name: load-test-rps-achieved
+      interval: 180s
+      successCondition: result[0] >= 100
+      failureCondition: result[0] < 50
+      failureLimit: 2
+      inconclusiveLimit: 3
+      provider:
+        prometheus:
+          address: "{{args.prometheus-url}}"
+          query: |
+            sum(rate(http_requests_total{namespace="{{args.load-test-namespace}}", target_service="{{args.service-name}}"}[1m]))
+
+---
+# Job-based analysis for complex validations
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: integration-test
+  namespace: graphmemory-production
+  labels:
+    app: graphmemory
+    component: analysis
+spec:
+  args:
+    - name: service-name
+      value: fastapi-backend-canary
+    - name: test-image
+      value: ghcr.io/elementalcollision/graphmemory-ide/integration-tests:latest
+  
+  metrics:
+    - name: integration-test-result
+      successCondition: result == "1"
+      failureCondition: result == "0"
+      provider:
+        job:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: integration-test
+                    image: "{{args.test-image}}"
+                    env:
+                      - name: TARGET_SERVICE
+                        value: "{{args.service-name}}"
+                      - name: TEST_SUITE
+                        value: "canary-validation"
+                    command:
+                      - /bin/bash
+                      - -c
+                      - |
+                        echo "Running integration tests against {{args.service-name}}"
+                        
+                        # Run comprehensive integration tests
+                        python -m pytest tests/integration/ \
+                          --target-host={{args.service-name}}.graphmemory-production.svc.cluster.local:8080 \
+                          --junitxml=/tmp/test-results.xml \
+                          --tb=short \
+                          -v
+                        
+                        # Check test results
+                        if [ $? -eq 0 ]; then
+                          echo "1" > /tmp/analysis-result
+                        else
+                          echo "0" > /tmp/analysis-result
+                        fi
+                        
+                        # Upload results for debugging
+                        cat /tmp/test-results.xml
+                restartPolicy: Never
+            backoffLimit: 1 

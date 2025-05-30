@@ -1,0 +1,421 @@
+# =============================================================================
+# GraphMemory-IDE Production Docker Compose Configuration
+# Phase 3 Day 1: Container Orchestration & Docker Production
+# Production-ready multi-service deployment with performance optimization
+# =============================================================================
+
+version: '3.8'
+
+# =============================================================================
+# Production Networks
+# Isolated networks for security and performance
+# =============================================================================
+networks:
+  # Frontend network for user-facing services
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+          gateway: 172.20.1.1
+    driver_opts:
+      com.docker.network.bridge.name: gm-frontend
+      com.docker.network.driver.mtu: 1500
+
+  # Backend network for internal services
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24
+          gateway: 172.20.2.1
+    driver_opts:
+      com.docker.network.bridge.name: gm-backend
+      com.docker.network.driver.mtu: 1500
+
+  # Database network for data services
+  database:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.3.0/24
+          gateway: 172.20.3.1
+    driver_opts:
+      com.docker.network.bridge.name: gm-database
+      com.docker.network.driver.mtu: 1500
+
+  # Monitoring network for observability
+  monitoring:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.4.0/24
+          gateway: 172.20.4.1
+    driver_opts:
+      com.docker.network.bridge.name: gm-monitoring
+
+# =============================================================================
+# Production Volumes
+# Persistent storage with proper backup strategies
+# =============================================================================
+volumes:
+  # Application data volumes
+  graphmemory_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${GRAPHMEMORY_DATA_PATH:-./data}
+
+  # Database volumes
+  kuzu_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${KUZU_DATA_PATH:-./data/kuzu}
+
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${REDIS_DATA_PATH:-./data/redis}
+
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${POSTGRES_DATA_PATH:-./data/postgres}
+
+  # Log volumes
+  application_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${LOG_PATH:-./logs}
+
+  # Monitoring volumes
+  prometheus_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PROMETHEUS_DATA_PATH:-./monitoring/prometheus}
+
+  grafana_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${GRAFANA_DATA_PATH:-./monitoring/grafana}
+
+# =============================================================================
+# Production Services
+# Optimized service configurations for production deployment
+# =============================================================================
+services:
+
+  # ==========================================================================
+  # Reverse Proxy & Load Balancer
+  # ==========================================================================
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: graphmemory-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/production/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/production/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/production/ssl:/etc/nginx/ssl:ro
+      - application_logs:/var/log/nginx
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - fastapi
+      - streamlit
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # ==========================================================================
+  # FastAPI Backend Service
+  # ==========================================================================
+  fastapi:
+    build:
+      context: ../..
+      dockerfile: docker/production/Dockerfile.fastapi
+      target: production
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-3.0.0}
+    image: graphmemory/fastapi:${VERSION:-3.0.0}-prod
+    container_name: graphmemory-fastapi-prod
+    restart: unless-stopped
+    environment:
+      - APP_ENV=production
+      - WORKERS=${FASTAPI_WORKERS:-4}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MAX_REQUESTS=${FASTAPI_MAX_REQUESTS:-1000}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-graphmemory}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-graphmemory}
+      - REDIS_URL=redis://redis:6379
+      - KUZU_DATABASE_PATH=/app/data/kuzu
+      - ANALYTICS_SERVICE_URL=http://analytics:8002
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+    volumes:
+      - graphmemory_data:/app/data
+      - application_logs:/app/logs
+    networks:
+      - frontend
+      - backend
+      - database
+    depends_on:
+      - postgres
+      - redis
+      - analytics
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+      restart_policy:
+        condition: unless-stopped
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  # ==========================================================================
+  # Streamlit Dashboard Service
+  # ==========================================================================
+  streamlit:
+    build:
+      context: ../..
+      dockerfile: docker/production/Dockerfile.streamlit
+      target: production
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-3.0.0}
+    image: graphmemory/streamlit:${VERSION:-3.0.0}-prod
+    container_name: graphmemory-streamlit-prod
+    restart: unless-stopped
+    environment:
+      - APP_ENV=production
+      - STREAMLIT_PORT=8501
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - FASTAPI_URL=http://fastapi:8000
+      - ANALYTICS_URL=http://analytics:8002
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    volumes:
+      - graphmemory_data:/app/data
+      - application_logs:/app/logs
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - fastapi
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+          cpus: '1.5'
+        reservations:
+          memory: 768M
+          cpus: '0.75'
+
+  # ==========================================================================
+  # Analytics Engine Service
+  # ==========================================================================
+  analytics:
+    build:
+      context: ../..
+      dockerfile: docker/production/Dockerfile.analytics
+      target: production
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-3.0.0}
+    image: graphmemory/analytics:${VERSION:-3.0.0}-prod
+    container_name: graphmemory-analytics-prod
+    restart: unless-stopped
+    environment:
+      - APP_ENV=production
+      - ANALYTICS_WORKERS=${ANALYTICS_WORKERS:-2}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ANALYTICS_MAX_MEMORY_MB=${ANALYTICS_MAX_MEMORY_MB:-1024}
+      - REDIS_URL=redis://redis:6379
+      - KUZU_DATABASE_PATH=/app/data/kuzu
+      - SQLITE_DATABASE_PATH=/app/data/analytics.db
+    volumes:
+      - graphmemory_data:/app/data
+      - application_logs:/app/logs
+    networks:
+      - backend
+      - database
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # ==========================================================================
+  # Database Services
+  # ==========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: graphmemory-postgres-prod
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-graphmemory}
+      - POSTGRES_USER=${POSTGRES_USER:-graphmemory}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/production/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-graphmemory}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  redis:
+    image: redis:7-alpine
+    container_name: graphmemory-redis-prod
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - database
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # ==========================================================================
+  # Monitoring Services
+  # ==========================================================================
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: graphmemory-prometheus-prod
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    volumes:
+      - ./monitoring/prometheus/production/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/production/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+      - backend
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  grafana:
+    image: grafana/grafana:11.5.0
+    container_name: graphmemory-grafana-prod
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=redis-datasource,prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/production/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/production/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - monitoring
+      - frontend
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25' 

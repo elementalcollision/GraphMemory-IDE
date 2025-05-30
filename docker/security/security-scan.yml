@@ -1,0 +1,225 @@
+# =============================================================================
+# GraphMemory-IDE Container Security Scanning Configuration
+# Phase 3 Day 1: Container Orchestration & Docker Production
+# Comprehensive security validation and vulnerability assessment
+# =============================================================================
+
+# =============================================================================
+# Security Scanning Workflow
+# Automated vulnerability scanning and compliance checking
+# =============================================================================
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # Trivy Security Scanner
+  # Container vulnerability scanning with SARIF output
+  # ==========================================================================
+  trivy-scanner:
+    image: aquasec/trivy:0.56.2
+    container_name: graphmemory-trivy-scanner
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./security/reports:/reports
+      - ./security/config:/config:ro
+    environment:
+      - TRIVY_CACHE_DIR=/tmp/trivy-cache
+      - TRIVY_TIMEOUT=10m
+      - TRIVY_SEVERITY=CRITICAL,HIGH,MEDIUM
+      - TRIVY_IGNORE_UNFIXED=false
+      - TRIVY_EXIT_CODE=1
+    command: >
+      sh -c "
+        echo 'Starting comprehensive security scan...'
+        
+        # Scan FastAPI container
+        echo 'Scanning FastAPI container...'
+        trivy image --format sarif --output /reports/fastapi-security.sarif graphmemory/fastapi:3.0.0-prod
+        trivy image --format table --output /reports/fastapi-security.txt graphmemory/fastapi:3.0.0-prod
+        
+        # Scan Streamlit container
+        echo 'Scanning Streamlit container...'
+        trivy image --format sarif --output /reports/streamlit-security.sarif graphmemory/streamlit:3.0.0-prod
+        trivy image --format table --output /reports/streamlit-security.txt graphmemory/streamlit:3.0.0-prod
+        
+        # Scan Analytics container
+        echo 'Scanning Analytics container...'
+        trivy image --format sarif --output /reports/analytics-security.sarif graphmemory/analytics:3.0.0-prod
+        trivy image --format table --output /reports/analytics-security.txt graphmemory/analytics:3.0.0-prod
+        
+        # Filesystem scanning
+        echo 'Scanning filesystem...'
+        trivy fs --format sarif --output /reports/filesystem-security.sarif /
+        
+        # Configuration scanning
+        echo 'Scanning configurations...'
+        trivy config --format sarif --output /reports/config-security.sarif /config
+        
+        echo 'Security scan completed successfully'
+      "
+
+  # ==========================================================================
+  # Docker Bench for Security
+  # CIS Docker Benchmark compliance checking
+  # ==========================================================================
+  docker-bench:
+    image: docker/docker-bench-security:latest
+    container_name: graphmemory-docker-bench
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc:/etc:ro
+      - /usr/bin/containerd:/usr/bin/containerd:ro
+      - /usr/bin/runc:/usr/bin/runc:ro
+      - /usr/lib/systemd:/usr/lib/systemd:ro
+      - /var/lib:/var/lib:ro
+      - /var/run/docker:/var/run/docker:ro
+      - ./security/reports:/usr/local/bin/reports
+    command: >
+      sh -c "
+        echo 'Running CIS Docker Benchmark security checks...'
+        /usr/local/bin/docker-bench-security.sh -l /usr/local/bin/reports/docker-bench.log
+        echo 'Docker Benchmark scan completed'
+      "
+
+  # ==========================================================================
+  # Grype Vulnerability Scanner
+  # Advanced vulnerability detection and SBOM analysis
+  # ==========================================================================
+  grype-scanner:
+    image: anchore/grype:v0.80.0
+    container_name: graphmemory-grype-scanner
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./security/reports:/reports
+    environment:
+      - GRYPE_DB_AUTO_UPDATE=true
+      - GRYPE_DB_CACHE_DIR=/tmp/grype-cache
+      - GRYPE_OUTPUT_TEMPLATE_FILE=/reports/grype-template.tmpl
+    command: >
+      sh -c "
+        echo 'Starting Grype vulnerability analysis...'
+        
+        # Scan FastAPI image
+        grype graphmemory/fastapi:3.0.0-prod -o json --file /reports/fastapi-grype.json
+        grype graphmemory/fastapi:3.0.0-prod -o table --file /reports/fastapi-grype.txt
+        
+        # Scan Streamlit image
+        grype graphmemory/streamlit:3.0.0-prod -o json --file /reports/streamlit-grype.json
+        grype graphmemory/streamlit:3.0.0-prod -o table --file /reports/streamlit-grype.txt
+        
+        # Scan Analytics image
+        grype graphmemory/analytics:3.0.0-prod -o json --file /reports/analytics-grype.json
+        grype graphmemory/analytics:3.0.0-prod -o table --file /reports/analytics-grype.txt
+        
+        echo 'Grype vulnerability analysis completed'
+      "
+
+  # ==========================================================================
+  # Syft SBOM Generator
+  # Software Bill of Materials generation for supply chain security
+  # ==========================================================================
+  syft-sbom:
+    image: anchore/syft:v1.17.0
+    container_name: graphmemory-syft-sbom
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./security/reports:/reports
+    command: >
+      sh -c "
+        echo 'Generating Software Bill of Materials (SBOM)...'
+        
+        # Generate SBOM for FastAPI
+        syft graphmemory/fastapi:3.0.0-prod -o spdx-json --file /reports/fastapi-sbom.spdx.json
+        syft graphmemory/fastapi:3.0.0-prod -o cyclonedx-json --file /reports/fastapi-sbom.cyclonedx.json
+        
+        # Generate SBOM for Streamlit
+        syft graphmemory/streamlit:3.0.0-prod -o spdx-json --file /reports/streamlit-sbom.spdx.json
+        syft graphmemory/streamlit:3.0.0-prod -o cyclonedx-json --file /reports/streamlit-sbom.cyclonedx.json
+        
+        # Generate SBOM for Analytics
+        syft graphmemory/analytics:3.0.0-prod -o spdx-json --file /reports/analytics-sbom.spdx.json
+        syft graphmemory/analytics:3.0.0-prod -o cyclonedx-json --file /reports/analytics-sbom.cyclonedx.json
+        
+        echo 'SBOM generation completed'
+      "
+
+  # ==========================================================================
+  # Hadolint Dockerfile Linter
+  # Dockerfile best practices and security linting
+  # ==========================================================================
+  hadolint-linter:
+    image: hadolint/hadolint:v2.12.0-alpine
+    container_name: graphmemory-hadolint-linter
+    volumes:
+      - ./docker/production:/dockerfiles:ro
+      - ./security/reports:/reports
+    command: >
+      sh -c "
+        echo 'Running Dockerfile security linting...'
+        
+        # Lint FastAPI Dockerfile
+        hadolint /dockerfiles/Dockerfile.fastapi --format json > /reports/fastapi-hadolint.json || true
+        hadolint /dockerfiles/Dockerfile.fastapi --format tty > /reports/fastapi-hadolint.txt || true
+        
+        # Lint Streamlit Dockerfile
+        hadolint /dockerfiles/Dockerfile.streamlit --format json > /reports/streamlit-hadolint.json || true
+        hadolint /dockerfiles/Dockerfile.streamlit --format tty > /reports/streamlit-hadolint.txt || true
+        
+        # Lint Analytics Dockerfile
+        hadolint /dockerfiles/Dockerfile.analytics --format json > /reports/analytics-hadolint.json || true
+        hadolint /dockerfiles/Dockerfile.analytics --format tty > /reports/analytics-hadolint.txt || true
+        
+        echo 'Dockerfile linting completed'
+      "
+
+  # ==========================================================================
+  # Security Report Aggregator
+  # Combines all security scan results into comprehensive report
+  # ==========================================================================
+  security-reporter:
+    image: python:3.12-slim
+    container_name: graphmemory-security-reporter
+    volumes:
+      - ./security/reports:/reports
+      - ./security/scripts:/scripts:ro
+    depends_on:
+      - trivy-scanner
+      - grype-scanner
+      - syft-sbom
+      - hadolint-linter
+    command: >
+      sh -c "
+        echo 'Generating comprehensive security report...'
+        
+        # Install required packages
+        pip install jinja2 pyyaml requests pandas
+        
+        # Run security report generator
+        python /scripts/generate_security_report.py
+        
+        echo 'Security reporting completed'
+        echo 'Reports available in ./security/reports/'
+        
+        # Display summary
+        if [ -f /reports/security-summary.txt ]; then
+          echo '=== SECURITY SCAN SUMMARY ==='
+          cat /reports/security-summary.txt
+        fi
+      "
+
+# =============================================================================
+# Security Scanning Volumes
+# =============================================================================
+volumes:
+  security_reports:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./security/reports
+
+  trivy_cache:
+    driver: local
+
+  grype_cache:
+    driver: local 

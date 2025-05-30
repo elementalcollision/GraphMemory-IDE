@@ -1,0 +1,255 @@
+# =============================================================================
+# GraphMemory-IDE Streamlit Dashboard Production Dockerfile
+# Phase 3 Day 1: Container Orchestration & Docker Production
+# Optimized for real-time dashboard performance and production deployment
+# =============================================================================
+
+# =============================================================================
+# Stage 1: Base Configuration
+# Shared base for optimal layer caching and consistency
+# =============================================================================
+FROM python:3.12-slim-bookworm AS base
+
+# Streamlit production environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=random \
+    PYTHONPATH=/app \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_CACHE_DIR=/tmp/.uv-cache
+
+# Streamlit-specific configurations for production
+ENV STREAMLIT_SERVER_PORT=8501 \
+    STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \
+    STREAMLIT_SERVER_ENABLE_CORS=false \
+    STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=true \
+    STREAMLIT_SERVER_MAX_UPLOAD_SIZE=50 \
+    STREAMLIT_SERVER_ENABLE_WEBSOCKET_COMPRESSION=true \
+    STREAMLIT_RUNNER_FAST_RERUNS=true \
+    STREAMLIT_CLIENT_TOOLBAR_MODE=minimal
+
+# Security: Create non-root user
+RUN groupadd --gid 10002 streamlit && \
+    useradd --uid 10002 --gid streamlit --shell /bin/bash --create-home streamlit
+
+# =============================================================================
+# Stage 2: Builder Stage
+# Dependency installation with caching optimization
+# =============================================================================
+FROM base AS builder
+
+# Install system dependencies for building
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install modern uv package manager
+COPY --from=ghcr.io/astral-sh/uv:0.4.9 /uv /bin/uv
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files first for optimal caching
+COPY requirements.txt pyproject.toml* ./
+
+# Install core dependencies using uv
+RUN --mount=type=cache,target=/tmp/.uv-cache \
+    if [ -f pyproject.toml ]; then \
+        uv pip install --system -r pyproject.toml; \
+    else \
+        uv pip install --system -r requirements.txt; \
+    fi
+
+# Install Streamlit production dependencies with specific versions
+RUN --mount=type=cache,target=/tmp/.uv-cache \
+    uv pip install --system \
+    streamlit==1.45.1 \
+    streamlit-echarts==0.4.0 \
+    pandas==2.2.3 \
+    numpy==2.2.6 \
+    plotly==5.24.1 \
+    altair==5.5.0 \
+    pillow==11.2.1 \
+    requests==2.32.3 \
+    httpx==0.28.1 \
+    prometheus-client==0.21.1 \
+    psutil==7.0.0
+
+# Copy application source code
+COPY dashboard/ ./dashboard/
+COPY shared/ ./shared/
+COPY server/dashboard/utils/ ./server/dashboard/utils/
+
+# Create optimized bytecode for faster startup
+RUN python -m compileall -b . && \
+    find . -name "*.py" -delete && \
+    find . -name "__pycache__" -type d -exec rm -rf {} + || true
+
+# =============================================================================
+# Stage 3: Production Runtime
+# Minimal runtime with only necessary components
+# =============================================================================
+FROM base AS production
+
+# Install runtime system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    procps \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy Python environment and application from builder
+COPY --from=builder --chown=streamlit:streamlit /usr/local /usr/local
+COPY --from=builder --chown=streamlit:streamlit /app /app
+
+# Create Streamlit configuration directory and files
+RUN mkdir -p /home/streamlit/.streamlit /app/logs /app/data /app/static && \
+    chown -R streamlit:streamlit /home/streamlit /app
+
+# Switch to non-root user
+USER streamlit
+
+# Create production Streamlit config
+RUN cat > /home/streamlit/.streamlit/config.toml << 'EOF'
+[server]
+port = 8501
+address = "0.0.0.0"
+baseUrlPath = ""
+enableCORS = false
+enableXsrfProtection = true
+maxUploadSize = 50
+enableWebsocketCompression = true
+allowRunOnSave = false
+runOnSave = false
+headless = true
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = false
+
+[runner]
+fastReruns = true
+enforceSerializableSessionState = true
+magicEnabled = false
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#1f77b4"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"
+font = "sans serif"
+
+[global]
+developmentMode = false
+logLevel = "info"
+showWarningOnDirectExecution = false
+suppressDeprecationWarnings = true
+EOF
+
+# Set working directory
+WORKDIR /app
+
+# Health check for Streamlit readiness
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+
+# Expose Streamlit port
+EXPOSE 8501
+
+# Production entrypoint script
+COPY --chown=streamlit:streamlit docker/production/scripts/streamlit-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Production command
+CMD ["/entrypoint.sh"]
+
+# =============================================================================
+# Metadata and Labels
+# =============================================================================
+LABEL maintainer="GraphMemory-IDE Team" \
+      version="3.0.0" \
+      description="GraphMemory-IDE Streamlit Dashboard Production" \
+      component="dashboard" \
+      tier="frontend" \
+      environment="production" \
+      build-date="" \
+      vcs-url="https://github.com/user/GraphMemory-IDE" \
+      vcs-ref="" \
+      schema-version="1.0"
+
+# =============================================================================
+# Stage 4: Development Override
+# Development-specific optimizations
+# =============================================================================
+FROM production AS development
+
+# Switch back to root for development tools
+USER root
+
+# Install development dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    vim \
+    htop \
+    strace \
+    tree \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install development Python packages
+RUN --mount=type=cache,target=/tmp/.uv-cache \
+    /bin/uv pip install --system \
+    pytest==8.3.5 \
+    black==25.1.0 \
+    flake8==7.2.0 \
+    streamlit-analytics==0.4.2
+
+# Override Streamlit config for development
+USER streamlit
+RUN cat > /home/streamlit/.streamlit/config.toml << 'EOF'
+[server]
+port = 8501
+address = "0.0.0.0"
+runOnSave = true
+allowRunOnSave = true
+headless = false
+
+[client]
+toolbarMode = "developer"
+showErrorDetails = true
+
+[runner]
+fastReruns = true
+magicEnabled = true
+
+[global]
+developmentMode = true
+logLevel = "debug"
+showWarningOnDirectExecution = true
+suppressDeprecationWarnings = false
+EOF
+
+# Development command with auto-reload
+CMD ["streamlit", "run", "dashboard/streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+
+# =============================================================================
+# Build Arguments
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+# Apply build arguments to labels
+LABEL build-date=${BUILD_DATE} \
+      vcs-ref=${VCS_REF} \
+      version=${VERSION} 

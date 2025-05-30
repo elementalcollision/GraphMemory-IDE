@@ -1,0 +1,647 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: graphmemory-sli-slo-config
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: sli-slo-framework
+    app.kubernetes.io/instance: graphmemory
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/component: reliability
+data:
+  sli-definitions.yaml: |
+    # Service Level Indicators (SLIs) for GraphMemory-IDE
+    slis:
+      # Availability SLIs
+      api_availability:
+        name: "API Availability"
+        description: "Percentage of successful HTTP requests to GraphMemory-IDE API"
+        query: |
+          sum(rate(http_requests_total{job="fastapi-backend", status!~"5.."}[5m])) /
+          sum(rate(http_requests_total{job="fastapi-backend"}[5m]))
+        unit: "ratio"
+        target: 0.999  # 99.9% availability
+        
+      dashboard_availability:
+        name: "Dashboard Availability"
+        description: "Percentage of successful requests to Streamlit dashboard"
+        query: |
+          sum(rate(http_requests_total{job="streamlit-dashboard", status!~"5.."}[5m])) /
+          sum(rate(http_requests_total{job="streamlit-dashboard"}[5m]))
+        unit: "ratio"
+        target: 0.995  # 99.5% availability
+        
+      # Latency SLIs
+      api_latency_p95:
+        name: "API Latency P95"
+        description: "95th percentile of API response times"
+        query: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="fastapi-backend"}[5m])) by (le)
+          )
+        unit: "seconds"
+        target: 2.0  # 2 seconds max for P95
+        
+      api_latency_p99:
+        name: "API Latency P99"
+        description: "99th percentile of API response times"
+        query: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket{job="fastapi-backend"}[5m])) by (le)
+          )
+        unit: "seconds"
+        target: 5.0  # 5 seconds max for P99
+        
+      memory_operation_latency:
+        name: "Memory Operation Latency"
+        description: "Average time for memory operations to complete"
+        query: |
+          sum(rate(memory_operation_duration_seconds_sum{job="fastapi-backend"}[5m])) /
+          sum(rate(memory_operation_duration_seconds_count{job="fastapi-backend"}[5m]))
+        unit: "seconds"
+        target: 1.0  # 1 second average
+        
+      # Correctness SLIs
+      memory_operation_success_rate:
+        name: "Memory Operation Success Rate"
+        description: "Percentage of successful memory operations"
+        query: |
+          sum(rate(memory_operations_total{job="fastapi-backend", status="success"}[5m])) /
+          sum(rate(memory_operations_total{job="fastapi-backend"}[5m]))
+        unit: "ratio"
+        target: 0.99  # 99% success rate
+        
+      data_integrity:
+        name: "Data Integrity"
+        description: "Percentage of data validation checks that pass"
+        query: |
+          sum(rate(data_validation_total{job="fastapi-backend", result="pass"}[5m])) /
+          sum(rate(data_validation_total{job="fastapi-backend"}[5m]))
+        unit: "ratio"
+        target: 0.999  # 99.9% data integrity
+        
+      # Quality SLIs
+      search_quality:
+        name: "Search Quality"
+        description: "Percentage of search queries returning relevant results"
+        query: |
+          sum(rate(search_queries_total{job="fastapi-backend", relevance="high"}[5m])) /
+          sum(rate(search_queries_total{job="fastapi-backend"}[5m]))
+        unit: "ratio"
+        target: 0.85  # 85% search quality
+        
+      recommendation_accuracy:
+        name: "Recommendation Accuracy"
+        description: "Percentage of recommendations rated as accurate by users"
+        query: |
+          sum(rate(recommendations_total{job="fastapi-backend", accuracy="accurate"}[5m])) /
+          sum(rate(recommendations_total{job="fastapi-backend"}[5m]))
+        unit: "ratio"
+        target: 0.80  # 80% recommendation accuracy
+        
+      # Freshness SLIs
+      data_freshness:
+        name: "Data Freshness"
+        description: "Time since last data update in the knowledge graph"
+        query: |
+          time() - max(knowledge_graph_last_update_timestamp)
+        unit: "seconds"
+        target: 300  # 5 minutes max staleness
+        
+      index_freshness:
+        name: "Index Freshness"
+        description: "Time lag between data ingestion and search availability"
+        query: |
+          avg(search_index_lag_seconds{job="fastapi-backend"})
+        unit: "seconds"
+        target: 60  # 1 minute max lag
+        
+      # Throughput SLIs
+      api_throughput:
+        name: "API Throughput"
+        description: "Number of API requests processed per second"
+        query: |
+          sum(rate(http_requests_total{job="fastapi-backend"}[5m]))
+        unit: "requests_per_second"
+        target: 100  # 100 RPS minimum
+        
+      memory_operations_throughput:
+        name: "Memory Operations Throughput"
+        description: "Number of memory operations processed per second"
+        query: |
+          sum(rate(memory_operations_total{job="fastapi-backend"}[5m]))
+        unit: "operations_per_second"
+        target: 50  # 50 OPS minimum
+        
+      # Resource Efficiency SLIs
+      cpu_efficiency:
+        name: "CPU Efficiency"
+        description: "CPU utilization relative to throughput"
+        query: |
+          (sum(rate(http_requests_total{job="fastapi-backend"}[5m])) * 1000) /
+          (avg(rate(container_cpu_usage_seconds_total{container="fastapi-backend"}[5m])) * 100)
+        unit: "requests_per_cpu_percent"
+        target: 10  # 10 requests per CPU percent
+        
+      memory_efficiency:
+        name: "Memory Efficiency"
+        description: "Memory operations per MB of memory used"
+        query: |
+          sum(rate(memory_operations_total{job="fastapi-backend"}[5m])) /
+          (avg(container_memory_usage_bytes{container="fastapi-backend"}) / 1024 / 1024)
+        unit: "operations_per_mb"
+        target: 0.1  # 0.1 operations per MB
+        
+  slo-definitions.yaml: |
+    # Service Level Objectives (SLOs) for GraphMemory-IDE
+    slos:
+      # Critical User Journeys
+      user_journey_search:
+        name: "User Search Journey"
+        description: "Complete user search experience from query to results"
+        objective: "99.5% of search operations complete successfully within 3 seconds"
+        time_window: "30d"
+        error_budget: "0.5%"
+        slis:
+          - api_availability
+          - api_latency_p95
+          - search_quality
+        composite_query: |
+          (
+            graphmemory:api_success_rate > 0.995 and
+            graphmemory:api_response_time_p95 < 3 and
+            graphmemory:search_quality > 0.85
+          )
+        
+      user_journey_memory_creation:
+        name: "Memory Creation Journey"
+        description: "Complete memory creation workflow"
+        objective: "99% of memory creation operations succeed within 5 seconds"
+        time_window: "30d"
+        error_budget: "1%"
+        slis:
+          - memory_operation_success_rate
+          - memory_operation_latency
+          - data_integrity
+        composite_query: |
+          (
+            graphmemory:memory_operations_success_rate > 0.99 and
+            avg(memory_operation_duration_seconds) < 5 and
+            graphmemory:data_integrity > 0.999
+          )
+        
+      # System Reliability SLOs
+      api_reliability:
+        name: "API Service Reliability"
+        description: "Overall API service availability and performance"
+        objective: "99.9% availability with P95 latency under 2 seconds"
+        time_window: "30d"
+        error_budget: "0.1%"
+        alerting:
+          burn_rate_fast: 14.4  # 1h window
+          burn_rate_slow: 6     # 6h window
+        slis:
+          - api_availability
+          - api_latency_p95
+        
+      dashboard_reliability:
+        name: "Dashboard Service Reliability"
+        description: "Streamlit dashboard availability and performance"
+        objective: "99.5% availability with reasonable response times"
+        time_window: "30d"
+        error_budget: "0.5%"
+        slis:
+          - dashboard_availability
+        
+      # Data Quality SLOs
+      data_consistency:
+        name: "Data Consistency"
+        description: "Maintain data integrity across all operations"
+        objective: "99.9% of data operations maintain consistency"
+        time_window: "7d"
+        error_budget: "0.1%"
+        slis:
+          - data_integrity
+          - memory_operation_success_rate
+        
+      search_relevance:
+        name: "Search Relevance"
+        description: "Maintain high quality search results"
+        objective: "85% of searches return relevant results"
+        time_window: "7d"
+        error_budget: "15%"
+        slis:
+          - search_quality
+          - recommendation_accuracy
+        
+      # Performance SLOs
+      system_performance:
+        name: "System Performance"
+        description: "Overall system responsiveness"
+        objective: "P99 latency under 5 seconds for 99% of time"
+        time_window: "30d"
+        error_budget: "1%"
+        slis:
+          - api_latency_p99
+          - memory_operation_latency
+        
+      resource_efficiency:
+        name: "Resource Efficiency"
+        description: "Efficient use of computational resources"
+        objective: "Maintain target efficiency ratios 95% of time"
+        time_window: "7d"
+        error_budget: "5%"
+        slis:
+          - cpu_efficiency
+          - memory_efficiency
+        
+      # Freshness SLOs
+      data_timeliness:
+        name: "Data Timeliness"
+        description: "Keep data fresh and up-to-date"
+        objective: "Data freshness within 5 minutes 99% of time"
+        time_window: "24h"
+        error_budget: "1%"
+        slis:
+          - data_freshness
+          - index_freshness
+        
+  error-budget-policies.yaml: |
+    # Error Budget Policies for GraphMemory-IDE
+    error_budget_policies:
+      critical_slos:
+        # Critical SLOs with strict error budget policies
+        api_reliability:
+          error_budget_burn_rate_alerts:
+            - name: "fast_burn"
+              threshold: 14.4  # Exhausts 2% of 30-day budget in 1 hour
+              window: "1h"
+              severity: "critical"
+              action: "page_oncall"
+            - name: "slow_burn"
+              threshold: 6     # Exhausts 10% of 30-day budget in 6 hours
+              window: "6h"
+              severity: "warning"
+              action: "slack_alert"
+          
+          error_budget_exhaustion:
+            actions:
+              - "freeze_non_critical_deployments"
+              - "increase_monitoring_frequency"
+              - "activate_incident_response"
+              - "notify_stakeholders"
+        
+        user_journey_search:
+          error_budget_burn_rate_alerts:
+            - name: "fast_burn"
+              threshold: 10
+              window: "1h"
+              severity: "critical"
+            - name: "moderate_burn"
+              threshold: 5
+              window: "3h"
+              severity: "warning"
+          
+          error_budget_exhaustion:
+            actions:
+              - "rollback_recent_changes"
+              - "scale_up_resources"
+              - "enable_circuit_breakers"
+        
+      important_slos:
+        # Important SLOs with moderate policies
+        dashboard_reliability:
+          error_budget_burn_rate_alerts:
+            - name: "moderate_burn"
+              threshold: 8
+              window: "2h"
+              severity: "warning"
+          
+          error_budget_exhaustion:
+            actions:
+              - "investigate_root_cause"
+              - "consider_scaling"
+        
+        data_consistency:
+          error_budget_burn_rate_alerts:
+            - name: "fast_burn"
+              threshold: 12
+              window: "1h"
+              severity: "critical"
+          
+          error_budget_exhaustion:
+            actions:
+              - "enable_read_only_mode"
+              - "run_data_integrity_checks"
+              - "notify_data_team"
+        
+      monitoring_slos:
+        # SLOs with relaxed policies for monitoring and optimization
+        resource_efficiency:
+          error_budget_burn_rate_alerts:
+            - name: "slow_burn"
+              threshold: 4
+              window: "12h"
+              severity: "info"
+          
+          error_budget_exhaustion:
+            actions:
+              - "schedule_optimization_review"
+              - "analyze_resource_usage"
+        
+        search_relevance:
+          error_budget_burn_rate_alerts:
+            - name: "slow_burn"
+              threshold: 3
+              window: "24h"
+              severity: "info"
+          
+          error_budget_exhaustion:
+            actions:
+              - "review_search_algorithms"
+              - "update_relevance_models"
+    
+    # Recovery procedures when error budgets are exhausted
+    recovery_procedures:
+      immediate_actions:
+        - "Assess current system state and active incidents"
+        - "Review recent changes and deployments"
+        - "Check for ongoing maintenance or experiments"
+        - "Evaluate impact on user experience"
+        
+      short_term_actions:
+        - "Implement quick fixes or rollbacks"
+        - "Scale resources if needed"
+        - "Enable degraded mode operations"
+        - "Communicate with users about service status"
+        
+      long_term_actions:
+        - "Conduct thorough root cause analysis"
+        - "Update monitoring and alerting"
+        - "Improve system reliability"
+        - "Review and update SLOs if necessary"
+        - "Implement preventive measures"
+      
+      budget_reset_criteria:
+        - "All critical issues resolved"
+        - "System stability confirmed for 24+ hours"
+        - "Stakeholder approval obtained"
+        - "Post-incident review completed"
+
+---
+# PrometheusRule for SLI/SLO monitoring
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: graphmemory-sli-slo-rules
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: prometheus-rules
+    app.kubernetes.io/instance: graphmemory
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/component: reliability
+spec:
+  groups:
+    - name: graphmemory-sli-recording-rules
+      interval: 30s
+      rules:
+        # SLI Recording Rules
+        - record: graphmemory:api_success_rate
+          expr: |
+            sum(rate(http_requests_total{job="fastapi-backend", status!~"5.."}[5m])) /
+            sum(rate(http_requests_total{job="fastapi-backend"}[5m]))
+        
+        - record: graphmemory:api_response_time_p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="fastapi-backend"}[5m])) by (le)
+            )
+        
+        - record: graphmemory:api_response_time_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket{job="fastapi-backend"}[5m])) by (le)
+            )
+        
+        - record: graphmemory:memory_operations_success_rate
+          expr: |
+            sum(rate(memory_operations_total{job="fastapi-backend", status="success"}[5m])) /
+            sum(rate(memory_operations_total{job="fastapi-backend"}[5m]))
+        
+        - record: graphmemory:dashboard_availability
+          expr: |
+            sum(rate(http_requests_total{job="streamlit-dashboard", status!~"5.."}[5m])) /
+            sum(rate(http_requests_total{job="streamlit-dashboard"}[5m]))
+        
+        - record: graphmemory:data_integrity
+          expr: |
+            sum(rate(data_validation_total{job="fastapi-backend", result="pass"}[5m])) /
+            sum(rate(data_validation_total{job="fastapi-backend"}[5m]))
+        
+        - record: graphmemory:search_quality
+          expr: |
+            sum(rate(search_queries_total{job="fastapi-backend", relevance="high"}[5m])) /
+            sum(rate(search_queries_total{job="fastapi-backend"}[5m]))
+        
+        - record: graphmemory:api_throughput
+          expr: |
+            sum(rate(http_requests_total{job="fastapi-backend"}[5m]))
+        
+        - record: graphmemory:cpu_efficiency
+          expr: |
+            (sum(rate(http_requests_total{job="fastapi-backend"}[5m])) * 1000) /
+            (avg(rate(container_cpu_usage_seconds_total{container="fastapi-backend"}[5m])) * 100)
+    
+    - name: graphmemory-slo-alerting-rules
+      interval: 1m
+      rules:
+        # Error Budget Burn Rate Alerts
+        - alert: GraphMemoryAPIReliabilityFastBurn
+          expr: |
+            (
+              (1 - graphmemory:api_success_rate) > (14.4 * 0.001)
+              or
+              graphmemory:api_response_time_p95 > 2
+            )
+          for: 2m
+          labels:
+            severity: critical
+            service: graphmemory-api
+            slo: api_reliability
+            burn_rate: fast
+          annotations:
+            summary: "GraphMemory API SLO is burning error budget too fast"
+            description: "API reliability SLO is consuming error budget at {{ $value }}x the acceptable rate. At this rate, the entire monthly error budget will be exhausted in {{ div 720 $value | printf \"%.1f\" }} hours."
+            runbook_url: "https://docs.graphmemory.dev/runbooks/slo-burn-rate"
+            dashboard_url: "https://grafana.graphmemory.dev/d/slo-dashboard/slo-overview?var-service=api"
+        
+        - alert: GraphMemoryAPIReliabilitySlowBurn
+          expr: |
+            (
+              (1 - graphmemory:api_success_rate) > (6 * 0.001)
+              or
+              graphmemory:api_response_time_p95 > 2
+            )
+          for: 15m
+          labels:
+            severity: warning
+            service: graphmemory-api
+            slo: api_reliability
+            burn_rate: slow
+          annotations:
+            summary: "GraphMemory API SLO is burning error budget"
+            description: "API reliability SLO is consuming error budget at {{ $value }}x the acceptable rate."
+            runbook_url: "https://docs.graphmemory.dev/runbooks/slo-burn-rate"
+        
+        - alert: GraphMemorySearchJourneyFastBurn
+          expr: |
+            (
+              graphmemory:api_success_rate < 0.995
+              or
+              graphmemory:api_response_time_p95 > 3
+              or
+              graphmemory:search_quality < 0.85
+            )
+          for: 5m
+          labels:
+            severity: critical
+            service: graphmemory
+            slo: user_journey_search
+            burn_rate: fast
+          annotations:
+            summary: "GraphMemory search user journey SLO degraded"
+            description: "Search journey SLO is not meeting targets: Success rate {{ printf \"%.3f\" $values.search_success_rate }}, P95 latency {{ printf \"%.2f\" $values.p95_latency }}s, Search quality {{ printf \"%.2f\" $values.search_quality }}"
+            runbook_url: "https://docs.graphmemory.dev/runbooks/search-journey-degraded"
+        
+        - alert: GraphMemoryMemoryOperationsFastBurn
+          expr: |
+            (
+              graphmemory:memory_operations_success_rate < 0.99
+              or
+              avg(memory_operation_duration_seconds) > 5
+              or
+              graphmemory:data_integrity < 0.999
+            )
+          for: 5m
+          labels:
+            severity: critical
+            service: graphmemory
+            slo: user_journey_memory_creation
+            burn_rate: fast
+          annotations:
+            summary: "GraphMemory memory operations SLO degraded"
+            description: "Memory creation journey SLO failing: Success rate {{ printf \"%.3f\" $values.operation_success_rate }}, Avg duration {{ printf \"%.2f\" $values.avg_duration }}s, Data integrity {{ printf \"%.3f\" $values.data_integrity }}"
+            runbook_url: "https://docs.graphmemory.dev/runbooks/memory-operations-degraded"
+        
+        # SLO Target Violation Alerts
+        - alert: GraphMemoryDataFreshnessViolation
+          expr: |
+            (time() - max(knowledge_graph_last_update_timestamp)) > 300
+          for: 5m
+          labels:
+            severity: warning
+            service: graphmemory
+            slo: data_timeliness
+          annotations:
+            summary: "GraphMemory data freshness SLO violated"
+            description: "Data has not been updated for {{ $value }} seconds, exceeding the 5-minute freshness target."
+            runbook_url: "https://docs.graphmemory.dev/runbooks/data-freshness"
+        
+        - alert: GraphMemoryThroughputBelowTarget
+          expr: |
+            graphmemory:api_throughput < 100
+          for: 10m
+          labels:
+            severity: warning
+            service: graphmemory-api
+            slo: system_performance
+          annotations:
+            summary: "GraphMemory API throughput below target"
+            description: "API throughput is {{ printf \"%.1f\" $value }} RPS, below the 100 RPS target."
+            runbook_url: "https://docs.graphmemory.dev/runbooks/low-throughput"
+        
+        # Error Budget Exhaustion Warnings
+        - alert: GraphMemoryErrorBudgetExhaustion
+          expr: |
+            (
+              # Calculate error budget consumption over 30 days
+              (1 - avg_over_time(graphmemory:api_success_rate[30d])) > 0.0008  # 80% of 0.1% budget
+            )
+          for: 0m
+          labels:
+            severity: warning
+            service: graphmemory-api
+            slo: api_reliability
+          annotations:
+            summary: "GraphMemory API error budget nearly exhausted"
+            description: "API reliability error budget is {{ div $value 0.001 | printf \"%.1f\" }}% consumed. Consider implementing protective measures."
+            runbook_url: "https://docs.graphmemory.dev/runbooks/error-budget-exhausted"
+    
+    - name: graphmemory-slo-meta-rules
+      interval: 5m
+      rules:
+        # SLO Achievement Tracking
+        - record: graphmemory:slo_api_reliability_achievement_30d
+          expr: |
+            avg_over_time(graphmemory:api_success_rate[30d]) >= 0.999
+            and
+            avg_over_time(graphmemory:api_response_time_p95[30d]) <= 2
+        
+        - record: graphmemory:slo_search_journey_achievement_30d
+          expr: |
+            (
+              avg_over_time(graphmemory:api_success_rate[30d]) >= 0.995
+              and
+              avg_over_time(graphmemory:api_response_time_p95[30d]) <= 3
+              and
+              avg_over_time(graphmemory:search_quality[30d]) >= 0.85
+            )
+        
+        # Error Budget Remaining
+        - record: graphmemory:error_budget_remaining_api_reliability
+          expr: |
+            1 - ((1 - avg_over_time(graphmemory:api_success_rate[30d])) / 0.001)
+        
+        - record: graphmemory:error_budget_remaining_search_journey
+          expr: |
+            1 - ((1 - avg_over_time(
+              (
+                (graphmemory:api_success_rate >= 0.995) and
+                (graphmemory:api_response_time_p95 <= 3) and
+                (graphmemory:search_quality >= 0.85)
+              )[30d]
+            )) / 0.005)
+
+---
+# ServiceMonitor for SLI/SLO metrics collection
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: graphmemory-sli-metrics
+  namespace: monitoring-production
+  labels:
+    app.kubernetes.io/name: service-monitor
+    app.kubernetes.io/instance: graphmemory
+    app.kubernetes.io/part-of: graphmemory-ide
+    app.kubernetes.io/component: reliability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fastapi-backend
+  namespaceSelector:
+    matchNames:
+      - graphmemory-production
+      - graphmemory-staging
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: '(http_requests_total|http_request_duration_seconds.*|memory_operations_total|memory_operation_duration_seconds.*|data_validation_total|search_queries_total|recommendations_total|knowledge_graph_last_update_timestamp|search_index_lag_seconds)'
+          action: keep
+        - sourceLabels: [job]
+          targetLabel: sli_job
+        - targetLabel: reliability_tier
+          replacement: critical 

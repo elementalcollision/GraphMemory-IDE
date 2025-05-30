@@ -1,0 +1,202 @@
+# =============================================================================
+# GraphMemory-IDE Analytics Engine Production Dockerfile
+# Phase 3 Day 1: Container Orchestration & Docker Production
+# Lightweight analytics service with optimized performance
+# =============================================================================
+
+# =============================================================================
+# Stage 1: Base Configuration
+# Optimized base for analytics workloads
+# =============================================================================
+FROM python:3.12-slim-bookworm AS base
+
+# Analytics service environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=random \
+    PYTHONPATH=/app \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_CACHE_DIR=/tmp/.uv-cache
+
+# Analytics-specific configurations
+ENV ANALYTICS_PORT=8002 \
+    ANALYTICS_HOST=0.0.0.0 \
+    ANALYTICS_ENV=production \
+    ANALYTICS_LOG_LEVEL=info \
+    ANALYTICS_WORKERS=2 \
+    ANALYTICS_THREADS=4
+
+# Security: Create non-root user for analytics
+RUN groupadd --gid 10003 analytics && \
+    useradd --uid 10003 --gid analytics --shell /bin/bash --create-home analytics
+
+# =============================================================================
+# Stage 2: Builder Stage
+# Analytics dependencies and compilation
+# =============================================================================
+FROM base AS builder
+
+# Install system dependencies for analytics and ML libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    pkg-config \
+    gcc \
+    g++ \
+    gfortran \
+    libopenblas-dev \
+    liblapack-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install modern uv package manager
+COPY --from=ghcr.io/astral-sh/uv:0.4.9 /uv /bin/uv
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files first for caching
+COPY requirements.txt pyproject.toml* ./
+
+# Install core dependencies
+RUN --mount=type=cache,target=/tmp/.uv-cache \
+    if [ -f pyproject.toml ]; then \
+        uv pip install --system -r pyproject.toml; \
+    else \
+        uv pip install --system -r requirements.txt; \
+    fi
+
+# Install analytics-specific dependencies with optimized versions
+RUN --mount=type=cache,target=/tmp/.uv-cache \
+    uv pip install --system \
+    fastapi==0.115.12 \
+    uvicorn[standard]==0.31.1 \
+    numpy==2.2.6 \
+    pandas==2.2.3 \
+    scikit-learn==1.6.1 \
+    kuzu==0.10.0 \
+    redis==6.2.0 \
+    aiosqlite==0.21.0 \
+    pydantic==2.11.5 \
+    prometheus-client==0.21.1 \
+    psutil==7.0.0 \
+    asyncio-pool==0.6.0 \
+    memory-profiler==0.61.0
+
+# Copy analytics source code
+COPY server/analytics/ ./server/analytics/
+COPY shared/ ./shared/
+COPY data/ ./data/
+
+# Create optimized bytecode for faster startup
+RUN python -m compileall -b . && \
+    find . -name "*.py" -delete && \
+    find . -name "__pycache__" -type d -exec rm -rf {} + || true
+
+# =============================================================================
+# Stage 3: Production Runtime
+# Minimal analytics runtime environment
+# =============================================================================
+FROM base AS production
+
+# Install minimal runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    libopenblas0 \
+    liblapack3 \
+    procps \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy Python environment and application from builder
+COPY --from=builder --chown=analytics:analytics /usr/local /usr/local
+COPY --from=builder --chown=analytics:analytics /app /app
+
+# Create analytics directories with proper permissions
+RUN mkdir -p /app/logs /app/data /app/cache /app/models && \
+    chown -R analytics:analytics /app
+
+# Switch to non-root user
+USER analytics
+
+# Set working directory
+WORKDIR /app
+
+# Health check for analytics service readiness
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8002/health || exit 1
+
+# Expose analytics service port
+EXPOSE 8002
+
+# Production entrypoint script
+COPY --chown=analytics:analytics docker/production/scripts/analytics-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Production command
+CMD ["/entrypoint.sh"]
+
+# =============================================================================
+# Metadata and Labels
+# =============================================================================
+LABEL maintainer="GraphMemory-IDE Team" \
+      version="3.0.0" \
+      description="GraphMemory-IDE Analytics Engine Production" \
+      component="analytics" \
+      tier="backend" \
+      environment="production" \
+      build-date="" \
+      vcs-url="https://github.com/user/GraphMemory-IDE" \
+      vcs-ref="" \
+      schema-version="1.0"
+
+# =============================================================================
+# Stage 4: Development Override
+# Development-specific analytics tools
+# =============================================================================
+FROM production AS development
+
+# Switch back to root for development tools
+USER root
+
+# Install development and debugging tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    vim \
+    htop \
+    strace \
+    tree \
+    graphviz \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install analytics development packages
+RUN --mount=type=cache,target=/tmp/.uv-cache \
+    /bin/uv pip install --system \
+    pytest==8.3.5 \
+    pytest-asyncio==1.0.0 \
+    black==25.1.0 \
+    flake8==7.2.0 \
+    jupyter==1.1.1 \
+    matplotlib==3.10.0 \
+    seaborn==0.13.2 \
+    plotly==5.24.1
+
+# Override for development mode
+USER analytics
+CMD ["uvicorn", "server.analytics.main:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+
+# =============================================================================
+# Build Arguments
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+# Apply build arguments to labels
+LABEL build-date=${BUILD_DATE} \
+      vcs-ref=${VCS_REF} \
+      version=${VERSION} 

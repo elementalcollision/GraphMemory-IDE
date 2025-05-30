@@ -1176,5 +1176,5 @@ volumes:
 
 **Monitoring Guide**: Complete observability reference for GraphMemory-IDE  
 **Version**: 1.0.0  
-**Last Updated**: January 29, 2025  
+**Last Updated**: May 29, 2025  
 **Coverage**: Application, Step 8 Alerts, Analytics, Infrastructure 

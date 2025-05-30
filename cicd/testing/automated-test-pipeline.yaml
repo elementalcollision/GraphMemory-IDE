@@ -1,0 +1,716 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-pipeline-config
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    component: configuration
+data:
+  pytest.ini: |
+    [tool:pytest]
+    minversion = 6.0
+    addopts = 
+        -ra
+        -q
+        --strict-markers
+        --strict-config
+        --color=yes
+        --tb=short
+        --maxfail=10
+        --durations=10
+        --cov=server
+        --cov-report=term-missing
+        --cov-report=html:htmlcov
+        --cov-report=xml
+        --junitxml=test-results.xml
+    testpaths = tests
+    markers =
+        unit: Unit tests
+        integration: Integration tests
+        e2e: End-to-end tests
+        performance: Performance tests
+        slow: Slow running tests
+        smoke: Smoke tests for quick validation
+        security: Security tests
+        database: Tests requiring database
+        redis: Tests requiring Redis
+        api: API endpoint tests
+        memory: Memory operation tests
+        graph: Graph database tests
+  
+  test-config.yaml: |
+    testing:
+      environments:
+        unit:
+          database_url: "sqlite:///test.db"
+          redis_url: "redis://localhost:6379/0"
+          timeout: 30
+        integration:
+          database_url: "postgresql://test:test@postgres:5432/test_db"
+          redis_url: "redis://redis:6379/0"
+          timeout: 120
+        e2e:
+          base_url: "http://fastapi-backend:8080"
+          dashboard_url: "http://streamlit-dashboard:8501"
+          timeout: 300
+        performance:
+          base_url: "http://fastapi-backend:8080"
+          concurrent_users: 50
+          test_duration: 300
+          ramp_up_time: 60
+      
+      thresholds:
+        performance:
+          response_time_p95: 500  # milliseconds
+          response_time_p99: 1000
+          error_rate: 0.01  # 1%
+          throughput_min: 100  # requests per second
+        
+        coverage:
+          minimum: 85
+          target: 95
+        
+        security:
+          max_critical: 0
+          max_high: 2
+          max_medium: 10
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: unit-tests
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: unit
+    automation: ci-cd
+  annotations:
+    ci.graphmemory.dev/triggered-by: "github-actions"
+    ci.graphmemory.dev/commit-sha: "${GITHUB_SHA:-unknown}"
+    ci.graphmemory.dev/pipeline-run: "${GITHUB_RUN_ID:-unknown}"
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: unit
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      
+      containers:
+        - name: unit-tests
+          image: ghcr.io/elementalcollision/graphmemory-ide/test-runner:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: TEST_TYPE
+              value: "unit"
+            - name: PYTHONPATH
+              value: "/app"
+            - name: DATABASE_URL
+              value: "sqlite:///test.db"
+            - name: REDIS_URL
+              value: "redis://localhost:6379/0"
+            - name: TESTING
+              value: "true"
+            - name: LOG_LEVEL
+              value: "WARNING"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting unit tests..."
+              
+              # Setup test environment
+              python -c "import sys; print(f'Python version: {sys.version}')"
+              pip list | grep -E "(pytest|fastapi|sqlalchemy)"
+              
+              # Create test database
+              python -c "
+              from server.database import engine, Base
+              Base.metadata.create_all(bind=engine)
+              print('Test database initialized')
+              "
+              
+              # Run unit tests with coverage
+              pytest tests/unit/ \
+                --verbose \
+                --cov=server \
+                --cov-report=term-missing \
+                --cov-report=html:htmlcov \
+                --cov-report=xml \
+                --junitxml=test-results.xml \
+                --tb=short \
+                --maxfail=5 \
+                -m "unit and not slow"
+              
+              # Check coverage threshold
+              coverage report --fail-under=85
+              
+              echo "Unit tests completed successfully"
+          
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          
+          volumeMounts:
+            - name: test-config
+              mountPath: /app/pytest.ini
+              subPath: pytest.ini
+            - name: test-results
+              mountPath: /app/test-results
+      
+      volumes:
+        - name: test-config
+          configMap:
+            name: test-pipeline-config
+        - name: test-results
+          emptyDir: {}
+  
+  backoffLimit: 2
+  activeDeadlineSeconds: 1800  # 30 minutes
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: integration-tests
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: integration
+    automation: ci-cd
+  annotations:
+    ci.graphmemory.dev/depends-on: "unit-tests"
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: integration
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      
+      initContainers:
+        - name: wait-for-dependencies
+          image: busybox:1.35
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for database and Redis..."
+              until nc -z postgres 5432; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+              until nc -z redis 6379; do
+                echo "Waiting for Redis..."
+                sleep 2
+              done
+              echo "Dependencies are ready"
+      
+      containers:
+        - name: integration-tests
+          image: ghcr.io/elementalcollision/graphmemory-ide/test-runner:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: TEST_TYPE
+              value: "integration"
+            - name: DATABASE_URL
+              value: "postgresql://test:test@postgres:5432/test_db"
+            - name: REDIS_URL
+              value: "redis://redis:6379/0"
+            - name: TESTING
+              value: "true"
+            - name: LOG_LEVEL
+              value: "INFO"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting integration tests..."
+              
+              # Wait for services to be fully ready
+              sleep 10
+              
+              # Run database migrations
+              alembic upgrade head
+              
+              # Seed test data
+              python scripts/seed_test_data.py
+              
+              # Run integration tests
+              pytest tests/integration/ \
+                --verbose \
+                --tb=short \
+                --maxfail=3 \
+                --junitxml=integration-results.xml \
+                -m "integration" \
+                --durations=20
+              
+              echo "Integration tests completed successfully"
+          
+          resources:
+            requests:
+              cpu: 300m
+              memory: 1Gi
+            limits:
+              cpu: 1500m
+              memory: 2Gi
+          
+          volumeMounts:
+            - name: test-results
+              mountPath: /app/test-results
+      
+      volumes:
+        - name: test-results
+          emptyDir: {}
+  
+  backoffLimit: 2
+  activeDeadlineSeconds: 2700  # 45 minutes
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: e2e-tests
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: e2e
+    automation: ci-cd
+  annotations:
+    ci.graphmemory.dev/depends-on: "integration-tests"
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: e2e
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      
+      initContainers:
+        - name: wait-for-services
+          image: curlimages/curl:8.5.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for application services..."
+              
+              # Wait for FastAPI backend
+              until curl -f http://fastapi-backend:8080/health; do
+                echo "Waiting for FastAPI backend..."
+                sleep 5
+              done
+              
+              # Wait for Streamlit dashboard
+              until curl -f http://streamlit-dashboard:8501/_stcore/health; do
+                echo "Waiting for Streamlit dashboard..."
+                sleep 5
+              done
+              
+              echo "All services are ready"
+      
+      containers:
+        - name: e2e-tests
+          image: ghcr.io/elementalcollision/graphmemory-ide/test-runner:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: TEST_TYPE
+              value: "e2e"
+            - name: FASTAPI_BASE_URL
+              value: "http://fastapi-backend:8080"
+            - name: STREAMLIT_BASE_URL
+              value: "http://streamlit-dashboard:8501"
+            - name: TESTING
+              value: "true"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting end-to-end tests..."
+              
+              # Run API endpoint tests
+              pytest tests/e2e/api/ \
+                --verbose \
+                --tb=short \
+                --junitxml=e2e-api-results.xml \
+                -m "e2e and api"
+              
+              # Run dashboard tests (if Playwright is available)
+              if command -v playwright &> /dev/null; then
+                pytest tests/e2e/dashboard/ \
+                  --verbose \
+                  --tb=short \
+                  --junitxml=e2e-dashboard-results.xml \
+                  -m "e2e and dashboard" \
+                  --headed=false \
+                  --browser=chromium
+              fi
+              
+              # Run memory operations workflow tests
+              pytest tests/e2e/workflows/ \
+                --verbose \
+                --tb=short \
+                --junitxml=e2e-workflow-results.xml \
+                -m "e2e and memory"
+              
+              echo "End-to-end tests completed successfully"
+          
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          
+          volumeMounts:
+            - name: test-results
+              mountPath: /app/test-results
+      
+      volumes:
+        - name: test-results
+          emptyDir: {}
+  
+  backoffLimit: 1
+  activeDeadlineSeconds: 3600  # 60 minutes
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: performance-tests
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: performance
+    automation: ci-cd
+  annotations:
+    ci.graphmemory.dev/depends-on: "e2e-tests"
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: performance
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      
+      containers:
+        - name: performance-tests
+          image: ghcr.io/elementalcollision/graphmemory-ide/performance-tester:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: TARGET_URL
+              value: "http://fastapi-backend:8080"
+            - name: CONCURRENT_USERS
+              value: "50"
+            - name: TEST_DURATION
+              value: "300"
+            - name: RAMP_UP_TIME
+              value: "60"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting performance tests..."
+              
+              # Load test using Locust
+              locust \
+                --headless \
+                --users ${CONCURRENT_USERS} \
+                --spawn-rate 5 \
+                --run-time ${TEST_DURATION}s \
+                --host ${TARGET_URL} \
+                --html performance-report.html \
+                --csv performance-results \
+                --logfile performance.log \
+                --loglevel INFO \
+                -f tests/performance/locustfile.py
+              
+              # Analyze results
+              python scripts/analyze_performance.py \
+                --csv-file performance-results_stats.csv \
+                --thresholds-file /app/test-config.yaml
+              
+              echo "Performance tests completed"
+          
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 2Gi
+            limits:
+              cpu: 3000m
+              memory: 4Gi
+          
+          volumeMounts:
+            - name: test-config
+              mountPath: /app/test-config.yaml
+              subPath: test-config.yaml
+            - name: test-results
+              mountPath: /app/test-results
+      
+      volumes:
+        - name: test-config
+          configMap:
+            name: test-pipeline-config
+        - name: test-results
+          emptyDir: {}
+  
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800  # 30 minutes
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: security-tests
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: security
+    automation: ci-cd
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: security
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      
+      containers:
+        - name: security-tests
+          image: ghcr.io/elementalcollision/graphmemory-ide/security-scanner:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: TARGET_URL
+              value: "http://fastapi-backend:8080"
+            - name: SCAN_TYPE
+              value: "dynamic"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting security tests..."
+              
+              # OWASP ZAP security scanning
+              if command -v zap-baseline.py &> /dev/null; then
+                zap-baseline.py \
+                  -t ${TARGET_URL} \
+                  -r zap-baseline-report.html \
+                  -J zap-baseline-report.json \
+                  -w zap-baseline-report.md
+              fi
+              
+              # API security tests
+              pytest tests/security/ \
+                --verbose \
+                --tb=short \
+                --junitxml=security-results.xml \
+                -m "security"
+              
+              # SQL injection tests
+              sqlmap \
+                --batch \
+                --url="${TARGET_URL}/api/memory/search" \
+                --data="query=test" \
+                --level=3 \
+                --risk=2 \
+                --output-dir=/app/test-results/sqlmap/
+              
+              echo "Security tests completed"
+          
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 3Gi
+          
+          volumeMounts:
+            - name: test-results
+              mountPath: /app/test-results
+      
+      volumes:
+        - name: test-results
+          emptyDir: {}
+  
+  backoffLimit: 1
+  activeDeadlineSeconds: 2700  # 45 minutes
+
+---
+# Test results aggregation and reporting
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-report-aggregator
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: reporting
+    automation: ci-cd
+  annotations:
+    ci.graphmemory.dev/depends-on: "unit-tests,integration-tests,e2e-tests,performance-tests,security-tests"
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: reporting
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      
+      containers:
+        - name: report-aggregator
+          image: ghcr.io/elementalcollision/graphmemory-ide/test-reporter:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-token
+                  key: token
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: slack-webhook
+                  key: url
+            - name: GITHUB_REPOSITORY
+              value: "elementalcollision/GraphMemory-IDE"
+            - name: GITHUB_SHA
+              value: "${GITHUB_SHA:-unknown}"
+            - name: GITHUB_RUN_ID
+              value: "${GITHUB_RUN_ID:-unknown}"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Aggregating test results..."
+              
+              # Collect all test results
+              mkdir -p /tmp/reports
+              
+              # Generate unified test report
+              python scripts/generate_test_report.py \
+                --output-dir /tmp/reports \
+                --format html,json,junit \
+                --include-coverage \
+                --include-performance \
+                --include-security
+              
+              # Upload to GitHub Pages (if configured)
+              if [ -n "$GITHUB_TOKEN" ]; then
+                python scripts/upload_github_pages.py \
+                  --report-dir /tmp/reports \
+                  --repository $GITHUB_REPOSITORY \
+                  --sha $GITHUB_SHA
+              fi
+              
+              # Send Slack notification
+              if [ -n "$SLACK_WEBHOOK_URL" ]; then
+                python scripts/send_slack_notification.py \
+                  --webhook-url $SLACK_WEBHOOK_URL \
+                  --report-file /tmp/reports/summary.json \
+                  --build-url "https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+              fi
+              
+              echo "Test reporting completed"
+          
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          
+          volumeMounts:
+            - name: test-results
+              mountPath: /app/test-results
+      
+      volumes:
+        - name: test-results
+          emptyDir: {}
+  
+  backoffLimit: 1
+  activeDeadlineSeconds: 900  # 15 minutes
+
+---
+# Service account for test runners
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-runner
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    component: serviceaccount
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-runner
+  namespace: graphmemory-staging
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-runner
+  namespace: graphmemory-staging
+subjects:
+  - kind: ServiceAccount
+    name: test-runner
+    namespace: graphmemory-staging
+roleRef:
+  kind: Role
+  name: test-runner
+  apiGroup: rbac.authorization.k8s.io 

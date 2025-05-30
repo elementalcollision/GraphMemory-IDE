@@ -2,20 +2,20 @@
 
 ## 🎯 Overview
 
-This comprehensive guide covers deploying GraphMemory-IDE in various environments, from local development to production-grade enterprise deployments. The guide includes the complete Step 8 alerting system, analytics engine, and security hardening configurations.
+This comprehensive guide covers deploying GraphMemory-IDE in various environments, from local development to production-grade Kubernetes deployments. This guide includes the complete Phase 3 implementation with container orchestration, Kubernetes production deployment, and advanced operational features.
 
 ## 📋 Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Deployment Options](#deployment-options)
 - [Quick Start Deployment](#quick-start-deployment)
-- [Production Deployment](#production-deployment)
-- [Enterprise Deployment](#enterprise-deployment)
-- [Step 8 Alerting System Deployment](#step-8-alerting-system-deployment)
-- [Security Hardening](#security-hardening)
+- [Docker Compose Deployment](#docker-compose-deployment)
+- [Kubernetes Production Deployment](#kubernetes-production-deployment)
+- [Advanced Configuration](#advanced-configuration)
+- [Security & Hardening](#security--hardening)
 - [Monitoring & Observability](#monitoring--observability)
 - [Performance Tuning](#performance-tuning)
-- [Troubleshooting Deployment](#troubleshooting-deployment)
+- [Troubleshooting](#troubleshooting)
 
 ## 🚀 Prerequisites
 
@@ -31,42 +31,54 @@ This comprehensive guide covers deploying GraphMemory-IDE in various environment
 ### Software Dependencies
 
 ```mermaid
-graph TB
-    subgraph "Container Runtime"
-        DOCKER[Docker 24.0+<br/>or OrbStack]
-        COMPOSE[Docker Compose 2.0+]
+flowchart TB
+    subgraph "Development Environment"
+        DOCKER[Docker 24.0+<br/>Container Runtime]
+        COMPOSE[Docker Compose 2.0+<br/>Multi-container Apps]
+        PYTHON[Python 3.11+<br/>Development]
     end
     
-    subgraph "Optional (Local Dev)"
-        PYTHON[Python 3.11+]
-        NODE[Node.js 18+]
-        REDIS[Redis 7.0+]
+    subgraph "Production Environment"
+        KUBERNETES[Kubernetes 1.28+<br/>Container Orchestration]
+        KUBECTL[kubectl CLI<br/>Cluster Management]
+        HELM[Helm 3.0+<br/>Package Manager]
     end
     
-    subgraph "Production Additions"
-        NGINX[nginx/traefik<br/>Load Balancer]
-        VAULT[HashiCorp Vault<br/>Secrets Management]
-        PROMETHEUS[Prometheus<br/>Monitoring]
+    subgraph "Monitoring Stack"
+        PROMETHEUS[Prometheus<br/>Metrics Collection]
         GRAFANA[Grafana<br/>Dashboards]
+        ALERTMANAGER[Alertmanager<br/>Alert Routing]
+    end
+    
+    subgraph "Security Tools"
+        TRIVY[Trivy<br/>Security Scanning]
+        VAULT[HashiCorp Vault<br/>Secrets Management]
+        CERT_MANAGER[Cert Manager<br/>TLS Automation]
     end
     
     DOCKER --> COMPOSE
-    PYTHON --> NODE
-    NGINX --> VAULT
-    PROMETHEUS --> GRAFANA
+    KUBERNETES --> KUBECTL
+    KUBECTL --> HELM
     
-    style DOCKER fill:#00bf7d,color:#000000
-    style COMPOSE fill:#00b4c5,color:#000000
-    style PROMETHEUS fill:#0073e6,color:#ffffff
-    style GRAFANA fill:#2546f0,color:#ffffff
+    PROMETHEUS --> GRAFANA
+    GRAFANA --> ALERTMANAGER
+    
+    TRIVY --> VAULT
+    VAULT --> CERT_MANAGER
+    
+    style KUBERNETES fill:#326ce5,color:#fff
+    style PROMETHEUS fill:#e6522c,color:#fff
+    style VAULT fill:#000000,color:#fff
 ```
 
 ### Environment Preparation
 
 ```bash
-# Verify Docker installation
+# Verify required tools
 docker --version
 docker compose version
+kubectl version --client
+helm version
 
 # Clone repository
 git clone https://github.com/elementalcollision/GraphMemory-IDE.git
@@ -75,715 +87,744 @@ cd GraphMemory-IDE
 # Verify system resources
 df -h  # Check disk space
 free -h  # Check memory
-lscpu  # Check CPU
+lscpu  # Check CPU cores
 ```
 
 ## 🔧 Deployment Options
 
-### Deployment Architecture Matrix
+### Deployment Strategy Matrix
 
 ```mermaid
-graph TB
-    subgraph "Development"
-        DEV_LOCAL[Local Development<br/>Single Host]
-        DEV_COMPOSE[Docker Compose<br/>Development]
+flowchart TB
+    subgraph "Development Stage"
+        LOCAL_DEV[Local Development<br/>Docker Compose<br/>Single Developer]
+        TEAM_DEV[Team Development<br/>Shared Environment<br/>Feature Testing]
     end
     
-    subgraph "Testing/Staging"
-        STAGE_COMPOSE[Docker Compose<br/>with Monitoring]
-        STAGE_K8S[Kubernetes<br/>Testing Cluster]
+    subgraph "Testing Stage"
+        INTEGRATION[Integration Testing<br/>Docker Compose<br/>CI/CD Pipeline]
+        STAGING[Staging Environment<br/>Kubernetes<br/>Production-like]
     end
     
-    subgraph "Production"
-        PROD_SINGLE[Single Host<br/>Production]
-        PROD_CLUSTER[Multi-Host<br/>Cluster]
-        PROD_CLOUD[Cloud<br/>Managed Services]
+    subgraph "Production Stage"
+        SINGLE_NODE[Single Node<br/>Docker Compose<br/>Small Scale]
+        KUBERNETES_PROD[Kubernetes Production<br/>Multi-node Cluster<br/>High Availability]
+        ENTERPRISE[Enterprise<br/>Multi-cluster<br/>Global Scale]
     end
     
-    subgraph "Enterprise"
-        ENT_ONPREM[On-Premises<br/>Full Security]
-        ENT_HYBRID[Hybrid Cloud<br/>Multi-Region]
-        ENT_AIRGAP[Air-Gapped<br/>Isolated Network]
-    end
+    LOCAL_DEV --> INTEGRATION
+    TEAM_DEV --> STAGING
+    INTEGRATION --> SINGLE_NODE
+    STAGING --> KUBERNETES_PROD
+    SINGLE_NODE --> KUBERNETES_PROD
+    KUBERNETES_PROD --> ENTERPRISE
     
-    DEV_LOCAL --> STAGE_COMPOSE
-    DEV_COMPOSE --> STAGE_K8S
-    STAGE_COMPOSE --> PROD_SINGLE
-    STAGE_K8S --> PROD_CLUSTER
-    PROD_SINGLE --> ENT_ONPREM
-    PROD_CLUSTER --> ENT_HYBRID
-    ENT_HYBRID --> ENT_AIRGAP
-    
-    style DEV_LOCAL fill:#00bf7d,color:#000000
-    style PROD_SINGLE fill:#00b4c5,color:#000000
-    style ENT_ONPREM fill:#0073e6,color:#ffffff
+    style LOCAL_DEV fill:#4caf50,color:#000
+    style KUBERNETES_PROD fill:#326ce5,color:#fff
+    style ENTERPRISE fill:#ff9800,color:#000
 ```
 
 ## 🚀 Quick Start Deployment
 
-### Option 1: Standard Docker Deployment
+### Option 1: Docker Compose (Recommended for Development)
 
 ```bash
 # Navigate to docker directory
 cd docker
 
-# Start all services
+# Start all services with production config
 docker compose up -d
 
-# Verify services
+# Verify services are running
 docker compose ps
-docker compose logs -f mcp-server
+docker compose logs -f fastapi-backend
 ```
 
-**Services Started:**
-- MCP Server: http://localhost:8080
-- MCP Server (mTLS): https://localhost:50051
+**Services Available:**
+- FastAPI Backend: http://localhost:8080
+- Streamlit Dashboard: http://localhost:8501
 - Kestra CI/CD: http://localhost:8081
+- PostgreSQL: localhost:5432
+- Redis: localhost:6379
 
-### Option 2: Security-Hardened Deployment
+### Option 2: Kubernetes Quick Deploy
 
 ```bash
-# Deploy with enhanced security
-./scripts/deploy-secure.sh
+# Create namespace and apply manifests
+kubectl create namespace graphmemory-prod
+kubectl apply -f kubernetes/manifests/ -n graphmemory-prod
 
-# Or with mTLS enabled
-MTLS_ENABLED=true ./scripts/deploy-secure.sh
+# Verify deployment
+kubectl get pods -n graphmemory-prod
+kubectl get services -n graphmemory-prod
 
-# Verify security features
-./scripts/verify-security.sh
+# Check application status
+kubectl logs -f deployment/fastapi-backend -n graphmemory-prod
 ```
 
 ### Option 3: Local Development
 
 ```bash
-# Create virtual environment
+# Create and activate virtual environment
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Initialize database
-cd server && python init_db.py
+# Set environment variables
+export DATABASE_URL="postgresql://postgres:password@localhost:5432/graphmemory"
+export REDIS_URL="redis://localhost:6379"
 
-# Start development server
-python main.py
+# Start services
+python server/main.py
 ```
 
-## 🏢 Production Deployment
-
-### Production Architecture
-
-```mermaid
-graph TB
-    subgraph "Load Balancer Layer"
-        LB[nginx/traefik<br/>SSL Termination]
-        WAF[Web Application Firewall<br/>Security Filtering]
-    end
-    
-    subgraph "Application Layer"
-        APP1[GraphMemory Instance 1<br/>Primary]
-        APP2[GraphMemory Instance 2<br/>Secondary]
-        ALERT[Alert System<br/>Step 8 Implementation]
-        DASHBOARD[Dashboard Services<br/>Real-time Streaming]
-    end
-    
-    subgraph "Data Layer"
-        KUZU_PRIMARY[(Kuzu GraphDB<br/>Primary)]
-        KUZU_REPLICA[(Kuzu GraphDB<br/>Read Replica)]
-        REDIS_CLUSTER[(Redis Cluster<br/>Cache & Sessions)]
-        ALERT_DB[(Alert Database<br/>SQLite/PostgreSQL)]
-    end
-    
-    subgraph "Monitoring Layer"
-        PROMETHEUS[Prometheus<br/>Metrics Collection]
-        GRAFANA[Grafana<br/>Dashboards]
-        ALERTMANAGER[Alert Manager<br/>Notifications]
-        LOKI[Loki<br/>Log Aggregation]
-    end
-    
-    LB --> WAF
-    WAF --> APP1
-    WAF --> APP2
-    
-    APP1 --> ALERT
-    APP2 --> DASHBOARD
-    
-    APP1 --> KUZU_PRIMARY
-    APP2 --> KUZU_REPLICA
-    ALERT --> REDIS_CLUSTER
-    DASHBOARD --> ALERT_DB
-    
-    PROMETHEUS --> GRAFANA
-    PROMETHEUS --> ALERTMANAGER
-    GRAFANA --> LOKI
-    
-    style LB fill:#00bf7d,color:#000000
-    style APP1 fill:#0073e6,color:#ffffff
-    style ALERT fill:#2546f0,color:#ffffff
-    style PROMETHEUS fill:#5928ed,color:#ffffff
-```
-
-### Production Configuration
-
-```bash
-# Production environment variables
-export ENVIRONMENT=production
-export KUZU_DB_PATH=/data/kuzu
-export REDIS_URL=redis://redis-cluster:6379
-export JWT_SECRET_KEY=$(openssl rand -hex 32)
-export MTLS_ENABLED=true
-export LOG_LEVEL=INFO
-export METRICS_ENABLED=true
-
-# Deploy production stack
-ENVIRONMENT=production ./scripts/deploy-secure.sh --with-monitoring
-```
+## 📦 Docker Compose Deployment
 
 ### Production Docker Compose
 
-```yaml
-# docker-compose.prod.yml
-version: '3.8'
-
-services:
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./certs:/etc/nginx/certs
-    depends_on:
-      - graphmemory-app1
-      - graphmemory-app2
-
-  graphmemory-app1:
-    image: graphmemory-ide:latest
-    environment:
-      - ENVIRONMENT=production
-      - INSTANCE_ID=app1
-    volumes:
-      - kuzu_data:/app/data
-      - app_logs:/app/logs
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 4G
-        reservations:
-          cpus: '1'
-          memory: 2G
-
-  graphmemory-app2:
-    image: graphmemory-ide:latest
-    environment:
-      - ENVIRONMENT=production
-      - INSTANCE_ID=app2
-      - READ_ONLY_MODE=true
-    volumes:
-      - kuzu_data:/app/data:ro
-      - app_logs:/app/logs
-
-  redis-cluster:
-    image: redis:7-alpine
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-
-volumes:
-  kuzu_data:
-  redis_data:
-  prometheus_data:
-  app_logs:
-```
-
-## 🏛️ Enterprise Deployment
-
-### Enterprise Architecture Components
-
 ```mermaid
-graph TB
-    subgraph "Edge Layer"
-        CDN[Content Delivery Network<br/>Global Distribution]
-        EDGE_SEC[Edge Security<br/>DDoS Protection]
+flowchart TB
+    subgraph "Docker Compose Stack"
+        subgraph "Application Services"
+            FASTAPI[FastAPI Backend<br/>Production Image<br/>Health Checks]
+            STREAMLIT[Streamlit Dashboard<br/>Real-time Features<br/>WebSocket Support]
+            ANALYTICS[Analytics Engine<br/>ML Processing<br/>Graph Analytics]
+        end
+        
+        subgraph "Data Services"
+            POSTGRES[PostgreSQL 16<br/>Persistent Storage<br/>Replication Ready]
+            REDIS[Redis 7<br/>Caching Layer<br/>Pub/Sub Support]
+        end
+        
+        subgraph "Infrastructure"
+            NGINX[NGINX Gateway<br/>Reverse Proxy<br/>SSL Termination]
+            PROMETHEUS[Prometheus<br/>Metrics Collection<br/>Alert Rules]
+            GRAFANA[Grafana<br/>Dashboards<br/>Visualization]
+        end
     end
     
-    subgraph "DMZ"
-        WAF[Web Application Firewall<br/>OWASP Protection]
-        API_GATEWAY[API Gateway<br/>Rate Limiting & Auth]
-        BASTION[Bastion Host<br/>Secure Access]
-    end
+    NGINX --> FASTAPI
+    NGINX --> STREAMLIT
+    FASTAPI --> POSTGRES
+    FASTAPI --> REDIS
+    ANALYTICS --> POSTGRES
+    PROMETHEUS --> FASTAPI
+    PROMETHEUS --> POSTGRES
+    GRAFANA --> PROMETHEUS
     
-    subgraph "Application Tier"
-        LB_INTERNAL[Internal Load Balancer<br/>High Availability]
-        APPS[GraphMemory Cluster<br/>Auto-scaling]
-        WORKER[Background Workers<br/>Alert Processing]
-    end
-    
-    subgraph "Data Tier"
-        DB_CLUSTER[(Database Cluster<br/>HA + Backup)]
-        CACHE_CLUSTER[(Cache Cluster<br/>Redis Sentinel)]
-        STORAGE[Object Storage<br/>S3/MinIO]
-    end
-    
-    subgraph "Security Tier"
-        VAULT[HashiCorp Vault<br/>Secrets Management]
-        LDAP[Active Directory<br/>SSO Integration]
-        AUDIT[Audit Logging<br/>Compliance]
-    end
-    
-    subgraph "Monitoring Tier"
-        SIEM[SIEM System<br/>Security Monitoring]
-        APM[Application Performance<br/>Monitoring]
-        LOG_MGMT[Log Management<br/>Centralized Logging]
-    end
-    
-    CDN --> EDGE_SEC
-    EDGE_SEC --> WAF
-    WAF --> API_GATEWAY
-    API_GATEWAY --> BASTION
-    
-    BASTION --> LB_INTERNAL
-    LB_INTERNAL --> APPS
-    APPS --> WORKER
-    
-    APPS --> DB_CLUSTER
-    WORKER --> CACHE_CLUSTER
-    APPS --> STORAGE
-    
-    VAULT --> LDAP
-    LDAP --> AUDIT
-    
-    SIEM --> APM
-    APM --> LOG_MGMT
-    
-    style CDN fill:#17a2b8
-    style WAF fill:#dc3545
-    style APPS fill:#0073e6
-    style VAULT fill:#6f42c1
-    style SIEM fill:#fd7e14
+    style FASTAPI fill:#326ce5,color:#fff
+    style POSTGRES fill:#336791,color:#fff
+    style PROMETHEUS fill:#e6522c,color:#fff
 ```
 
-### Enterprise Security Configuration
+### Docker Compose Configuration
 
 ```bash
-# Enterprise deployment with full security
-export ENTERPRISE_MODE=true
-export SSO_ENABLED=true
-export AUDIT_LOGGING=true
-export ENCRYPTION_AT_REST=true
-export NETWORK_POLICIES=strict
+# Production deployment with all features
+cd docker
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
-# Deploy enterprise stack
-./scripts/deploy-enterprise.sh
+# With security scanning
+docker compose -f docker-compose.yml -f docker-compose.security.yml up -d
+
+# Development with hot reload
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
-## 🚨 Step 8 Alerting System Deployment
-
-### Alerting Architecture Deployment
-
-```mermaid
-graph TB
-    subgraph "Alert Processing Tier"
-        ALERT_ENGINE[Alert Engine<br/>Rule Evaluation]
-        ALERT_MANAGER[Alert Manager<br/>Lifecycle Management]
-        CORRELATOR[Alert Correlator<br/>ML Analysis]
-        INCIDENT_MGR[Incident Manager<br/>Escalation]
-    end
-    
-    subgraph "Notification Tier"
-        DISPATCHER[Notification Dispatcher<br/>Multi-channel]
-        WEBSOCKET[WebSocket Server<br/>Real-time]
-        EMAIL_SVC[Email Service<br/>SMTP]
-        WEBHOOK_SVC[Webhook Service<br/>HTTP Callbacks]
-        SLACK_SVC[Slack Integration<br/>Team Notifications]
-    end
-    
-    subgraph "Dashboard Tier"
-        SSE_SERVER[Enhanced SSE Server<br/>Event Streaming]
-        ALERT_UI[Alert Components<br/>Interactive Dashboard]
-        METRICS_UI[Metrics Dashboard<br/>Analytics]
-        ACTIONS_UI[Actions Interface<br/>Workflow Management]
-    end
-    
-    subgraph "Data Tier"
-        ALERT_DB[(Alert Database<br/>SQLite/PostgreSQL)]
-        METRICS_STORE[(Metrics Store<br/>Prometheus)]
-        CACHE_ALERT[(Alert Cache<br/>Redis)]
-    end
-    
-    ALERT_ENGINE --> ALERT_MANAGER
-    ALERT_MANAGER --> CORRELATOR
-    CORRELATOR --> INCIDENT_MGR
-    
-    ALERT_MANAGER --> DISPATCHER
-    DISPATCHER --> WEBSOCKET
-    DISPATCHER --> EMAIL_SVC
-    DISPATCHER --> WEBHOOK_SVC
-    DISPATCHER --> SLACK_SVC
-    
-    DISPATCHER --> SSE_SERVER
-    SSE_SERVER --> ALERT_UI
-    SSE_SERVER --> METRICS_UI
-    SSE_SERVER --> ACTIONS_UI
-    
-    ALERT_MANAGER --> ALERT_DB
-    CORRELATOR --> METRICS_STORE
-    INCIDENT_MGR --> CACHE_ALERT
-    
-    style ALERT_ENGINE fill:#dc3545
-    style CORRELATOR fill:#ffc107
-    style SSE_SERVER fill:#20c997
-    style ALERT_UI fill:#17a2b8
-```
-
-### Step 8 Configuration
+### Compose Environment Configuration
 
 ```bash
-# Enable Step 8 alerting system
-export STEP8_ENABLED=true
-export ALERT_PROCESSING_WORKERS=4
-export CORRELATION_ML_ENABLED=true
-export INCIDENT_AUTO_ESCALATION=true
-export DASHBOARD_REALTIME=true
+# Create environment file
+cat > .env << EOF
+# Application Configuration
+ENVIRONMENT=production
+LOG_LEVEL=info
+DEBUG=false
 
-# Configure notification channels
-export WEBSOCKET_ENABLED=true
-export EMAIL_ENABLED=true
-export WEBHOOK_ENABLED=true
-export SLACK_ENABLED=false
+# Database Configuration
+DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@postgres:5432/graphmemory
+REDIS_URL=redis://redis:6379
 
-# Performance tuning
-export ALERT_BATCH_SIZE=100
-export CORRELATION_TIMEOUT=30
-export NOTIFICATION_RETRY_ATTEMPTS=3
+# Security Configuration
+JWT_SECRET_KEY=${JWT_SECRET}
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
 
-# Deploy Step 8 components
-docker compose -f docker-compose.yml -f docker-compose.step8.yml up -d
+# Performance Configuration
+WORKERS=4
+MAX_CONNECTIONS=100
+CACHE_TTL=300
+
+# Monitoring Configuration
+PROMETHEUS_ENABLED=true
+METRICS_PORT=9090
+EOF
 ```
 
-### Step 8 Docker Compose Extension
+## ☸️ Kubernetes Production Deployment
+
+### Kubernetes Architecture Overview
+
+```mermaid
+flowchart TB
+    subgraph "External Access"
+        INTERNET[Internet Traffic]
+        DNS[DNS Resolution]
+        CDN[Content Delivery Network]
+    end
+    
+    subgraph "Kubernetes Cluster"
+        subgraph "Ingress Layer"
+            GATEWAY_API[Gateway API<br/>NGINX Gateway Fabric<br/>TLS Termination]
+            INGRESS_CTRL[Ingress Controller<br/>HTTP/HTTPS Routing<br/>Rate Limiting]
+        end
+        
+        subgraph "Application Layer"
+            FASTAPI_PODS[FastAPI Pods<br/>3 Replicas<br/>Auto-scaling]
+            STREAMLIT_PODS[Streamlit Pods<br/>2 Replicas<br/>Session Affinity]
+            ANALYTICS_PODS[Analytics Pods<br/>2 Replicas<br/>Resource Intensive]
+        end
+        
+        subgraph "Data Layer"
+            POSTGRES_SS[PostgreSQL StatefulSet<br/>Primary + Replicas<br/>Persistent Storage]
+            REDIS_SS[Redis StatefulSet<br/>Cluster Mode<br/>High Availability]
+        end
+        
+        subgraph "Monitoring"
+            PROMETHEUS_STACK[Prometheus Stack<br/>Metrics & Alerts<br/>Service Discovery]
+            GRAFANA_DASH[Grafana Dashboards<br/>Visualization<br/>Real-time Monitoring]
+        end
+    end
+    
+    INTERNET --> DNS
+    DNS --> CDN
+    CDN --> GATEWAY_API
+    GATEWAY_API --> INGRESS_CTRL
+    
+    INGRESS_CTRL --> FASTAPI_PODS
+    INGRESS_CTRL --> STREAMLIT_PODS
+    FASTAPI_PODS --> ANALYTICS_PODS
+    
+    FASTAPI_PODS --> POSTGRES_SS
+    ANALYTICS_PODS --> POSTGRES_SS
+    FASTAPI_PODS --> REDIS_SS
+    
+    PROMETHEUS_STACK -.-> FASTAPI_PODS
+    PROMETHEUS_STACK -.-> POSTGRES_SS
+    GRAFANA_DASH --> PROMETHEUS_STACK
+    
+    style GATEWAY_API fill:#326ce5,color:#fff
+    style POSTGRES_SS fill:#336791,color:#fff
+    style PROMETHEUS_STACK fill:#e6522c,color:#fff
+```
+
+### Step-by-Step Kubernetes Deployment
+
+#### 1. Namespace and RBAC Setup
+
+```bash
+# Create production namespace
+kubectl apply -f kubernetes/manifests/namespace.yaml
+
+# Verify namespace creation
+kubectl get namespace graphmemory-prod
+
+# Check RBAC configuration
+kubectl get serviceaccounts -n graphmemory-prod
+kubectl get roles,rolebindings -n graphmemory-prod
+```
+
+#### 2. Storage and StatefulSets
+
+```bash
+# Apply storage classes
+kubectl apply -f kubernetes/manifests/storage-classes.yaml
+
+# Deploy PostgreSQL StatefulSet
+kubectl apply -f kubernetes/manifests/statefulsets.yaml
+
+# Verify StatefulSet deployment
+kubectl get statefulsets -n graphmemory-prod
+kubectl get pvc -n graphmemory-prod
+
+# Check PostgreSQL pods
+kubectl get pods -l app=postgresql -n graphmemory-prod
+kubectl logs postgresql-0 -n graphmemory-prod
+```
+
+#### 3. Application Deployments
+
+```bash
+# Deploy application services
+kubectl apply -f kubernetes/manifests/deployments.yaml
+
+# Verify deployments
+kubectl get deployments -n graphmemory-prod
+kubectl get pods -n graphmemory-prod
+
+# Check application logs
+kubectl logs -f deployment/fastapi-backend -n graphmemory-prod
+kubectl logs -f deployment/streamlit-dashboard -n graphmemory-prod
+```
+
+#### 4. Networking and Ingress
+
+```bash
+# Apply Gateway API configuration
+kubectl apply -f kubernetes/manifests/gateway-ingress.yaml
+
+# Verify Gateway and HTTPRoutes
+kubectl get gateway -n graphmemory-prod
+kubectl get httproutes -n graphmemory-prod
+
+# Check ingress status
+kubectl describe gateway graphmemory-gateway -n graphmemory-prod
+```
+
+#### 5. Configuration and Secrets
+
+```bash
+# Apply ConfigMaps and Secrets
+kubectl apply -f kubernetes/manifests/configmaps-secrets.yaml
+
+# Verify configuration
+kubectl get configmaps -n graphmemory-prod
+kubectl get secrets -n graphmemory-prod
+
+# Check configuration values
+kubectl describe configmap app-config -n graphmemory-prod
+```
+
+#### 6. Auto-scaling Configuration
+
+```bash
+# Apply HPA and VPA
+kubectl apply -f kubernetes/manifests/autoscaling.yaml
+
+# Verify auto-scaling
+kubectl get hpa -n graphmemory-prod
+kubectl get vpa -n graphmemory-prod
+
+# Check scaling metrics
+kubectl top pods -n graphmemory-prod
+kubectl describe hpa fastapi-backend-hpa -n graphmemory-prod
+```
+
+### Production Kubernetes Verification
+
+```bash
+# Complete deployment verification script
+cat > verify-deployment.sh << 'EOF'
+#!/bin/bash
+
+NAMESPACE="graphmemory-prod"
+
+echo "🔍 Verifying GraphMemory-IDE Kubernetes Deployment..."
+
+# Check namespace
+echo "📁 Checking namespace..."
+kubectl get namespace $NAMESPACE
+
+# Check StatefulSets
+echo "📊 Checking StatefulSets..."
+kubectl get statefulsets -n $NAMESPACE
+
+# Check Deployments
+echo "🚀 Checking Deployments..."
+kubectl get deployments -n $NAMESPACE
+
+# Check Services
+echo "🌐 Checking Services..."
+kubectl get services -n $NAMESPACE
+
+# Check Ingress/Gateway
+echo "🔗 Checking Gateway API..."
+kubectl get gateway,httproutes -n $NAMESPACE
+
+# Check Pods
+echo "📦 Checking Pods..."
+kubectl get pods -n $NAMESPACE
+
+# Check Auto-scaling
+echo "📈 Checking Auto-scaling..."
+kubectl get hpa,vpa -n $NAMESPACE
+
+# Check Storage
+echo "💾 Checking Storage..."
+kubectl get pvc -n $NAMESPACE
+
+# Application Health
+echo "🏥 Checking Application Health..."
+kubectl get pods -n $NAMESPACE -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}'
+
+echo "✅ Deployment verification complete!"
+EOF
+
+chmod +x verify-deployment.sh
+./verify-deployment.sh
+```
+
+## ⚙️ Advanced Configuration
+
+### Environment-specific Configurations
+
+```mermaid
+flowchart TB
+    subgraph "Configuration Management"
+        BASE_CONFIG[Base Configuration<br/>Common settings<br/>Default values]
+        ENV_OVERLAYS[Environment Overlays<br/>Dev/Staging/Prod<br/>Specific overrides]
+        SECRET_MGMT[Secret Management<br/>Encrypted secrets<br/>External vaults]
+    end
+    
+    subgraph "Development"
+        DEV_CONFIG[Development Config<br/>Debug enabled<br/>Hot reload]
+        DEV_SECRETS[Development Secrets<br/>Local credentials<br/>Test data]
+    end
+    
+    subgraph "Production"
+        PROD_CONFIG[Production Config<br/>Optimized settings<br/>Security hardened]
+        PROD_SECRETS[Production Secrets<br/>Vault integration<br/>Rotation policies]
+    end
+    
+    BASE_CONFIG --> ENV_OVERLAYS
+    ENV_OVERLAYS --> SECRET_MGMT
+    
+    ENV_OVERLAYS --> DEV_CONFIG
+    ENV_OVERLAYS --> PROD_CONFIG
+    SECRET_MGMT --> DEV_SECRETS
+    SECRET_MGMT --> PROD_SECRETS
+    
+    style BASE_CONFIG fill:#4caf50,color:#000
+    style PROD_CONFIG fill:#ff5722,color:#fff
+    style SECRET_MGMT fill:#9c27b0,color:#fff
+```
+
+### Resource Configuration
 
 ```yaml
-# docker-compose.step8.yml
-version: '3.8'
-
-services:
-  alert-engine:
-    image: graphmemory-ide:latest
-    command: python -m server.analytics.alert_engine
-    environment:
-      - COMPONENT=alert_engine
-      - WORKERS=4
-    volumes:
-      - alert_data:/app/data/alerts
-    depends_on:
-      - alert-db
-
-  alert-correlator:
-    image: graphmemory-ide:latest
-    command: python -m server.analytics.alert_correlator
-    environment:
-      - COMPONENT=alert_correlator
-      - ML_ENABLED=true
-    volumes:
-      - ml_models:/app/models
-
-  notification-dispatcher:
-    image: graphmemory-ide:latest
-    command: python -m server.analytics.notification_dispatcher
-    environment:
-      - COMPONENT=notification_dispatcher
-      - CHANNELS=websocket,email,webhook
-    ports:
-      - "8082:8082"  # WebSocket port
-
-  sse-alert-server:
-    image: graphmemory-ide:latest
-    command: python -m server.dashboard.sse_alert_server
-    environment:
-      - COMPONENT=sse_alert_server
-    ports:
-      - "8083:8083"  # SSE port
-
-  alert-db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=alerts
-      - POSTGRES_USER=alertuser
-      - POSTGRES_PASSWORD_FILE=/run/secrets/alert_db_password
-    volumes:
-      - alert_db_data:/var/lib/postgresql/data
-    secrets:
-      - alert_db_password
-
-volumes:
-  alert_data:
-  alert_db_data:
-  ml_models:
-
-secrets:
-  alert_db_password:
-    file: ./secrets/alert_db_password.txt
+# Production resource configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: resource-config
+  namespace: graphmemory-prod
+data:
+  cpu_limits: |
+    fastapi: "1000m"
+    streamlit: "500m"
+    analytics: "2000m"
+    postgresql: "2000m"
+    redis: "500m"
+  
+  memory_limits: |
+    fastapi: "2Gi"
+    streamlit: "1Gi"
+    analytics: "4Gi"
+    postgresql: "4Gi"
+    redis: "1Gi"
+  
+  scaling_config: |
+    min_replicas: 2
+    max_replicas: 10
+    target_cpu: 70
+    target_memory: 80
 ```
 
-## 🔒 Security Hardening
+### Custom Resource Definitions
 
-### Container Security
+```bash
+# Apply custom monitoring configuration
+kubectl apply -f - << EOF
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: graphmemory-monitoring
+  namespace: graphmemory-prod
+spec:
+  selector:
+    matchLabels:
+      app: graphmemory
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+EOF
+```
+
+## 🔒 Security & Hardening
+
+### Security Configuration
+
+```mermaid
+flowchart TB
+    subgraph "Network Security"
+        NETWORK_POLICIES[Network Policies<br/>Pod-to-pod rules<br/>Default deny]
+        TLS_CONFIG[TLS Configuration<br/>End-to-end encryption<br/>Certificate management]
+        FIREWALL_RULES[Firewall Rules<br/>Ingress filtering<br/>Egress control]
+    end
+    
+    subgraph "Container Security"
+        IMAGE_SCANNING[Image Scanning<br/>Vulnerability assessment<br/>Policy enforcement]
+        RUNTIME_SECURITY[Runtime Security<br/>Non-root containers<br/>Read-only filesystems]
+        RESOURCE_LIMITS[Resource Limits<br/>CPU/Memory quotas<br/>DoS prevention]
+    end
+    
+    subgraph "Application Security"
+        AUTH_CONFIG[Authentication<br/>JWT tokens<br/>RBAC enforcement]
+        SECRET_ENCRYPTION[Secret Encryption<br/>At-rest encryption<br/>Transit encryption]
+        AUDIT_LOGGING[Audit Logging<br/>Access logs<br/>Security events]
+    end
+    
+    NETWORK_POLICIES --> IMAGE_SCANNING
+    TLS_CONFIG --> RUNTIME_SECURITY
+    FIREWALL_RULES --> RESOURCE_LIMITS
+    
+    IMAGE_SCANNING --> AUTH_CONFIG
+    RUNTIME_SECURITY --> SECRET_ENCRYPTION
+    RESOURCE_LIMITS --> AUDIT_LOGGING
+    
+    style NETWORK_POLICIES fill:#f44336,color:#fff
+    style IMAGE_SCANNING fill:#ff5722,color:#fff
+    style AUTH_CONFIG fill:#4caf50,color:#000
+```
+
+### Security Deployment Commands
 
 ```bash
 # Apply security hardening
-./scripts/apply-security-hardening.sh
+kubectl apply -f kubernetes/security/
+
+# Enable Pod Security Standards
+kubectl label namespace graphmemory-prod \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/audit=restricted \
+  pod-security.kubernetes.io/warn=restricted
+
+# Apply Network Policies
+kubectl apply -f kubernetes/manifests/network-policies.yaml
 
 # Verify security configuration
-./scripts/verify-security.sh
-
-# Generate mTLS certificates
-./scripts/setup-mtls.sh
+kubectl get networkpolicies -n graphmemory-prod
+kubectl get podsecuritypolicy
+kubectl auth can-i --list --as=system:serviceaccount:graphmemory-prod:graphmemory-service-account
 ```
-
-### Security Checklist
-
-- ✅ **Container Hardening**: Read-only filesystems, non-root users
-- ✅ **Network Security**: mTLS, VPN, network segmentation
-- ✅ **Authentication**: JWT tokens, SSO integration
-- ✅ **Authorization**: RBAC, fine-grained permissions
-- ✅ **Encryption**: Data at rest and in transit
-- ✅ **Audit Logging**: Complete audit trail
-- ✅ **Secrets Management**: Vault integration
-- ✅ **Security Monitoring**: Real-time threat detection
 
 ## 📊 Monitoring & Observability
 
 ### Monitoring Stack Deployment
 
 ```bash
-# Deploy full monitoring stack
-docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+# Deploy Prometheus and Grafana
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
 
-# Access monitoring services
-echo "Prometheus: http://localhost:9090"
-echo "Grafana: http://localhost:3000"
-echo "AlertManager: http://localhost:9093"
+# Install Prometheus
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace \
+  --values kubernetes/monitoring/prometheus-values.yaml
+
+# Install Grafana dashboards
+kubectl apply -f kubernetes/monitoring/grafana-dashboards.yaml
+
+# Verify monitoring stack
+kubectl get pods -n monitoring
+kubectl get services -n monitoring
 ```
 
-### Monitoring Architecture
-
-```mermaid
-graph TB
-    subgraph "Data Collection"
-        METRICS[Metrics Collection<br/>Prometheus]
-        LOGS[Log Collection<br/>Loki]
-        TRACES[Trace Collection<br/>Jaeger]
-        EVENTS[Event Collection<br/>Custom]
-    end
-    
-    subgraph "Processing"
-        AGGREGATION[Data Aggregation<br/>Processing Rules]
-        ALERTING[Alert Processing<br/>Rule Engine]
-        CORRELATION[Event Correlation<br/>Pattern Detection]
-    end
-    
-    subgraph "Storage"
-        TSDB[Time Series DB<br/>Prometheus]
-        LOG_STORE[Log Storage<br/>Loki]
-        TRACE_STORE[Trace Storage<br/>Jaeger]
-    end
-    
-    subgraph "Visualization"
-        GRAFANA[Grafana Dashboards<br/>Visualization]
-        ALERT_UI[Alert Dashboard<br/>Step 8 UI]
-        CUSTOM_DASH[Custom Dashboards<br/>Business Metrics]
-    end
-    
-    METRICS --> AGGREGATION
-    LOGS --> AGGREGATION
-    TRACES --> CORRELATION
-    EVENTS --> ALERTING
-    
-    AGGREGATION --> TSDB
-    ALERTING --> LOG_STORE
-    CORRELATION --> TRACE_STORE
-    
-    TSDB --> GRAFANA
-    LOG_STORE --> ALERT_UI
-    TRACE_STORE --> CUSTOM_DASH
-    
-    style METRICS fill:#e6522c
-    style GRAFANA fill:#f46800
-    style ALERT_UI fill:#dc3545
-```
-
-## ⚡ Performance Tuning
-
-### Database Optimization
-
-```bash
-# Optimize Kuzu database
-echo "CREATE INDEX IF NOT EXISTS idx_memory_created_at ON Memory(created_at);" | kuzu
-
-# Redis configuration for high performance
-redis-cli CONFIG SET maxmemory-policy allkeys-lru
-redis-cli CONFIG SET maxmemory 2gb
-```
-
-### Application Tuning
+### Custom Metrics Configuration
 
 ```yaml
-# Performance environment variables
-environment:
-  - WORKERS=4
-  - WORKER_CONNECTIONS=1000
-  - KEEPALIVE_TIMEOUT=65
-  - MAX_REQUEST_SIZE=50MB
-  - CACHE_TTL=3600
-  - BATCH_SIZE=1000
-  - CONCURRENT_REQUESTS=100
+# Custom ServiceMonitor for GraphMemory-IDE
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: graphmemory-metrics
+  namespace: graphmemory-prod
+spec:
+  selector:
+    matchLabels:
+      app: graphmemory
+  endpoints:
+  - port: metrics
+    interval: 15s
+    path: /metrics
+    honorLabels: true
 ```
 
-### Performance Monitoring
+## 🎯 Performance Tuning
+
+### Performance Optimization
+
+```mermaid
+flowchart TB
+    subgraph "Application Optimization"
+        CODE_OPTIMIZATION[Code Optimization<br/>Async operations<br/>Connection pooling]
+        CACHING_STRATEGY[Caching Strategy<br/>Redis cache<br/>Query optimization]
+        RESOURCE_TUNING[Resource Tuning<br/>CPU/Memory limits<br/>JVM parameters]
+    end
+    
+    subgraph "Infrastructure Optimization"
+        AUTO_SCALING[Auto-scaling<br/>HPA + VPA<br/>Cluster scaling]
+        STORAGE_OPTIMIZATION[Storage Optimization<br/>SSD storage<br/>IOPS tuning]
+        NETWORK_OPTIMIZATION[Network Optimization<br/>CNI optimization<br/>Load balancing]
+    end
+    
+    subgraph "Database Optimization"
+        DB_TUNING[Database Tuning<br/>Connection pooling<br/>Query optimization]
+        INDEX_OPTIMIZATION[Index Optimization<br/>Query performance<br/>Statistics]
+        REPLICATION_SETUP[Replication Setup<br/>Read replicas<br/>Load distribution]
+    end
+    
+    CODE_OPTIMIZATION --> AUTO_SCALING
+    CACHING_STRATEGY --> STORAGE_OPTIMIZATION
+    RESOURCE_TUNING --> NETWORK_OPTIMIZATION
+    
+    AUTO_SCALING --> DB_TUNING
+    STORAGE_OPTIMIZATION --> INDEX_OPTIMIZATION
+    NETWORK_OPTIMIZATION --> REPLICATION_SETUP
+    
+    style CODE_OPTIMIZATION fill:#4caf50,color:#000
+    style AUTO_SCALING fill:#ff9800,color:#000
+    style DB_TUNING fill:#336791,color:#fff
+```
+
+### Performance Testing
 
 ```bash
-# Monitor performance
-curl http://localhost:8080/metrics | grep -E "(request_duration|memory_usage|cpu_usage)"
+# Load testing script
+cat > load-test.sh << 'EOF'
+#!/bin/bash
 
-# Step 8 specific metrics
-curl http://localhost:8080/alerts/metrics/performance
+NAMESPACE="graphmemory-prod"
+SERVICE_URL="http://$(kubectl get service fastapi-backend -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+
+echo "🚀 Starting load test on $SERVICE_URL"
+
+# Install k6 if not available
+if ! command -v k6 &> /dev/null; then
+    echo "Installing k6..."
+    sudo apt-get update && sudo apt-get install k6
+fi
+
+# Run load test
+k6 run --vus 50 --duration 5m - << EOT
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export default function () {
+  let response = http.get('${SERVICE_URL}/health');
+  check(response, {
+    'status is 200': (r) => r.status === 200,
+    'response time < 500ms': (r) => r.timings.duration < 500,
+  });
+  sleep(1);
+}
+EOT
+
+echo "✅ Load test completed"
+EOF
+
+chmod +x load-test.sh
+./load-test.sh
 ```
 
-## 🚀 Cloud Deployment
+## 🔧 Troubleshooting
 
-### AWS Deployment
+### Common Deployment Issues
+
+```mermaid
+flowchart TD
+    subgraph "Pod Issues"
+        POD_PENDING[Pod Pending<br/>Resource constraints<br/>Node selection]
+        POD_CRASHLOOP[CrashLoopBackOff<br/>Application errors<br/>Health checks]
+        POD_OOM[Out of Memory<br/>Resource limits<br/>Memory leaks]
+    end
+    
+    subgraph "Service Issues"
+        SERVICE_UNREACHABLE[Service Unreachable<br/>Networking<br/>DNS resolution]
+        INGRESS_ISSUES[Ingress Issues<br/>Certificate problems<br/>Routing]
+        LOAD_BALANCER[Load Balancer<br/>Health checks<br/>Backend registration]
+    end
+    
+    subgraph "Storage Issues"
+        PVC_PENDING[PVC Pending<br/>Storage class<br/>Provisioning]
+        MOUNT_FAILURES[Mount Failures<br/>Permissions<br/>Path issues]
+        DATA_CORRUPTION[Data Corruption<br/>Backup restore<br/>Integrity]
+    end
+    
+    subgraph "Solutions"
+        RESOURCE_INCREASE[Increase Resources<br/>CPU/Memory limits<br/>Node capacity]
+        CONFIG_FIX[Fix Configuration<br/>Environment variables<br/>Secrets]
+        STORAGE_FIX[Storage Fix<br/>Reclaim policy<br/>Backup restore]
+    end
+    
+    POD_PENDING --> RESOURCE_INCREASE
+    POD_CRASHLOOP --> CONFIG_FIX
+    POD_OOM --> RESOURCE_INCREASE
+    
+    SERVICE_UNREACHABLE --> CONFIG_FIX
+    INGRESS_ISSUES --> CONFIG_FIX
+    LOAD_BALANCER --> RESOURCE_INCREASE
+    
+    PVC_PENDING --> STORAGE_FIX
+    MOUNT_FAILURES --> CONFIG_FIX
+    DATA_CORRUPTION --> STORAGE_FIX
+    
+    style POD_CRASHLOOP fill:#f44336,color:#fff
+    style SERVICE_UNREACHABLE fill:#ff5722,color:#fff
+    style DATA_CORRUPTION fill:#f44336,color:#fff
+```
+
+### Troubleshooting Commands
 
 ```bash
-# Deploy to AWS using ECS
-aws ecs create-cluster --cluster-name graphmemory-prod
+# Diagnostic script
+cat > diagnose.sh << 'EOF'
+#!/bin/bash
 
-# Deploy using CloudFormation
-aws cloudformation deploy \
-  --template-file cloudformation/graphmemory-stack.yml \
-  --stack-name graphmemory-production \
-  --capabilities CAPABILITY_IAM
+NAMESPACE="graphmemory-prod"
+
+echo "🔍 GraphMemory-IDE Diagnostic Report"
+echo "======================================"
+
+# Cluster information
+echo "📊 Cluster Information:"
+kubectl cluster-info
+kubectl get nodes
+
+# Namespace resources
+echo "📁 Namespace Resources:"
+kubectl get all -n $NAMESPACE
+
+# Pod details
+echo "📦 Pod Details:"
+kubectl describe pods -n $NAMESPACE
+
+# Events
+echo "📋 Recent Events:"
+kubectl get events -n $NAMESPACE --sort-by='.lastTimestamp'
+
+# Resource usage
+echo "📈 Resource Usage:"
+kubectl top nodes
+kubectl top pods -n $NAMESPACE
+
+# Storage
+echo "💾 Storage Status:"
+kubectl get pv,pvc -n $NAMESPACE
+
+# Network
+echo "🌐 Network Status:"
+kubectl get services,ingress,networkpolicies -n $NAMESPACE
+
+echo "✅ Diagnostic complete"
+EOF
+
+chmod +x diagnose.sh
+./diagnose.sh
 ```
 
-### Kubernetes Deployment
-
-```bash
-# Deploy to Kubernetes
-kubectl apply -f k8s/namespace.yml
-kubectl apply -f k8s/configmap.yml
-kubectl apply -f k8s/secrets.yml
-kubectl apply -f k8s/deployment.yml
-kubectl apply -f k8s/service.yml
-kubectl apply -f k8s/ingress.yml
-
-# Deploy Step 8 components
-kubectl apply -f k8s/step8/
-```
-
-## 🔧 Troubleshooting Deployment
-
-### Common Issues
-
-**Container Won't Start**
-```bash
-# Check logs
-docker compose logs -f mcp-server
-
-# Check resource usage
-docker stats
-
-# Verify configuration
-docker compose config
-```
-
-**Database Connection Issues**
-```bash
-# Test database connectivity
-docker compose exec mcp-server python -c "
-import kuzu
-db = kuzu.Database('/app/data/kuzu')
-conn = kuzu.Connection(db)
-print('Database connection successful')
-"
-```
-
-**Alert System Issues**
-```bash
-# Check Step 8 components
-curl http://localhost:8080/alerts/health
-curl http://localhost:8083/alerts/stream/status
-
-# Verify notification channels
-docker compose logs notification-dispatcher
-```
-
-**Performance Issues**
-```bash
-# Monitor resource usage
-htop
-iotop
-nethogs
-
-# Check application metrics
-curl http://localhost:8080/metrics
-```
-
-### Deployment Validation
-
-```bash
-# Run comprehensive deployment tests
-./scripts/test-deployment.sh
-
-# Validate all services
-./scripts/validate-services.sh
-
-# Run integration tests
-pytest tests/deployment/ -v
-```
-
-## 📋 Deployment Checklist
-
-### Pre-Deployment
-- [ ] System requirements verified
-- [ ] Dependencies installed
-- [ ] Network connectivity confirmed
-- [ ] Storage capacity planned
-- [ ] Security certificates generated
-- [ ] Environment variables configured
-- [ ] Backup strategy implemented
-
-### Deployment
-- [ ] Services deployed successfully
-- [ ] Health checks passing
-- [ ] Database initialized
-- [ ] Cache configured
-- [ ] Monitoring enabled
-- [ ] Logging configured
-- [ ] Security hardening applied
-
-### Post-Deployment
-- [ ] Functional testing completed
-- [ ] Performance testing passed
-- [ ] Security testing validated
-- [ ] Monitoring alerts configured
-- [ ] Documentation updated
-- [ ] Team training completed
-- [ ] Incident response procedures in place
-
----
-
-**Deployment Guide**: Complete deployment reference for GraphMemory-IDE  
-**Version**: 2.0.0  
-**Last Updated**: January 29, 2025  
-**Includes**: Step 8 Alerting System, Enterprise Security, Production Monitoring 
+This comprehensive deployment guide provides complete instructions for deploying GraphMemory-IDE from development to production with Kubernetes, including all Phase 3 Day 2 components like StatefulSets, Gateway API, auto-scaling, and monitoring. 
