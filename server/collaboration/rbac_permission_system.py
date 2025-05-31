@@ -591,23 +591,46 @@ class RBACPermissionSystem:
                 data = json.loads(cached_data)
                 
                 # Reconstruct UserPermissions object
-                permissions = [
-                    Permission(
-                        resource_type=ResourceType(p['resource_type']),
-                        action=Action(p['action']),
-                        conditions=p.get('conditions'),
-                        granted=p.get('granted', True),
-                        granted_at=datetime.fromisoformat(p['granted_at']) if p.get('granted_at') else None,
-                        granted_by=p.get('granted_by'),
-                        expires_at=datetime.fromisoformat(p['expires_at']) if p.get('expires_at') else None,
-                        metadata=p.get('metadata')
-                    ) for p in data['permissions']
-                ]
+                permissions = []
+                for p in data['permissions']:
+                    try:
+                        # Safely convert resource_type
+                        resource_type = p['resource_type']
+                        if isinstance(resource_type, str):
+                            resource_type = ResourceType(resource_type)
+                        
+                        # Safely convert action
+                        action = p['action']
+                        if isinstance(action, str):
+                            action = Action(action)
+                        
+                        permission = Permission(
+                            resource_type=resource_type,
+                            action=action,
+                            conditions=p.get('conditions'),
+                            granted=p.get('granted', True),
+                            granted_at=datetime.fromisoformat(p['granted_at']) if p.get('granted_at') else None,
+                            granted_by=p.get('granted_by'),
+                            expires_at=datetime.fromisoformat(p['expires_at']) if p.get('expires_at') else None,
+                            metadata=p.get('metadata')
+                        )
+                        permissions.append(permission)
+                    except (ValueError, KeyError):
+                        # Skip invalid permission entries
+                        continue
+                
+                # Safely convert role
+                try:
+                    role = data['role']
+                    if isinstance(role, str):
+                        role = UserRole(role)
+                except (ValueError, KeyError):
+                    role = UserRole.EDITOR  # Default role
                 
                 user_permissions = UserPermissions(
                     user_id=data['user_id'],
                     tenant_id=data['tenant_id'],
-                    role=UserRole(data['role']),
+                    role=role,
                     permissions=permissions,
                     cached_at=datetime.fromisoformat(data['cached_at']) if data.get('cached_at') else None,
                     cache_expires_at=datetime.fromisoformat(data['cache_expires_at']) if data.get('cache_expires_at') else None

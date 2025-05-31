@@ -59,6 +59,9 @@ except ImportError:
     class KuzuTenantManager:
         def __init__(self, *args, **kwargs):
             pass
+        
+        async def get_tenant_info(self, tenant_id: str) -> Dict[str, Any]:
+            return {'name': tenant_id, 'is_active': True, 'metadata': {}}
 
 
 class UserRole(str, Enum):
@@ -384,11 +387,7 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
         self.cache_misses += 1
         if self.kuzu_manager:
             # Query tenant from Kuzu
-            tenant_info = {
-                'name': tenant_id,
-                'is_active': True,
-                'metadata': {}
-            }
+            tenant_info = await self.kuzu_manager.get_tenant_info(tenant_id)
         else:
             # Default tenant info
             tenant_info = {
@@ -413,7 +412,8 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
             self.cache_hits += 1
             if isinstance(cached_role, str):
                 try:
-                    return UserRole(cached_role)
+                    converted_role = UserRole(cached_role)
+                    return converted_role
                 except ValueError:
                     # Invalid role string, fall through to default
                     pass

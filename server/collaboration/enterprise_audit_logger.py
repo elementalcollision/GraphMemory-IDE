@@ -434,7 +434,8 @@ class EnterpriseAuditLogger:
         start_time = time.time()
         
         try:
-            async with self._db_pool.acquire() as conn:
+            conn = await self._db_pool.acquire()
+            try:
                 # Prepare batch insert
                 values = []
                 for event in batch:
@@ -483,6 +484,8 @@ class EnterpriseAuditLogger:
                     
                     if processing_time > 100:  # >100ms for batch processing
                         self.logger.warning(f"Batch processing exceeded target: {processing_time:.2f}ms for {len(batch)} events")
+            finally:
+                await self._db_pool.release(conn)
                 
         except PostgresError as e:
             self.logger.error(f"Database error processing audit batch: {e}")
@@ -495,7 +498,8 @@ class EnterpriseAuditLogger:
             return
         
         try:
-            async with self._db_pool.acquire() as conn:
+            conn = await self._db_pool.acquire()
+            try:
                 # Create main audit logs table with partitioning
                 await conn.execute("""
                     CREATE TABLE IF NOT EXISTS audit_logs (
@@ -530,6 +534,8 @@ class EnterpriseAuditLogger:
                 await conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_logs_event_type ON audit_logs (event_type)")
                 await conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_logs_compliance_tags ON audit_logs USING GIN (compliance_tags)")
                 await conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs (resource_type, action)")
+            finally:
+                await self._db_pool.release(conn)
                 
         except Exception as e:
             self.logger.error(f"Failed to create audit tables: {e}")

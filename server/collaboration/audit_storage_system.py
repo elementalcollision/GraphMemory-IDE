@@ -47,16 +47,32 @@ import os
 try:
     import asyncpg
     from asyncpg.exceptions import PostgresError
-    # Type alias for proper typing
-    DatabasePool = asyncpg.Pool
+    from asyncpg import Pool, Connection
+    HAS_ASYNCPG = True
 except ImportError:
     # Handle missing asyncpg dependency
+    HAS_ASYNCPG = False
+    
     class PostgresError(Exception):
         pass
     
-    class MockPool:
-        async def acquire(self):
+    class Connection:
+        async def fetch(self, query: str, *args):
             raise ImportError("asyncpg not available")
+        
+        async def fetchrow(self, query: str, *args):
+            raise ImportError("asyncpg not available")
+            
+        async def execute(self, query: str, *args):
+            raise ImportError("asyncpg not available")
+            
+        async def executemany(self, query: str, args):
+            raise ImportError("asyncpg not available")
+    
+    class Pool:
+        async def acquire(self) -> Connection:
+            raise ImportError("asyncpg not available")
+        
         async def close(self):
             pass
         
@@ -67,14 +83,12 @@ except ImportError:
             pass
     
     class asyncpg:
-        Pool = MockPool
+        Pool = Pool
+        Connection = Connection
         
         @staticmethod
-        async def create_pool(*args, **kwargs) -> MockPool:
+        async def create_pool(*args, **kwargs) -> Pool:
             raise ImportError("asyncpg not available")
-    
-    # Type alias for fallback
-    DatabasePool = MockPool
 
 # Define audit event protocol for type checking
 class AuditEventProtocol(Protocol):
@@ -253,7 +267,7 @@ class AuditStorageSystem:
         self.data_integrity_checks = data_integrity_checks
         
         # Database connection pool - properly typed
-        self._db_pool: Optional[DatabasePool] = None
+        self._db_pool: Optional[Pool] = None
         
         # Background tasks
         self._cleanup_task: Optional[asyncio.Task] = None
@@ -278,12 +292,16 @@ class AuditStorageSystem:
         """Initialize storage system and background tasks"""
         try:
             # Create database connection pool
-            self._db_pool = await asyncpg.create_pool(
-                self.database_url,
-                min_size=5,
-                max_size=20,
-                command_timeout=60
-            )
+            if HAS_ASYNCPG:
+                self._db_pool = await asyncpg.create_pool(
+                    self.database_url,
+                    min_size=5,
+                    max_size=20,
+                    command_timeout=60
+                )
+            else:
+                self._db_pool = None
+                self.logger.warning("asyncpg not available - database operations will be mocked")
             
             # Initialize database schema
             await self._initialize_storage_schema()
@@ -314,90 +332,18 @@ class AuditStorageSystem:
         Returns:
             True if storage was successful, False otherwise
         """
-        if not events or not self._db_pool:
+        if not events:
+            return False
+        
+        if not HAS_ASYNCPG or not self._db_pool:
+            self.logger.warning("Database not available - audit events not stored")
             return False
         
         start_time = time.time()
         
         try:
             async with self._db_pool.acquire() as conn:
-                # Prepare batch insert values
-                values = []
-                for event in events:
-                    # Calculate retention date based on event type
-                    retention_date = self._calculate_retention_date(event)
-                    
-                    # Safely extract event attributes
-                    event_id = getattr(event, 'event_id', str(uuid.uuid4()))
-                    tenant_id = getattr(event, 'tenant_id', '')
-                    user_id = getattr(event, 'user_id', None)
-                    event_type = getattr(event, 'event_type', None)
-                    resource_type = getattr(event, 'resource_type', None)
-                    resource_id = getattr(event, 'resource_id', None)
-                    action = getattr(event, 'action', None)
-                    timestamp = getattr(event, 'timestamp', datetime.utcnow())
-                    ip_address = getattr(event, 'ip_address', None)
-                    user_agent = getattr(event, 'user_agent', None)
-                    request_id = getattr(event, 'request_id', None)
-                    session_id = getattr(event, 'session_id', None)
-                    legal_basis = getattr(event, 'legal_basis', None)
-                    data_subject_consent = getattr(event, 'data_subject_consent', None)
-                    processing_purpose = getattr(event, 'processing_purpose', None)
-                    event_details = getattr(event, 'event_details', {})
-                    compliance_tags = getattr(event, 'compliance_tags', [])
-                    success = getattr(event, 'success', True)
-                    error_message = getattr(event, 'error_message', None)
-                    response_time_ms = getattr(event, 'response_time_ms', None)
-                    integrity_hash = getattr(event, 'integrity_hash', None)
-                    
-                    values.append((
-                        event_id,
-                        tenant_id,
-                        user_id,
-                        event_type.value if event_type and hasattr(event_type, 'value') else str(event_type) if event_type else None,
-                        resource_type.value if resource_type and hasattr(resource_type, 'value') else str(resource_type) if resource_type else None,
-                        resource_id,
-                        action.value if action and hasattr(action, 'value') else str(action) if action else None,
-                        timestamp,
-                        ip_address,
-                        user_agent,
-                        request_id,
-                        session_id,
-                        legal_basis,
-                        data_subject_consent,
-                        processing_purpose,
-                        json.dumps(event_details) if event_details else '{}',
-                        [tag.value if hasattr(tag, 'value') else str(tag) for tag in compliance_tags] if compliance_tags else [],
-                        success,
-                        error_message,
-                        response_time_ms,
-                        integrity_hash,
-                        retention_date
-                    ))
-                
-                # Perform batch insert
-                await conn.executemany("""
-                    INSERT INTO audit_logs (
-                        event_id, tenant_id, user_id, event_type, resource_type,
-                        resource_id, action, timestamp, ip_address, user_agent,
-                        request_id, session_id, legal_basis, data_subject_consent,
-                        processing_purpose, event_details, compliance_tags,
-                        success, error_message, response_time_ms, integrity_hash,
-                        retention_until
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
-                """, values)
-                
-                # Update metrics
-                self.metrics.total_audit_events += len(events)
-                
-                # Performance monitoring
-                if self.performance_monitoring:
-                    storage_time = (time.time() - start_time) * 1000
-                    self.metrics.query_performance_ms['batch_insert'] = storage_time
-                    
-                    if storage_time > 100:  # >100ms target
-                        self.logger.warning(f"Audit storage exceeded target: {storage_time:.2f}ms for {len(events)} events")
-                
+                await self._store_events_batch(conn, events, start_time)
                 return True
                 
         except PostgresError as e:
@@ -406,6 +352,85 @@ class AuditStorageSystem:
         except Exception as e:
             self.logger.error(f"Unexpected error storing audit events: {e}")
             return False
+
+    async def _store_events_batch(self, conn: Connection, events: List[AuditEvent], start_time: float):
+        """Store events batch using database connection"""
+        # Prepare batch insert values
+        values = []
+        for event in events:
+            # Calculate retention date based on event type
+            retention_date = self._calculate_retention_date(event)
+            
+            # Safely extract event attributes
+            event_id = getattr(event, 'event_id', str(uuid.uuid4()))
+            tenant_id = getattr(event, 'tenant_id', '')
+            user_id = getattr(event, 'user_id', None)
+            event_type = getattr(event, 'event_type', None)
+            resource_type = getattr(event, 'resource_type', None)
+            resource_id = getattr(event, 'resource_id', None)
+            action = getattr(event, 'action', None)
+            timestamp = getattr(event, 'timestamp', datetime.utcnow())
+            ip_address = getattr(event, 'ip_address', None)
+            user_agent = getattr(event, 'user_agent', None)
+            request_id = getattr(event, 'request_id', None)
+            session_id = getattr(event, 'session_id', None)
+            legal_basis = getattr(event, 'legal_basis', None)
+            data_subject_consent = getattr(event, 'data_subject_consent', None)
+            processing_purpose = getattr(event, 'processing_purpose', None)
+            event_details = getattr(event, 'event_details', {})
+            compliance_tags = getattr(event, 'compliance_tags', [])
+            success = getattr(event, 'success', True)
+            error_message = getattr(event, 'error_message', None)
+            response_time_ms = getattr(event, 'response_time_ms', None)
+            integrity_hash = getattr(event, 'integrity_hash', None)
+            
+            values.append((
+                event_id,
+                tenant_id,
+                user_id,
+                event_type.value if event_type and hasattr(event_type, 'value') else str(event_type) if event_type else None,
+                resource_type.value if resource_type and hasattr(resource_type, 'value') else str(resource_type) if resource_type else None,
+                resource_id,
+                action.value if action and hasattr(action, 'value') else str(action) if action else None,
+                timestamp,
+                ip_address,
+                user_agent,
+                request_id,
+                session_id,
+                legal_basis,
+                data_subject_consent,
+                processing_purpose,
+                json.dumps(event_details) if event_details else '{}',
+                [tag.value if hasattr(tag, 'value') else str(tag) for tag in compliance_tags] if compliance_tags else [],
+                success,
+                error_message,
+                response_time_ms,
+                integrity_hash,
+                retention_date
+            ))
+        
+        # Perform batch insert
+        await conn.executemany("""
+            INSERT INTO audit_logs (
+                event_id, tenant_id, user_id, event_type, resource_type,
+                resource_id, action, timestamp, ip_address, user_agent,
+                request_id, session_id, legal_basis, data_subject_consent,
+                processing_purpose, event_details, compliance_tags,
+                success, error_message, response_time_ms, integrity_hash,
+                retention_until
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+        """, values)
+        
+        # Update metrics
+        self.metrics.total_audit_events += len(events)
+        
+        # Performance monitoring
+        if self.performance_monitoring:
+            storage_time = (time.time() - start_time) * 1000
+            self.metrics.query_performance_ms['batch_insert'] = storage_time
+            
+            if storage_time > 100:  # >100ms target
+                self.logger.warning(f"Audit storage exceeded target: {storage_time:.2f}ms for {len(events)} events")
 
     async def query_audit_logs(
         self,
@@ -422,48 +447,47 @@ class AuditStorageSystem:
         Returns:
             List of audit log records matching the filter criteria
         """
-        if not self._db_pool:
+        if not HAS_ASYNCPG or not self._db_pool:
+            self.logger.warning("Database not available - returning empty results")
             return []
         
         start_time = time.time()
         
         try:
-            # Build optimized query based on type
-            query, params = self._build_optimized_query(query_filter, query_type)
-            
-            async with self._db_pool.acquire() as conn:
+            conn = await self._db_pool.acquire()
+            try:
+                # Build optimized query based on type
+                query, params = self._build_optimized_query(query_filter, query_type)
+                
                 rows = await conn.fetch(query, *params)
                 
                 # Convert rows to dictionaries
                 results = []
                 for row in rows:
-                    result = dict(row)
+                    # Convert row to mutable dictionary
+                    result: Dict[str, Any] = dict(row)
                     
                     # Parse JSON fields
                     if result.get('event_details'):
                         try:
                             parsed_details = json.loads(result['event_details'])
-                            # Create mutable copy and update
-                            result_dict = dict(result)
-                            result_dict['event_details'] = parsed_details
-                            result = result_dict
+                            result['event_details'] = parsed_details
                         except json.JSONDecodeError:
-                            # Create mutable copy and set empty dict
-                            result_dict = dict(result)
-                            result_dict['event_details'] = {}
-                            result = result_dict
+                            result['event_details'] = {}
                     
                     results.append(result)
+            finally:
+                await self._db_pool.release(conn)
+            
+            # Performance monitoring
+            if self.performance_monitoring:
+                query_time = (time.time() - start_time) * 1000
+                self.metrics.query_performance_ms[query_type.value] = query_time
                 
-                # Performance monitoring
-                if self.performance_monitoring:
-                    query_time = (time.time() - start_time) * 1000
-                    self.metrics.query_performance_ms[query_type.value] = query_time
-                    
-                    if query_time > 50:  # >50ms target for queries
-                        self.logger.warning(f"Audit query exceeded target: {query_time:.2f}ms for {query_type.value}")
-                
-                return results
+                if query_time > 50:  # >50ms target for queries
+                    self.logger.warning(f"Audit query exceeded target: {query_time:.2f}ms for {query_type.value}")
+            
+            return results
                 
         except PostgresError as e:
             self.logger.error(f"Database error querying audit logs: {e}")
@@ -988,8 +1012,9 @@ async def create_audit_query_filter(
     if event_types:
         for et in event_types:
             try:
+                # Use the imported AuditEventType directly
                 event_type_enums.append(AuditEventType(et))
-            except ValueError:
+            except (ValueError, TypeError):
                 pass  # Skip invalid event types
     
     return AuditQueryFilter(
