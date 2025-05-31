@@ -59,10 +59,18 @@ class ServerNode:
     def from_dict(cls, data: Dict[str, Any]) -> "ServerNode":
         """Create from dictionary"""
         status_value = data["status"]
-        if isinstance(status_value, str):
-            status = ServerStatus(status_value)
-        else:
-            status = status_value
+        
+        # Ensure we have a proper ServerStatus enum
+        status: ServerStatus
+        try:
+            if isinstance(status_value, ServerStatus):
+                status = status_value
+            else:
+                # Try to convert string to enum
+                status = ServerStatus(str(status_value))
+        except (ValueError, TypeError):
+            # Default to offline for any conversion failure
+            status = ServerStatus.OFFLINE
             
         return cls(
             server_id=data["server_id"],
@@ -129,22 +137,31 @@ class ClusterCoordinator:
 
     async def initialize(self) -> None:
         """Initialize cluster coordinator"""
-        # Register message handlers
+        # Register message handlers - create wrapper functions for async handlers
+        def server_status_handler(message: CollaborationMessage) -> None:
+            asyncio.create_task(self._handle_server_status(message))
+        
+        def session_sync_handler(message: CollaborationMessage) -> None:
+            asyncio.create_task(self._handle_session_sync(message))
+            
+        def user_event_handler(message: CollaborationMessage) -> None:
+            asyncio.create_task(self._handle_user_event(message))
+        
         self.redis_manager.register_message_handler(
             MessageType.SERVER_STATUS,
-            self._handle_server_status
+            server_status_handler
         )
         self.redis_manager.register_message_handler(
             MessageType.SESSION_STATE,
-            self._handle_session_sync
+            session_sync_handler
         )
         self.redis_manager.register_message_handler(
             MessageType.USER_JOIN,
-            self._handle_user_event
+            user_event_handler
         )
         self.redis_manager.register_message_handler(
             MessageType.USER_LEAVE,
-            self._handle_user_event
+            user_event_handler
         )
         
         # Add this server to cluster
@@ -515,7 +532,19 @@ class ClusterCoordinator:
         try:
             payload = message.payload
             server_id = message.server_id
-            status = payload.get("status", "online")
+            status_value = payload.get("status", "online")
+            
+            # Safely convert to ServerStatus enum
+            status: ServerStatus
+            try:
+                if isinstance(status_value, ServerStatus):
+                    status = status_value
+                else:
+                    # Try to convert to enum
+                    status = ServerStatus(str(status_value))
+            except (ValueError, TypeError):
+                logger.warning(f"Unknown server status '{status_value}', defaulting to OFFLINE")
+                status = ServerStatus.OFFLINE
             
             if server_id not in self.cluster_nodes:
                 # New server discovered
@@ -523,7 +552,7 @@ class ClusterCoordinator:
                     server_id=server_id,
                     host="unknown",
                     port=0,
-                    status=ServerStatus(status),
+                    status=status,
                     last_heartbeat=datetime.now(timezone.utc),
                     capabilities=payload.get("capabilities", [])
                 )
@@ -531,7 +560,7 @@ class ClusterCoordinator:
             else:
                 # Update existing server
                 node = self.cluster_nodes[server_id]
-                node.status = ServerStatus(status)
+                node.status = status
                 node.last_heartbeat = datetime.now(timezone.utc)
                 node.capabilities = payload.get("capabilities", node.capabilities)
             
