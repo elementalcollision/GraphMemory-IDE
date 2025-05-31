@@ -3,6 +3,9 @@ fastapi
 uvicorn
 kuzu
 
+# Database
+asyncpg
+
 # Authentication
 python-jose[cryptography]
 passlib[bcrypt]

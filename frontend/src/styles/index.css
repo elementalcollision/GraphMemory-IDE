@@ -1,0 +1,280 @@
+/**
+ * Main CSS for GraphMemory-IDE React Frontend
+ * Includes Tailwind CSS and custom styles for collaborative features
+ */
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Monaco Editor custom styles */
+.monaco-editor {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace !important;
+}
+
+/* Collaborative cursor styles */
+.yjs-cursor {
+  position: absolute;
+  border-left: 2px solid;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.yjs-cursor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -1px;
+  width: 2px;
+  height: 1.2em;
+  background-color: inherit;
+}
+
+.yjs-cursor-label {
+  position: absolute;
+  top: -1.5em;
+  left: -1px;
+  background-color: inherit;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-family: system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 11;
+}
+
+.yjs-selection {
+  background-color: rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+/* Loading animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Conflict visualization styles */
+.diff-line-added {
+  background-color: #e6ffed;
+  border-left: 3px solid #28a745;
+}
+
+.diff-line-removed {
+  background-color: #ffeef0;
+  border-left: 3px solid #d73a49;
+}
+
+.diff-line-modified {
+  background-color: #fff8e1;
+  border-left: 3px solid #ffc107;
+}
+
+/* User presence styles */
+.user-avatar {
+  transition: transform 0.2s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);
+}
+
+.user-status-online {
+  background-color: #10b981;
+}
+
+.user-status-away {
+  background-color: #f59e0b;
+}
+
+.user-status-offline {
+  background-color: #6b7280;
+}
+
+/* Performance indicators */
+.performance-good {
+  color: #10b981;
+}
+
+.performance-warning {
+  color: #f59e0b;
+}
+
+.performance-error {
+  color: #ef4444;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .collaborative-memory-editor {
+    flex-direction: column;
+  }
+  
+  .editor-sidebar {
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .user-presence {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .monaco-editor {
+    background-color: #1e1e1e !important;
+  }
+  
+  .yjs-cursor-label {
+    background-color: #333;
+    color: #fff;
+  }
+}
+
+/* Focus styles for accessibility */
+.focus-visible:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Utility classes */
+.truncate-2-lines {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in-right {
+  animation: slideInRight 0.3s ease-in-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Monaco Editor theme customizations */
+.monaco-editor .margin {
+  background-color: transparent !important;
+}
+
+.monaco-editor .monaco-editor-background {
+  background-color: #ffffff !important;
+}
+
+.monaco-editor.vs-dark .monaco-editor-background {
+  background-color: #1e1e1e !important;
+}
+
+/* Collaborative features highlight */
+.collaboration-highlight {
+  box-shadow: 0 0 0 2px #3b82f6;
+  border-radius: 4px;
+}
+
+.collaboration-pulse {
+  animation: collaborationPulse 2s infinite;
+}
+
+@keyframes collaborationPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+} 

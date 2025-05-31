@@ -15,6 +15,8 @@ anyio==4.9.0
     #   httpx
     #   sse-starlette
     #   starlette
+asyncpg==0.30.0
+    # via -r requirements.in
 attrs==25.3.0
     # via
     #   jsonschema
@@ -447,5 +449,3 @@ zope-interface==7.2
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
-aiohttp>=3.9.0
-aiosqlite>=0.20.0
