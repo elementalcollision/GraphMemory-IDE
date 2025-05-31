@@ -34,7 +34,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional, Set, Union, Tuple
+from typing import Any, Dict, List, Optional, Set, Union, Tuple, Protocol
 from dataclasses import dataclass, field
 from enum import Enum
 import uuid
@@ -47,29 +47,74 @@ import os
 try:
     import asyncpg
     from asyncpg.exceptions import PostgresError
+    # Type alias for proper typing
+    DatabasePool = asyncpg.Pool
 except ImportError:
     # Handle missing asyncpg dependency
     class PostgresError(Exception):
         pass
     
-    class asyncpg:
-        @staticmethod
-        async def create_pool(*args, **kwargs):
+    class MockPool:
+        async def acquire(self):
             raise ImportError("asyncpg not available")
+        async def close(self):
+            pass
+        
+        def __aenter__(self):
+            return self
+        
+        def __aexit__(self, exc_type, exc_val, exc_tb):
+            pass
+    
+    class asyncpg:
+        Pool = MockPool
+        
+        @staticmethod
+        async def create_pool(*args, **kwargs) -> MockPool:
+            raise ImportError("asyncpg not available")
+    
+    # Type alias for fallback
+    DatabasePool = MockPool
 
+# Define audit event protocol for type checking
+class AuditEventProtocol(Protocol):
+    event_id: str
+    tenant_id: str
+    user_id: Optional[str]
+    event_type: Any
+    timestamp: datetime
+    success: bool
+    
 try:
     from .enterprise_audit_logger import AuditEvent, AuditEventType, ComplianceFramework
     from .compliance_engine import ComplianceReport, ComplianceStatus
 except ImportError:
     # Handle relative imports during development
+    @dataclass
     class AuditEvent:
-        pass
+        event_id: str = ""
+        tenant_id: str = ""
+        user_id: Optional[str] = None
+        event_type: Optional['AuditEventType'] = None
+        timestamp: datetime = field(default_factory=datetime.utcnow)
+        success: bool = True
+        
+        def __getattr__(self, name: str) -> Any:
+            """Handle missing attributes gracefully"""
+            return None
+    
     class AuditEventType(str, Enum):
         SYSTEM_EVENT = "system_event"
+        USER_EVENT = "user_event"
+        SECURITY_EVENT = "security_event"
+        
     class ComplianceFramework(str, Enum):
         SOC2_SECURITY = "soc2_security"
+        GDPR = "gdpr"
+        
     class ComplianceReport:
         pass
+        
     class ComplianceStatus(str, Enum):
         COMPLIANT = "compliant"
 
@@ -207,8 +252,8 @@ class AuditStorageSystem:
         self.performance_monitoring = performance_monitoring
         self.data_integrity_checks = data_integrity_checks
         
-        # Database connection pool
-        self._db_pool: Optional[asyncpg.Pool] = None
+        # Database connection pool - properly typed
+        self._db_pool: Optional[DatabasePool] = None
         
         # Background tasks
         self._cleanup_task: Optional[asyncio.Task] = None
@@ -282,28 +327,51 @@ class AuditStorageSystem:
                     # Calculate retention date based on event type
                     retention_date = self._calculate_retention_date(event)
                     
+                    # Safely extract event attributes
+                    event_id = getattr(event, 'event_id', str(uuid.uuid4()))
+                    tenant_id = getattr(event, 'tenant_id', '')
+                    user_id = getattr(event, 'user_id', None)
+                    event_type = getattr(event, 'event_type', None)
+                    resource_type = getattr(event, 'resource_type', None)
+                    resource_id = getattr(event, 'resource_id', None)
+                    action = getattr(event, 'action', None)
+                    timestamp = getattr(event, 'timestamp', datetime.utcnow())
+                    ip_address = getattr(event, 'ip_address', None)
+                    user_agent = getattr(event, 'user_agent', None)
+                    request_id = getattr(event, 'request_id', None)
+                    session_id = getattr(event, 'session_id', None)
+                    legal_basis = getattr(event, 'legal_basis', None)
+                    data_subject_consent = getattr(event, 'data_subject_consent', None)
+                    processing_purpose = getattr(event, 'processing_purpose', None)
+                    event_details = getattr(event, 'event_details', {})
+                    compliance_tags = getattr(event, 'compliance_tags', [])
+                    success = getattr(event, 'success', True)
+                    error_message = getattr(event, 'error_message', None)
+                    response_time_ms = getattr(event, 'response_time_ms', None)
+                    integrity_hash = getattr(event, 'integrity_hash', None)
+                    
                     values.append((
-                        event.event_id,
-                        event.tenant_id,
-                        event.user_id,
-                        event.event_type.value if event.event_type else None,
-                        event.resource_type.value if hasattr(event, 'resource_type') and event.resource_type else None,
-                        event.resource_id if hasattr(event, 'resource_id') else None,
-                        event.action.value if hasattr(event, 'action') and event.action else None,
-                        event.timestamp,
-                        event.ip_address if hasattr(event, 'ip_address') else None,
-                        event.user_agent if hasattr(event, 'user_agent') else None,
-                        event.request_id if hasattr(event, 'request_id') else None,
-                        event.session_id if hasattr(event, 'session_id') else None,
-                        event.legal_basis if hasattr(event, 'legal_basis') else None,
-                        event.data_subject_consent if hasattr(event, 'data_subject_consent') else None,
-                        event.processing_purpose if hasattr(event, 'processing_purpose') else None,
-                        json.dumps(event.event_details) if hasattr(event, 'event_details') else '{}',
-                        [tag.value for tag in event.compliance_tags] if hasattr(event, 'compliance_tags') else [],
-                        event.success if hasattr(event, 'success') else True,
-                        event.error_message if hasattr(event, 'error_message') else None,
-                        event.response_time_ms if hasattr(event, 'response_time_ms') else None,
-                        event.integrity_hash if hasattr(event, 'integrity_hash') else None,
+                        event_id,
+                        tenant_id,
+                        user_id,
+                        event_type.value if event_type and hasattr(event_type, 'value') else str(event_type) if event_type else None,
+                        resource_type.value if resource_type and hasattr(resource_type, 'value') else str(resource_type) if resource_type else None,
+                        resource_id,
+                        action.value if action and hasattr(action, 'value') else str(action) if action else None,
+                        timestamp,
+                        ip_address,
+                        user_agent,
+                        request_id,
+                        session_id,
+                        legal_basis,
+                        data_subject_consent,
+                        processing_purpose,
+                        json.dumps(event_details) if event_details else '{}',
+                        [tag.value if hasattr(tag, 'value') else str(tag) for tag in compliance_tags] if compliance_tags else [],
+                        success,
+                        error_message,
+                        response_time_ms,
+                        integrity_hash,
                         retention_date
                     ))
                 
@@ -375,11 +443,15 @@ class AuditStorageSystem:
                     if result.get('event_details'):
                         try:
                             parsed_details = json.loads(result['event_details'])
-                            result = dict(result)  # Create mutable copy
-                            result['event_details'] = parsed_details
+                            # Create mutable copy and update
+                            result_dict = dict(result)
+                            result_dict['event_details'] = parsed_details
+                            result = result_dict
                         except json.JSONDecodeError:
-                            result = dict(result)  # Create mutable copy
-                            result['event_details'] = {}
+                            # Create mutable copy and set empty dict
+                            result_dict = dict(result)
+                            result_dict['event_details'] = {}
+                            result = result_dict
                     
                     results.append(result)
                 
@@ -605,11 +677,13 @@ class AuditStorageSystem:
         retention_days = self.default_retention_days
         
         # Adjust retention based on event type and compliance frameworks
-        if hasattr(event, 'compliance_tags') and event.compliance_tags:
-            for tag in event.compliance_tags:
-                if 'gdpr' in tag.value.lower():
+        compliance_tags = getattr(event, 'compliance_tags', None)
+        if compliance_tags:
+            for tag in compliance_tags:
+                tag_value = getattr(tag, 'value', str(tag)) if hasattr(tag, 'value') else str(tag)
+                if 'gdpr' in tag_value.lower():
                     retention_days = max(retention_days, 2555)  # 7 years for GDPR
-                elif 'soc2' in tag.value.lower():
+                elif 'soc2' in tag_value.lower():
                     retention_days = max(retention_days, 1095)  # 3 years for SOC2
         
         # Calculate retention date
@@ -910,7 +984,7 @@ async def create_audit_query_filter(
     end_time = datetime.utcnow()
     start_time = end_time - timedelta(days=days_back)
     
-    event_type_enums = []
+    event_type_enums: List[AuditEventType] = []
     if event_types:
         for et in event_types:
             try:
