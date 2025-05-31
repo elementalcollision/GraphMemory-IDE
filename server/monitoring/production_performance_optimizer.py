@@ -180,40 +180,52 @@ class ProductionPerformanceOptimizer:
         }
     
     def _setup_prometheus_metrics(self):
-        """Initialize Prometheus metrics"""
-        self.system_health_score = Gauge(
-            'system_health_score', 
-            'Overall system health score (0-100)',
-            registry=self.metrics_registry
-        )
-        
-        self.component_latency = Histogram(
-            'component_latency_seconds',
-            'Component operation latency',
-            ['component', 'operation'],
-            registry=self.metrics_registry
-        )
-        
-        self.optimization_counter = Counter(
-            'optimizations_total',
-            'Total optimization actions executed',
-            ['strategy', 'component', 'success'],
-            registry=self.metrics_registry
-        )
-        
-        self.alert_counter = Counter(
-            'alerts_total',
-            'Total alerts generated',
-            ['severity', 'component'],
-            registry=self.metrics_registry
-        )
-        
-        self.resource_utilization = Gauge(
-            'resource_utilization_percent',
-            'Resource utilization percentage',
-            ['resource_type'],
-            registry=self.metrics_registry
-        )
+        """Initialize Prometheus metrics for monitoring"""
+        try:
+            self.system_health_score = Gauge(
+                'system_health_score',
+                'Overall system health score (0-100)',
+                registry=self.metrics_registry
+            )
+            
+            self.component_latency = Histogram(
+                'component_latency_seconds',
+                'Component operation latency in seconds',
+                ['component', 'operation'],
+                registry=self.metrics_registry
+            )
+            
+            self.optimization_counter = Counter(
+                'optimization_actions_total',
+                'Total number of optimization actions performed',
+                ['strategy', 'component', 'success'],
+                registry=self.metrics_registry
+            )
+            
+            self.alert_counter = Counter(
+                'performance_alerts_total',
+                'Total number of performance alerts generated',
+                ['severity', 'component'],
+                registry=self.metrics_registry
+            )
+            
+            self.resource_utilization = Gauge(
+                'resource_utilization_percent',
+                'Resource utilization percentage',
+                ['resource_type'],
+                registry=self.metrics_registry
+            )
+            
+            logger.info("Prometheus metrics initialized successfully")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize Prometheus metrics: {e}")
+            # Set to None if initialization fails
+            self.system_health_score = None
+            self.component_latency = None
+            self.optimization_counter = None
+            self.alert_counter = None
+            self.resource_utilization = None
 
     def _setup_performance_thresholds(self) -> Dict[str, PerformanceThreshold]:
         """Configure performance monitoring thresholds"""
@@ -314,38 +326,44 @@ class ProductionPerformanceOptimizer:
     async def _collect_system_metrics(self) -> Dict[str, float]:
         """Collect system-level performance metrics"""
         try:
-            # CPU metrics
-            cpu_percent = psutil.cpu_percent(interval=1)
+            # CPU metrics - handle potential list return
+            cpu_percent_raw = psutil.cpu_percent(interval=1)
+            if isinstance(cpu_percent_raw, list):
+                cpu_percent = float(sum(cpu_percent_raw) / len(cpu_percent_raw))
+            else:
+                cpu_percent = float(cpu_percent_raw)
+            
             cpu_count = psutil.cpu_count()
             
             # Memory metrics  
             memory = psutil.virtual_memory()
-            memory_percent = memory.percent
-            memory_available = memory.available / (1024**3)  # GB
+            memory_percent = float(memory.percent)
+            memory_available = float(memory.available / (1024**3))  # GB
             
             # Disk metrics
             disk = psutil.disk_usage('/')
-            disk_percent = disk.percent
+            disk_percent = float(disk.percent)
             
-            # Network metrics with proper error handling
+            # Network metrics with proper type handling
             network_bytes_sent = 0.0
             network_bytes_recv = 0.0
             try:
                 network = psutil.net_io_counters()
-                if network:
-                    network_bytes_sent = float(network.bytes_sent)
-                    network_bytes_recv = float(network.bytes_recv)
-            except (AttributeError, TypeError):
+                if network is not None:
+                    # psutil.net_io_counters() returns a namedtuple, not a dict
+                    network_bytes_sent = float(getattr(network, 'bytes_sent', 0))
+                    network_bytes_recv = float(getattr(network, 'bytes_recv', 0))
+            except (AttributeError, TypeError, OSError):
                 # Handle case where network counters are not available
                 network_bytes_sent = 0.0
                 network_bytes_recv = 0.0
             
             return {
-                "cpu_utilization": float(cpu_percent),
+                "cpu_utilization": cpu_percent,
                 "cpu_count": float(cpu_count or 0),
-                "memory_utilization": float(memory_percent),
-                "memory_available_gb": float(memory_available),
-                "disk_utilization": float(disk_percent),
+                "memory_utilization": memory_percent,
+                "memory_available_gb": memory_available,
+                "disk_utilization": disk_percent,
                 "network_bytes_sent": network_bytes_sent,
                 "network_bytes_recv": network_bytes_recv,
                 "timestamp": time.time()
@@ -420,46 +438,49 @@ class ProductionPerformanceOptimizer:
     def _update_prometheus_metrics(self, metrics: Dict[str, float]):
         """Update Prometheus metrics with current values"""
         try:
-            # Update resource utilization
+            # Update system health score if available
+            if self.system_health_score is not None and "system_health" in metrics:
+                self.system_health_score.set(metrics["system_health"])
+            
+            # Update resource utilization metrics
             for resource in ["cpu", "memory", "disk"]:
                 key = f"{resource}_utilization"
-                if key in metrics:
+                if key in metrics and self.resource_utilization is not None:
                     self.resource_utilization.labels(resource_type=resource).set(metrics[key])
             
             # Update component latencies
             latency_metrics = {k: v for k, v in metrics.items() if "latency" in k or "time" in k}
             for metric_name, value in latency_metrics.items():
-                component = metric_name.split("_")[0]
-                self.component_latency.labels(component=component, operation="default").observe(value/1000)
+                if self.component_latency is not None:
+                    component = metric_name.split("_")[0]
+                    self.component_latency.labels(component=component, operation="default").observe(value/1000)
                 
         except Exception as e:
             logger.error(f"Prometheus metrics update failed: {e}")
 
     async def _generate_alert(self, metric_name: str, value: float, severity: AlertSeverity, threshold: PerformanceThreshold):
-        """Generate performance alert and trigger optimization if needed"""
+        """Generate and process performance alert"""
         alert = {
             "timestamp": time.time(),
             "metric_name": metric_name,
             "value": value,
             "severity": severity.value,
-            "threshold_exceeded": threshold.critical_threshold,
-            "description": threshold.description,
-            "component": "system"
+            "threshold": threshold.warning_threshold,
+            "description": f"{metric_name} exceeded {severity.value} threshold: {value}{threshold.unit}"
         }
         
         self.alert_history.append(alert)
-        self.alert_counter.labels(severity=severity.value, component="system").inc()
+        if self.alert_counter is not None:
+            self.alert_counter.labels(severity=severity.value, component="system").inc()
         
         logger.warning(f"Performance alert: {metric_name} = {value}{threshold.unit} ({severity.value})")
         
-        # Trigger optimization for critical alerts
-        if severity in [AlertSeverity.CRITICAL, AlertSeverity.EMERGENCY]:
-            await self.optimization_queue.put({
-                "metric_name": metric_name,
-                "value": value,
-                "severity": severity,
-                "timestamp": time.time()
-            })
+        # Add to optimization queue for automated remediation
+        await self.optimization_queue.put({
+            "type": "alert_response",
+            "alert": alert,
+            "priority": "high" if severity in [AlertSeverity.CRITICAL, AlertSeverity.EMERGENCY] else "medium"
+        })
 
     async def _optimization_processor(self):
         """Process optimization requests and execute automated optimizations"""
@@ -504,14 +525,15 @@ class ProductionPerformanceOptimizer:
             action = await self._optimize_cache_performance()
             optimization_actions.append(action)
         
-        # Log optimization results
+        # Record optimization actions
         for action in optimization_actions:
             self.optimization_history.append(action)
-            self.optimization_counter.labels(
-                strategy=action.strategy.value,
-                component=action.component,
-                success=str(action.success)
-            ).inc()
+            if self.optimization_counter is not None:
+                self.optimization_counter.labels(
+                    strategy=action.strategy.value,
+                    component=action.component,
+                    success=str(action.success)
+                ).inc()
 
     async def _optimize_memory_usage(self) -> OptimizationAction:
         """Optimize system memory usage"""
@@ -615,19 +637,28 @@ class ProductionPerformanceOptimizer:
             )
 
     async def _health_assessor(self):
-        """Continuous system health assessment and scoring"""
+        """Continuous health assessment and reporting"""
         while self.monitoring_active:
             try:
                 health_report = await self._generate_health_report()
                 self.health_history.append(health_report)
-                self.system_health_score.set(health_report.overall_health_score)
+                if self.system_health_score is not None:
+                    self.system_health_score.set(health_report.overall_health_score)
                 
                 logger.info(f"System health score: {health_report.overall_health_score:.1f}/100")
+                
+                # Check for critical health issues
+                if health_report.overall_health_score < 50:
+                    await self.optimization_queue.put({
+                        "type": "critical_health",
+                        "health_report": health_report,
+                        "priority": "emergency"
+                    })
                 
             except Exception as e:
                 logger.error(f"Health assessment error: {e}")
             
-            await asyncio.sleep(self.config["health_check_interval"])
+            await asyncio.sleep(60)  # Health check every minute
 
     async def _generate_health_report(self) -> SystemHealthReport:
         """Generate comprehensive system health report"""
