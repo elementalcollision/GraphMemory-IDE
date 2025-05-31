@@ -57,7 +57,8 @@ try:
 except ImportError:
     # Handle relative imports during development
     class KuzuTenantManager:
-        pass
+        def __init__(self, *args, **kwargs):
+            pass
 
 
 class UserRole(str, Enum):
@@ -411,8 +412,13 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
         if cached_role:
             self.cache_hits += 1
             if isinstance(cached_role, str):
-                return UserRole(cached_role)
-            return cached_role
+                try:
+                    return UserRole(cached_role)
+                except ValueError:
+                    # Invalid role string, fall through to default
+                    pass
+            elif isinstance(cached_role, UserRole):
+                return cached_role
         
         # Lookup from database (placeholder implementation)
         # In production, this would query the user_tenant_roles table

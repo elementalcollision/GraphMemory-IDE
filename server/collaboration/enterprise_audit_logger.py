@@ -45,16 +45,47 @@ import ipaddress
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
-import asyncpg
-from asyncpg.exceptions import PostgresError
+
+try:
+    import asyncpg
+    from asyncpg.exceptions import PostgresError
+    HAS_ASYNCPG = True
+except ImportError:
+    HAS_ASYNCPG = False
+    class PostgresError(Exception):
+        pass
+    
+    class asyncpg:
+        class Pool:
+            async def acquire(self):
+                raise ImportError("asyncpg not available")
+            async def close(self):
+                pass
+        
+        @staticmethod
+        async def create_pool(*args, **kwargs):
+            raise ImportError("asyncpg not available")
 
 try:
     from .fastapi_tenant_middleware import TenantContext
     from .rbac_permission_system import UserRole, ResourceType, Action
 except ImportError:
     # Handle relative imports during development
+    @dataclass
     class TenantContext:
-        pass
+        tenant_id: str = ""
+        user_id: Optional[str] = None
+        user_role: Optional['UserRole'] = None
+        
+        def __getattr__(self, name: str) -> Any:
+            """Handle missing attributes gracefully"""
+            if name == "tenant_id":
+                return getattr(self, "tenant_id", "")
+            elif name == "user_id":
+                return getattr(self, "user_id", None)
+            elif name == "user_role":
+                return getattr(self, "user_role", None)
+            return None
     
     class UserRole(str, Enum):
         VIEWER = "viewer"
@@ -235,19 +266,24 @@ class EnterpriseAuditLogger:
     async def initialize(self):
         """Initialize database connection pool and background processing"""
         try:
-            # Create database connection pool
-            self._db_pool = await asyncpg.create_pool(
-                self.database_url,
-                min_size=2,
-                max_size=10,
-                command_timeout=30
-            )
+            # Create database connection pool only if asyncpg is available
+            if HAS_ASYNCPG:
+                self._db_pool = await asyncpg.create_pool(
+                    self.database_url,
+                    min_size=2,
+                    max_size=10,
+                    command_timeout=30
+                )
+            else:
+                self._db_pool = None
+                self.logger.warning("asyncpg not available - audit logging will be mocked")
             
             # Start background processing task
             self._processing_task = asyncio.create_task(self._background_processor())
             
-            # Create audit tables if not exists
-            await self._create_audit_tables()
+            # Create audit tables if database is available
+            if self._db_pool:
+                await self._create_audit_tables()
             
             self.logger.info("Enterprise Audit Logger initialized successfully")
             
@@ -312,10 +348,19 @@ class EnterpriseAuditLogger:
         # Extract compliance tags based on request
         compliance_tags = self._extract_compliance_tags(request, tenant_context)
         
+        # Safely extract tenant context attributes
+        tenant_id = ""
+        user_id = None
+        user_role = getattr(tenant_context, 'user_role', None)
+        user_role_value = None
+        
+        if user_role:
+            user_role_value = getattr(user_role, 'value', None) if hasattr(user_role, 'value') else str(user_role)
+        
         # Create audit event
         event = AuditEvent(
-            tenant_id=tenant_context.tenant_id if tenant_context else "",
-            user_id=tenant_context.user_id if tenant_context else None,
+            tenant_id=tenant_id,
+            user_id=user_id,
             event_type=event_type,
             resource_type=self._extract_resource_type(request),
             action=self._extract_action(request),
@@ -330,7 +375,7 @@ class EnterpriseAuditLogger:
                 'path': str(request.url.path),
                 'query_params': dict(request.query_params),
                 'status_code': response.status_code if response else None,
-                'user_role': tenant_context.user_role.value if tenant_context else None
+                'user_role': user_role_value
             },
             compliance_tags=compliance_tags,
             success=error_message is None,
@@ -379,7 +424,11 @@ class EnterpriseAuditLogger:
 
     async def _process_batch(self, batch: List[AuditEvent]):
         """Process batch of audit events for database storage"""
-        if not batch or not self._db_pool:
+        if not batch:
+            return
+            
+        if not HAS_ASYNCPG or not self._db_pool:
+            self.logger.warning("Database not available - audit events not stored")
             return
         
         start_time = time.time()
@@ -442,7 +491,7 @@ class EnterpriseAuditLogger:
 
     async def _create_audit_tables(self):
         """Create audit tables with time-series optimization"""
-        if not self._db_pool:
+        if not HAS_ASYNCPG or not self._db_pool:
             return
         
         try:
@@ -621,7 +670,7 @@ class EnterpriseAuditLogger:
             await self._process_batch(remaining_events)
         
         # Close database pool
-        if self._db_pool:
+        if HAS_ASYNCPG and self._db_pool:
             await self._db_pool.close()
 
 
