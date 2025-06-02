@@ -1,0 +1,16 @@
+{
+  "go_live_summary": {
+    "status": "FAILED",
+    "failure_reason": "Pre-deployment checklist failed",
+    "start_time": "2025-06-02T09:22:05.373324",
+    "end_time": "2025-06-02T09:22:05.518862",
+    "duration_minutes": 0.0
+  },
+  "recommendations": [
+    "\ud83d\udea8 Go-live failed - do not proceed to production",
+    "\ud83d\udd0d Investigate and resolve the failure reason",
+    "\ud83d\udccb Review and address failed checklist items",
+    "\ud83d\udd04 Re-run go-live procedures after resolution",
+    "\ud83d\udcdd Update procedures based on lessons learned"
+  ]
+}

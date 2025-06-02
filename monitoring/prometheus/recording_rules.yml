@@ -1,0 +1,259 @@
+groups:
+  # API Performance Recording Rules
+  - name: api_performance_rules
+    interval: 30s
+    rules:
+      # API Request Rate (per second)
+      - record: graphmemory:api:request_rate
+        expr: rate(http_requests_total[5m])
+        labels:
+          metric_type: "rate"
+          
+      # API Error Rate (percentage)
+      - record: graphmemory:api:error_rate
+        expr: |
+          (
+            rate(http_requests_total{status=~"5.."}[5m]) /
+            rate(http_requests_total[5m])
+          ) * 100
+        labels:
+          metric_type: "error_rate"
+          
+      # API P95 Response Time
+      - record: graphmemory:api:response_time_p95
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+        labels:
+          metric_type: "latency"
+          percentile: "95"
+          
+      # API P99 Response Time
+      - record: graphmemory:api:response_time_p99
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+        labels:
+          metric_type: "latency"
+          percentile: "99"
+          
+      # API Success Rate (percentage)
+      - record: graphmemory:api:success_rate
+        expr: |
+          (
+            rate(http_requests_total{status=~"2.."}[5m]) /
+            rate(http_requests_total[5m])
+          ) * 100
+        labels:
+          metric_type: "success_rate"
+
+  # Database Performance Recording Rules
+  - name: database_performance_rules
+    interval: 30s
+    rules:
+      # Database Connection Pool Utilization
+      - record: graphmemory:db:connection_pool_utilization
+        expr: |
+          (
+            db_connection_pool_active_connections /
+            db_connection_pool_max_connections
+          ) * 100
+        labels:
+          metric_type: "utilization"
+          
+      # Database Query Rate
+      - record: graphmemory:db:query_rate
+        expr: rate(db_queries_total[5m])
+        labels:
+          metric_type: "rate"
+          
+      # Database Error Rate
+      - record: graphmemory:db:error_rate
+        expr: |
+          (
+            rate(db_queries_total{status="error"}[5m]) /
+            rate(db_queries_total[5m])
+          ) * 100
+        labels:
+          metric_type: "error_rate"
+          
+      # Database Query P95 Duration
+      - record: graphmemory:db:query_duration_p95
+        expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m]))
+        labels:
+          metric_type: "latency"
+          percentile: "95"
+
+  # Cache Performance Recording Rules
+  - name: cache_performance_rules
+    interval: 30s
+    rules:
+      # Redis Cache Hit Rate
+      - record: graphmemory:cache:hit_rate
+        expr: |
+          (
+            rate(redis_commands_processed_total{cmd="hit"}[5m]) /
+            (
+              rate(redis_commands_processed_total{cmd="hit"}[5m]) +
+              rate(redis_commands_processed_total{cmd="miss"}[5m])
+            )
+          ) * 100
+        labels:
+          metric_type: "hit_rate"
+          
+      # Cache Memory Utilization
+      - record: graphmemory:cache:memory_utilization
+        expr: |
+          (
+            redis_memory_used_bytes /
+            redis_memory_max_bytes
+          ) * 100
+        labels:
+          metric_type: "utilization"
+          
+      # Cache Operation Rate
+      - record: graphmemory:cache:operation_rate
+        expr: rate(redis_commands_processed_total[5m])
+        labels:
+          metric_type: "rate"
+
+  # System Resource Recording Rules
+  - name: system_resource_rules
+    interval: 15s
+    rules:
+      # CPU Utilization
+      - record: graphmemory:system:cpu_utilization
+        expr: |
+          (
+            1 - rate(node_cpu_seconds_total{mode="idle"}[5m])
+          ) * 100
+        labels:
+          metric_type: "utilization"
+          
+      # Memory Utilization
+      - record: graphmemory:system:memory_utilization
+        expr: |
+          (
+            (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) /
+            node_memory_MemTotal_bytes
+          ) * 100
+        labels:
+          metric_type: "utilization"
+          
+      # Disk Utilization
+      - record: graphmemory:system:disk_utilization
+        expr: |
+          (
+            (node_filesystem_size_bytes - node_filesystem_avail_bytes) /
+            node_filesystem_size_bytes
+          ) * 100
+        labels:
+          metric_type: "utilization"
+          
+      # Network I/O Rate
+      - record: graphmemory:system:network_io_rate
+        expr: |
+          rate(node_network_receive_bytes_total[5m]) +
+          rate(node_network_transmit_bytes_total[5m])
+        labels:
+          metric_type: "rate"
+
+  # Business Metrics Recording Rules
+  - name: business_metrics_rules
+    interval: 60s
+    rules:
+      # User Authentication Rate
+      - record: graphmemory:business:auth_rate
+        expr: rate(user_authentication_total[5m])
+        labels:
+          metric_type: "rate"
+          
+      # User Authentication Failure Rate
+      - record: graphmemory:business:auth_failure_rate
+        expr: |
+          (
+            rate(user_authentication_total{status="failed"}[5m]) /
+            rate(user_authentication_total[5m])
+          ) * 100
+        labels:
+          metric_type: "failure_rate"
+          
+      # User Onboarding Completion Rate
+      - record: graphmemory:business:onboarding_completion_rate
+        expr: |
+          (
+            rate(user_onboarding_total{status="completed"}[1h]) /
+            rate(user_onboarding_total{status="started"}[1h])
+          ) * 100
+        labels:
+          metric_type: "completion_rate"
+          
+      # Collaboration Session Rate
+      - record: graphmemory:business:collaboration_session_rate
+        expr: rate(collaboration_sessions_total[5m])
+        labels:
+          metric_type: "rate"
+          
+      # Memory Operation Rate
+      - record: graphmemory:business:memory_operation_rate
+        expr: rate(memory_operations_total[5m])
+        labels:
+          metric_type: "rate"
+
+  # Application Health Recording Rules
+  - name: application_health_rules
+    interval: 30s
+    rules:
+      # Service Availability
+      - record: graphmemory:health:service_availability
+        expr: |
+          (
+            up{job=~"graphmemory-ide.*"}
+          ) * 100
+        labels:
+          metric_type: "availability"
+          
+      # Container Health Status
+      - record: graphmemory:health:container_health
+        expr: |
+          (
+            container_last_seen{name=~"graphmemory.*"} > 0
+          )
+        labels:
+          metric_type: "health_status"
+          
+      # Queue Processing Rate
+      - record: graphmemory:health:queue_processing_rate
+        expr: rate(queue_processed_total[5m])
+        labels:
+          metric_type: "processing_rate"
+          
+      # Queue Backlog Size
+      - record: graphmemory:health:queue_backlog_size
+        expr: queue_size_current
+        labels:
+          metric_type: "backlog_size"
+
+  # Alert Correlation Recording Rules
+  - name: alert_correlation_rules
+    interval: 60s
+    rules:
+      # Alert Generation Rate
+      - record: graphmemory:alerts:generation_rate
+        expr: rate(alerts_generated_total[5m])
+        labels:
+          metric_type: "rate"
+          
+      # Alert Correlation Rate
+      - record: graphmemory:alerts:correlation_rate
+        expr: rate(alerts_correlated_total[5m])
+        labels:
+          metric_type: "correlation_rate"
+          
+      # Alert Escalation Rate
+      - record: graphmemory:alerts:escalation_rate
+        expr: rate(alerts_escalated_total[5m])
+        labels:
+          metric_type: "escalation_rate"
+          
+      # Active Alert Groups
+      - record: graphmemory:alerts:active_groups
+        expr: alert_groups_active_current
+        labels:
+          metric_type: "active_count" 

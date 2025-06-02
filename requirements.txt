@@ -4,6 +4,8 @@
 #
 #    pip-compile requirements.in
 #
+alembic==1.16.1
+    # via -r requirements.in
 altair==4.2.2
     # via streamlit
 amazon-ion==0.13.0
@@ -161,6 +163,8 @@ locust==2.37.5
     # via -r requirements.in
 locust-cloud==1.21.8
     # via locust
+mako==1.3.10
+    # via alembic
 markdown==3.8
     # via
     #   mkdocs
@@ -172,6 +176,7 @@ markupsafe==3.0.2
     # via
     #   flask
     #   jinja2
+    #   mako
     #   mkdocs
     #   werkzeug
 mccabe==0.7.0
@@ -365,6 +370,8 @@ smmap==5.0.2
     # via gitdb
 sniffio==1.3.1
     # via anyio
+sqlalchemy==2.0.41
+    # via alembic
 sse-starlette==2.3.5
     # via -r requirements.in
 starlette==0.46.2
@@ -402,12 +409,14 @@ transformers==4.52.3
     # via sentence-transformers
 typing-extensions==4.13.2
     # via
+    #   alembic
     #   fastapi
     #   huggingface-hub
     #   pydantic
     #   pydantic-core
     #   pyee
     #   sentence-transformers
+    #   sqlalchemy
     #   streamlit
     #   torch
     #   typing-inspection
@@ -449,3 +458,27 @@ zope-interface==7.2
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
+
+# SSO and MFA dependencies for Phase 2 implementation
+aioredis==2.0.1
+    # via -r requirements.in (for rate limiting and session storage)
+pyotp==2.9.0
+    # via -r requirements.in (for TOTP/MFA authentication)
+qrcode[pil]==7.4.2
+    # via -r requirements.in (for QR code generation in MFA setup)
+PyJWT==2.8.0
+    # via -r requirements.in (for JWT token handling)
+python-multipart==0.0.6
+    # via -r requirements.in (for form data handling in auth routes)
+email-validator==2.1.0.post1
+    # via -r requirements.in (for email validation in auth forms)
+
+# Analytics and Visualization dependencies for Phase 3 implementation
+pandas==2.1.4
+    # via -r requirements.in (for data processing and analytics)
+plotly==5.17.0
+    # via -r requirements.in (for interactive data visualizations)
+websockets==12.0
+    # via -r requirements.in (for real-time WebSocket connections)
+httpx==0.25.2
+    # via -r requirements.in (for webhook notifications in alerting)

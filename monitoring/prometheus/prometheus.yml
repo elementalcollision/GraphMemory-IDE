@@ -1,0 +1,202 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'graphmemory-ide'
+    environment: 'production'
+
+rule_files:
+  - "recording_rules.yml"
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 5s
+    metrics_path: /metrics
+
+  # GraphMemory-IDE Main Application
+  - job_name: 'graphmemory-ide-app'
+    static_configs:
+      - targets: ['graphmemory-ide:8000']
+    scrape_interval: 10s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: graphmemory-ide:8000
+
+  # GraphMemory-IDE API Health Checks
+  - job_name: 'graphmemory-ide-health'
+    static_configs:
+      - targets: ['graphmemory-ide:8000']
+    scrape_interval: 30s
+    metrics_path: /health/metrics
+    scrape_timeout: 5s
+    
+  # Database Monitoring - PostgreSQL
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: database
+        replacement: 'graphmemory-ide-db'
+
+  # Redis Monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: redis_instance
+        replacement: 'graphmemory-ide-cache'
+
+  # Node Exporter - System Metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: node
+        replacement: 'graphmemory-ide-host'
+
+  # cAdvisor - Container Metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    honor_labels: true
+
+  # GraphMemory-IDE Collaboration Service
+  - job_name: 'collaboration-service'
+    static_configs:
+      - targets: ['graphmemory-ide:8000']
+    scrape_interval: 10s
+    metrics_path: /collaboration/metrics
+    scrape_timeout: 8s
+
+  # GraphMemory-IDE Memory Operations
+  - job_name: 'memory-operations'
+    static_configs:
+      - targets: ['graphmemory-ide:8000']
+    scrape_interval: 15s
+    metrics_path: /memory/metrics
+    scrape_timeout: 10s
+
+  # GraphMemory-IDE Authentication Service
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['graphmemory-ide:8000']
+    scrape_interval: 20s
+    metrics_path: /auth/metrics
+    scrape_timeout: 5s
+
+  # GraphMemory-IDE Dashboard Service
+  - job_name: 'dashboard-service'
+    static_configs:
+      - targets: ['graphmemory-ide:8000']
+    scrape_interval: 30s
+    metrics_path: /dashboard/metrics
+    scrape_timeout: 8s
+
+  # Business Metrics Collection
+  - job_name: 'business-metrics'
+    static_configs:
+      - targets: ['graphmemory-ide:8000']
+    scrape_interval: 60s
+    metrics_path: /business/metrics
+    scrape_timeout: 15s
+
+# Service Discovery for Dynamic Environments
+  # Kubernetes Service Discovery (if deployed on K8s)
+  - job_name: 'kubernetes-pods'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+            - graphmemory-ide
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+
+  # Docker Swarm Service Discovery (if using Docker Swarm)
+  - job_name: 'dockerswarm-services'
+    dockerswarm_sd_configs:
+      - host: unix:///var/run/docker.sock
+        role: services
+        port: 8000
+    relabel_configs:
+      - source_labels: [__meta_dockerswarm_service_label_monitoring]
+        action: keep
+        regex: prometheus
+
+# Storage Configuration
+storage:
+  tsdb:
+    path: /prometheus/data
+    retention.time: 30d
+    retention.size: 10GB
+    min-block-duration: 2h
+    max-block-duration: 25h
+    wal-compression: true
+
+# Query Configuration
+query:
+  timeout: 2m
+  max_concurrency: 20
+  max_samples: 50000000
+
+# Web Configuration
+web:
+  listen-address: "0.0.0.0:9090"
+  external-url: "http://prometheus:9090"
+  enable-lifecycle: true
+  enable-admin-api: true
+  console.templates: "consoles"
+  console.libraries: "console_libraries"
+
+# Logging Configuration
+log:
+  level: info
+  format: json 

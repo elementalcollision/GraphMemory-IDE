@@ -5,6 +5,7 @@ kuzu
 
 # Database
 asyncpg
+alembic
 
 # Authentication
 python-jose[cryptography]

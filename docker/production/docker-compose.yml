@@ -1,0 +1,225 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:16-alpine
+    container_name: graphmemory-postgresql
+    restart: unless-stopped
+    environment:
+      # Core PostgreSQL configuration
+      POSTGRES_DB: ${POSTGRES_DB:-graphmemory}
+      POSTGRES_USER: ${POSTGRES_USER:-graphmemory}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      
+      # Performance and connection settings
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      
+    command: [
+      "postgres",
+      # Performance tuning for production
+      "-c", "shared_preload_libraries=pg_stat_statements",
+      "-c", "max_connections=200",
+      "-c", "shared_buffers=256MB",
+      "-c", "effective_cache_size=1GB",
+      "-c", "maintenance_work_mem=64MB",
+      "-c", "checkpoint_completion_target=0.9",
+      "-c", "wal_buffers=16MB",
+      "-c", "default_statistics_target=100",
+      "-c", "random_page_cost=1.1",
+      "-c", "effective_io_concurrency=200",
+      
+      # Logging and monitoring
+      "-c", "log_statement=all",
+      "-c", "log_duration=on",
+      "-c", "log_min_duration_statement=1000",
+      "-c", "log_checkpoints=on",
+      "-c", "log_connections=on",
+      "-c", "log_disconnections=on",
+      "-c", "log_lock_waits=on",
+      
+      # Security settings
+      "-c", "ssl=on",
+      "-c", "ssl_cert_file=/var/lib/postgresql/server.crt",
+      "-c", "ssl_key_file=/var/lib/postgresql/server.key",
+      "-c", "password_encryption=scram-sha-256"
+    ]
+    
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    
+    volumes:
+      # Data persistence
+      - postgresql_data:/var/lib/postgresql/data
+      - postgresql_logs:/var/log/postgresql
+      
+      # Configuration and initialization
+      - ./postgresql/init:/docker-entrypoint-initdb.d:ro
+      - ./postgresql/config:/etc/postgresql:ro
+      - ./postgresql/ssl:/var/lib/postgresql:ro
+      
+      # Backup storage
+      - ./postgresql/backups:/backups
+    
+    networks:
+      - graphmemory_network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-graphmemory} -d ${POSTGRES_DB:-graphmemory}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    
+    labels:
+      - "com.graphmemory.service=database"
+      - "com.graphmemory.environment=${ENVIRONMENT:-production}"
+    
+    # Security settings
+    user: postgres
+    read_only: false
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: graphmemory-redis
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    
+    command: [
+      "redis-server",
+      "--requirepass", "${REDIS_PASSWORD}",
+      "--maxmemory", "512mb",
+      "--maxmemory-policy", "allkeys-lru",
+      "--save", "900", "1",
+      "--save", "300", "10",
+      "--save", "60", "10000",
+      "--appendonly", "yes",
+      "--appendfsync", "everysec"
+    ]
+    
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    
+    volumes:
+      - redis_data:/data
+      - ./redis/config:/usr/local/etc/redis:ro
+    
+    networks:
+      - graphmemory_network
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Kuzu graph database
+  kuzu:
+    image: kuzu/kuzu:latest
+    container_name: graphmemory-kuzu
+    restart: unless-stopped
+    
+    volumes:
+      - kuzu_data:/kuzu/data
+      - ./kuzu/config:/kuzu/config:ro
+      - ./kuzu/init:/kuzu/init:ro
+    
+    networks:
+      - graphmemory_network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /kuzu/data/.healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    
+    # Resource limits  
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Database backup service
+  backup:
+    image: postgres:16-alpine
+    container_name: graphmemory-backup
+    restart: "no"
+    depends_on:
+      - postgresql
+    
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: postgresql
+      POSTGRES_USER: ${POSTGRES_USER:-graphmemory}
+      POSTGRES_DB: ${POSTGRES_DB:-graphmemory}
+    
+    volumes:
+      - ./postgresql/backups:/backups
+      - ./scripts/backup:/scripts:ro
+    
+    networks:
+      - graphmemory_network
+    
+    entrypoint: ["/scripts/backup.sh"]
+
+volumes:
+  postgresql_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_DIR:-./data}/postgresql
+  
+  postgresql_logs:
+    driver: local
+    
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_DIR:-./data}/redis
+  
+  kuzu_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_DIR:-./data}/kuzu
+
+networks:
+  graphmemory_network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: graphmemory0
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

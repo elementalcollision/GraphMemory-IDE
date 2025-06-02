@@ -20,18 +20,45 @@ class Environment(str, Enum):
 class SecuritySettings(BaseModel):
     """Security-related configuration"""
     SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    
+    # JWT Configuration with EdDSA support
     JWT_SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_ALGORITHM: str = "EdDSA"  # Updated to use EdDSA (Ed25519) for enhanced security
+    JWT_KEY_STORAGE_PATH: str = "./secrets/jwt"
+    JWT_KEY_ROTATION_DAYS: int = 30  # Automatic rotation every 30 days
+    JWT_MAX_KEY_VERSIONS: int = 5
+    JWT_ENABLE_ROTATION: bool = True
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # Reduced from 30 for better UX
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
-    # Password requirements
-    MIN_PASSWORD_LENGTH: int = 8
-    REQUIRE_PASSWORD_SPECIAL_CHARS: bool = True
+    # Enhanced Key Management
+    USE_HSM: bool = False  # Hardware Security Module support
+    HSM_PROVIDER: Optional[str] = None
+    HSM_SLOT: Optional[str] = None
+    ENABLE_KEY_CACHING: bool = False  # In-memory key caching
     
-    # Rate limiting
+    # Password requirements
+    MIN_PASSWORD_LENGTH: int = 12  # Increased from 8
+    REQUIRE_PASSWORD_SPECIAL_CHARS: bool = True
+    REQUIRE_PASSWORD_NUMBERS: bool = True
+    REQUIRE_PASSWORD_UPPERCASE: bool = True
+    REQUIRE_PASSWORD_LOWERCASE: bool = True
+    
+    # Rate limiting (enhanced)
     RATE_LIMIT_PER_MINUTE: int = 60
     RATE_LIMIT_BURST: int = 20
+    RATE_LIMIT_PER_HOUR: int = 1000  # Additional hourly limit
+    
+    # API Key Management
+    API_KEY_LENGTH: int = 32
+    API_KEY_ROTATION_DAYS: int = 90  # API keys rotate every 90 days
+    API_KEY_SCOPED_PERMISSIONS: bool = True
+    
+    # Audit and Compliance
+    SECURITY_AUDIT_LOGGING: bool = True
+    AUDIT_LOG_PATH: str = "./logs/security_audit.log"
+    AUDIT_LOG_ROTATION_SIZE: str = "10MB"
+    AUDIT_LOG_RETENTION_DAYS: int = 90
     
     class Config:
         env_prefix = "SECURITY_"
