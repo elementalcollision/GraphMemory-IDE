@@ -127,7 +127,7 @@ class CorrelationResult:
 class TemporalCorrelator:
     """Correlates alerts based on temporal patterns"""
     
-    def __init__(self, rule: CorrelationRule):
+    def __init__(self, rule: CorrelationRule) -> None:
         self.rule = rule
     
     async def correlate(self, new_alert: Alert, existing_alerts: List[Alert]) -> Optional[CorrelationResult]:
@@ -210,7 +210,7 @@ class TemporalCorrelator:
 class SpatialCorrelator:
     """Correlates alerts based on spatial/location attributes"""
     
-    def __init__(self, rule: CorrelationRule):
+    def __init__(self, rule: CorrelationRule) -> None:
         self.rule = rule
     
     async def correlate(self, new_alert: Alert, existing_alerts: List[Alert]) -> Optional[CorrelationResult]:
@@ -321,7 +321,7 @@ class SpatialCorrelator:
 class SemanticCorrelator:
     """Correlates alerts based on semantic similarity"""
     
-    def __init__(self, rule: CorrelationRule):
+    def __init__(self, rule: CorrelationRule) -> None:
         self.rule = rule
     
     async def correlate(self, new_alert: Alert, existing_alerts: List[Alert]) -> Optional[CorrelationResult]:
@@ -449,7 +449,7 @@ class SemanticCorrelator:
 class MetricPatternCorrelator:
     """Correlates alerts based on metric value patterns"""
     
-    def __init__(self, rule: CorrelationRule):
+    def __init__(self, rule: CorrelationRule) -> None:
         self.rule = rule
     
     async def correlate(self, new_alert: Alert, existing_alerts: List[Alert]) -> Optional[CorrelationResult]:
@@ -558,7 +558,7 @@ class AlertCorrelator:
     Main alert correlation engine that orchestrates multiple correlation strategies
     """
     
-    def __init__(self, rules: Optional[List[CorrelationRule]] = None):
+    def __init__(self, rules: Optional[List[CorrelationRule]] = None) -> None:
         self.rules = rules or self._create_default_rules()
         self.correlators = self._initialize_correlators()
         
@@ -583,7 +583,7 @@ class AlertCorrelator:
         
         logger.info("AlertCorrelator initialized with {} rules".format(len(self.rules)))
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the correlation engine"""
         try:
             # Get external dependencies
@@ -701,7 +701,7 @@ class AlertCorrelator:
             logger.error(f"Error removing correlation {correlation_id}: {e}")
             return False
     
-    def add_correlation_callback(self, callback: Callable):
+    def add_correlation_callback(self, callback: Callable) -> None:
         """Add callback for correlation events"""
         self.correlation_callbacks.append(callback)
     
@@ -780,7 +780,7 @@ class AlertCorrelator:
         
         return correlators
     
-    async def _process_correlation_result(self, correlation: CorrelationResult):
+    async def _process_correlation_result(self, correlation: CorrelationResult) -> None:
         """Process and store correlation result"""
         # Store correlation
         self.active_correlations[correlation.correlation_id] = correlation
@@ -794,7 +794,7 @@ class AlertCorrelator:
             cache_key = f"correlation:{correlation.correlation_id}"
             await self.cache_manager.set(cache_key, correlation.__dict__, ttl=3600)
     
-    async def _trigger_correlation_callbacks(self, correlation: CorrelationResult):
+    async def _trigger_correlation_callbacks(self, correlation: CorrelationResult) -> None:
         """Trigger correlation event callbacks"""
         for callback in self.correlation_callbacks:
             try:
@@ -831,7 +831,7 @@ async def initialize_alert_correlator(rules: Optional[List[CorrelationRule]] = N
     return _alert_correlator
 
 
-async def shutdown_alert_correlator():
+async def shutdown_alert_correlator() -> None:
     """Shutdown the global alert correlator"""
     global _alert_correlator
     

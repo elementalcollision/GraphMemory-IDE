@@ -264,7 +264,7 @@ class GenericConnectionPool(ConnectionPool):
                  max_size: int = 50,
                  min_size: int = 5,
                  timeout: int = 30,
-                 max_age: int = 3600):
+                 max_age: int = 3600) -> None:
         self.connection_factory = connection_factory
         self.max_size = max_size
         self.min_size = min_size
@@ -285,7 +285,7 @@ class GenericConnectionPool(ConnectionPool):
             "errors": 0
         }
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize pool with minimum connections"""
         for _ in range(self.min_size):
             try:
@@ -398,7 +398,7 @@ class GenericConnectionPool(ConnectionPool):
 class ConnectionPoolManager:
     """Manages multiple connection pools"""
     
-    def __init__(self, config: PerformanceConfig):
+    def __init__(self, config: PerformanceConfig) -> None:
         self.config = config
         self.pools: Dict[str, ConnectionPool] = {}
         self._lock = asyncio.Lock()
@@ -430,7 +430,7 @@ class ConnectionPoolManager:
         return self.pools.get(name)
     
     @asynccontextmanager
-    async def get_connection(self, pool_name: str):
+    async def get_connection(self, pool_name: str) -> None:
         """Context manager for getting and returning connections"""
         pool = await self.get_pool(pool_name)
         if not pool:
@@ -449,7 +449,7 @@ class ConnectionPoolManager:
             stats[name] = pool.get_stats()
         return stats
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown all pools"""
         async with self._lock:
             for pool in self.pools.values():
@@ -460,7 +460,7 @@ class ConnectionPoolManager:
 class RateLimitManager:
     """Advanced rate limiting manager"""
     
-    def __init__(self, config: PerformanceConfig):
+    def __init__(self, config: PerformanceConfig) -> None:
         self.config = config
         self.limiter: Optional[Limiter] = None
         self.custom_limits: Dict[str, str] = {}
@@ -469,7 +469,7 @@ class RateLimitManager:
         if SLOWAPI_AVAILABLE and config.enable_rate_limiting:
             self._initialize_limiter()
     
-    def _initialize_limiter(self):
+    def _initialize_limiter(self) -> None:
         """Initialize the rate limiter"""
         try:
             storage_uri = None
@@ -489,7 +489,7 @@ class RateLimitManager:
         """Get the rate limiter instance"""
         return self.limiter
     
-    def add_custom_limit(self, endpoint: str, limit: str):
+    def add_custom_limit(self, endpoint: str, limit: str) -> None:
         """Add custom rate limit for specific endpoint"""
         self.custom_limits[endpoint] = limit
     
@@ -497,7 +497,7 @@ class RateLimitManager:
         """Get rate limit for specific endpoint"""
         return self.custom_limits.get(endpoint, self.config.default_rate_limit)
     
-    async def adjust_adaptive_limits(self, endpoint: str, load_factor: float):
+    async def adjust_adaptive_limits(self, endpoint: str, load_factor: float) -> None:
         """Adjust rate limits based on system load"""
         if endpoint not in self.adaptive_limits:
             self.adaptive_limits[endpoint] = 1.0
@@ -516,7 +516,7 @@ class RateLimitManager:
 class MemoryManager:
     """Advanced memory management and monitoring"""
     
-    def __init__(self, config: PerformanceConfig):
+    def __init__(self, config: PerformanceConfig) -> None:
         self.config = config
         self.memory_snapshots: deque = deque(maxlen=1000)
         self.memory_alerts: List[SystemAlert] = []
@@ -555,7 +555,7 @@ class MemoryManager:
         result = func()
         return result, peak_memory
     
-    async def monitor_memory(self):
+    async def monitor_memory(self) -> None:
         """Continuous memory monitoring"""
         while True:
             try:
@@ -580,7 +580,7 @@ class MemoryManager:
                 print(f"Memory monitoring error: {e}")
                 await asyncio.sleep(10)
     
-    async def _create_memory_alert(self, usage: Dict[str, float]):
+    async def _create_memory_alert(self, usage: Dict[str, float]) -> None:
         """Create memory usage alert"""
         alert = SystemAlert(
             alert_id=f"memory_{int(time.time())}",
@@ -593,7 +593,7 @@ class MemoryManager:
         )
         self.memory_alerts.append(alert)
     
-    async def _perform_gc(self):
+    async def _perform_gc(self) -> None:
         """Perform garbage collection"""
         before_objects = len(gc.get_objects())
         collected = gc.collect()
@@ -619,7 +619,7 @@ class MemoryManager:
 class PerformanceProfiler:
     """Real-time performance profiling and monitoring"""
     
-    def __init__(self, config: PerformanceConfig):
+    def __init__(self, config: PerformanceConfig) -> None:
         self.config = config
         self.performance_snapshots: deque = deque(maxlen=2000)
         self.operation_times: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
@@ -635,7 +635,7 @@ class PerformanceProfiler:
         }
     
     @asynccontextmanager
-    async def profile_operation(self, operation_name: str):
+    async def profile_operation(self, operation_name: str) -> None:
         """Context manager for profiling operations"""
         start_time = time.time()
         start_memory = 0
@@ -670,7 +670,7 @@ class PerformanceProfiler:
                 
                 await self._record_operation(operation_name, duration, memory_delta)
     
-    async def _record_operation(self, operation: str, duration: float, memory_delta: float):
+    async def _record_operation(self, operation: str, duration: float, memory_delta: float) -> None:
         """Record operation performance data"""
         snapshot = {
             "operation": operation,
@@ -725,14 +725,14 @@ class PerformanceProfiler:
 class ResourceMonitor:
     """Comprehensive system resource monitoring"""
     
-    def __init__(self, config: PerformanceConfig):
+    def __init__(self, config: PerformanceConfig) -> None:
         self.config = config
         self.resource_history: deque = deque(maxlen=1000)
         self.alerts: List[SystemAlert] = []
         self.monitoring_active = False
         self.monitoring_task: Optional[asyncio.Task] = None
     
-    async def start_monitoring(self):
+    async def start_monitoring(self) -> None:
         """Start continuous resource monitoring"""
         if self.monitoring_active:
             return
@@ -740,7 +740,7 @@ class ResourceMonitor:
         self.monitoring_active = True
         self.monitoring_task = asyncio.create_task(self._monitoring_loop())
     
-    async def stop_monitoring(self):
+    async def stop_monitoring(self) -> None:
         """Stop resource monitoring"""
         self.monitoring_active = False
         if self.monitoring_task:
@@ -750,7 +750,7 @@ class ResourceMonitor:
             except asyncio.CancelledError:
                 pass
     
-    async def _monitoring_loop(self):
+    async def _monitoring_loop(self) -> None:
         """Main monitoring loop"""
         while self.monitoring_active:
             try:
@@ -813,7 +813,7 @@ class ResourceMonitor:
             load_average=psutil.getloadavg() if hasattr(psutil, 'getloadavg') else (0.0, 0.0, 0.0)
         )
     
-    async def _check_thresholds(self, metrics: ResourceMetrics):
+    async def _check_thresholds(self, metrics: ResourceMetrics) -> None:
         """Check resource thresholds and create alerts"""
         alerts_to_create = []
         
@@ -886,7 +886,7 @@ class PerformanceManager:
     rate limiting, memory management, performance profiling, and resource monitoring.
     """
     
-    def __init__(self, config: Optional[PerformanceConfig] = None):
+    def __init__(self, config: Optional[PerformanceConfig] = None) -> None:
         self.config = config or PerformanceConfig()
         
         # Core components
@@ -917,7 +917,7 @@ class PerformanceManager:
             "resource_savings": {}
         }
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize performance manager and all components"""
         try:
             # Initialize async pool for concurrent tasks
@@ -941,7 +941,7 @@ class PerformanceManager:
         except Exception as e:
             raise RuntimeError(f"Performance manager initialization failed: {e}")
     
-    async def _initialize_integrations(self):
+    async def _initialize_integrations(self) -> None:
         """Initialize integrations with existing Phase 3 components"""
         try:
             # Circuit breaker integration
@@ -959,7 +959,7 @@ class PerformanceManager:
         except Exception as e:
             print(f"Integration initialization warning: {e}")
     
-    async def _apply_optimizations(self):
+    async def _apply_optimizations(self) -> None:
         """Apply performance optimization strategies"""
         
         # Connection pooling optimization
@@ -979,7 +979,7 @@ class PerformanceManager:
         if self.rate_limit_manager.get_limiter():
             self.optimization_strategies.add(OptimizationStrategy.RATE_LIMITING)
     
-    async def _setup_connection_pools(self):
+    async def _setup_connection_pools(self) -> None:
         """Setup connection pools for various services"""
         try:
             # Analytics engine connection pool
@@ -1006,13 +1006,13 @@ class PerformanceManager:
     # Public API methods
     
     @asynccontextmanager
-    async def profile_operation(self, operation_name: str):
+    async def profile_operation(self, operation_name: str) -> None:
         """Profile a specific operation"""
         async with self.performance_profiler.profile_operation(operation_name):
             yield
     
     @asynccontextmanager
-    async def get_connection(self, pool_name: str):
+    async def get_connection(self, pool_name: str) -> None:
         """Get connection from specified pool"""
         async with self.connection_pool_manager.get_connection(pool_name) as conn:
             yield conn
@@ -1027,7 +1027,7 @@ class PerformanceManager:
         async with self.profile_operation(f"rate_limited_{endpoint}"):
             return await operation(*args, **kwargs)
     
-    async def optimize_memory_usage(self):
+    async def optimize_memory_usage(self) -> None:
         """Trigger memory optimization"""
         await self.memory_manager._perform_gc()
         self.performance_stats["total_optimizations"] += 1
@@ -1093,7 +1093,7 @@ class PerformanceManager:
         
         return recommendations
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown performance manager and cleanup resources"""
         try:
             # Stop monitoring
@@ -1139,7 +1139,7 @@ async def initialize_performance_manager(config: Optional[PerformanceConfig] = N
     return _performance_manager
 
 
-async def shutdown_performance_manager():
+async def shutdown_performance_manager() -> None:
     """Shutdown global performance manager instance"""
     global _performance_manager
     if _performance_manager:
@@ -1149,14 +1149,14 @@ async def shutdown_performance_manager():
 
 # Convenience functions for direct access
 @asynccontextmanager
-async def profile_operation(operation_name: str):
+async def profile_operation(operation_name: str) -> None:
     """Profile operation using global performance manager"""
     manager = await get_performance_manager()
     async with manager.profile_operation(operation_name):
         yield
 
 
-async def get_connection(pool_name: str):
+async def get_connection(pool_name: str) -> None:
     """Get connection from pool using global performance manager"""
     manager = await get_performance_manager()
     return manager.get_connection(pool_name)

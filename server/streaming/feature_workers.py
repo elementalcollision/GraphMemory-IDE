@@ -41,18 +41,18 @@ class PatternDetection:
 class TimeWindow:
     """Implements tumbling and sliding time windows"""
     
-    def __init__(self, size_seconds: int, slide_seconds: Optional[int] = None):
+    def __init__(self, size_seconds: int, slide_seconds: Optional[int] = None) -> None:
         self.size_seconds = size_seconds
         self.slide_seconds = slide_seconds or size_seconds  # Default to tumbling window
         self.events: deque = deque()
         self._last_slide = time.time()
     
-    def add_event(self, event: Dict[str, Any], timestamp: float):
+    def add_event(self, event: Dict[str, Any], timestamp: float) -> None:
         """Add event to the window"""
         self.events.append((timestamp, event))
         self._cleanup_old_events()
     
-    def _cleanup_old_events(self):
+    def _cleanup_old_events(self) -> None:
         """Remove events outside the window"""
         cutoff_time = time.time() - self.size_seconds
         while self.events and self.events[0][0] < cutoff_time:
@@ -67,14 +67,14 @@ class TimeWindow:
         """Check if window should slide (for sliding windows)"""
         return time.time() - self._last_slide >= self.slide_seconds
     
-    def slide(self):
+    def slide(self) -> None:
         """Slide the window"""
         self._last_slide = time.time()
 
 class MemoryOperationFeatureWorker:
     """Worker for computing memory operation features"""
     
-    def __init__(self, consumer_group: str = "memory_features"):
+    def __init__(self, consumer_group: str = "memory_features") -> None:
         self.consumer_group = consumer_group
         self.consumer_name = f"memory_worker_{int(time.time())}"
         self.stream_name = "analytics:memory_operations"
@@ -95,7 +95,7 @@ class MemoryOperationFeatureWorker:
         self._running = False
         self._task: Optional[asyncio.Task] = None
     
-    async def start(self):
+    async def start(self) -> None:
         """Start the feature worker"""
         if self._running:
             return
@@ -125,7 +125,7 @@ class MemoryOperationFeatureWorker:
             logger.error(f"Failed to start memory operation feature worker: {e}")
             raise
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the feature worker"""
         if not self._running:
             return
@@ -140,7 +140,7 @@ class MemoryOperationFeatureWorker:
             except asyncio.CancelledError:
                 pass
     
-    async def _process_stream(self):
+    async def _process_stream(self) -> None:
         """Main processing loop"""
         client = await get_dragonfly_client()
         
@@ -168,7 +168,7 @@ class MemoryOperationFeatureWorker:
                 logger.error(f"Error processing memory operation stream: {e}")
                 await asyncio.sleep(1)
     
-    async def _process_message(self, message_id: str, fields: Dict[str, Any], client):
+    async def _process_message(self, message_id: str, fields: Dict[str, Any], client) -> None:
         """Process a single message"""
         try:
             # Parse timestamp
@@ -193,7 +193,7 @@ class MemoryOperationFeatureWorker:
         except Exception as e:
             logger.error(f"Error processing message {message_id}: {e}")
     
-    async def _compute_windowed_features(self):
+    async def _compute_windowed_features(self) -> None:
         """Compute features over time windows"""
         current_time = datetime.utcnow().isoformat()
         
@@ -318,7 +318,7 @@ class MemoryOperationFeatureWorker:
 class PatternDetectionWorker:
     """Worker for detecting patterns across all streams"""
     
-    def __init__(self, consumer_group: str = "pattern_detection"):
+    def __init__(self, consumer_group: str = "pattern_detection") -> None:
         self.consumer_group = consumer_group
         self.consumer_name = f"pattern_worker_{int(time.time())}"
         self.streams = [
@@ -337,7 +337,7 @@ class PatternDetectionWorker:
         self._running = False
         self._task: Optional[asyncio.Task] = None
     
-    async def start(self):
+    async def start(self) -> None:
         """Start the pattern detection worker"""
         if self._running:
             return
@@ -367,7 +367,7 @@ class PatternDetectionWorker:
             logger.error(f"Failed to start pattern detection worker: {e}")
             raise
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the pattern detection worker"""
         if not self._running:
             return
@@ -382,7 +382,7 @@ class PatternDetectionWorker:
             except asyncio.CancelledError:
                 pass
     
-    async def _detect_patterns(self):
+    async def _detect_patterns(self) -> None:
         """Main pattern detection loop"""
         client = await get_dragonfly_client()
         
@@ -412,7 +412,7 @@ class PatternDetectionWorker:
                 logger.error(f"Error in pattern detection: {e}")
                 await asyncio.sleep(1)
     
-    async def _analyze_for_patterns(self, stream_name: str, fields: Dict[str, Any], client):
+    async def _analyze_for_patterns(self, stream_name: str, fields: Dict[str, Any], client) -> None:
         """Analyze individual events for patterns"""
         try:
             timestamp = fields.get("timestamp", datetime.utcnow().isoformat())
@@ -432,7 +432,7 @@ class PatternDetectionWorker:
         except Exception as e:
             logger.error(f"Error analyzing pattern for {stream_name}: {e}")
     
-    async def _detect_memory_anomalies(self, fields: Dict[str, Any], timestamp: str):
+    async def _detect_memory_anomalies(self, fields: Dict[str, Any], timestamp: str) -> None:
         """Detect anomalies in memory operations"""
         processing_time = float(fields.get("processing_time_ms", 0))
         
@@ -451,7 +451,7 @@ class PatternDetectionWorker:
             )
             self.patterns.append(pattern)
     
-    async def _detect_user_patterns(self, fields: Dict[str, Any], timestamp: str):
+    async def _detect_user_patterns(self, fields: Dict[str, Any], timestamp: str) -> None:
         """Detect patterns in user interactions"""
         # Implement user pattern detection
         interaction_type = fields.get("interaction_type")
@@ -472,7 +472,7 @@ class PatternDetectionWorker:
             )
             self.patterns.append(pattern)
     
-    async def _detect_system_anomalies(self, fields: Dict[str, Any], timestamp: str):
+    async def _detect_system_anomalies(self, fields: Dict[str, Any], timestamp: str) -> None:
         """Detect system metric anomalies"""
         metric_name = fields.get("metric_name")
         metric_value = fields.get("metric_value")
@@ -494,7 +494,7 @@ class PatternDetectionWorker:
                 )
                 self.patterns.append(pattern)
     
-    async def _periodic_analysis(self):
+    async def _periodic_analysis(self) -> None:
         """Perform periodic pattern analysis"""
         # Clean up old patterns (keep last 1000)
         if len(self.patterns) > 1000:
@@ -509,13 +509,13 @@ class PatternDetectionWorker:
 class FeatureWorkerManager:
     """Manages all feature engineering workers"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.memory_worker = MemoryOperationFeatureWorker()
         self.pattern_worker = PatternDetectionWorker()
         self._workers = [self.memory_worker, self.pattern_worker]
         self._running = False
     
-    async def start(self):
+    async def start(self) -> None:
         """Start all workers"""
         if self._running:
             return
@@ -528,7 +528,7 @@ class FeatureWorkerManager:
         self._running = True
         logger.info("All feature workers started")
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop all workers"""
         if not self._running:
             return
@@ -567,13 +567,13 @@ async def get_worker_manager() -> FeatureWorkerManager:
         raise RuntimeError("Feature worker manager not initialized")
     return _worker_manager
 
-async def initialize_feature_workers():
+async def initialize_feature_workers() -> None:
     """Initialize feature workers"""
     global _worker_manager
     _worker_manager = FeatureWorkerManager()
     await _worker_manager.start()
 
-async def shutdown_feature_workers():
+async def shutdown_feature_workers() -> None:
     """Shutdown feature workers"""
     global _worker_manager
     if _worker_manager:

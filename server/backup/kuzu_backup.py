@@ -69,7 +69,7 @@ class KuzuBackupManager:
     def __init__(self, 
                  database_path: str,
                  backup_storage_path: str,
-                 metrics_collector=None):
+                 metrics_collector=None) -> None:
         self.database_path = Path(database_path)
         self.backup_storage_path = Path(backup_storage_path)
         self.metrics = metrics_collector
@@ -105,7 +105,7 @@ class KuzuBackupManager:
                 # Create compressed tar archive
                 archive_path = backup_dir / f"{backup_id}.tar.gz"
                 
-                def create_archive():
+                def create_archive() -> None:
                     with tarfile.open(archive_path, "w:gz") as tar:
                         tar.add(self.database_path, arcname=self.database_path.name)
                 
@@ -121,7 +121,7 @@ class KuzuBackupManager:
                 # Copy directory structure
                 backup_db_path = backup_dir / self.database_path.name
                 
-                def copy_directory():
+                def copy_directory() -> None:
                     shutil.copytree(self.database_path, backup_db_path)
                 
                 await asyncio.get_event_loop().run_in_executor(None, copy_directory)
@@ -309,9 +309,9 @@ class KuzuBackupManager:
             
             if archive_path.exists():
                 # Extract compressed archive
-                def extract_archive():
+                def extract_archive() -> None:
                     with tarfile.open(archive_path, "r:gz") as tar:
-                        tar.extractall(target_db_path.parent)
+                        tar.extractall(path=target_db_path.parent)
                 
                 await asyncio.get_event_loop().run_in_executor(None, extract_archive)
                 
@@ -324,7 +324,7 @@ class KuzuBackupManager:
                     if target_db_path.exists():
                         shutil.rmtree(target_db_path)
                     
-                    def copy_directory():
+                    def copy_directory() -> None:
                         shutil.copytree(backup_db_path, target_db_path)
                     
                     await asyncio.get_event_loop().run_in_executor(None, copy_directory)
@@ -380,7 +380,7 @@ class KuzuBackupManager:
                 archive_path = backup_dir / f"{backup_id}.tar.gz"
                 if archive_path.exists():
                     # Verify archive integrity
-                    def check_archive():
+                    def check_archive() -> None:
                         try:
                             with tarfile.open(archive_path, "r:gz") as tar:
                                 # Test archive integrity
@@ -542,7 +542,7 @@ class KuzuBackupManager:
         combined_checksums = "\n".join(checksums)
         return hashlib.sha256(combined_checksums.encode()).hexdigest()
     
-    async def _save_backup_metadata(self, metadata: KuzuBackupMetadata):
+    async def _save_backup_metadata(self, metadata: KuzuBackupMetadata) -> None:
         """Save backup metadata to file"""
         backup_dir = self.backup_storage_path / metadata.backup_id
         metadata_file = backup_dir / "metadata.json"

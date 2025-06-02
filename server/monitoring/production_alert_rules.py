@@ -34,13 +34,13 @@ logger = logging.getLogger(__name__)
 class ProductionAlertRules:
     """Production-ready alert rules manager"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.alert_rules: Dict[str, AlertRule] = {}
         self._initialize_production_rules()
         
         logger.info("ProductionAlertRules initialized with comprehensive monitoring rules")
     
-    def _initialize_production_rules(self):
+    def _initialize_production_rules(self) -> None:
         """Initialize all production alert rules"""
         
         # API Performance & SLI Rules
@@ -63,7 +63,7 @@ class ProductionAlertRules:
         
         logger.info(f"Initialized {len(self.alert_rules)} production alert rules")
     
-    def _create_api_performance_rules(self):
+    def _create_api_performance_rules(self) -> None:
         """Create SLI-based API performance alert rules"""
         
         # Critical: API Response Time P95 > 5 seconds
@@ -174,7 +174,7 @@ class ProductionAlertRules:
             }
         ))
     
-    def _create_database_health_rules(self):
+    def _create_database_health_rules(self) -> None:
         """Create database health and connection monitoring rules"""
         
         # Critical: Database Connection Pool Exhausted
@@ -285,7 +285,7 @@ class ProductionAlertRules:
             }
         ))
     
-    def _create_system_resource_rules(self):
+    def _create_system_resource_rules(self) -> None:
         """Create system resource monitoring rules with predictive thresholds"""
         
         # Critical: CPU Utilization > 95%
@@ -423,7 +423,7 @@ class ProductionAlertRules:
             }
         ))
     
-    def _create_business_metric_rules(self):
+    def _create_business_metric_rules(self) -> None:
         """Create business metric and user activity alerts"""
         
         # Critical: User Authentication Failure Rate > 10%
@@ -507,7 +507,7 @@ class ProductionAlertRules:
             }
         ))
     
-    def _create_security_rules(self):
+    def _create_security_rules(self) -> None:
         """Create security and compliance monitoring rules"""
         
         # Critical: Multiple Failed Login Attempts
@@ -564,7 +564,7 @@ class ProductionAlertRules:
             }
         ))
     
-    def _create_application_health_rules(self):
+    def _create_application_health_rules(self) -> None:
         """Create application-specific health monitoring rules"""
         
         # Critical: Application Service Down
@@ -621,7 +621,7 @@ class ProductionAlertRules:
             }
         ))
     
-    def add_rule(self, rule: AlertRule):
+    def add_rule(self, rule: AlertRule) -> None:
         """Add alert rule to the registry"""
         rule_key = f"{rule.category.value}_{rule.name.lower().replace(' ', '_')}"
         self.alert_rules[rule_key] = rule
@@ -652,7 +652,7 @@ class ProductionAlertRules:
             if rule.enabled
         ]
     
-    def enable_rule(self, rule_key: str, enabled: bool = True):
+    def enable_rule(self, rule_key: str, enabled: bool = True) -> None:
         """Enable/disable an alert rule"""
         if rule_key in self.alert_rules:
             self.alert_rules[rule_key].enabled = enabled

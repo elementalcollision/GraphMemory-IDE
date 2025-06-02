@@ -227,18 +227,18 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 class PerformanceTracker:
     """Track performance metrics during testing."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.response_times = []
         self.memory_usage = []
         self.errors = []
     
-    def record_response_time(self, time_ms: float):
+    def record_response_time(self, time_ms: float) -> None:
         self.response_times.append(time_ms)
     
-    def record_memory_usage(self, usage_mb: float):
+    def record_memory_usage(self, usage_mb: float) -> None:
         self.memory_usage.append(usage_mb)
     
-    def record_error(self, error: str):
+    def record_error(self, error: str) -> None:
         self.errors.append(error)
     
     @property
@@ -269,7 +269,7 @@ async def check_kuzu_health(connection: kuzu.Connection) -> bool:
 
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
-async def ensure_database_health(kuzu_connection: kuzu.Connection):
+async def ensure_database_health(kuzu_connection: kuzu.Connection) -> None:
     """Ensure database is healthy before each test."""
     if not await check_kuzu_health(kuzu_connection):
         pytest.fail("Kuzu database health check failed")
@@ -364,7 +364,7 @@ def get_memory_usage() -> float:
 
 
 @pytest.fixture(autouse=True)
-def monitor_memory_usage():
+def monitor_memory_usage() -> None:
     """Monitor memory usage for each test."""
     initial_memory = get_memory_usage()
     yield

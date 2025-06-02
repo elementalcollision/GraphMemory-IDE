@@ -184,7 +184,7 @@ class SSLCertificateManager:
     Production-grade SSL certificate management with automated renewal and monitoring.
     """
     
-    def __init__(self, storage: SecureKeyStorage):
+    def __init__(self, storage: SecureKeyStorage) -> None:
         self.storage = storage
         self.certificates: Dict[str, SSLCertificate] = {}
         self.renewal_jobs: Dict[str, CertificateRenewalJob] = {}

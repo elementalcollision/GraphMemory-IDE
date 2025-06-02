@@ -35,7 +35,7 @@ class AnalyticsEngineClient:
     Provides methods to collect real-time analytics data for dashboard streaming.
     """
     
-    def __init__(self, kuzu_connection: Optional[kuzu.Connection] = None, redis_url: str = "redis://localhost:6379"):
+    def __init__(self, kuzu_connection: Optional[kuzu.Connection] = None, redis_url: str = "redis://localhost:6379") -> None:
         self.kuzu_conn = kuzu_connection
         self.redis_url = redis_url
         self.analytics_engine: Optional[AnalyticsEngine] = None
@@ -73,7 +73,7 @@ class AnalyticsEngineClient:
             self._connection_healthy = False
             return False
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the analytics engine client"""
         if self.analytics_engine:
             await self.analytics_engine.shutdown()
@@ -429,7 +429,7 @@ async def initialize_analytics_client(kuzu_connection: Optional[kuzu.Connection]
     return await client.initialize()
 
 
-async def shutdown_analytics_client():
+async def shutdown_analytics_client() -> None:
     """Shutdown the global analytics client instance"""
     global _analytics_client_instance
     

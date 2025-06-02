@@ -27,7 +27,7 @@ except ImportError:
     
     class MockAuditEvent:
         """Mock audit event for testing"""
-        def __init__(self, tenant_id: str = "test_tenant"):
+        def __init__(self, tenant_id: str = "test_tenant") -> None:
             self.event_id = "test_event_001"
             self.tenant_id = tenant_id
             self.user_id = "test_user"
@@ -37,14 +37,14 @@ except ImportError:
             self.compliance_tags = ["soc2_security"]
             self.integrity_hash = "test_hash"
             
-        def to_dict(self):
+        def to_dict(self) -> None:
             return {"event_id": self.event_id, "tenant_id": self.tenant_id}
 
 
 class IntegrationPerformanceTest:
     """Comprehensive integration performance test suite"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.test_results = {}
         self.performance_metrics = {}
         
@@ -67,7 +67,7 @@ class IntegrationPerformanceTest:
         
         return summary
     
-    async def test_audit_logger_performance(self):
+    async def test_audit_logger_performance(self) -> None:
         """Test Enterprise Audit Logger performance targets"""
         print("\n📝 Testing Enterprise Audit Logger Performance...")
         
@@ -94,7 +94,7 @@ class IntegrationPerformanceTest:
         status = "✅ PASSED" if avg_time < 2.0 else "❌ FAILED"
         print(f"   Average processing time: {avg_time:.2f}ms {status}")
         
-    async def test_compliance_engine_performance(self):
+    async def test_compliance_engine_performance(self) -> None:
         """Test SOC2/GDPR Compliance Engine performance"""
         print("\n🏛️ Testing Compliance Engine Performance...")
         
@@ -115,7 +115,7 @@ class IntegrationPerformanceTest:
         print(f"   Validation time: {validation_time:.2f}ms {status}")
         print(f"   Requirements validated: {len(validation_results)}")
         
-    async def test_storage_system_performance(self):
+    async def test_storage_system_performance(self) -> None:
         """Test Audit Storage System performance"""
         print("\n🗄️ Testing Audit Storage System Performance...")
         
@@ -146,7 +146,7 @@ class IntegrationPerformanceTest:
         print(f"   Batch storage time: {storage_time:.2f}ms {storage_status}")
         print(f"   Query time: {query_time:.2f}ms {query_status}")
         
-    async def test_complete_integration_flow(self):
+    async def test_complete_integration_flow(self) -> None:
         """Test complete integration flow across all components"""
         print("\n🔗 Testing Complete Integration Flow...")
         
@@ -179,7 +179,7 @@ class IntegrationPerformanceTest:
         print(f"   All components integrated successfully ✅")
         
     # Simulation methods for testing
-    async def simulate_audit_processing(self, event: MockAuditEvent):
+    async def simulate_audit_processing(self, event: MockAuditEvent) -> None:
         """Simulate audit event processing"""
         start_time = time.time()
         
@@ -189,7 +189,7 @@ class IntegrationPerformanceTest:
         processing_time = (time.time() - start_time) * 1000
         return processing_time
         
-    async def simulate_audit_processing_batch(self, events: List[MockAuditEvent]):
+    async def simulate_audit_processing_batch(self, events: List[MockAuditEvent]) -> None:
         """Simulate batch audit processing"""
         await asyncio.sleep(0.01)  # 10ms simulation
         return True
@@ -207,7 +207,7 @@ class IntegrationPerformanceTest:
             {"requirement_id": "GDPR-DSR-001", "status": "partial_compliant", "score": 78.0},
         ]
         
-    async def simulate_batch_storage(self, events: List[MockAuditEvent]):
+    async def simulate_batch_storage(self, events: List[MockAuditEvent]) -> None:
         """Simulate batch storage operations"""
         await asyncio.sleep(0.02)  # 20ms simulation
         return True
@@ -256,7 +256,7 @@ class IntegrationPerformanceTest:
             ]
         }
         
-    def print_summary(self, summary: Dict[str, Any]):
+    def print_summary(self, summary: Dict[str, Any]) -> None:
         """Print formatted test summary"""
         print("\n" + "=" * 60)
         print("🎯 PHASE 3 INTEGRATION TEST SUMMARY")
@@ -290,7 +290,7 @@ class IntegrationPerformanceTest:
         print("=" * 60)
 
 
-async def main():
+async def main() -> None:
     """Run integration performance tests"""
     test_suite = IntegrationPerformanceTest()
     await test_suite.run_all_tests()

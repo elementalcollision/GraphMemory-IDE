@@ -54,7 +54,7 @@ class TestFastAPITenantMiddleware:
     """Test suite for FastAPI Tenant Middleware"""
 
     @pytest.fixture
-    async def middleware(self):
+    async def middleware(self) -> None:
         """Create middleware instance for testing"""
         app = FastAPI()
         middleware = FastAPITenantMiddleware(
@@ -68,7 +68,7 @@ class TestFastAPITenantMiddleware:
         return middleware
 
     @pytest.fixture
-    def mock_request(self):
+    def mock_request(self) -> None:
         """Create mock request for testing"""
         request = Mock(spec=Request)
         request.headers = {
@@ -83,7 +83,7 @@ class TestFastAPITenantMiddleware:
         return request
 
     @pytest.mark.asyncio
-    async def test_tenant_extraction_from_header(self, middleware, mock_request):
+    async def test_tenant_extraction_from_header(self, middleware, mock_request) -> None:
         """Test tenant extraction from X-Tenant-ID header"""
         context = await middleware._extract_tenant_context(mock_request)
         
@@ -93,7 +93,7 @@ class TestFastAPITenantMiddleware:
         assert len(context.permissions) > 0
 
     @pytest.mark.asyncio
-    async def test_tenant_extraction_from_subdomain(self, middleware):
+    async def test_tenant_extraction_from_subdomain(self, middleware) -> None:
         """Test tenant extraction from subdomain"""
         request = Mock(spec=Request)
         request.headers = {
@@ -111,7 +111,7 @@ class TestFastAPITenantMiddleware:
         assert context.tenant_id == "tenant_tenant002"
 
     @pytest.mark.asyncio
-    async def test_permission_verification(self, middleware, mock_request):
+    async def test_permission_verification(self, middleware, mock_request) -> None:
         """Test permission verification for different operations"""
         # Test memory read permission
         required_permission = await middleware._determine_required_permission(mock_request)
@@ -123,12 +123,12 @@ class TestFastAPITenantMiddleware:
         assert required_permission == "memory:create"
 
     @pytest.mark.asyncio
-    async def test_middleware_performance(self, middleware, mock_request):
+    async def test_middleware_performance(self, middleware, mock_request) -> None:
         """Test middleware performance meets <10ms target"""
         start_time = time.time()
         
         # Mock the call_next function
-        async def mock_call_next(request):
+        async def mock_call_next(request) -> None:
             return Mock(status_code=200)
         
         # Process request through middleware
@@ -150,7 +150,7 @@ class TestFastAPITenantMiddleware:
         # Verify performance target
         assert processing_time < 10.0, f"Middleware overhead {processing_time:.2f}ms exceeds 10ms target"
 
-    def test_permission_caching(self, middleware):
+    def test_permission_caching(self, middleware) -> None:
         """Test permission caching functionality"""
         # Test cache set and get
         test_key = "test_cache_key"
@@ -161,7 +161,7 @@ class TestFastAPITenantMiddleware:
         
         assert cached_value == test_value
 
-    def test_performance_metrics(self, middleware):
+    def test_performance_metrics(self, middleware) -> None:
         """Test performance metrics collection"""
         # Simulate some processing
         middleware._update_performance_metrics(5.0)
@@ -177,7 +177,7 @@ class TestRBACPermissionSystem:
     """Test suite for RBAC Permission System"""
 
     @pytest.fixture
-    async def rbac_system(self):
+    async def rbac_system(self) -> None:
         """Create RBAC system instance for testing"""
         system = RBACPermissionSystem(
             redis_url="redis://localhost:6379",
@@ -190,7 +190,7 @@ class TestRBACPermissionSystem:
         return system
 
     @pytest.mark.asyncio
-    async def test_role_based_permissions(self, rbac_system):
+    async def test_role_based_permissions(self, rbac_system) -> None:
         """Test role-based permission assignment"""
         # Test viewer permissions
         viewer_permissions = await rbac_system.get_role_permissions(UserRole.VIEWER)
@@ -208,7 +208,7 @@ class TestRBACPermissionSystem:
         assert "system:manage" in admin_permission_strings
 
     @pytest.mark.asyncio
-    async def test_permission_conditions(self, rbac_system):
+    async def test_permission_conditions(self, rbac_system) -> None:
         """Test JSON-based permission conditions"""
         # Create permission with time restriction
         time_restricted_permission = Permission(
@@ -240,7 +240,7 @@ class TestRBACPermissionSystem:
         # For now, we test the structure
 
     @pytest.mark.asyncio
-    async def test_permission_verification_performance(self, rbac_system):
+    async def test_permission_verification_performance(self, rbac_system) -> None:
         """Test permission verification performance meets <5ms target"""
         user_id = "user_123"
         tenant_id = "tenant_001"
@@ -259,7 +259,7 @@ class TestRBACPermissionSystem:
         assert has_permission is True
 
     @pytest.mark.asyncio
-    async def test_permission_caching(self, rbac_system):
+    async def test_permission_caching(self, rbac_system) -> None:
         """Test permission caching functionality"""
         user_id = "user_123"
         tenant_id = "tenant_001"
@@ -278,7 +278,7 @@ class TestRBACPermissionSystem:
         assert metrics['cache_hits'] > 0
 
     @pytest.mark.asyncio
-    async def test_audit_logging(self, rbac_system):
+    async def test_audit_logging(self, rbac_system) -> None:
         """Test comprehensive audit logging"""
         user_id = "user_123"
         tenant_id = "tenant_001"
@@ -303,7 +303,7 @@ class TestTenantVerificationService:
     """Test suite for Tenant Verification Service"""
 
     @pytest.fixture
-    async def verification_service(self):
+    async def verification_service(self) -> None:
         """Create verification service instance for testing"""
         service = TenantVerificationService(
             rbac_system=None,
@@ -317,7 +317,7 @@ class TestTenantVerificationService:
         return service
 
     @pytest.mark.asyncio
-    async def test_tenant_access_verification(self, verification_service):
+    async def test_tenant_access_verification(self, verification_service) -> None:
         """Test basic tenant access verification"""
         result = await verification_service.verify_tenant_access(
             user_id="user_123",
@@ -329,7 +329,7 @@ class TestTenantVerificationService:
         assert result.verification_time_ms > 0
 
     @pytest.mark.asyncio
-    async def test_role_hierarchy_enforcement(self, verification_service):
+    async def test_role_hierarchy_enforcement(self, verification_service) -> None:
         """Test role hierarchy enforcement"""
         # User with EDITOR role should not access ADMIN-required resources
         result = await verification_service.verify_tenant_access(
@@ -343,7 +343,7 @@ class TestTenantVerificationService:
         assert "Role admin required" in result.error_message
 
     @pytest.mark.asyncio
-    async def test_cross_tenant_boundary_enforcement(self, verification_service):
+    async def test_cross_tenant_boundary_enforcement(self, verification_service) -> None:
         """Test cross-tenant boundary enforcement"""
         # Same tenant access should be allowed
         same_tenant_result = await verification_service.check_cross_tenant_boundary(
@@ -362,7 +362,7 @@ class TestTenantVerificationService:
         assert cross_tenant_result is False
 
     @pytest.mark.asyncio
-    async def test_verification_performance(self, verification_service):
+    async def test_verification_performance(self, verification_service) -> None:
         """Test verification performance meets <5ms target"""
         start_time = time.time()
         
@@ -378,7 +378,7 @@ class TestTenantVerificationService:
         assert result.verification_time_ms > 0
 
     @pytest.mark.asyncio
-    async def test_user_role_assignment(self, verification_service):
+    async def test_user_role_assignment(self, verification_service) -> None:
         """Test user role assignment functionality"""
         # Test role assignment by admin
         success = await verification_service.assign_user_role(
@@ -391,7 +391,7 @@ class TestTenantVerificationService:
         # Mock implementation should return True
         assert success is True
 
-    def test_verification_caching(self, verification_service):
+    def test_verification_caching(self, verification_service) -> None:
         """Test verification result caching"""
         test_result = VerificationResult(
             user_id="user_123",
@@ -414,7 +414,7 @@ class TestRBACIntegration:
     """Integration tests for complete RBAC system"""
 
     @pytest.fixture
-    async def integrated_system(self):
+    async def integrated_system(self) -> None:
         """Create complete integrated RBAC system"""
         # Create FastAPI app
         app = FastAPI()
@@ -438,7 +438,7 @@ class TestRBACIntegration:
         
         # Add test routes
         @app.get("/memories")
-        async def get_memories(request: Request):
+        async def get_memories(request: Request) -> None:
             context = get_tenant_context(request)
             return {"tenant_id": context.tenant_id if context else None}
         
@@ -457,7 +457,7 @@ class TestRBACIntegration:
         }
 
     @pytest.mark.asyncio
-    async def test_complete_request_flow(self, integrated_system):
+    async def test_complete_request_flow(self, integrated_system) -> None:
         """Test complete request flow through all RBAC components"""
         app = integrated_system['app']
         
@@ -476,7 +476,7 @@ class TestRBACIntegration:
             assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_cross_component_performance(self, integrated_system):
+    async def test_cross_component_performance(self, integrated_system) -> None:
         """Test performance across all components meets targets"""
         rbac_system = integrated_system['rbac_system']
         verification_service = integrated_system['verification_service']
@@ -499,7 +499,7 @@ class TestRBACIntegration:
         assert total_time < 15.0, f"Total RBAC flow {total_time:.2f}ms exceeds 15ms target"
 
     @pytest.mark.asyncio
-    async def test_audit_trail_integration(self, integrated_system):
+    async def test_audit_trail_integration(self, integrated_system) -> None:
         """Test comprehensive audit trail across all components"""
         rbac_system = integrated_system['rbac_system']
         verification_service = integrated_system['verification_service']
@@ -522,7 +522,7 @@ class TestRBACIntegration:
                 ])
 
     @pytest.mark.asyncio
-    async def test_security_boundary_enforcement(self, integrated_system):
+    async def test_security_boundary_enforcement(self, integrated_system) -> None:
         """Test security boundary enforcement across components"""
         verification_service = integrated_system['verification_service']
         
@@ -547,12 +547,12 @@ class TestRBACPerformanceBenchmarks:
     """Performance benchmarking for RBAC system"""
 
     @pytest.mark.asyncio
-    async def test_concurrent_permission_checks(self):
+    async def test_concurrent_permission_checks(self) -> None:
         """Test concurrent permission checking performance"""
         rbac_system = RBACPermissionSystem()
         rbac_system._redis_client = AsyncMock()
         
-        async def check_permission_task():
+        async def check_permission_task() -> None:
             return await rbac_system.check_permission(
                 "user_123", "tenant_001", ResourceType.MEMORY, Action.READ
             )
@@ -571,7 +571,7 @@ class TestRBACPerformanceBenchmarks:
         assert avg_time < 5.0, f"Average permission check {avg_time:.2f}ms exceeds 5ms target"
 
     @pytest.mark.asyncio
-    async def test_cache_performance_under_load(self):
+    async def test_cache_performance_under_load(self) -> None:
         """Test cache performance under high load"""
         verification_service = TenantVerificationService()
         verification_service._redis_client = AsyncMock()
@@ -595,7 +595,7 @@ class TestRBACSecurityCompliance:
     """Security compliance testing for enterprise requirements"""
 
     @pytest.mark.asyncio
-    async def test_audit_log_completeness(self):
+    async def test_audit_log_completeness(self) -> None:
         """Test audit log completeness for SOC2/GDPR compliance"""
         rbac_system = RBACPermissionSystem(enable_audit_logging=True)
         rbac_system._redis_client = AsyncMock()
@@ -615,7 +615,7 @@ class TestRBACSecurityCompliance:
             for field in required_fields:
                 assert field in call_args
 
-    def test_permission_data_structure_security(self):
+    def test_permission_data_structure_security(self) -> None:
         """Test permission data structure security"""
         permission = Permission(
             resource_type=ResourceType.MEMORY,

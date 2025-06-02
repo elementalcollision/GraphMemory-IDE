@@ -121,7 +121,7 @@ class AlertStreamConfig:
 class AlertEventStream:
     """Real-time alert event stream for individual users"""
     
-    def __init__(self, config: AlertStreamConfig):
+    def __init__(self, config: AlertStreamConfig) -> None:
         self.config = config
         self.event_queue: asyncio.Queue = asyncio.Queue(maxsize=config.buffer_size)
         self.connected_at = datetime.utcnow()
@@ -217,7 +217,7 @@ class AlertEventStream:
 class AlertEventSSEServer:
     """Enhanced SSE server with alert event streaming capabilities"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.streams: Dict[str, AlertEventStream] = {}
         self.event_callbacks: List[Callable] = []
         
@@ -238,7 +238,7 @@ class AlertEventSSEServer:
         
         logger.info("AlertEventSSEServer initialized")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the alert event SSE server"""
         try:
             # Get base SSE manager
@@ -284,14 +284,14 @@ class AlertEventSSEServer:
         logger.info(f"Created alert stream for user {config.user_id}")
         return stream
     
-    async def close_stream(self, user_id: str):
+    async def close_stream(self, user_id: str) -> None:
         """Close alert event stream for user"""
         if user_id in self.streams:
             del self.streams[user_id]
             self.active_streams = len(self.streams)
             logger.info(f"Closed alert stream for user {user_id}")
     
-    async def broadcast_event(self, event: AlertEvent):
+    async def broadcast_event(self, event: AlertEvent) -> None:
         """Broadcast event to all active streams"""
         try:
             self.total_events_sent += 1
@@ -318,7 +318,7 @@ class AlertEventSSEServer:
         except Exception as e:
             logger.error(f"Error broadcasting event: {e}")
     
-    def add_event_callback(self, callback: Callable):
+    def add_event_callback(self, callback: Callable) -> None:
         """Add callback for alert events"""
         self.event_callbacks.append(callback)
     
@@ -362,7 +362,7 @@ class AlertEventSSEServer:
     
     # Event handlers for alerting system components
     
-    async def _on_alert_engine_event(self, event_type: str, alert: Alert):
+    async def _on_alert_engine_event(self, event_type: str, alert: Alert) -> None:
         """Handle events from AlertEngine"""
         try:
             if event_type == "alert_created":
@@ -382,7 +382,7 @@ class AlertEventSSEServer:
         except Exception as e:
             logger.error(f"Error handling alert engine event: {e}")
     
-    async def _on_alert_manager_event(self, event_type: str, alert: Alert, **kwargs):
+    async def _on_alert_manager_event(self, event_type: str, alert: Alert, **kwargs) -> None:
         """Handle events from AlertManager"""
         try:
             event_type_map = {
@@ -411,7 +411,7 @@ class AlertEventSSEServer:
         except Exception as e:
             logger.error(f"Error handling alert manager event: {e}")
     
-    async def _on_correlation_event(self, correlation: CorrelationResult):
+    async def _on_correlation_event(self, correlation: CorrelationResult) -> None:
         """Handle correlation events from AlertCorrelator"""
         try:
             correlation_event = AlertEvent(
@@ -432,7 +432,7 @@ class AlertEventSSEServer:
         except Exception as e:
             logger.error(f"Error handling correlation event: {e}")
     
-    async def _on_incident_event(self, event_type: str, incident: Incident):
+    async def _on_incident_event(self, event_type: str, incident: Incident) -> None:
         """Handle events from IncidentManager"""
         try:
             event_type_map = {
@@ -488,7 +488,7 @@ async def initialize_alert_sse_server() -> AlertEventSSEServer:
     return _alert_sse_server
 
 
-async def shutdown_alert_sse_server():
+async def shutdown_alert_sse_server() -> None:
     """Shutdown the global alert event SSE server"""
     global _alert_sse_server
     

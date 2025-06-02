@@ -91,7 +91,7 @@ class DataBuffer:
     Rolling buffer for storing time-series data with automatic aggregation
     """
     
-    def __init__(self, max_size: int = 3600, name: str = "buffer"):
+    def __init__(self, max_size: int = 3600, name: str = "buffer") -> None:
         self.max_size = max_size
         self.name = name
         self.data: deque[DataPoint] = deque(maxlen=max_size)
@@ -101,7 +101,7 @@ class DataBuffer:
         self.cleanup_interval = 300  # 5 minutes
     
     def add_data_point(self, data: Union[SystemMetricsData, MemoryInsightsData, GraphMetricsData], 
-                      collection_time: float):
+                      collection_time: float) -> None:
         """Add a new data point to the buffer"""
         data_point = DataPoint(
             timestamp=datetime.now(),
@@ -116,7 +116,7 @@ class DataBuffer:
         if time.time() - self.last_cleanup > self.cleanup_interval:
             self._cleanup_old_data()
     
-    def record_failed_collection(self):
+    def record_failed_collection(self) -> None:
         """Record a failed data collection attempt"""
         self.failed_collections += 1
         self.total_collections += 1
@@ -183,7 +183,7 @@ class DataBuffer:
             "newest_data": self.data[-1].timestamp.isoformat() if self.data else None
         }
     
-    def _cleanup_old_data(self):
+    def _cleanup_old_data(self) -> None:
         """Clean up old data beyond retention period"""
         # The deque automatically handles max_size, but we can do additional cleanup here
         self.last_cleanup = time.time()
@@ -323,7 +323,7 @@ class HealthMonitor:
     System health monitoring with status tracking and alerting
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.component_health: Dict[str, HealthStatus] = {}
         self.health_history: deque = deque(maxlen=100)  # Keep last 100 health checks
         self.last_health_check = time.time()
@@ -332,7 +332,7 @@ class HealthMonitor:
         self.max_alerts = 50
     
     def update_component_health(self, component: str, status: HealthStatus, 
-                              details: Optional[Dict[str, Any]] = None):
+                              details: Optional[Dict[str, Any]] = None) -> None:
         """Update health status for a component"""
         old_status = self.component_health.get(component)
         self.component_health[component] = status
@@ -392,13 +392,13 @@ class HealthMonitor:
         """Get health status for a specific component"""
         return self.component_health.get(component)
     
-    def clear_alerts(self):
+    def clear_alerts(self) -> None:
         """Clear all alerts"""
         self.alerts.clear()
         logger.info("Health alerts cleared")
     
     def _generate_alert(self, component: str, old_status: HealthStatus, 
-                       new_status: HealthStatus, details: Optional[Dict[str, Any]]):
+                       new_status: HealthStatus, details: Optional[Dict[str, Any]]) -> None:
         """Generate an alert for health status change"""
         alert = {
             "timestamp": datetime.now().isoformat(),
@@ -463,7 +463,7 @@ class BackgroundDataCollector:
     buffering, health monitoring, and performance tracking.
     """
     
-    def __init__(self, data_adapter: Optional[DataAdapter] = None):
+    def __init__(self, data_adapter: Optional[DataAdapter] = None) -> None:
         self.data_adapter = data_adapter or get_data_adapter()
         self.status = CollectionStatus.STOPPED
         
@@ -498,7 +498,7 @@ class BackgroundDataCollector:
         self.start_time: Optional[datetime] = None
         self.last_health_check = time.time()
     
-    async def start_collection(self):
+    async def start_collection(self) -> None:
         """Start background data collection"""
         if self.status == CollectionStatus.RUNNING:
             logger.warning("Background collection already running")
@@ -534,7 +534,7 @@ class BackgroundDataCollector:
             logger.error(f"Failed to start background collection: {e}")
             raise
     
-    async def stop_collection(self):
+    async def stop_collection(self) -> None:
         """Stop background data collection"""
         if self.status == CollectionStatus.STOPPED:
             logger.warning("Background collection already stopped")
@@ -557,7 +557,7 @@ class BackgroundDataCollector:
         self.health_monitor.update_component_health("background_collector", HealthStatus.DEGRADED)
         logger.info("Background data collection stopped")
     
-    async def _collect_analytics_data(self):
+    async def _collect_analytics_data(self) -> None:
         """Continuously collect analytics data"""
         logger.info("Starting analytics data collection")
         
@@ -601,7 +601,7 @@ class BackgroundDataCollector:
                 # Exponential backoff on error
                 await asyncio.sleep(min(self.collection_intervals["analytics"] * 2, 10))
     
-    async def _collect_memory_data(self):
+    async def _collect_memory_data(self) -> None:
         """Continuously collect memory data"""
         logger.info("Starting memory data collection")
         
@@ -645,7 +645,7 @@ class BackgroundDataCollector:
                 # Exponential backoff on error
                 await asyncio.sleep(min(self.collection_intervals["memory"] * 2, 15))
     
-    async def _collect_graph_data(self):
+    async def _collect_graph_data(self) -> None:
         """Continuously collect graph data"""
         logger.info("Starting graph data collection")
         
@@ -689,7 +689,7 @@ class BackgroundDataCollector:
                 # Exponential backoff on error
                 await asyncio.sleep(min(self.collection_intervals["graph"] * 2, 15))
     
-    async def _monitor_health(self):
+    async def _monitor_health(self) -> None:
         """Monitor overall system health"""
         logger.info("Starting health monitoring")
         
@@ -735,7 +735,7 @@ class BackgroundDataCollector:
                 logger.error(f"Error in health monitoring: {e}")
                 await asyncio.sleep(self.collection_intervals["health"])
     
-    def _update_collection_stats(self, data_type: str, collection_time: float, success: bool):
+    def _update_collection_stats(self, data_type: str, collection_time: float, success: bool) -> None:
         """Update collection statistics"""
         stats = self.collection_stats[data_type]
         stats["total"] += 1
@@ -800,13 +800,13 @@ def initialize_background_collector(data_adapter: Optional[DataAdapter] = None) 
     return _background_collector
 
 
-async def start_background_collection():
+async def start_background_collection() -> None:
     """Start the global background collection"""
     collector = get_background_collector()
     await collector.start_collection()
 
 
-async def stop_background_collection():
+async def stop_background_collection() -> None:
     """Stop the global background collection"""
     global _background_collector
     if _background_collector is not None:

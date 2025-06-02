@@ -78,7 +78,7 @@ router = APIRouter(prefix="/api/analytics", tags=["Analytics & BI"])
 
 # Dashboard endpoints
 @router.get("/dashboards")
-async def list_dashboards():
+async def list_dashboards() -> None:
     """Get list of all dashboards."""
     bi_dashboard = get_bi_dashboard()
     if not bi_dashboard:
@@ -102,7 +102,7 @@ async def list_dashboards():
 
 
 @router.post("/dashboards")
-async def create_dashboard(request: CreateDashboardRequest):
+async def create_dashboard(request: CreateDashboardRequest) -> None:
     """Create a new dashboard."""
     bi_dashboard = get_bi_dashboard()
     if not bi_dashboard:
@@ -124,7 +124,7 @@ async def create_dashboard(request: CreateDashboardRequest):
 
 
 @router.get("/dashboards/{dashboard_id}")
-async def get_dashboard(dashboard_id: str):
+async def get_dashboard(dashboard_id: str) -> None:
     """Get dashboard with rendered widgets."""
     bi_dashboard = get_bi_dashboard()
     if not bi_dashboard:
@@ -140,7 +140,7 @@ async def get_dashboard(dashboard_id: str):
 
 
 @router.post("/dashboards/{dashboard_id}/widgets")
-async def add_widget_to_dashboard(dashboard_id: str, request: CreateWidgetRequest):
+async def add_widget_to_dashboard(dashboard_id: str, request: CreateWidgetRequest) -> None:
     """Add a widget to a dashboard."""
     bi_dashboard = get_bi_dashboard()
     if not bi_dashboard:
@@ -179,7 +179,7 @@ async def add_widget_to_dashboard(dashboard_id: str, request: CreateWidgetReques
 
 
 @router.get("/metrics/real-time")
-async def get_real_time_metrics():
+async def get_real_time_metrics() -> None:
     """Get current real-time metrics."""
     bi_dashboard = get_bi_dashboard()
     if not bi_dashboard:
@@ -194,7 +194,7 @@ async def get_real_time_metrics():
 
 # Real-time tracking endpoints
 @router.post("/track/event")
-async def track_event(request: TrackEventRequest):
+async def track_event(request: TrackEventRequest) -> None:
     """Track a user activity event."""
     tracker = get_real_time_tracker()
     if not tracker:
@@ -218,7 +218,7 @@ async def track_event(request: TrackEventRequest):
 
 
 @router.get("/track/journey/{session_id}")
-async def get_user_journey(session_id: str):
+async def get_user_journey(session_id: str) -> None:
     """Get user journey data for a session."""
     tracker = get_real_time_tracker()
     if not tracker:
@@ -232,7 +232,7 @@ async def get_user_journey(session_id: str):
 
 
 @router.get("/track/metrics/current")
-async def get_current_tracking_metrics():
+async def get_current_tracking_metrics() -> None:
     """Get current tracking metrics."""
     tracker = get_real_time_tracker()
     if not tracker:
@@ -247,7 +247,7 @@ async def get_current_tracking_metrics():
 
 # WebSocket endpoint for real-time updates
 @router.websocket("/ws/real-time")
-async def websocket_real_time_updates(websocket: WebSocket, user_id: Optional[str] = None):
+async def websocket_real_time_updates(websocket: WebSocket, user_id: Optional[str] = None) -> None:
     """WebSocket endpoint for real-time analytics updates."""
     tracker = get_real_time_tracker()
     if not tracker:
@@ -275,7 +275,7 @@ async def websocket_real_time_updates(websocket: WebSocket, user_id: Optional[st
 
 # Alert management endpoints
 @router.get("/alerts/rules")
-async def list_alert_rules():
+async def list_alert_rules() -> None:
     """Get list of all alert rules."""
     alerting_system = get_alerting_system()
     if not alerting_system:
@@ -289,7 +289,7 @@ async def list_alert_rules():
 
 
 @router.post("/alerts/rules")
-async def create_alert_rule(request: CreateAlertRuleRequest):
+async def create_alert_rule(request: CreateAlertRuleRequest) -> None:
     """Create a new alert rule."""
     alerting_system = get_alerting_system()
     if not alerting_system:
@@ -322,7 +322,7 @@ async def create_alert_rule(request: CreateAlertRuleRequest):
 
 
 @router.get("/alerts/active")
-async def get_active_alerts():
+async def get_active_alerts() -> None:
     """Get all active alerts."""
     alerting_system = get_alerting_system()
     if not alerting_system:
@@ -336,7 +336,7 @@ async def get_active_alerts():
 
 
 @router.post("/alerts/{alert_id}/acknowledge")
-async def acknowledge_alert(alert_id: str):
+async def acknowledge_alert(alert_id: str) -> None:
     """Acknowledge an alert."""
     alerting_system = get_alerting_system()
     if not alerting_system:
@@ -350,7 +350,7 @@ async def acknowledge_alert(alert_id: str):
 
 
 @router.post("/alerts/{alert_id}/resolve")
-async def resolve_alert(alert_id: str):
+async def resolve_alert(alert_id: str) -> None:
     """Resolve an alert."""
     alerting_system = get_alerting_system()
     if not alerting_system:
@@ -370,7 +370,7 @@ async def export_dashboard_data(
     format: str = "json",
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
-):
+) -> None:
     """Export dashboard data in various formats."""
     bi_dashboard = get_bi_dashboard()
     if not bi_dashboard:
@@ -410,7 +410,7 @@ async def export_analytics_data(
     end_date: str,
     format: str = "json",
     event_types: Optional[List[str]] = None
-):
+) -> None:
     """Export analytics data for a date range."""
     try:
         # Parse dates
@@ -467,7 +467,7 @@ async def export_analytics_data(
 
 # Health and status endpoints
 @router.get("/health")
-async def get_analytics_health():
+async def get_analytics_health() -> None:
     """Get health status of analytics components."""
     bi_dashboard = get_bi_dashboard()
     tracker = get_real_time_tracker()

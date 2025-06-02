@@ -102,13 +102,13 @@ class ErrorAnalytics:
 class ErrorAggregator:
     """Aggregates and analyzes error patterns"""
     
-    def __init__(self, window_size: int = 1000):
+    def __init__(self, window_size: int = 1000) -> None:
         self.window_size = window_size
         self.error_patterns: Dict[str, ErrorPattern] = {}
         self.recent_errors: deque = deque(maxlen=window_size)
         self.error_history: deque = deque(maxlen=10000)
         
-    def add_error(self, error: Exception, context: ErrorContext, error_type: ErrorType):
+    def add_error(self, error: Exception, context: ErrorContext, error_type: ErrorType) -> None:
         """Add an error to the aggregator"""
         pattern_key = self._create_pattern_key(error, context, error_type)
         
@@ -217,18 +217,18 @@ class ErrorAggregator:
 class FallbackManager:
     """Manages fallback strategies for different components"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.cache_fallbacks: Dict[str, Any] = {}
         self.default_fallbacks: Dict[str, Callable] = {}
         
-    def register_cache_fallback(self, component: str, data: Any):
+    def register_cache_fallback(self, component: str, data: Any) -> None:
         """Register cached data as fallback for component"""
         self.cache_fallbacks[component] = {
             "data": data,
             "timestamp": datetime.now()
         }
     
-    def register_default_fallback(self, component: str, fallback_func: Callable):
+    def register_default_fallback(self, component: str, fallback_func: Callable) -> None:
         """Register default data generator as fallback for component"""
         self.default_fallbacks[component] = fallback_func
     
@@ -259,11 +259,11 @@ class FallbackManager:
 class RecoveryManager:
     """Manages recovery actions for different error scenarios"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.recovery_handlers: Dict[RecoveryAction, Callable] = {}
         self.recovery_history: List[Dict[str, Any]] = []
         
-    def register_recovery_handler(self, action: RecoveryAction, handler: Callable):
+    def register_recovery_handler(self, action: RecoveryAction, handler: Callable) -> None:
         """Register a recovery handler for specific action"""
         self.recovery_handlers[action] = handler
     
@@ -315,7 +315,7 @@ class EnhancedErrorHandler:
     Enhanced error handler with comprehensive error management capabilities
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.error_aggregator = ErrorAggregator()
         self.fallback_manager = FallbackManager()
         self.recovery_manager = RecoveryManager()
@@ -457,7 +457,7 @@ class EnhancedErrorHandler:
     async def error_context(self, component: str, operation: str, 
                            request_id: Optional[str] = None,
                            user_id: Optional[str] = None,
-                           **additional_data):
+                           **additional_data) -> None:
         """Context manager for error handling"""
         
         context = ErrorContext(
@@ -507,11 +507,11 @@ class EnhancedErrorHandler:
             # Fallback error event
             return SSEFormatter.format_error(f"Error in {context.component}: {str(error)}")
     
-    def configure_error_strategy(self, error_type: ErrorType, strategy: ErrorHandlingStrategy):
+    def configure_error_strategy(self, error_type: ErrorType, strategy: ErrorHandlingStrategy) -> None:
         """Configure handling strategy for specific error type"""
         self.error_strategies[error_type] = strategy
     
-    def configure_recovery_action(self, error_type: ErrorType, action: RecoveryAction):
+    def configure_recovery_action(self, error_type: ErrorType, action: RecoveryAction) -> None:
         """Configure recovery action for specific error type"""
         self.recovery_actions[error_type] = action
 

@@ -108,7 +108,7 @@ class WebSocketCRDTBridge:
     operations through existing Phase 2.1 collaboration engine components.
     """
     
-    def __init__(self, integration_manager: CollaborationIntegrationManager):
+    def __init__(self, integration_manager: CollaborationIntegrationManager) -> None:
         self.integration_manager = integration_manager
         self.crdt_manager: Optional[MemoryCRDTManager] = None
         self.operation_managers: Dict[str, MemoryFieldOperationsManager] = {}
@@ -134,7 +134,7 @@ class WebSocketCRDTBridge:
         
         logger.info("WebSocketCRDTBridge initialized")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize CRDT manager and dependencies"""
         try:
             self.crdt_manager = await get_memory_crdt_manager()
@@ -497,7 +497,7 @@ class WebSocketCRDTBridge:
             }
         }
     
-    async def cleanup_memory_resources(self, memory_id: str):
+    async def cleanup_memory_resources(self, memory_id: str) -> None:
         """Cleanup resources for a specific memory"""
         if memory_id in self.operation_managers:
             del self.operation_managers[memory_id]
@@ -522,7 +522,7 @@ async def get_websocket_crdt_bridge() -> WebSocketCRDTBridge:
     return _websocket_crdt_bridge
 
 
-async def cleanup_websocket_crdt_bridge():
+async def cleanup_websocket_crdt_bridge() -> None:
     """Cleanup global bridge instance"""
     global _websocket_crdt_bridge
     if _websocket_crdt_bridge is not None:

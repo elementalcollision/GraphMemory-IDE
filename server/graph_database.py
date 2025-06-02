@@ -57,7 +57,7 @@ class GraphQueryResult:
 class GraphConnectionPool:
     """Thread-safe connection pool for Kuzu database"""
     
-    def __init__(self, database: 'kuzu.Database', config: GraphDatabaseConfig):
+    def __init__(self, database: 'kuzu.Database', config: GraphDatabaseConfig) -> None:
         self.database = database
         self.config = config
         self._connections: List['kuzu.Connection'] = []
@@ -66,7 +66,7 @@ class GraphConnectionPool:
         self._metrics = MetricsCollector()
         self._initialize_pool()
     
-    def _initialize_pool(self):
+    def _initialize_pool(self) -> None:
         """Initialize connection pool"""
         logger.info(f"Initializing graph connection pool with {self.config.connection_pool_size} connections")
         
@@ -81,7 +81,7 @@ class GraphConnectionPool:
                 raise
     
     @contextmanager
-    def get_connection(self):
+    def get_connection(self) -> None:
         """Get connection from pool with automatic return"""
         connection = None
         start_time = time.time()
@@ -107,7 +107,7 @@ class GraphConnectionPool:
                     self._available_connections.append(connection)
                     self._metrics.increment('graph_connections_returned')
     
-    def close_all(self):
+    def close_all(self) -> None:
         """Close all connections in pool"""
         with self._lock:
             for conn in self._connections:
@@ -123,7 +123,7 @@ class GraphConnectionPool:
 class GraphSchemaManager:
     """Manages graph database schema and structure"""
     
-    def __init__(self, connection_pool: GraphConnectionPool):
+    def __init__(self, connection_pool: GraphConnectionPool) -> None:
         self.connection_pool = connection_pool
         self._metrics = MetricsCollector()
     
@@ -239,7 +239,7 @@ class GraphSchemaManager:
             self._metrics.increment('graph_schema_errors')
             return False
     
-    def _create_indexes(self):
+    def _create_indexes(self) -> None:
         """Create indexes for better query performance"""
         index_queries = [
             "CREATE INDEX IF NOT EXISTS user_email_idx ON User(email)",
@@ -262,7 +262,7 @@ class GraphSchemaManager:
 class GraphQueryEngine:
     """Handles graph database queries and operations"""
     
-    def __init__(self, connection_pool: GraphConnectionPool, config: GraphDatabaseConfig):
+    def __init__(self, connection_pool: GraphConnectionPool, config: GraphDatabaseConfig) -> None:
         self.connection_pool = connection_pool
         self.config = config
         self._metrics = MetricsCollector()
@@ -345,7 +345,7 @@ class GraphQueryEngine:
 class GraphHealthChecker:
     """Health check functionality for graph database"""
     
-    def __init__(self, connection_pool: GraphConnectionPool):
+    def __init__(self, connection_pool: GraphConnectionPool) -> None:
         self.connection_pool = connection_pool
         self._metrics = MetricsCollector()
     
@@ -443,7 +443,7 @@ class GraphHealthChecker:
 class GraphDatabaseManager:
     """Main graph database manager"""
     
-    def __init__(self, config: Optional[GraphDatabaseConfig] = None):
+    def __init__(self, config: Optional[GraphDatabaseConfig] = None) -> None:
         self.config = config or GraphDatabaseConfig()
         self.database: Optional['kuzu.Database'] = None
         self.connection_pool: Optional[GraphConnectionPool] = None
@@ -499,7 +499,7 @@ class GraphDatabaseManager:
             self._metrics.increment('graph_database_initialization_errors')
             return False
     
-    async def close(self):
+    async def close(self) -> None:
         """Close graph database manager"""
         if self.connection_pool:
             self.connection_pool.close_all()
@@ -539,7 +539,7 @@ async def get_graph_database() -> GraphDatabaseManager:
     
     return _graph_db_manager
 
-async def close_graph_database():
+async def close_graph_database() -> None:
     """Close graph database manager"""
     global _graph_db_manager
     

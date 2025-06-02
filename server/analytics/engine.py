@@ -38,7 +38,7 @@ class AnalyticsEngine:
     Enhanced with Phase 3 capabilities for production deployment.
     """
     
-    def __init__(self, kuzu_connection: kuzu.Connection, redis_url: str = "redis://localhost:6379"):
+    def __init__(self, kuzu_connection: kuzu.Connection, redis_url: str = "redis://localhost:6379") -> None:
         self.kuzu_conn = kuzu_connection
         self.cache = AnalyticsCache(redis_url)
         self.realtime = RealtimeAnalytics()
@@ -58,7 +58,7 @@ class AnalyticsEngine:
         self._graph_cache = {}
         self._last_graph_update = 0
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the analytics engine with Phase 3 components"""
         if self.initialized:
             return
@@ -84,7 +84,7 @@ class AnalyticsEngine:
             logger.error(f"Failed to initialize analytics engine: {e}")
             raise
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the analytics engine and Phase 3 components"""
         await self.realtime.shutdown()
         await self.cache.close()
@@ -201,7 +201,7 @@ class AnalyticsEngine:
             visited = set()
             components = []
             
-            def dfs(node, component):
+            def dfs(node, component) -> None:
                 if node in visited:
                     return
                 visited.add(node)

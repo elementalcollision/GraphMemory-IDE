@@ -14,14 +14,8 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union, Tuple, AsyncIterator
 from contextlib import asynccontextmanager
-
-try:
-    from .models.error_models import AnalyticsError, ErrorSeverity, ErrorCategory
-except ImportError:
-    from models.error_models import AnalyticsError, ErrorSeverity, ErrorCategory
-
 
 class CircuitState(Enum):
     """Circuit breaker states"""
@@ -58,8 +52,8 @@ class CircuitBreakerConfig:
     half_open_max_requests: int = 3         # Max requests to test in half-open
     
     # Error handling
-    monitored_exceptions: tuple = (Exception,)  # Exceptions to monitor
-    ignored_exceptions: tuple = ()           # Exceptions to ignore
+    monitored_exceptions: Tuple[Type[Exception], ...] = (Exception,)  # Exceptions to monitor
+    ignored_exceptions: Tuple[Type[Exception], ...] = ()           # Exceptions to ignore
     
     # Recovery settings
     exponential_backoff: bool = True         # Use exponential backoff
@@ -166,7 +160,7 @@ class RecoveryStrategy(ABC):
 class ExponentialBackoffStrategy(RecoveryStrategy):
     """Exponential backoff recovery strategy"""
     
-    def __init__(self, initial_delay: float = 1.0, max_delay: float = 300.0, multiplier: float = 2.0):
+    def __init__(self, initial_delay: float = 1.0, max_delay: float = 300.0, multiplier: float = 2.0) -> None:
         self.initial_delay = initial_delay
         self.max_delay = max_delay
         self.multiplier = multiplier
@@ -184,7 +178,7 @@ class ExponentialBackoffStrategy(RecoveryStrategy):
 class AdaptiveRecoveryStrategy(RecoveryStrategy):
     """Adaptive recovery strategy based on error patterns"""
     
-    def __init__(self, min_success_rate: float = 0.1):
+    def __init__(self, min_success_rate: float = 0.1) -> None:
         self.min_success_rate = min_success_rate
     
     async def should_attempt_recovery(self, metrics: CircuitMetrics) -> bool:
@@ -212,7 +206,7 @@ class EnhancedCircuitBreaker:
     def __init__(self, 
                  name: str,
                  config: Optional[CircuitBreakerConfig] = None,
-                 recovery_strategy: Optional[RecoveryStrategy] = None):
+                 recovery_strategy: Optional[RecoveryStrategy] = None) -> None:
         self.name = name
         self.config = config or CircuitBreakerConfig()
         self.recovery_strategy = recovery_strategy or ExponentialBackoffStrategy()
@@ -266,7 +260,7 @@ class EnhancedCircuitBreaker:
             return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
     
     @asynccontextmanager
-    async def protect(self):
+    async def protect(self) -> AsyncIterator[None]:
         """Context manager for circuit breaker protection"""
         if not await self._can_execute():
             raise CircuitBreakerOpenError(f"Circuit breaker '{self.name}' is open")
@@ -333,7 +327,7 @@ class EnhancedCircuitBreaker:
         
         return False
     
-    async def _record_success(self, result: RequestResult):
+    async def _record_success(self, result: RequestResult) -> None:
         """Record a successful request"""
         async with self._state_lock:
             self._success_count += 1
@@ -345,7 +339,7 @@ class EnhancedCircuitBreaker:
             
             await self._update_metrics(result)
     
-    async def _record_failure(self, result: RequestResult):
+    async def _record_failure(self, result: RequestResult) -> None:
         """Record a failed request"""
         async with self._state_lock:
             self._failure_count += 1
@@ -384,26 +378,26 @@ class EnhancedCircuitBreaker:
         cutoff_time = datetime.now() - timedelta(seconds=self.config.failure_window_seconds)
         return [r for r in self._recent_results if r.timestamp >= cutoff_time]
     
-    async def _transition_to_open(self):
+    async def _transition_to_open(self) -> None:
         """Transition circuit to OPEN state"""
         await self._change_state(CircuitState.OPEN)
         self._backoff_attempt += 1
     
-    async def _transition_to_half_open(self):
+    async def _transition_to_half_open(self) -> None:
         """Transition circuit to HALF_OPEN state"""
         await self._change_state(CircuitState.HALF_OPEN)
         self._half_open_requests = 0
         self._success_count = 0
         self._failure_count = 0
     
-    async def _transition_to_closed(self):
+    async def _transition_to_closed(self) -> None:
         """Transition circuit to CLOSED state"""
         await self._change_state(CircuitState.CLOSED)
         self._failure_count = 0
         self._success_count = 0
         self._backoff_attempt = 0
     
-    async def _change_state(self, new_state: CircuitState):
+    async def _change_state(self, new_state: CircuitState) -> None:
         """Change circuit state and record transition"""
         old_state = self._state
         self._state = new_state
@@ -438,7 +432,7 @@ class EnhancedCircuitBreaker:
         
         return False
     
-    async def _update_metrics(self, result: RequestResult):
+    async def _update_metrics(self, result: RequestResult) -> None:
         """Update comprehensive metrics"""
         async with self._metrics_lock:
             # Update basic counters
@@ -481,7 +475,7 @@ class EnhancedCircuitBreaker:
             self._metrics.state_duration_seconds = (datetime.now() - self._state_since).total_seconds()
             return self._metrics
     
-    async def reset(self):
+    async def reset(self) -> None:
         """Reset circuit breaker to initial state"""
         async with self._state_lock:
             await self._transition_to_closed()
@@ -504,7 +498,7 @@ class CircuitBreakerOpenError(Exception):
 class CircuitBreakerManager:
     """Manages multiple circuit breakers with centralized monitoring"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._breakers: Dict[str, EnhancedCircuitBreaker] = {}
         self._global_metrics = {
             "total_breakers": 0,
@@ -571,7 +565,7 @@ class CircuitBreakerManager:
         metrics["global"] = self._global_metrics.copy()
         return metrics
     
-    async def reset_all(self):
+    async def reset_all(self) -> None:
         """Reset all circuit breakers"""
         for breaker in self._breakers.values():
             await breaker.reset()

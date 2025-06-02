@@ -56,7 +56,7 @@ class AnalyticsGateway:
     with load balancing, caching, circuit breaking, and monitoring.
     """
 
-    def __init__(self, service_registry):
+    def __init__(self, service_registry) -> None:
         self.service_registry = service_registry
         self.request_cache: Dict[str, Tuple[GatewayResponse, float]] = {}
         self.cache_ttl = 300  # 5 minutes
@@ -369,7 +369,7 @@ class AnalyticsGateway:
 
         # Execute request
         try:
-            timeout = aiohttp.ClientTimeout(total=request.timeout_seconds)  # type: ignore
+            timeout = aiohttp.ClientTimeout(total=request.timeout_seconds)
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 url = f"{selected_service.endpoint_url}/{request.operation}"
 

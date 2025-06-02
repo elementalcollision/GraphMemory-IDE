@@ -37,7 +37,7 @@ def test_app_config() -> Dict[str, Any]:
     }
 
 @pytest.fixture(scope="function")
-def mock_environment_variables(test_app_config: Dict[str, Any]):
+def mock_environment_variables(test_app_config: Dict[str, Any]) -> None:
     """Mock environment variables for testing."""
     env_vars = {
         "ENVIRONMENT": "test",
@@ -77,7 +77,7 @@ def base_app(mock_environment_variables) -> FastAPI:
     
     # Add basic health check endpoint
     @app.get("/health")
-    async def health_check():
+    async def health_check() -> None:
         return {"status": "healthy", "environment": "test"}
     
     return app
@@ -89,7 +89,7 @@ def mcp_server_app(base_app: FastAPI, isolated_databases) -> FastAPI:
     # For now, creating mock endpoints for testing
     
     @base_app.post("/mcp/memory/create")
-    async def create_memory(memory_data: dict):
+    async def create_memory(memory_data: dict) -> None:
         """Mock MCP memory creation endpoint."""
         return {
             "id": "test-memory-001",
@@ -98,7 +98,7 @@ def mcp_server_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.get("/mcp/memory/{memory_id}")
-    async def get_memory(memory_id: str):
+    async def get_memory(memory_id: str) -> None:
         """Mock MCP memory retrieval endpoint."""
         return {
             "id": memory_id,
@@ -108,7 +108,7 @@ def mcp_server_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.get("/mcp/search")
-    async def search_memories(query: str):
+    async def search_memories(query: str) -> None:
         """Mock MCP memory search endpoint."""
         return {
             "query": query,
@@ -122,13 +122,13 @@ def mcp_server_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     # Override database dependencies with test databases
-    def get_test_kuzu_connection():
+    def get_test_kuzu_connection() -> None:
         return isolated_databases["kuzu"]
     
-    def get_test_redis_client():
+    def get_test_redis_client() -> None:
         return isolated_databases["redis"]
     
-    def get_test_sqlite_connection():
+    def get_test_sqlite_connection() -> None:
         return isolated_databases["sqlite"]
     
     # Add dependency overrides
@@ -146,7 +146,7 @@ def analytics_engine_app(base_app: FastAPI, isolated_databases) -> FastAPI:
     """Create analytics engine application with test dependencies."""
     
     @base_app.post("/analytics/process")
-    async def process_analytics(data: dict):
+    async def process_analytics(data: dict) -> None:
         """Mock analytics processing endpoint."""
         return {
             "job_id": "test-analytics-001",
@@ -156,7 +156,7 @@ def analytics_engine_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.get("/analytics/results/{job_id}")
-    async def get_analytics_results(job_id: str):
+    async def get_analytics_results(job_id: str) -> None:
         """Mock analytics results endpoint."""
         return {
             "job_id": job_id,
@@ -168,7 +168,7 @@ def analytics_engine_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.get("/analytics/health")
-    async def analytics_health():
+    async def analytics_health() -> None:
         """Mock analytics health check."""
         return {
             "status": "healthy",
@@ -187,9 +187,9 @@ def dashboard_sse_app(base_app: FastAPI) -> FastAPI:
     import asyncio
     
     @base_app.get("/dashboard/sse")
-    async def dashboard_sse():
+    async def dashboard_sse() -> None:
         """Mock SSE endpoint for dashboard updates."""
-        async def event_stream():
+        async def event_stream() -> None:
             for i in range(5):  # Send 5 test events
                 event_data = {
                     "event": "dashboard_update",
@@ -213,7 +213,7 @@ def dashboard_sse_app(base_app: FastAPI) -> FastAPI:
         )
     
     @base_app.get("/dashboard/metrics")
-    async def get_dashboard_metrics():
+    async def get_dashboard_metrics() -> None:
         """Mock dashboard metrics endpoint."""
         return {
             "cpu_usage": 45.2,
@@ -230,7 +230,7 @@ def alert_system_app(base_app: FastAPI, isolated_databases) -> FastAPI:
     """Create alert system application with test dependencies."""
     
     @base_app.post("/alerts/create")
-    async def create_alert(alert_data: dict):
+    async def create_alert(alert_data: dict) -> None:
         """Mock alert creation endpoint."""
         return {
             "id": "test-alert-001",
@@ -241,7 +241,7 @@ def alert_system_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.get("/alerts")
-    async def get_alerts(status: str = "all"):
+    async def get_alerts(status: str = "all") -> None:
         """Mock alerts listing endpoint."""
         return {
             "alerts": [
@@ -258,7 +258,7 @@ def alert_system_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.post("/alerts/{alert_id}/acknowledge")
-    async def acknowledge_alert(alert_id: str):
+    async def acknowledge_alert(alert_id: str) -> None:
         """Mock alert acknowledgment endpoint."""
         return {
             "id": alert_id,
@@ -283,7 +283,7 @@ def integrated_app(
     
     # Add integration endpoint
     @app.get("/integration/status")
-    async def integration_status():
+    async def integration_status() -> None:
         """Check status of all integrated components."""
         return {
             "mcp_server": "healthy",
@@ -314,19 +314,19 @@ async def async_client(integrated_app: FastAPI) -> AsyncGenerator[AsyncClient, N
 
 # Application lifecycle fixtures
 @pytest_asyncio.fixture(scope="function")
-async def app_with_startup_shutdown(base_app: FastAPI):
+async def app_with_startup_shutdown(base_app: FastAPI) -> None:
     """Test application startup and shutdown events."""
     startup_completed = False
     shutdown_completed = False
     
     @base_app.on_event("startup")
-    async def startup_event():
+    async def startup_event() -> None:
         nonlocal startup_completed
         startup_completed = True
         print("Test app startup completed")
     
     @base_app.on_event("shutdown")
-    async def shutdown_event():
+    async def shutdown_event() -> None:
         nonlocal shutdown_completed
         shutdown_completed = True
         print("Test app shutdown completed")
@@ -345,23 +345,23 @@ async def app_with_startup_shutdown(base_app: FastAPI):
 
 # Performance testing fixture
 @pytest.fixture(scope="function")
-def app_performance_monitor():
+def app_performance_monitor() -> None:
     """Monitor application performance during tests."""
     import time
     from collections import defaultdict
     
     class AppPerformanceMonitor:
-        def __init__(self):
+        def __init__(self) -> None:
             self.request_times = defaultdict(list)
             self.error_counts = defaultdict(int)
         
-        def record_request(self, endpoint: str, duration: float, status_code: int):
+        def record_request(self, endpoint: str, duration: float, status_code: int) -> None:
             """Record request performance metrics."""
             self.request_times[endpoint].append(duration)
             if status_code >= 400:
                 self.error_counts[endpoint] += 1
         
-        def get_stats(self):
+        def get_stats(self) -> None:
             """Get performance statistics."""
             stats = {}
             for endpoint, times in self.request_times.items():

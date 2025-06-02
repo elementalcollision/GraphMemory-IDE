@@ -42,7 +42,7 @@ class EmailVerificationRequest(BaseModel):
     resend: bool = False
     
     @validator('email')
-    def validate_email_format(cls, v):
+    def validate_email_format(cls, v) -> None:
         """Additional email validation"""
         # Check for valid email format
         parsed = parseaddr(v)
@@ -103,7 +103,7 @@ class EmailVerificationService:
         max_tokens_per_day: int = 10,
         max_attempts_per_ip: int = 20,
         cleanup_interval_hours: int = 1
-    ):
+    ) -> None:
         self.redis_url = redis_url
         self.token_expiry_hours = token_expiry_hours
         self.max_tokens_per_hour = max_tokens_per_hour
@@ -133,7 +133,7 @@ class EmailVerificationService:
         
         logger.info("EmailVerificationService initialized")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the service"""
         try:
             # Initialize Redis connection
@@ -159,7 +159,7 @@ class EmailVerificationService:
             logger.error(f"Failed to initialize EmailVerificationService: {e}")
             raise
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Cleanup service resources"""
         if self._cleanup_task:
             self._cleanup_task.cancel()
@@ -401,7 +401,7 @@ class EmailVerificationService:
         email: str,
         client_ip: str,
         user_id: Optional[str] = None
-    ):
+    ) -> None:
         """Update rate limiting counters"""
         if not self.redis_client:
             return
@@ -569,7 +569,7 @@ class EmailVerificationService:
             logger.error(f"Failed to get/create user: {e}")
             return None
     
-    async def _cleanup_expired_tokens(self):
+    async def _cleanup_expired_tokens(self) -> None:
         """Background task to cleanup expired verification tokens"""
         while True:
             try:
@@ -619,10 +619,10 @@ class EmailVerificationService:
             logger.error(f"Redis GET failed for key {key}: {e}")
             return None
     
-    async def _redis_incr_with_expiry(self, key: str, expiry: int):
+    async def _redis_incr_with_expiry(self, key: str, expiry: int) -> None:
         """Increment Redis key with expiry"""
         try:
-            def _incr_with_expiry():
+            def _incr_with_expiry() -> None:
                 pipe = self.redis_client.pipeline()
                 pipe.incr(key)
                 pipe.expire(key, expiry)
@@ -793,7 +793,7 @@ async def get_email_verification_service() -> EmailVerificationService:
     return _email_verification_service
 
 
-async def shutdown_email_verification_service():
+async def shutdown_email_verification_service() -> None:
     """Shutdown email verification service"""
     global _email_verification_service
     

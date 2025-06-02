@@ -84,7 +84,7 @@ class ConcurrentUserSimulator:
     - Production performance monitoring
     """
     
-    def __init__(self, base_url: str = "http://testserver"):
+    def __init__(self, base_url: str = "http://testserver") -> None:
         self.base_url = base_url
         self.metrics = LoadTestMetrics()
         self.running = False
@@ -179,7 +179,7 @@ class ConcurrentUserSimulator:
         else:
             raise ValueError(f"Unsupported HTTP method: {method}")
     
-    async def monitor_system_resources(self, duration: float, interval: float = 1.0):
+    async def monitor_system_resources(self, duration: float, interval: float = 1.0) -> None:
         """Monitor system resources during load testing."""
         start_time = time.time()
         
@@ -379,7 +379,7 @@ class TestConcurrentUserSimulation:
     """Test concurrent user simulation with realistic scenarios."""
     
     @pytest.mark.asyncio
-    async def test_light_concurrent_load(self):
+    async def test_light_concurrent_load(self) -> None:
         """Test light concurrent load (5 users) - baseline performance."""
         simulator = ConcurrentUserSimulator()
         workflow = GraphMemoryWorkflowSimulator.cursor_developer_workflow()
@@ -400,7 +400,7 @@ class TestConcurrentUserSimulation:
         print(f"✅ Light load test passed - {metrics.success_rate:.1f}% success rate")
     
     @pytest.mark.asyncio
-    async def test_moderate_concurrent_load(self):
+    async def test_moderate_concurrent_load(self) -> None:
         """Test moderate concurrent load (20 users) - typical production load."""
         simulator = ConcurrentUserSimulator()
         workflow = GraphMemoryWorkflowSimulator.cursor_developer_workflow()
@@ -422,7 +422,7 @@ class TestConcurrentUserSimulation:
         print(f"✅ Moderate load test passed - {metrics.success_rate:.1f}% success rate")
     
     @pytest.mark.asyncio 
-    async def test_heavy_concurrent_load(self):
+    async def test_heavy_concurrent_load(self) -> None:
         """Test heavy concurrent load (50 users) - stress testing."""
         simulator = ConcurrentUserSimulator()
         workflow = GraphMemoryWorkflowSimulator.cursor_developer_workflow()
@@ -443,7 +443,7 @@ class TestConcurrentUserSimulation:
         print(f"✅ Heavy load test passed - {metrics.success_rate:.1f}% success rate")
     
     @pytest.mark.asyncio
-    async def test_analytics_workflow_performance(self):
+    async def test_analytics_workflow_performance(self) -> None:
         """Test analytics-heavy workflow performance."""
         simulator = ConcurrentUserSimulator()
         workflow = GraphMemoryWorkflowSimulator.analytics_heavy_workflow()
@@ -467,7 +467,7 @@ class TestPerformanceRegression:
     """Test performance regression detection with baseline comparisons."""
     
     @pytest.mark.asyncio
-    async def test_performance_baseline_comparison(self):
+    async def test_performance_baseline_comparison(self) -> None:
         """Compare current performance against established baseline."""
         # Baseline metrics from previous test runs (would be stored/loaded in real implementation)
         baseline_metrics = {
@@ -509,7 +509,7 @@ if __name__ == "__main__":
     # Run load tests directly for development/debugging
     import asyncio
     
-    async def main():
+    async def main() -> None:
         simulator = ConcurrentUserSimulator()
         workflow = GraphMemoryWorkflowSimulator.cursor_developer_workflow()
         

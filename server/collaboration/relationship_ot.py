@@ -84,7 +84,7 @@ class RelationshipOperation:
     original_type: Optional[str] = None
     original_metadata: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate operation data"""
         if self.operation_type == RelationshipOperationType.CREATE:
             if not self.relationship_type or self.strength is None:
@@ -410,7 +410,7 @@ class RelationshipOTDocument:
     handling operation application, transformation, and conflict resolution.
     """
 
-    def __init__(self, initial_state: Optional[RelationshipState] = None):
+    def __init__(self, initial_state: Optional[RelationshipState] = None) -> None:
         self.state = initial_state
         self.operation_history: List[RelationshipOperation] = []
         self.pending_operations: List[RelationshipOperation] = []
@@ -548,16 +548,16 @@ class RelationshipOTDocument:
                 transformed = transformed.transform_against(pending_op)
         return transformed
 
-    def add_operation_observer(self, observer: Callable[[RelationshipOperation], None]):
+    def add_operation_observer(self, observer: Callable[[RelationshipOperation], None]) -> None:
         """Add observer for operation events"""
         self.operation_observers.append(observer)
 
-    def remove_operation_observer(self, observer: Callable[[RelationshipOperation], None]):
+    def remove_operation_observer(self, observer: Callable[[RelationshipOperation], None]) -> None:
         """Remove operation observer"""
         if observer in self.operation_observers:
             self.operation_observers.remove(observer)
 
-    async def add_pending_operation(self, operation: RelationshipOperation):
+    async def add_pending_operation(self, operation: RelationshipOperation) -> None:
         """Add operation to pending list"""
         async with self._lock:
             self.pending_operations.append(operation)
@@ -575,7 +575,7 @@ class RelationshipOTManager:
     and provides high-level operations for collaborative relationship editing.
     """
 
-    def __init__(self, redis_client: Redis, memory_crdt_manager: MemoryCRDTManager):
+    def __init__(self, redis_client: Redis, memory_crdt_manager: MemoryCRDTManager) -> None:
         self.redis_client = redis_client
         self.memory_crdt_manager = memory_crdt_manager
         self.documents: Dict[str, RelationshipOTDocument] = {}
@@ -747,7 +747,7 @@ class RelationshipOTManager:
         
         return None
 
-    async def _save_relationship_to_cache(self, relationship_id: str, state: RelationshipState):
+    async def _save_relationship_to_cache(self, relationship_id: str, state: RelationshipState) -> None:
         """Save relationship state to Redis cache"""
         try:
             cache_key = self.RELATIONSHIP_STATE_KEY.format(relationship_id=relationship_id)
@@ -844,7 +844,7 @@ async def modify_relationship_strength(source_memory_id: str, target_memory_id: 
     return await manager.modify_relationship_strength(source_memory_id, target_memory_id, new_strength, user_id, role)
 
 
-async def shutdown_relationship_ot():
+async def shutdown_relationship_ot() -> None:
     """Shutdown relationship OT system"""
     global _relationship_ot_manager
     if _relationship_ot_manager:
@@ -856,28 +856,28 @@ async def shutdown_relationship_ot():
 class RelationshipOTMetrics:
     """Metrics collector for relationship OT operations"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.operation_count = 0
         self.transform_count = 0
         self.conflict_count = 0
         self.error_count = 0
         self.average_transform_time = 0.0
     
-    def record_operation(self):
+    def record_operation(self) -> None:
         """Record a relationship operation"""
         self.operation_count += 1
     
-    def record_transform(self, duration: float):
+    def record_transform(self, duration: float) -> None:
         """Record a transform operation"""
         self.transform_count += 1
         self.average_transform_time = ((self.average_transform_time * (self.transform_count - 1) + duration) 
                                      / self.transform_count)
     
-    def record_conflict(self):
+    def record_conflict(self) -> None:
         """Record a conflict resolution"""
         self.conflict_count += 1
     
-    def record_error(self):
+    def record_error(self) -> None:
         """Record an error"""
         self.error_count += 1
     

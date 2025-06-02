@@ -1,0 +1,392 @@
+# GraphMemory-IDE Production Prometheus Configuration
+# Phase 4: Enterprise Monitoring & Observability Integration
+# Monitors Phase 1 Security, Phase 2 Quality, Phase 3 Documentation, Phase 4 Production
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'graphmemory-ide-production'
+    environment: 'production'
+    service: 'graphmemory-ide'
+    region: 'us-east-1'
+
+# Rule files specify a list of globs for rule files.
+rule_files:
+  - "rules/*.yml"
+  - "security_rules/*.yml"
+  - "quality_rules/*.yml"
+  - "documentation_rules/*.yml"
+  - "application_rules/*.yml"
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+      timeout: 10s
+      api_version: v2
+
+# Scrape configurations
+scrape_configs:
+  # ============================================================================
+  # PROMETHEUS SELF-MONITORING
+  # ============================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 5s
+    metrics_path: /metrics
+    params:
+      collect[]:
+        - prometheus_config_last_reload_success_timestamp_seconds
+        - prometheus_config_last_reload_successful
+        - prometheus_notifications_total
+        - prometheus_notifications_dropped_total
+
+  # ============================================================================
+  # PHASE 1: SECURITY MONITORING
+  # ============================================================================
+  - job_name: 'security-audit-metrics'
+    static_configs:
+      - targets: ['security-service:8080']
+    scrape_interval: 30s
+    metrics_path: /security/metrics
+    params:
+      collect[]:
+        - security_scan_duration_seconds
+        - security_issues_total
+        - security_critical_issues_total
+        - security_baseline_score
+        - bandit_scan_results_total
+        - semgrep_findings_total
+        - safety_vulnerabilities_total
+        - dependency_check_cve_total
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: security-service:8080
+
+  - job_name: 'security-baseline-monitoring'
+    static_configs:
+      - targets: ['localhost:8081']
+    scrape_interval: 60s
+    metrics_path: /security/baseline
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'security_baseline_score'
+        target_label: baseline_type
+        replacement: 'phase1_security'
+      - source_labels: [critical_count]
+        target_label: security_severity
+        replacement: 'critical'
+
+  # ============================================================================
+  # PHASE 2: CODE QUALITY MONITORING
+  # ============================================================================
+  - job_name: 'code-quality-metrics'
+    static_configs:
+      - targets: ['quality-service:8082']
+    scrape_interval: 30s
+    metrics_path: /quality/metrics
+    params:
+      collect[]:
+        - code_quality_gate_status
+        - code_maintainability_rating
+        - code_coverage_percentage
+        - pylint_score_total
+        - mypy_errors_total
+        - sonarqube_debt_minutes
+        - performance_profile_duration_seconds
+    relabel_configs:
+      - source_labels: [job]
+        target_label: quality_job
+        replacement: 'phase2_quality'
+
+  - job_name: 'sonarqube-metrics'
+    static_configs:
+      - targets: ['sonarqube:9000']
+    scrape_interval: 60s
+    metrics_path: /api/monitoring/metrics
+    bearer_token_file: /var/run/secrets/sonarqube/token
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'sonar_.*'
+        target_label: quality_tool
+        replacement: 'sonarqube'
+
+  # ============================================================================
+  # PHASE 3: DOCUMENTATION MONITORING
+  # ============================================================================
+  - job_name: 'documentation-metrics'
+    static_configs:
+      - targets: ['docs-service:8083']
+    scrape_interval: 60s
+    metrics_path: /docs/metrics
+    params:
+      collect[]:
+        - documentation_coverage_percentage
+        - documentation_grade_score
+        - technical_debt_minutes
+        - sphinx_build_duration_seconds
+        - sphinx_build_success_total
+        - docstring_quality_score
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: documentation_source
+        replacement: 'phase3_docs'
+
+  - job_name: 'technical-debt-monitoring'
+    static_configs:
+      - targets: ['debt-analyzer:8084']
+    scrape_interval: 300s  # 5 minutes
+    metrics_path: /debt/analysis
+    params:
+      format: ['prometheus']
+    metric_relabel_configs:
+      - source_labels: [debt_type]
+        target_label: technical_debt_category
+      - source_labels: [debt_cost_minutes]
+        target_label: debt_financial_impact
+
+  # ============================================================================
+  # PHASE 4: APPLICATION MONITORING
+  # ============================================================================
+  - job_name: 'graphmemory-ide-app'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+            - production
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: graphmemory-ide
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+
+  - job_name: 'graphmemory-ide-server'
+    static_configs:
+      - targets: ['server:8000']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    params:
+      collect[]:
+        - http_requests_total
+        - http_request_duration_seconds
+        - memory_graph_operations_total
+        - memory_graph_size_bytes
+        - database_connections_active
+        - redis_connections_active
+        - authentication_attempts_total
+        - api_rate_limit_exceeded_total
+
+  - job_name: 'graphmemory-ide-dashboard'
+    static_configs:
+      - targets: ['dashboard:3000']
+    scrape_interval: 15s
+    metrics_path: /api/metrics
+    params:
+      collect[]:
+        - dashboard_page_views_total
+        - dashboard_user_sessions_active
+        - dashboard_component_render_duration_seconds
+        - dashboard_api_calls_total
+        - dashboard_websocket_connections
+
+  # ============================================================================
+  # INFRASTRUCTURE MONITORING
+  # ============================================================================
+  - job_name: 'node-exporter'
+    kubernetes_sd_configs:
+      - role: node
+    relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __address__
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics
+
+  - job_name: 'kube-state-metrics'
+    static_configs:
+      - targets: ['kube-state-metrics:8080']
+    honor_labels: true
+
+  - job_name: 'kubelet'
+    kubernetes_sd_configs:
+      - role: node
+    scheme: https
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecure_skip_verify: true
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __address__
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics
+
+  # ============================================================================
+  # CONTAINER & REGISTRY MONITORING
+  # ============================================================================
+  - job_name: 'cadvisor'
+    kubernetes_sd_configs:
+      - role: node
+    scheme: https
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecure_skip_verify: true
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __address__
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+
+  - job_name: 'container-registry'
+    static_configs:
+      - targets: ['registry.ghcr.io:443']
+    scrape_interval: 60s
+    metrics_path: /v2/_catalog
+    scheme: https
+    tls_config:
+      insecure_skip_verify: false
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'registry_.*'
+        target_label: registry_type
+        replacement: 'github_container_registry'
+
+  # ============================================================================
+  # DATABASE MONITORING
+  # ============================================================================
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+    params:
+      collect[]:
+        - pg_up
+        - pg_database_size_bytes
+        - pg_stat_database_tup_inserted
+        - pg_stat_database_tup_updated
+        - pg_stat_database_tup_deleted
+        - pg_locks_count
+
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    params:
+      collect[]:
+        - redis_up
+        - redis_connected_clients
+        - redis_used_memory_bytes
+        - redis_keyspace_hits_total
+        - redis_keyspace_misses_total
+
+  # ============================================================================
+  # CI/CD PIPELINE MONITORING
+  # ============================================================================
+  - job_name: 'github-actions-metrics'
+    static_configs:
+      - targets: ['github-actions-exporter:8085']
+    scrape_interval: 60s
+    metrics_path: /github/metrics
+    params:
+      collect[]:
+        - github_actions_workflow_runs_total
+        - github_actions_workflow_run_duration_seconds
+        - github_actions_job_duration_seconds
+        - github_actions_security_scan_results
+        - github_actions_quality_gate_results
+        - github_actions_deployment_success_total
+    bearer_token_file: /var/run/secrets/github/token
+
+  - job_name: 'pipeline-integration-metrics'
+    static_configs:
+      - targets: ['pipeline-monitor:8086']
+    scrape_interval: 30s
+    metrics_path: /pipeline/metrics
+    params:
+      collect[]:
+        - pipeline_phase1_security_duration_seconds
+        - pipeline_phase2_quality_duration_seconds
+        - pipeline_phase3_documentation_duration_seconds
+        - pipeline_phase4_deployment_duration_seconds
+        - pipeline_total_execution_time_seconds
+        - pipeline_success_rate_percentage
+
+# Remote write configuration for long-term storage
+remote_write:
+  - url: "https://prometheus-remote-storage.graphmemory-ide.com/api/v1/write"
+    queue_config:
+      max_samples_per_send: 10000
+      max_shards: 200
+      capacity: 2500
+    write_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'up|.*_duration_seconds|.*_total|.*_percentage'
+        action: keep
+
+# Remote read configuration for federated queries
+remote_read:
+  - url: "https://prometheus-remote-storage.graphmemory-ide.com/api/v1/read"
+    read_recent: true
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus/data
+    retention.time: 30d
+    retention.size: 50GB
+    wal-compression: true
+
+# Web configuration
+web:
+  console.templates: /etc/prometheus/consoles
+  console.libraries: /etc/prometheus/console_libraries
+  page_title: "GraphMemory-IDE Production Monitoring"
+  external_url: "https://monitoring.graphmemory-ide.com"
+  enable_lifecycle: true
+  enable_admin_api: true
+  max_connections: 512
+
+# Feature flags for enhanced monitoring
+feature_flags:
+  - enable-feature=extra-scrape-metrics
+  - enable-feature=new-service-discovery-manager
+  - enable-feature=remote-write-receiver 

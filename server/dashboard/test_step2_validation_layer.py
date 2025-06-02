@@ -18,7 +18,7 @@ import json
 # Add the current directory to Python path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-def test_custom_field_types():
+def test_custom_field_types() -> None:
     """Test custom Pydantic field types and validators"""
     print("🔍 Testing Custom Field Types & Validators...")
     
@@ -53,7 +53,7 @@ def test_custom_field_types():
         print(f"  ❌ Custom field types error: {e}")
         return False
 
-def test_analytics_data_models():
+def test_analytics_data_models() -> None:
     """Test analytics data models with real-world data"""
     print("🔍 Testing Analytics Data Models...")
     
@@ -131,7 +131,7 @@ def test_analytics_data_models():
         traceback.print_exc()
         return False
 
-def test_error_handling():
+def test_error_handling() -> None:
     """Test comprehensive error handling"""
     print("🔍 Testing Error Handling Models...")
     
@@ -179,7 +179,7 @@ def test_error_handling():
         print(f"  ❌ Error handling error: {e}")
         return False
 
-def test_performance_features():
+def test_performance_features() -> None:
     """Test performance optimization features"""
     print("🔍 Testing Performance Features...")
     
@@ -239,7 +239,7 @@ def test_performance_features():
         print(f"  ❌ Performance test error: {e}")
         return False
 
-def test_integration_with_analytics_client():
+def test_integration_with_analytics_client() -> None:
     """Test integration with analytics client data format"""
     print("🔍 Testing Integration with Analytics Client...")
     
@@ -303,7 +303,7 @@ def test_integration_with_analytics_client():
         traceback.print_exc()
         return False
 
-def test_sse_compatibility():
+def test_sse_compatibility() -> None:
     """Test SSE streaming compatibility"""
     print("🔍 Testing SSE Streaming Compatibility...")
     
@@ -356,7 +356,7 @@ def test_sse_compatibility():
         print(f"  ❌ SSE compatibility error: {e}")
         return False
 
-def main():
+def main() -> None:
     """Run comprehensive Step 2 tests"""
     print("🚀 Step 2 Complete Test: Data Models & Validation Layer")
     print("=" * 70)

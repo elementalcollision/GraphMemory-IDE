@@ -94,7 +94,7 @@ class ConflictResolver:
     - Performance optimization with conflict prediction
     """
     
-    def __init__(self, ot_engine: Optional[OperationalTransform] = None):
+    def __init__(self, ot_engine: Optional[OperationalTransform] = None) -> None:
         self.ot_engine = ot_engine or OperationalTransform()
         
         # Conflict tracking

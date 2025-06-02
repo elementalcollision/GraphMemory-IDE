@@ -65,7 +65,7 @@ class CollaborationIntegrationManager:
     routing and response aggregation reducing client-server round trips.
     """
 
-    def __init__(self, redis_client: Redis):
+    def __init__(self, redis_client: Redis) -> None:
         self.redis_client = redis_client
         self.circuit_breaker_threshold = 5  # failures before circuit opens
         self.component_health = {feature.value: True for feature in CollaborationFeature.__members__.values()}
@@ -163,7 +163,7 @@ class CollaborationIntegrationManager:
             'components_processed': list(results.keys())
         }
 
-    def _update_component_health(self, component: str, healthy: bool):
+    def _update_component_health(self, component: str, healthy: bool) -> None:
         """Update component health for circuit breaker pattern"""
         self.component_health[component] = healthy
 
@@ -177,7 +177,7 @@ class BackwardCompatibilityLayer:
     server reconciliation patterns without complex CRDT implementation overhead.
     """
 
-    def __init__(self, integration_manager: CollaborationIntegrationManager):
+    def __init__(self, integration_manager: CollaborationIntegrationManager) -> None:
         self.integration_manager = integration_manager
         self.compatibility_cache = {}
 
@@ -251,7 +251,7 @@ class PerformanceOptimizer:
     for optimal performance across all collaboration components.
     """
 
-    def __init__(self, redis_client: Redis):
+    def __init__(self, redis_client: Redis) -> None:
         self.redis_client = redis_client
         self.operation_cache = {}
         self.batch_queue = []
@@ -330,7 +330,7 @@ class ProductionDeploymentController:
     Vercel and GitLab enterprise deployment research.
     """
 
-    def __init__(self, redis_client: Redis):
+    def __init__(self, redis_client: Redis) -> None:
         self.redis_client = redis_client
         self.feature_flags = {}
         self.health_status = {}
@@ -446,7 +446,7 @@ async def ensure_backward_compatibility(endpoint: str, data: Dict[str, Any],
     return await compatibility_layer.translate_legacy_api_call(endpoint, data, user_id)
 
 
-async def shutdown_phase1_integration():
+async def shutdown_phase1_integration() -> None:
     """Shutdown Phase 1 integration system"""
     global _phase1_integration_manager
     if _phase1_integration_manager:
@@ -458,14 +458,14 @@ async def shutdown_phase1_integration():
 class IntegrationMetrics:
     """Comprehensive metrics for Phase 1 integration performance"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.api_calls_processed = 0
         self.collaboration_requests = 0
         self.backward_compatibility_calls = 0
         self.average_response_time = 0.0
         self.feature_adoption_rate = 0.0
         
-    def record_api_call(self, response_time_ms: float, collaboration_enabled: bool):
+    def record_api_call(self, response_time_ms: float, collaboration_enabled: bool) -> None:
         """Record API call metrics"""
         self.api_calls_processed += 1
         if collaboration_enabled:

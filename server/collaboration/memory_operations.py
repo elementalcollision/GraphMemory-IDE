@@ -126,7 +126,7 @@ class TitleOperations:
     with user tracking and permission validation.
     """
     
-    def __init__(self, document: MemoryDocument):
+    def __init__(self, document: MemoryDocument) -> None:
         self.document = document
         self.field_type = MemoryFieldType.TITLE
         self.max_title_length = 200
@@ -346,7 +346,7 @@ class TitleOperations:
         
         return len(self.user_operations[user_id]) < self.rate_limit_operations
     
-    def _record_operation(self, user_id: str):
+    def _record_operation(self, user_id: str) -> None:
         """Record operation for rate limiting"""
         if user_id not in self.user_operations:
             self.user_operations[user_id] = []
@@ -361,7 +361,7 @@ class ContentOperations:
     link insertion, code blocks, and structured content operations.
     """
     
-    def __init__(self, document: MemoryDocument):
+    def __init__(self, document: MemoryDocument) -> None:
         self.document = document
         self.field_type = MemoryFieldType.CONTENT
         self.max_content_length = 10000
@@ -452,7 +452,7 @@ class TagOperations:
     auto-completion suggestions, and collaborative conflict resolution.
     """
     
-    def __init__(self, document: MemoryDocument):
+    def __init__(self, document: MemoryDocument) -> None:
         self.document = document
         self.field_type = MemoryFieldType.TAGS
         self.max_tags = 20
@@ -545,7 +545,7 @@ class MetadataOperations:
     and custom metadata fields with type validation and conflict resolution.
     """
     
-    def __init__(self, document: MemoryDocument):
+    def __init__(self, document: MemoryDocument) -> None:
         self.document = document
         self.field_type = MemoryFieldType.METADATA
         self.protected_fields = {"created_at", "memory_id", "version"}
@@ -622,7 +622,7 @@ class MemoryFieldOperationsManager:
     with permission validation, operation transformation, and conflict resolution.
     """
     
-    def __init__(self, document: MemoryDocument):
+    def __init__(self, document: MemoryDocument) -> None:
         self.document = document
         self.title_ops = TitleOperations(document)
         self.content_ops = ContentOperations(document)
@@ -695,7 +695,7 @@ class MemoryFieldOperationsManager:
                 transformed_operations=[]
             )
     
-    def _add_to_history(self, operation: FieldOperation):
+    def _add_to_history(self, operation: FieldOperation) -> None:
         """Add operation to history for conflict resolution"""
         self.operation_history.append(operation)
         
@@ -721,7 +721,7 @@ async def get_field_operations_manager(document: MemoryDocument) -> MemoryFieldO
     return _operation_managers[document.memory_id]
 
 
-async def cleanup_field_operations_manager(memory_id: str):
+async def cleanup_field_operations_manager(memory_id: str) -> None:
     """Cleanup field operations manager"""
     if memory_id in _operation_managers:
         del _operation_managers[memory_id] 

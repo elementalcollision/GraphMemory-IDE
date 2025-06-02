@@ -76,7 +76,7 @@ class CollaborationAuthenticator:
         jwt_secret: str,
         jwt_algorithm: str = "HS256",
         token_expiry_hours: int = 24
-    ):
+    ) -> None:
         self.jwt_secret = jwt_secret
         self.jwt_algorithm = jwt_algorithm
         self.token_expiry_hours = token_expiry_hours

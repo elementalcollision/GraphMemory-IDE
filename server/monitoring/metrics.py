@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class MetricsCollector:
     """Centralized metrics collection for application monitoring"""
 
-    def __init__(self, registry: Optional[CollectorRegistry] = None):
+    def __init__(self, registry: Optional[CollectorRegistry] = None) -> None:
         self.registry = registry or REGISTRY
         self._setup_metrics()
 
@@ -190,7 +190,7 @@ class MetricsCollector:
 class MetricsMiddleware(BaseHTTPMiddleware):
     """Middleware for automatic HTTP request metrics collection"""
 
-    def __init__(self, app, metrics_collector: MetricsCollector):
+    def __init__(self, app, metrics_collector: MetricsCollector) -> None:
         super().__init__(app)
         self.metrics_collector = metrics_collector
 

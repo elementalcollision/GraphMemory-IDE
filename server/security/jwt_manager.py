@@ -118,7 +118,7 @@ class JWTKeyManager:
     - Comprehensive audit logging
     """
 
-    def __init__(self, config: JWTConfig):
+    def __init__(self, config: JWTConfig) -> None:
         self.config = config
         self.key_versions: Dict[str, KeyVersion] = {}
         self.private_keys: Dict[str, Ed25519PrivateKey] = {}
@@ -405,7 +405,7 @@ class JWTValidator:
     JWT token validator with multi-key support for zero-downtime rotation.
     """
 
-    def __init__(self, key_manager: JWTKeyManager):
+    def __init__(self, key_manager: JWTKeyManager) -> None:
         self.key_manager = key_manager
 
     def validate_token(self, token: str) -> Dict[str, Any]:

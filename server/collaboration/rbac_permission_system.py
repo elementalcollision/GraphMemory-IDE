@@ -94,7 +94,7 @@ class Permission:
     expires_at: Optional[datetime] = None
     metadata: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize permission with current timestamp"""
         if self.granted_at is None:
             self.granted_at = datetime.utcnow()
@@ -244,7 +244,7 @@ class UserPermissions:
     cached_at: Optional[datetime] = None
     cache_expires_at: Optional[datetime] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize cache timestamps"""
         if self.cached_at is None:
             self.cached_at = datetime.utcnow()
@@ -330,7 +330,7 @@ class RBACPermissionSystem:
         cache_ttl_seconds: int = 300,  # 5 minutes
         preload_active_users: bool = True,
         performance_monitoring: bool = True
-    ):
+    ) -> None:
         """
         Initialize RBAC Permission System
         
@@ -359,7 +359,7 @@ class RBACPermissionSystem:
         
         self.logger = logging.getLogger(__name__)
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize Redis connections and setup"""
         try:
             self._redis_pool = redis.ConnectionPool.from_url(
@@ -648,7 +648,7 @@ class RBACPermissionSystem:
         
         return None
 
-    async def _set_cache(self, key: str, user_permissions: UserPermissions):
+    async def _set_cache(self, key: str, user_permissions: UserPermissions) -> None:
         """Set cached user permissions"""
         if not self._redis_client:
             return
@@ -663,7 +663,7 @@ class RBACPermissionSystem:
         except Exception as e:
             self.logger.error(f"Failed to set cache: {e}")
 
-    async def _invalidate_cache(self, key: str):
+    async def _invalidate_cache(self, key: str) -> None:
         """Invalidate cached permissions"""
         if not self._redis_client:
             return
@@ -683,7 +683,7 @@ class RBACPermissionSystem:
         context: Dict[str, Any],
         processing_time_ms: float,
         error_detail: Optional[str] = None
-    ):
+    ) -> None:
         """Log permission check for audit trail"""
         audit_entry = PermissionAuditEntry(
             user_id=user_id,
@@ -700,7 +700,7 @@ class RBACPermissionSystem:
         # In production, store to database or external audit system
         self.logger.info(f"Permission audit: {json.dumps(audit_entry.to_dict())}")
 
-    def _update_performance_metrics(self, processing_time_ms: float):
+    def _update_performance_metrics(self, processing_time_ms: float) -> None:
         """Update performance metrics"""
         self.permission_checks += 1
         self.total_check_time += processing_time_ms
@@ -731,7 +731,7 @@ class RBACPermissionSystem:
             'cache_misses': self.cache_misses
         }
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup Redis connections"""
         if self._redis_client:
             await self._redis_client.close()

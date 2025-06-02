@@ -26,7 +26,7 @@ from server.dashboard.enhanced_circuit_breaker import get_circuit_breaker_manage
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def cleanup_circuit_breakers():
+async def cleanup_circuit_breakers() -> None:
     """Auto-cleanup circuit breakers before each test to prevent naming conflicts"""
     # Cleanup before test
     manager = get_circuit_breaker_manager()
@@ -39,7 +39,7 @@ async def cleanup_circuit_breakers():
 class TestCacheConfig:
     """Test cache configuration functionality"""
     
-    def test_default_config(self):
+    def test_default_config(self) -> None:
         """Test default configuration values"""
         config = CacheConfig()
         
@@ -52,7 +52,7 @@ class TestCacheConfig:
         assert config.enable_cache_warming is True
         assert config.enable_circuit_breaker is True
     
-    def test_custom_config(self):
+    def test_custom_config(self) -> None:
         """Test custom configuration values"""
         config = CacheConfig(
             enable_l1_memory=False,
@@ -74,7 +74,7 @@ class TestCacheConfig:
 class TestCacheEntry:
     """Test cache entry functionality"""
     
-    def test_cache_entry_creation(self):
+    def test_cache_entry_creation(self) -> None:
         """Test cache entry creation and metadata"""
         now = datetime.now()
         entry = CacheEntry(
@@ -92,7 +92,7 @@ class TestCacheEntry:
         assert entry.tags == {"tag1", "tag2"}
         assert entry.access_count == 0
     
-    def test_cache_entry_expiration(self):
+    def test_cache_entry_expiration(self) -> None:
         """Test cache entry expiration logic"""
         # Create expired entry
         old_time = datetime.now() - timedelta(seconds=400)
@@ -118,7 +118,7 @@ class TestCacheEntry:
         
         assert fresh_entry.is_expired() is False
     
-    def test_cache_entry_touch(self):
+    def test_cache_entry_touch(self) -> None:
         """Test cache entry touch functionality"""
         entry = CacheEntry(
             key="test",
@@ -141,7 +141,7 @@ class TestCacheEntry:
 class TestCacheMetrics:
     """Test cache metrics functionality"""
     
-    def test_metrics_initialization(self):
+    def test_metrics_initialization(self) -> None:
         """Test metrics initialization"""
         metrics = CacheMetrics()
         
@@ -150,7 +150,7 @@ class TestCacheMetrics:
         assert metrics.misses == 0
         assert metrics.get_hit_rate() == 0.0
     
-    def test_hit_rate_calculation(self):
+    def test_hit_rate_calculation(self) -> None:
         """Test hit rate calculation"""
         metrics = CacheMetrics()
         metrics.hits = 7
@@ -158,7 +158,7 @@ class TestCacheMetrics:
         
         assert metrics.get_hit_rate() == 70.0
     
-    def test_l1_hit_rate_calculation(self):
+    def test_l1_hit_rate_calculation(self) -> None:
         """Test L1 hit rate calculation"""
         metrics = CacheMetrics()
         metrics.l1_hits = 8
@@ -166,7 +166,7 @@ class TestCacheMetrics:
         
         assert metrics.get_l1_hit_rate() == 80.0
     
-    def test_performance_metrics_update(self):
+    def test_performance_metrics_update(self) -> None:
         """Test performance metrics update"""
         metrics = CacheMetrics()
         
@@ -185,7 +185,7 @@ class TestFallbackCache:
     """Test fallback cache implementation"""
     
     @pytest.mark.asyncio
-    async def test_fallback_cache_basic_operations(self):
+    async def test_fallback_cache_basic_operations(self) -> None:
         """Test basic fallback cache operations"""
         cache = FallbackCache(max_size=10)
         
@@ -201,7 +201,7 @@ class TestFallbackCache:
         assert value is None
     
     @pytest.mark.asyncio
-    async def test_fallback_cache_expiration(self):
+    async def test_fallback_cache_expiration(self) -> None:
         """Test fallback cache expiration"""
         cache = FallbackCache()
         
@@ -213,7 +213,7 @@ class TestFallbackCache:
         assert value is None
     
     @pytest.mark.asyncio
-    async def test_fallback_cache_size_limit(self):
+    async def test_fallback_cache_size_limit(self) -> None:
         """Test fallback cache size limit and LRU eviction"""
         cache = FallbackCache(max_size=3)
         
@@ -234,7 +234,7 @@ class TestFallbackCache:
         assert await cache.get("key4") == "value4"  # New key
     
     @pytest.mark.asyncio
-    async def test_fallback_cache_delete_and_clear(self):
+    async def test_fallback_cache_delete_and_clear(self) -> None:
         """Test fallback cache delete and clear operations"""
         cache = FallbackCache()
         
@@ -260,7 +260,7 @@ class TestCacheManager:
     """Test cache manager functionality"""
     
     @pytest_asyncio.fixture
-    async def cache_manager(self):
+    async def cache_manager(self) -> None:
         """Create cache manager for testing"""
         config = CacheConfig(
             enable_l1_memory=True,
@@ -275,7 +275,7 @@ class TestCacheManager:
         await manager.shutdown()
     
     @pytest.mark.asyncio
-    async def test_cache_manager_initialization(self, cache_manager):
+    async def test_cache_manager_initialization(self, cache_manager) -> None:
         """Test cache manager initialization"""
         assert cache_manager.l1_cache is not None
         assert cache_manager.l2_cache is None  # Disabled in config
@@ -283,7 +283,7 @@ class TestCacheManager:
         assert cache_manager.config.enable_l2_redis is False
     
     @pytest.mark.asyncio
-    async def test_cache_manager_basic_operations(self, cache_manager):
+    async def test_cache_manager_basic_operations(self, cache_manager) -> None:
         """Test basic cache manager operations"""
         
         # Test set
@@ -306,7 +306,7 @@ class TestCacheManager:
         assert value is None
     
     @pytest.mark.asyncio
-    async def test_cache_manager_with_tags(self, cache_manager):
+    async def test_cache_manager_with_tags(self, cache_manager) -> None:
         """Test cache manager with tags"""
         
         # Set with tags
@@ -331,7 +331,7 @@ class TestCacheManager:
         assert await cache_manager.get("key3") == "value3"  # Should still exist
     
     @pytest.mark.asyncio
-    async def test_cache_manager_pattern_invalidation(self, cache_manager):
+    async def test_cache_manager_pattern_invalidation(self, cache_manager) -> None:
         """Test pattern-based cache invalidation"""
         
         # Set multiple keys with similar patterns
@@ -351,7 +351,7 @@ class TestCacheManager:
         assert await cache_manager.get("graph_metrics_1") == "data4"
     
     @pytest.mark.asyncio
-    async def test_cache_manager_metrics(self, cache_manager):
+    async def test_cache_manager_metrics(self, cache_manager) -> None:
         """Test cache manager metrics collection"""
         
         # Perform operations to generate metrics
@@ -370,7 +370,7 @@ class TestCacheManager:
         assert metrics.get_hit_rate() > 0
     
     @pytest.mark.asyncio
-    async def test_cache_manager_clear(self, cache_manager):
+    async def test_cache_manager_clear(self, cache_manager) -> None:
         """Test cache manager clear functionality"""
         
         # Add some data
@@ -390,7 +390,7 @@ class TestCacheManager:
         assert await cache_manager.get("key2") is None
     
     @pytest.mark.asyncio
-    async def test_cache_manager_info(self, cache_manager):
+    async def test_cache_manager_info(self, cache_manager) -> None:
         """Test cache manager info functionality"""
         
         info = await cache_manager.get_cache_info()
@@ -410,7 +410,7 @@ class TestCacheWarmer:
     """Test cache warming functionality"""
     
     @pytest_asyncio.fixture
-    async def cache_manager_with_warming(self):
+    async def cache_manager_with_warming(self) -> None:
         """Create cache manager with warming enabled"""
         config = CacheConfig(
             enable_cache_warming=True,
@@ -424,7 +424,7 @@ class TestCacheWarmer:
         await manager.shutdown()
     
     @pytest.mark.asyncio
-    async def test_cache_warmer_basic(self, cache_manager_with_warming):
+    async def test_cache_warmer_basic(self, cache_manager_with_warming) -> None:
         """Test basic cache warming functionality"""
         warmer = cache_manager_with_warming.cache_warmer
         
@@ -442,7 +442,7 @@ class TestCacheWarmer:
             assert value == f"data_for_{key}"
     
     @pytest.mark.asyncio
-    async def test_cache_warmer_async_loader(self, cache_manager_with_warming):
+    async def test_cache_warmer_async_loader(self, cache_manager_with_warming) -> None:
         """Test cache warming with async data loader"""
         warmer = cache_manager_with_warming.cache_warmer
         
@@ -461,7 +461,7 @@ class TestCacheWarmer:
             assert value == f"async_data_for_{key}"
     
     @pytest.mark.asyncio
-    async def test_cache_warmer_error_handling(self, cache_manager_with_warming):
+    async def test_cache_warmer_error_handling(self, cache_manager_with_warming) -> None:
         """Test cache warming error handling"""
         warmer = cache_manager_with_warming.cache_warmer
         
@@ -485,7 +485,7 @@ class TestCacheInvalidator:
     """Test cache invalidation functionality"""
     
     @pytest_asyncio.fixture
-    async def cache_manager_with_data(self):
+    async def cache_manager_with_data(self) -> None:
         """Create cache manager with test data"""
         config = CacheConfig(
             enable_l2_redis=False,
@@ -505,7 +505,7 @@ class TestCacheInvalidator:
         await manager.shutdown()
     
     @pytest.mark.asyncio
-    async def test_invalidator_by_key(self, cache_manager_with_data):
+    async def test_invalidator_by_key(self, cache_manager_with_data) -> None:
         """Test invalidation by specific key"""
         invalidator = cache_manager_with_data.cache_invalidator
         
@@ -520,7 +520,7 @@ class TestCacheInvalidator:
         assert await cache_manager_with_data.get("memory_insights") == "memory_data"  # Should still exist
     
     @pytest.mark.asyncio
-    async def test_invalidator_by_pattern(self, cache_manager_with_data):
+    async def test_invalidator_by_pattern(self, cache_manager_with_data) -> None:
         """Test invalidation by pattern"""
         invalidator = cache_manager_with_data.cache_invalidator
         
@@ -534,7 +534,7 @@ class TestCacheInvalidator:
         assert await cache_manager_with_data.get("user_data") == "user_info"  # Doesn't match pattern
     
     @pytest.mark.asyncio
-    async def test_invalidator_by_tags(self, cache_manager_with_data):
+    async def test_invalidator_by_tags(self, cache_manager_with_data) -> None:
         """Test invalidation by tags"""
         invalidator = cache_manager_with_data.cache_invalidator
         
@@ -552,7 +552,7 @@ class TestGlobalCacheFunctions:
     """Test global cache functions"""
     
     @pytest.mark.asyncio
-    async def test_global_cache_manager_singleton(self):
+    async def test_global_cache_manager_singleton(self) -> None:
         """Test global cache manager is singleton"""
         manager1 = await get_cache_manager()
         manager2 = await get_cache_manager()
@@ -563,7 +563,7 @@ class TestGlobalCacheFunctions:
         await shutdown_cache_manager()
     
     @pytest.mark.asyncio
-    async def test_global_cache_functions(self):
+    async def test_global_cache_functions(self) -> None:
         """Test global cache convenience functions"""
         
         # Test cache_set
@@ -600,7 +600,7 @@ class TestGlobalCacheFunctions:
         await shutdown_cache_manager()
     
     @pytest.mark.asyncio
-    async def test_initialize_custom_cache_manager(self):
+    async def test_initialize_custom_cache_manager(self) -> None:
         """Test initialization with custom config"""
         config = CacheConfig(
             l1_max_size=500,
@@ -619,7 +619,7 @@ class TestGlobalCacheFunctions:
 
 
 @pytest.mark.asyncio
-async def test_integration_scenario():
+async def test_integration_scenario() -> None:
     """Test realistic cache manager usage scenario"""
     
     # Initialize cache manager
@@ -657,7 +657,7 @@ async def test_integration_scenario():
         
         # Test cache warming
         warmer = manager.cache_warmer
-        def loader(key: str):
+        def loader(key: str) -> None:
             return f"warmed_data_for_{key}"
         
         await warmer.warm_cache(["warm_key1", "warm_key2"], loader)

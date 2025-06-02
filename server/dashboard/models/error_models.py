@@ -348,17 +348,17 @@ class ErrorContext:
         operation: str,
         category: ErrorCategory = ErrorCategory.SYSTEM,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM
-    ):
+    ) -> None:
         self.component = component
         self.operation = operation
         self.category = category
         self.severity = severity
         self.error_id = generate_error_id()
     
-    def __enter__(self):
+    def __enter__(self) -> "ErrorContext":
         return self
     
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
         if exc_type is not None:
             # An exception occurred, create an error
             error = AnalyticsError.from_exception(
@@ -375,6 +375,7 @@ class ErrorContext:
             
             # Don't suppress the exception
             return False
+        return False
     
     def create_error(self, message: str, details: Optional[str] = None) -> AnalyticsError:
         """Create an error within this context"""

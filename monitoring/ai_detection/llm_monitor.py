@@ -78,7 +78,7 @@ class LLMAnalysisEngine:
     to provide intelligent incident analysis and recommendations.
     """
     
-    def __init__(self, model_endpoint: Optional[str] = None):
+    def __init__(self, model_endpoint: Optional[str] = None) -> None:
         self.model_endpoint = model_endpoint or "http://localhost:11434"  # Ollama default
         self.model_name = "llama2"  # Default model
         self.analysis_templates = self._load_analysis_templates()
@@ -360,7 +360,7 @@ class ContextualAlertManager:
     Manages alerts with rich context and LLM-powered enrichment.
     """
     
-    def __init__(self, llm_engine: Optional[LLMAnalysisEngine] = None):
+    def __init__(self, llm_engine: Optional[LLMAnalysisEngine] = None) -> None:
         self.llm_engine = llm_engine or LLMAnalysisEngine()
         self.active_incidents = {}
         self.alert_history = []

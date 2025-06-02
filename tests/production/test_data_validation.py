@@ -24,7 +24,7 @@ class DataValidationResult:
     error_details: Optional[str] = None
     timestamp: str = None
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.timestamp is None:
             self.timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -32,7 +32,7 @@ class DataValidationResult:
 class ProductionDataValidator:
     """Comprehensive production data validation framework."""
     
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str) -> None:
         self.base_url = base_url
         self.validation_results: List[DataValidationResult] = []
     
@@ -347,7 +347,7 @@ class TestProductionDataValidation:
     """Test production data validation framework."""
     
     @pytest.mark.asyncio
-    async def test_comprehensive_data_validation(self):
+    async def test_comprehensive_data_validation(self) -> None:
         """Test comprehensive production data validation."""
         base_url = "http://localhost:8000"  # Default to local for testing
         validator = ProductionDataValidator(base_url)
@@ -370,7 +370,7 @@ class TestProductionDataValidation:
         print("✅ Comprehensive data validation completed successfully")
     
     @pytest.mark.asyncio
-    async def test_memory_node_lifecycle(self):
+    async def test_memory_node_lifecycle(self) -> None:
         """Test complete memory node lifecycle validation."""
         base_url = "http://localhost:8000"
         validator = ProductionDataValidator(base_url)
@@ -384,7 +384,7 @@ class TestProductionDataValidation:
         print("✅ Memory node lifecycle validation passed")
     
     @pytest.mark.asyncio
-    async def test_analytics_accuracy(self):
+    async def test_analytics_accuracy(self) -> None:
         """Test analytics data accuracy and structure."""
         base_url = "http://localhost:8000"
         validator = ProductionDataValidator(base_url)
@@ -396,7 +396,7 @@ class TestProductionDataValidation:
         print("✅ Analytics accuracy validation passed")
     
     @pytest.mark.asyncio
-    async def test_graph_relationships(self):
+    async def test_graph_relationships(self) -> None:
         """Test graph database relationships and structure."""
         base_url = "http://localhost:8000"
         validator = ProductionDataValidator(base_url)
@@ -408,7 +408,7 @@ class TestProductionDataValidation:
         print("✅ Graph relationships validation passed")
     
     @pytest.mark.asyncio
-    async def test_search_functionality_validation(self):
+    async def test_search_functionality_validation(self) -> None:
         """Test search functionality validation."""
         base_url = "http://localhost:8000"
         validator = ProductionDataValidator(base_url)

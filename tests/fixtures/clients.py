@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 import websockets
 from websockets.legacy.client import WebSocketClientProtocol
+from types import TracebackType
 
 @pytest_asyncio.fixture(scope="function")
 async def http_client(integrated_app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
@@ -51,22 +52,22 @@ async def authenticated_client(http_client: AsyncClient) -> AsyncGenerator[Async
     yield http_client
 
 @pytest_asyncio.fixture(scope="function")
-async def websocket_client():
+async def websocket_client() -> None:
     """Create a WebSocket client for testing real-time communications."""
     
     class MockWebSocketClient:
-        def __init__(self):
+        def __init__(self) -> None:
             self.connected = False
             self.messages = []
             self.connection = None
         
-        async def connect(self, uri: str):
+        async def connect(self, uri: str) -> None:
             """Mock WebSocket connection."""
             self.connected = True
             self.uri = uri
             print(f"Mock WebSocket connected to {uri}")
         
-        async def send(self, message: str):
+        async def send(self, message: str) -> None:
             """Mock sending a message."""
             if not self.connected:
                 raise ConnectionError("WebSocket not connected")
@@ -84,12 +85,12 @@ async def websocket_client():
             }
             return json.dumps(mock_message)
         
-        async def close(self):
+        async def close(self) -> None:
             """Mock closing the connection."""
             self.connected = False
             print("Mock WebSocket connection closed")
         
-        def get_sent_messages(self):
+        def get_sent_messages(self) -> None:
             """Get all sent messages."""
             return [msg["data"] for msg in self.messages if msg["type"] == "sent"]
     
@@ -101,22 +102,22 @@ async def websocket_client():
         await client.close()
 
 @pytest_asyncio.fixture(scope="function")
-async def sse_client():
+async def sse_client() -> None:
     """Create an SSE (Server-Sent Events) client for testing real-time updates."""
     
     class MockSSEClient:
-        def __init__(self):
+        def __init__(self) -> None:
             self.connected = False
             self.events = []
             self.url = None
         
-        async def connect(self, url: str):
+        async def connect(self, url: str) -> None:
             """Mock SSE connection."""
             self.connected = True
             self.url = url
             print(f"Mock SSE client connected to {url}")
         
-        async def listen(self, timeout: float = 10.0):
+        async def listen(self, timeout: float = 10.0) -> None:
             """Mock listening for SSE events."""
             if not self.connected:
                 raise ConnectionError("SSE client not connected")
@@ -139,12 +140,12 @@ async def sse_client():
             self.events.extend(events)
             return events
         
-        async def close(self):
+        async def close(self) -> None:
             """Mock closing the SSE connection."""
             self.connected = False
             print("Mock SSE client connection closed")
         
-        def get_received_events(self):
+        def get_received_events(self) -> None:
             """Get all received events."""
             return self.events.copy()
     
@@ -156,11 +157,11 @@ async def sse_client():
         await client.close()
 
 @pytest_asyncio.fixture(scope="function")
-async def analytics_client(http_client: AsyncClient):
+async def analytics_client(http_client: AsyncClient) -> None:
     """Create a specialized client for analytics engine testing."""
     
     class AnalyticsTestClient:
-        def __init__(self, http_client: AsyncClient):
+        def __init__(self, http_client: AsyncClient) -> None:
             self.client = http_client
             self.base_path = "/analytics"
         
@@ -193,11 +194,11 @@ async def analytics_client(http_client: AsyncClient):
     yield AnalyticsTestClient(http_client)
 
 @pytest_asyncio.fixture(scope="function")
-async def mcp_client(authenticated_client: AsyncClient):
+async def mcp_client(authenticated_client: AsyncClient) -> None:
     """Create a specialized client for MCP server testing."""
     
     class MCPTestClient:
-        def __init__(self, http_client: AsyncClient):
+        def __init__(self, http_client: AsyncClient) -> None:
             self.client = http_client
             self.base_path = "/mcp"
         
@@ -235,11 +236,11 @@ async def mcp_client(authenticated_client: AsyncClient):
     yield MCPTestClient(authenticated_client)
 
 @pytest_asyncio.fixture(scope="function")
-async def alert_client(authenticated_client: AsyncClient):
+async def alert_client(authenticated_client: AsyncClient) -> None:
     """Create a specialized client for alert system testing."""
     
     class AlertTestClient:
-        def __init__(self, http_client: AsyncClient):
+        def __init__(self, http_client: AsyncClient) -> None:
             self.client = http_client
             self.base_path = "/alerts"
         
@@ -283,11 +284,11 @@ async def alert_client(authenticated_client: AsyncClient):
     yield AlertTestClient(authenticated_client)
 
 @pytest_asyncio.fixture(scope="function")
-async def dashboard_client(http_client: AsyncClient, sse_client):
+async def dashboard_client(http_client: AsyncClient, sse_client) -> None:
     """Create a specialized client for dashboard testing."""
     
     class DashboardTestClient:
-        def __init__(self, http_client: AsyncClient, sse_client):
+        def __init__(self, http_client: AsyncClient, sse_client) -> None:
             self.client = http_client
             self.sse_client = sse_client
             self.base_path = "/dashboard"
@@ -298,7 +299,7 @@ async def dashboard_client(http_client: AsyncClient, sse_client):
             response.raise_for_status()
             return response.json()
         
-        async def connect_sse(self):
+        async def connect_sse(self) -> None:
             """Connect to dashboard SSE stream."""
             await self.sse_client.connect(f"{self.base_path}/sse")
         
@@ -334,16 +335,16 @@ async def dashboard_client(http_client: AsyncClient, sse_client):
 
 # Performance testing client fixtures
 @pytest_asyncio.fixture(scope="function")
-async def load_test_clients(integrated_app: FastAPI):
+async def load_test_clients(integrated_app: FastAPI) -> None:
     """Create multiple clients for load testing."""
     
     class LoadTestManager:
-        def __init__(self, app: FastAPI, client_count: int = 10):
+        def __init__(self, app: FastAPI, client_count: int = 10) -> None:
             self.app = app
             self.client_count = client_count
             self.clients = []
         
-        async def __aenter__(self):
+        async def __aenter__(self) -> None:
             """Create multiple async clients."""
             for i in range(self.client_count):
                 transport = ASGITransport(app=self.app)
@@ -357,12 +358,15 @@ async def load_test_clients(integrated_app: FastAPI):
             
             return self
         
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
+        async def __aexit__(self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType]) -> None:
             """Close all clients."""
             for client in self.clients:
                 await client.aclose()
         
-        async def concurrent_requests(self, endpoint: str, count: int = None):
+        async def concurrent_requests(self, endpoint: str, count: int = None) -> None:
             """Make concurrent requests to an endpoint."""
             if count is None:
                 count = self.client_count
@@ -381,17 +385,17 @@ async def load_test_clients(integrated_app: FastAPI):
 
 # Client health monitoring
 @pytest.fixture(scope="function")
-def client_health_monitor():
+def client_health_monitor() -> None:
     """Monitor client connection health during tests."""
     
     class ClientHealthMonitor:
-        def __init__(self):
+        def __init__(self) -> None:
             self.connection_attempts = 0
             self.successful_connections = 0
             self.failed_connections = 0
             self.response_times = []
         
-        def record_connection_attempt(self, success: bool, response_time: float = None):
+        def record_connection_attempt(self, success: bool, response_time: float = None) -> None:
             """Record a connection attempt."""
             self.connection_attempts += 1
             if success:
@@ -401,7 +405,7 @@ def client_health_monitor():
             else:
                 self.failed_connections += 1
         
-        def get_health_stats(self):
+        def get_health_stats(self) -> None:
             """Get connection health statistics."""
             success_rate = (
                 self.successful_connections / self.connection_attempts

@@ -1,0 +1,139 @@
+{
+  "timestamp": "2025-06-02T12:31:14.369371+00:00",
+  "execution_time": 0.0006570816040039062,
+  "total_debt_score": 200.65,
+  "debt_breakdown": {
+    "documentation_debt": 18.0,
+    "architectural_debt": 32.65,
+    "code_quality_debt": 45.0,
+    "testing_debt": 25.0,
+    "security_debt": 15.0,
+    "performance_debt": 35.0,
+    "maintenance_debt": 30.0
+  },
+  "business_impact": {
+    "total_business_impact_score": 9.6204375,
+    "category_impacts": {
+      "documentation": {
+        "raw_impact": 1.8,
+        "weighted_score": 1.395,
+        "affected_areas": [
+          "developer_productivity",
+          "onboarding_time",
+          "maintenance_efficiency",
+          "knowledge_transfer"
+        ],
+        "severity": "LOW"
+      },
+      "architecture": {
+        "raw_impact": 4.8975,
+        "weighted_score": 4.0404374999999995,
+        "affected_areas": [
+          "system_reliability",
+          "scalability",
+          "maintainability",
+          "performance"
+        ],
+        "severity": "LOW"
+      },
+      "code_quality": {
+        "raw_impact": 5.3999999999999995,
+        "weighted_score": 4.185,
+        "affected_areas": [
+          "bug_frequency",
+          "development_velocity",
+          "code_reusability",
+          "testing_efficiency"
+        ],
+        "severity": "LOW"
+      }
+    },
+    "cost_estimates": {
+      "documentation": {
+        "hours": 0.3,
+        "cost": 22.5,
+        "priority_multiplier": 1.0
+      },
+      "architecture": {
+        "hours": 0.5441666666666667,
+        "cost": 65.3,
+        "priority_multiplier": 1.5
+      },
+      "code_quality": {
+        "hours": 0.75,
+        "cost": 63.75,
+        "priority_multiplier": 1.0
+      },
+      "testing": {
+        "hours": 0.4166666666666667,
+        "cost": 29.166666666666668,
+        "priority_multiplier": 1.0
+      },
+      "security": {
+        "hours": 0.25,
+        "cost": 32.5,
+        "priority_multiplier": 1.5
+      },
+      "performance": {
+        "hours": 0.5833333333333334,
+        "cost": 64.16666666666667,
+        "priority_multiplier": 1.0
+      },
+      "total_cost": 277.3833333333333,
+      "roi_projection": 693.4583333333333
+    },
+    "risk_assessment": {
+      "high_debt_areas": [],
+      "trend_concerns": [],
+      "business_continuity_risks": [],
+      "overall_risk_level": "HIGH"
+    },
+    "prioritization_matrix": []
+  },
+  "debt_items": [
+    {
+      "category": "Security",
+      "description": "Security vulnerabilities and compliance gaps",
+      "priority": "CRITICAL",
+      "business_impact": 80.0,
+      "effort_estimate": "High",
+      "cost_estimate": 32.5,
+      "risk_level": "CRITICAL"
+    },
+    {
+      "category": "Testing",
+      "description": "Insufficient test coverage and quality",
+      "priority": "MEDIUM",
+      "business_impact": 25.0,
+      "effort_estimate": "Medium",
+      "cost_estimate": 29.166666666666668,
+      "risk_level": "MEDIUM"
+    },
+    {
+      "category": "Code Quality",
+      "description": "Code smells and maintainability issues",
+      "priority": "MEDIUM",
+      "business_impact": 4.185,
+      "effort_estimate": "Medium",
+      "cost_estimate": 63.75,
+      "risk_level": "MEDIUM"
+    }
+  ],
+  "prioritized_recommendations": [
+    "\ud83d\udea8 CRITICAL: Address security vulnerabilities immediately",
+    "\ud83d\udea8 CRITICAL: Review and refactor high-risk architectural components",
+    "\ud83d\udccb MEDIUM: Improve code quality and maintainability",
+    "\ud83d\udccb MEDIUM: Enhance test coverage and quality",
+    "\ud83d\udccb MEDIUM: Implement automated code quality monitoring",
+    "\ud83c\udfaf STRATEGIC: Integrate technical debt tracking into development workflow",
+    "\ud83c\udfaf STRATEGIC: Establish monthly technical debt review process",
+    "\ud83c\udfaf STRATEGIC: Create technical debt dashboard with real-time metrics",
+    "\ud83c\udfaf STRATEGIC: Implement debt-aware development guidelines"
+  ],
+  "integration_status": {
+    "phase1_security_integration": false,
+    "phase2_quality_integration": false,
+    "sonarqube_enhanced": true,
+    "documentation_framework": false
+  }
+}

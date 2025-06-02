@@ -43,7 +43,7 @@ class CollaborationEngine:
         self,
         redis_client: redis.Redis,
         session_manager: Optional[SessionManager] = None
-    ):
+    ) -> None:
         self.redis = redis_client
         self.session_manager = session_manager or SessionManager(redis_client)
         

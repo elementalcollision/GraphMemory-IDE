@@ -23,14 +23,14 @@ from server.dashboard.analytics_client import AnalyticsEngineClient
 class RealAnalyticsEngineFixture:
     """Real analytics engine integration for testing."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.engine_url = os.getenv("ANALYTICS_ENGINE_URL", "http://localhost:8001")
         self.timeout = 30.0
         self.client: Optional[httpx.AsyncClient] = None
         self.analytics_client: Optional[AnalyticsEngineClient] = None
         self.embedded_engine: Optional[AnalyticsEngine] = None
         
-    async def setup(self):
+    async def setup(self) -> None:
         """Setup real analytics engine connection."""
         self.client = httpx.AsyncClient(timeout=httpx.Timeout(self.timeout))
         
@@ -51,7 +51,7 @@ class RealAnalyticsEngineFixture:
         
         return self.analytics_client
     
-    async def _setup_embedded_engine(self):
+    async def _setup_embedded_engine(self) -> None:
         """Setup embedded analytics engine for testing."""
         # Create test Kuzu database
         test_db_path = f"/tmp/test_kuzu_{uuid.uuid4().hex[:8]}"
@@ -65,7 +65,7 @@ class RealAnalyticsEngineFixture:
         # Mock the HTTP endpoints for testing
         self.engine_url = "http://embedded-test"
         
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup analytics engine connection."""
         if self.client:
             await self.client.aclose()
@@ -105,7 +105,7 @@ class RealAnalyticsEngineFixture:
 class RealDatabaseFixture:
     """Real database connections for integration testing."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.test_id = str(uuid.uuid4())[:8]
         self.kuzu_db = None
         self.kuzu_conn = None
@@ -113,7 +113,7 @@ class RealDatabaseFixture:
         self.sqlite_conn = None
         self.cleanup_tasks = []
     
-    async def setup_kuzu_real_connection(self):
+    async def setup_kuzu_real_connection(self) -> None:
         """Setup real Kuzu database with test data isolation."""
         db_path = Path(f"/tmp/kuzu_integration_test_{self.test_id}")
         
@@ -135,7 +135,7 @@ class RealDatabaseFixture:
                 shutil.rmtree(db_path, ignore_errors=True)
             raise RuntimeError(f"Failed to setup Kuzu database: {e}")
     
-    async def setup_redis_real_connection(self):
+    async def setup_redis_real_connection(self) -> None:
         """Setup real Redis with dedicated test database."""
         import random
         
@@ -165,7 +165,7 @@ class RealDatabaseFixture:
                 await self.redis_client.aclose()
             raise RuntimeError(f"Failed to setup Redis connection: {e}")
     
-    async def setup_sqlite_real_connection(self):
+    async def setup_sqlite_real_connection(self) -> None:
         """Setup real SQLite database for alerts."""
         db_path = f"/tmp/alerts_integration_test_{self.test_id}.db"
         
@@ -187,7 +187,7 @@ class RealDatabaseFixture:
                 self.sqlite_conn.close()
             raise RuntimeError(f"Failed to setup SQLite database: {e}")
     
-    async def _initialize_kuzu_schema(self):
+    async def _initialize_kuzu_schema(self) -> None:
         """Initialize Kuzu database schema."""
         if not self.kuzu_conn:
             return
@@ -207,7 +207,7 @@ class RealDatabaseFixture:
                 if "already exists" not in str(e).lower():
                     raise
     
-    async def _initialize_sqlite_schema(self):
+    async def _initialize_sqlite_schema(self) -> None:
         """Initialize SQLite alerts schema."""
         if not self.sqlite_conn:
             return
@@ -240,7 +240,7 @@ class RealDatabaseFixture:
         self.sqlite_conn.executescript(schema_sql)
         self.sqlite_conn.commit()
     
-    async def _cleanup_redis(self):
+    async def _cleanup_redis(self) -> None:
         """Cleanup Redis test database."""
         if self.redis_client:
             try:
@@ -249,7 +249,7 @@ class RealDatabaseFixture:
             except Exception:
                 pass  # Ignore cleanup errors
     
-    def _cleanup_sqlite(self, db_path: str):
+    def _cleanup_sqlite(self, db_path: str) -> None:
         """Cleanup SQLite database."""
         if self.sqlite_conn:
             try:
@@ -262,7 +262,7 @@ class RealDatabaseFixture:
         except Exception:
             pass
     
-    async def cleanup_all(self):
+    async def cleanup_all(self) -> None:
         """Cleanup all database connections."""
         for cleanup_task in self.cleanup_tasks:
             try:
@@ -277,7 +277,7 @@ class RealDatabaseFixture:
 class RealServiceIntegrationManager:
     """Manages real service integration for testing."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.services = {}
         self.use_real_services = os.getenv("USE_REAL_SERVICES", "false").lower() == "true"
         self.service_health = {}
@@ -389,7 +389,7 @@ class RealServiceIntegrationManager:
         
         return health
     
-    async def cleanup_all(self):
+    async def cleanup_all(self) -> None:
         """Cleanup all real services."""
         for service_name, service_info in self.services.items():
             try:
@@ -445,7 +445,7 @@ async def real_service_integration() -> AsyncGenerator[RealServiceIntegrationMan
 
 
 @pytest.fixture(scope="function")
-def real_service_config():
+def real_service_config() -> None:
     """Configuration for real services."""
     return {
         "analytics_engine": {

@@ -64,7 +64,7 @@ class TimeSeriesForecaster:
     seasonal decomposition, and ensemble methods.
     """
     
-    def __init__(self, forecast_horizon: int = 24):
+    def __init__(self, forecast_horizon: int = 24) -> None:
         self.forecast_horizon = forecast_horizon  # hours
         self.models = {}
         self.model_performance = {}
@@ -400,7 +400,7 @@ class CapacityPlanner:
     scaling recommendations.
     """
     
-    def __init__(self, forecaster: Optional[TimeSeriesForecaster] = None):
+    def __init__(self, forecaster: Optional[TimeSeriesForecaster] = None) -> None:
         self.forecaster = forecaster or TimeSeriesForecaster()
         self.capacity_thresholds = {
             'cpu_usage': 80.0,  # %
@@ -528,7 +528,7 @@ class PredictiveAnalyticsEngine:
     Main predictive analytics engine combining forecasting and capacity planning.
     """
     
-    def __init__(self, prometheus_url: str = "http://localhost:9090"):
+    def __init__(self, prometheus_url: str = "http://localhost:9090") -> None:
         self.prometheus_url = prometheus_url
         self.forecaster = TimeSeriesForecaster()
         self.capacity_planner = CapacityPlanner(self.forecaster)

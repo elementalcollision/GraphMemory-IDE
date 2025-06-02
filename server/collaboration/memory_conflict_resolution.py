@@ -58,7 +58,7 @@ try:
 except ImportError:
     # Fallback for missing relationship_ot module
     RelationshipOTEngine = None
-    def get_relationship_ot_engine():
+    def get_relationship_ot_engine() -> None:
         return None
 
 try:
@@ -66,7 +66,7 @@ try:
 except ImportError:
     # Fallback for missing vector_consistency module
     VectorConsistencyManager = None
-    def get_vector_consistency_manager():
+    def get_vector_consistency_manager() -> None:
         return None
 
 
@@ -161,7 +161,7 @@ class UnifiedConflictManager:
     """
 
     def __init__(self, redis_client: Redis, memory_crdt: MemoryCRDTManager,
-                 relationship_ot: RelationshipOTEngine, vector_consistency: VectorConsistencyManager):
+                 relationship_ot: RelationshipOTEngine, vector_consistency: VectorConsistencyManager) -> None:
         self.redis_client = redis_client
         self.memory_crdt = memory_crdt
         self.relationship_ot = relationship_ot
@@ -327,7 +327,7 @@ class UnifiedConflictManager:
         }
 
     async def _update_conflict_metrics(self, resolution_outcome: Optional[ResolutionOutcome], 
-                                     resolution_time: float):
+                                     resolution_time: float) -> None:
         """Update SRVRA-inspired performance metrics"""
         try:
             self.conflict_metrics['total_conflicts'] += 1
@@ -419,7 +419,7 @@ class ConflictDetectionEngine:
     comprehensive metadata tracking for cross-component conflict scenarios.
     """
 
-    def __init__(self, redis_client: Redis):
+    def __init__(self, redis_client: Redis) -> None:
         self.redis_client = redis_client
         self.detection_cache = {}
         self.detection_metrics = {
@@ -584,7 +584,7 @@ class ResolutionStrategyManager:
     selective merging capabilities, and adaptive threshold management.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.strategy_performance = {
             ResolutionStrategy.SMART_MERGE: {'success_rate': 0.85, 'avg_time': 150},
             ResolutionStrategy.USER_GUIDED: {'success_rate': 0.95, 'avg_time': 5000},
@@ -676,7 +676,7 @@ class CrossComponentCoordinator:
     conflict resolution without explicit coordination messages across components.
     """
 
-    def __init__(self, redis_client: Redis):
+    def __init__(self, redis_client: Redis) -> None:
         self.redis_client = redis_client
         self.coordination_cache = {}
         
@@ -759,7 +759,7 @@ class CrossComponentCoordinator:
         return True
 
     async def _update_coordination_state(self, conflict_context: ConflictContext, 
-                                       resolution_operations: List[Dict[str, Any]]):
+                                       resolution_operations: List[Dict[str, Any]]) -> None:
         """Update coordination state in Redis"""
         try:
             coordination_key = f"coordination:state:{conflict_context.conflict_id}"
@@ -785,7 +785,7 @@ class ConflictResolutionOrchestrator:
     action space to find optimal conflict resolution outcomes.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.mcts_iterations = 100
         self.exploration_constant = 1.4  # UCB1 exploration parameter
         
@@ -933,22 +933,22 @@ class ConflictResolutionOrchestrator:
         # Simple confidence calculation based on operation completeness
         return min(0.95, 0.5 + (len(resolution_operations) * 0.1))
 
-    async def _select_and_expand(self, node):
+    async def _select_and_expand(self, node) -> None:
         """MCTS selection and expansion phase"""
         # Simplified implementation
         return node
 
-    async def _simulate_resolution(self, node):
+    async def _simulate_resolution(self, node) -> None:
         """MCTS simulation phase"""
         # Simplified simulation returning random score
         return random.random()
 
-    async def _backpropagate(self, node, result):
+    async def _backpropagate(self, node, result) -> None:
         """MCTS backpropagation phase"""
         # Simplified backpropagation
         pass
 
-    def _select_best_child(self, node):
+    def _select_best_child(self, node) -> None:
         """Select best child node from MCTS tree"""
         # Simplified selection
         return node
@@ -998,7 +998,7 @@ async def handle_cross_component_conflict(conflict_operations: List[Dict[str, An
     return await manager.handle_cross_component_conflict(conflict_operations, user_id, session_id)
 
 
-async def shutdown_conflict_resolution():
+async def shutdown_conflict_resolution() -> None:
     """Shutdown conflict resolution system"""
     global _memory_conflict_manager
     if _memory_conflict_manager:
@@ -1010,14 +1010,14 @@ async def shutdown_conflict_resolution():
 class ConflictResolutionMetrics:
     """Metrics collector for conflict resolution operations"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.conflicts_handled = 0
         self.cross_component_conflicts = 0
         self.resolution_strategies_used = defaultdict(int)
         self.average_resolution_time = 0.0
         self.user_satisfaction_scores = []
     
-    def record_conflict_resolution(self, outcome: ResolutionOutcome):
+    def record_conflict_resolution(self, outcome: ResolutionOutcome) -> None:
         """Record a conflict resolution operation"""
         self.conflicts_handled += 1
         

@@ -51,7 +51,7 @@ class DataTransformationError(Exception):
 class CacheEntry:
     """Cache entry with TTL support"""
     
-    def __init__(self, data: Any, ttl_seconds: int = 300):
+    def __init__(self, data: Any, ttl_seconds: int = 300) -> None:
         self.data = data
         self.created_at = time.time()
         self.ttl_seconds = ttl_seconds
@@ -68,7 +68,7 @@ class CacheEntry:
 class PerformanceMonitor:
     """Monitor performance of data transformations"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.system_transform_times: list[float] = []
         self.memory_transform_times: list[float] = []
         self.graph_transform_times: list[float] = []
@@ -77,7 +77,7 @@ class PerformanceMonitor:
         self.cache_hits: int = 0
         self.cache_misses: int = 0
     
-    def record_transform_time(self, data_type: str, duration: float):
+    def record_transform_time(self, data_type: str, duration: float) -> None:
         """Record transformation time for a data type"""
         if data_type == "system":
             self.system_transform_times.append(duration)
@@ -95,15 +95,15 @@ class PerformanceMonitor:
         
         self.total_transformations += 1
     
-    def record_failure(self):
+    def record_failure(self) -> None:
         """Record a transformation failure"""
         self.failed_transformations += 1
     
-    def record_cache_hit(self):
+    def record_cache_hit(self) -> None:
         """Record a cache hit"""
         self.cache_hits += 1
     
-    def record_cache_miss(self):
+    def record_cache_miss(self) -> None:
         """Record a cache miss"""
         self.cache_misses += 1
     
@@ -142,7 +142,7 @@ class DataAdapter:
     real-time dashboard streaming.
     """
     
-    def __init__(self, analytics_client: Optional[AnalyticsEngineClient] = None):
+    def __init__(self, analytics_client: Optional[AnalyticsEngineClient] = None) -> None:
         self.analytics_client = analytics_client or get_analytics_client()
         self.cache: Dict[str, CacheEntry] = {}
         self.performance_monitor = PerformanceMonitor()
@@ -469,7 +469,7 @@ class DataAdapter:
         
         return True
     
-    def _record_circuit_breaker_failure(self):
+    def _record_circuit_breaker_failure(self) -> None:
         """Record a circuit breaker failure"""
         self.circuit_breaker_failures += 1
     
@@ -492,11 +492,11 @@ class DataAdapter:
             "total_transformations": self.performance_monitor.total_transformations
         }
     
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """Clear all cache entries"""
         self.cache.clear()
     
-    def set_cache_ttl(self, ttl_seconds: int):
+    def set_cache_ttl(self, ttl_seconds: int) -> None:
         """Set cache TTL in seconds"""
         self.cache_ttl = ttl_seconds
 
@@ -520,7 +520,7 @@ def initialize_data_adapter(analytics_client: Optional[AnalyticsEngineClient] = 
     return _data_adapter
 
 
-async def shutdown_data_adapter():
+async def shutdown_data_adapter() -> None:
     """Shutdown the global data adapter instance"""
     global _data_adapter
     if _data_adapter is not None:

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 @st.fragment(run_every=2)
-def render_analytics_metrics():
+def render_analytics_metrics() -> None:
     """Real-time analytics metrics display"""
     try:
         # Get streaming state
@@ -104,7 +104,7 @@ def render_analytics_metrics():
 
 
 @st.fragment(run_every=5)
-def render_memory_metrics():
+def render_memory_metrics() -> None:
     """Real-time memory metrics display"""
     try:
         # Get streaming state
@@ -206,7 +206,7 @@ def render_memory_metrics():
 
 
 @st.fragment(run_every=3)
-def render_graph_metrics():
+def render_graph_metrics() -> None:
     """Real-time graph metrics display"""
     try:
         # Get streaming state
@@ -296,7 +296,7 @@ def render_graph_metrics():
         logger.error(f"Graph metrics error: {e}")
 
 
-def render_system_health_metrics():
+def render_system_health_metrics() -> None:
     """Render system health overview metrics"""
     try:
         api_client = get_api_client()

@@ -33,7 +33,7 @@ class TestAsyncInfrastructure:
     """Test async testing infrastructure setup and performance."""
     
     @pytest.mark.asyncio
-    async def test_async_client_isolation(self, async_client: AsyncClient):
+    async def test_async_client_isolation(self, async_client: AsyncClient) -> None:
         """Test that async client provides proper test isolation."""
         # Test basic connectivity
         response = await async_client.get("/health")
@@ -63,14 +63,14 @@ class TestAsyncInfrastructure:
         self, 
         async_client: AsyncClient, 
         performance_tracker
-    ):
+    ) -> None:
         """Test concurrent request handling capabilities."""
         
         # Test concurrent analytics requests
         concurrent_requests = 20
         start_time = time.time()
         
-        async def make_request(request_id: int):
+        async def make_request(request_id: int) -> None:
             try:
                 request_start = time.time()
                 
@@ -114,7 +114,7 @@ class TestDatabaseIntegration:
     """Test database integration and data validation."""
     
     @pytest.mark.asyncio
-    async def test_kuzu_database_connectivity(self, kuzu_connection):
+    async def test_kuzu_database_connectivity(self, kuzu_connection) -> None:
         """Test Kuzu database connectivity and basic operations."""
         
         # Test basic query execution
@@ -126,7 +126,7 @@ class TestDatabaseIntegration:
             pytest.fail(f"Database connectivity failed: {e}")
     
     @pytest.mark.asyncio
-    async def test_sample_data_creation(self, sample_memory_data):
+    async def test_sample_data_creation(self, sample_memory_data) -> None:
         """Test sample data creation and validation."""
         
         # Validate data structure
@@ -140,7 +140,7 @@ class TestDatabaseIntegration:
         print(f"✅ Sample data created with {len(nodes)} nodes")
     
     @pytest.mark.asyncio
-    async def test_data_insertion_performance(self, kuzu_connection, performance_data):
+    async def test_data_insertion_performance(self, kuzu_connection, performance_data) -> None:
         """Test data insertion performance with larger datasets."""
         
         start_time = time.time()
@@ -174,7 +174,7 @@ class TestDatabaseIntegration:
         self, 
         kuzu_connection, 
         project_data_factory
-    ):
+    ) -> None:
         """Test realistic dataset creation for different scales."""
         
         # Test small dataset
@@ -212,7 +212,7 @@ class TestPerformanceValidation:
         self, 
         async_client: AsyncClient,
         performance_tracker
-    ):
+    ) -> None:
         """Test response time benchmarks for key endpoints."""
         
         # Test key endpoints with performance requirements
@@ -249,7 +249,7 @@ class TestPerformanceValidation:
         self, 
         kuzu_connection,
         project_data_factory
-    ):
+    ) -> None:
         """Test memory efficiency during data operations."""
         import psutil
         import gc
@@ -283,10 +283,10 @@ class TestPerformanceValidation:
         self,
         kuzu_connection,
         performance_tracker
-    ):
+    ) -> None:
         """Test concurrent database operations performance."""
         
-        async def database_operation(operation_id: int):
+        async def database_operation(operation_id: int) -> None:
             try:
                 start_time = time.time()
                 
@@ -332,7 +332,7 @@ class TestPerformanceValidation:
 class TestCloudPreparation:
     """Test cloud deployment preparation and validation."""
     
-    @pytest_asyncio.async def test_cloud_environment_simulation(self, async_client: AsyncClient):
+    @pytest_asyncio.async def test_cloud_environment_simulation(self, async_client: AsyncClient) -> None:
         """Test application behavior in cloud-like environment."""
         
         # Simulate cloud environment conditions
@@ -375,7 +375,7 @@ class TestCloudPreparation:
             else:
                 print(f"   {name}: ❌ {result.get('error', 'Unknown error')}")
     
-    @pytest_asyncio.async def test_digitalocean_compatibility(self, async_client: AsyncClient):
+    @pytest_asyncio.async def test_digitalocean_compatibility(self, async_client: AsyncClient) -> None:
         """Test DigitalOcean App Platform compatibility."""
         
         # Test DigitalOcean-specific requirements
@@ -445,7 +445,7 @@ class TestRealWorldScenarios:
         self, 
         async_client: AsyncClient,
         sample_memory_data
-    ):
+    ) -> None:
         """Simulate typical Cursor IDE workflow scenarios."""
         
         # Simulate common Cursor IDE operations
@@ -512,7 +512,7 @@ class TestRealWorldScenarios:
         self,
         kuzu_connection,
         project_data_factory
-    ):
+    ) -> None:
         """Test with production-like data volumes and patterns."""
         
         # Create production-like dataset
@@ -551,7 +551,7 @@ class TestRealWorldScenarios:
 
 # Summary fixture to report Phase 1 results
 @pytest.fixture(scope="module", autouse=True)
-def phase1_summary():
+def phase1_summary() -> None:
     """Provide Phase 1 implementation summary."""
     yield
     

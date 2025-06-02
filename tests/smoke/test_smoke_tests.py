@@ -14,7 +14,7 @@ class TestSmokeTests:
     """Basic smoke tests for critical functionality."""
     
     @pytest.mark.asyncio
-    async def test_api_health_check(self):
+    async def test_api_health_check(self) -> None:
         """Test that the API health check endpoint is working."""
         base_url = os.getenv("TEST_BASE_URL", "http://localhost:8000")
         
@@ -29,7 +29,7 @@ class TestSmokeTests:
             print("✅ API health check passed")
     
     @pytest.mark.asyncio
-    async def test_api_docs_accessible(self):
+    async def test_api_docs_accessible(self) -> None:
         """Test that API documentation is accessible."""
         base_url = os.getenv("TEST_BASE_URL", "http://localhost:8000")
         
@@ -42,7 +42,7 @@ class TestSmokeTests:
             print("✅ API documentation accessible")
     
     @pytest.mark.asyncio
-    async def test_memory_graph_endpoint(self):
+    async def test_memory_graph_endpoint(self) -> None:
         """Test that memory graph endpoint is working."""
         base_url = os.getenv("TEST_BASE_URL", "http://localhost:8000")
         
@@ -57,7 +57,7 @@ class TestSmokeTests:
             print("✅ Memory graph endpoint working")
     
     @pytest.mark.asyncio
-    async def test_analytics_dashboard_endpoint(self):
+    async def test_analytics_dashboard_endpoint(self) -> None:
         """Test that analytics dashboard endpoint is working."""
         base_url = os.getenv("TEST_BASE_URL", "http://localhost:8000")
         
@@ -72,7 +72,7 @@ class TestSmokeTests:
             print("✅ Analytics dashboard endpoint working")
     
     @pytest.mark.asyncio
-    async def test_basic_api_workflow(self):
+    async def test_basic_api_workflow(self) -> None:
         """Test basic API workflow with memory node creation and retrieval."""
         base_url = os.getenv("TEST_BASE_URL", "http://localhost:8000")
         

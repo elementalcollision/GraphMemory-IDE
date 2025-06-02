@@ -40,7 +40,7 @@ class AuthenticationIntegration:
     Coordinates SSO, MFA, security middleware, and rate limiting.
     """
     
-    def __init__(self, app: FastAPI, settings: AdvancedSettings, db_session=None):
+    def __init__(self, app: FastAPI, settings: AdvancedSettings, db_session=None) -> None:
         self.app = app
         self.settings = settings
         self.db_session = db_session
@@ -79,7 +79,7 @@ class AuthenticationIntegration:
             logger.error(f"Authentication integration failed: {e}")
             return False
     
-    async def _setup_security_middleware(self):
+    async def _setup_security_middleware(self) -> None:
         """Setup security middleware."""
         try:
             # Add security headers middleware
@@ -93,7 +93,7 @@ class AuthenticationIntegration:
             logger.error(f"Failed to setup security middleware: {e}")
             raise
     
-    async def _setup_rate_limiting(self):
+    async def _setup_rate_limiting(self) -> None:
         """Setup rate limiting middleware."""
         try:
             # Get the rate limiter instance
@@ -111,7 +111,7 @@ class AuthenticationIntegration:
             logger.error(f"Failed to setup rate limiting: {e}")
             raise
     
-    async def _setup_sso(self):
+    async def _setup_sso(self) -> None:
         """Setup SSO manager."""
         try:
             await initialize_sso_manager(self.settings, self.db_session)
@@ -127,7 +127,7 @@ class AuthenticationIntegration:
             logger.error(f"Failed to setup SSO: {e}")
             raise
     
-    async def _setup_mfa(self):
+    async def _setup_mfa(self) -> None:
         """Setup MFA manager."""
         try:
             await initialize_mfa_manager(self.settings, self.db_session)
@@ -143,7 +143,7 @@ class AuthenticationIntegration:
             logger.error(f"Failed to setup MFA: {e}")
             raise
     
-    async def _register_routes(self):
+    async def _register_routes(self) -> None:
         """Register authentication routes."""
         try:
             # Include authentication router
@@ -152,7 +152,7 @@ class AuthenticationIntegration:
             
             # Add authentication status endpoint
             @self.app.get("/api/auth/integration/status")
-            async def get_auth_integration_status():
+            async def get_auth_integration_status() -> None:
                 """Get authentication integration status."""
                 sso_manager = get_sso_manager()
                 mfa_manager = get_mfa_manager()

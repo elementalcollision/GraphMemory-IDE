@@ -105,13 +105,13 @@ class RedisChannelManager:
     - collaboration:server:{server_id} - Server-specific messages
     """
     
-    def __init__(self, redis_pool: ConnectionPool, server_id: str):
+    def __init__(self, redis_pool: ConnectionPool, server_id: str) -> None:
         self.redis_pool = redis_pool
         self.server_id = server_id
-        self.redis: Optional[Redis] = None
+        self.redis: Optional[Redis[bytes]] = None
         
         # Channel subscriptions
-        self.subscriptions: Dict[str, Set[Callable]] = {}
+        self.subscriptions: Dict[str, Set[Callable[..., Any]]] = {}
         self.pubsub: Optional[redis.client.PubSub] = None
         
         # Message routing

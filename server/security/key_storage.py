@@ -140,7 +140,7 @@ class KeyStorageBackend(ABC):
 class FilesystemKeyStorage(KeyStorageBackend):
     """Filesystem-based key storage with encryption"""
     
-    def __init__(self, storage_path: str, master_key: Optional[bytes] = None):
+    def __init__(self, storage_path: str, master_key: Optional[bytes] = None) -> None:
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
         
@@ -296,7 +296,7 @@ class SecureKeyStorage:
     High-level secure key storage interface with multiple backend support.
     """
     
-    def __init__(self, backend: KeyStorageBackend):
+    def __init__(self, backend: KeyStorageBackend) -> None:
         self.backend = backend
         self.cache: Dict[str, bytes] = {}  # Optional in-memory cache
         self.cache_enabled = False
@@ -423,13 +423,13 @@ class KeyRotationManager:
     Automated key rotation management system.
     """
     
-    def __init__(self, storage: SecureKeyStorage):
+    def __init__(self, storage: SecureKeyStorage) -> None:
         self.storage = storage
         self.rotation_schedules: Dict[str, Dict[str, Any]] = {}
         self.running = False
     
     def schedule_rotation(self, key_pattern: str, rotation_interval: timedelta,
-                         key_generator: Callable[..., bytes], **generator_kwargs) -> None:
+                         key_generator: Callable[..., bytes], **generator_kwargs: Any) -> None:
         """
         Schedule automatic rotation for keys matching a pattern.
         

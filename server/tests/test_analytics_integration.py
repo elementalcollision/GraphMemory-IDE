@@ -25,7 +25,7 @@ class TestKuzuAnalyticsEngine:
     """Test suite for KuzuAnalyticsEngine"""
     
     @pytest.fixture
-    def mock_connection(self):
+    def mock_connection(self) -> None:
         """Mock Kuzu database connection"""
         mock_conn = Mock()
         mock_result = Mock()
@@ -36,12 +36,12 @@ class TestKuzuAnalyticsEngine:
         return mock_conn
     
     @pytest.fixture
-    def analytics_engine(self, mock_connection):
+    def analytics_engine(self, mock_connection) -> None:
         """Create analytics engine with mocked connection"""
         return KuzuAnalyticsEngine(mock_connection)
     
     @pytest.mark.asyncio
-    async def test_execute_graph_analytics_centrality(self, analytics_engine):
+    async def test_execute_graph_analytics_centrality(self, analytics_engine) -> None:
         """Test centrality analysis execution"""
         parameters = {
             "entity_type": "Entity",
@@ -68,7 +68,7 @@ class TestKuzuAnalyticsEngine:
             mock_compute.assert_called_once_with(parameters)
     
     @pytest.mark.asyncio
-    async def test_get_graph_metrics(self, analytics_engine):
+    async def test_get_graph_metrics(self, analytics_engine) -> None:
         """Test graph metrics computation"""
         # Mock the cypher execution for different queries
         with patch.object(analytics_engine, '_execute_cypher') as mock_cypher:
@@ -95,7 +95,7 @@ class TestKuzuAnalyticsEngine:
                     assert metrics.diameter == 6
     
     @pytest.mark.asyncio
-    async def test_find_shortest_paths(self, analytics_engine):
+    async def test_find_shortest_paths(self, analytics_engine) -> None:
         """Test shortest path finding"""
         with patch.object(analytics_engine, '_execute_cypher') as mock_cypher:
             mock_cypher.return_value = [
@@ -113,7 +113,7 @@ class TestKuzuAnalyticsEngine:
             assert result["max_hops"] == 5
             assert result["path_count"] == 1
     
-    def test_caching_mechanism(self, analytics_engine):
+    def test_caching_mechanism(self, analytics_engine) -> None:
         """Test analytics result caching"""
         analytics_type = GraphAnalyticsType.CENTRALITY
         parameters = {"test": "data"}
@@ -136,7 +136,7 @@ class TestAnalyticsGateway:
     """Test suite for AnalyticsGateway"""
     
     @pytest.fixture
-    def mock_service_registry(self):
+    def mock_service_registry(self) -> None:
         """Mock service registry"""
         registry = Mock()
         registry.discover_services = AsyncMock()
@@ -144,12 +144,12 @@ class TestAnalyticsGateway:
         return registry
     
     @pytest.fixture
-    def analytics_gateway(self, mock_service_registry):
+    def analytics_gateway(self, mock_service_registry) -> None:
         """Create analytics gateway with mocked dependencies"""
         return AnalyticsGateway(mock_service_registry)
     
     @pytest.mark.asyncio
-    async def test_gateway_initialization(self, analytics_gateway):
+    async def test_gateway_initialization(self, analytics_gateway) -> None:
         """Test gateway initialization and startup"""
         await analytics_gateway.start(num_workers=2)
         
@@ -161,10 +161,10 @@ class TestAnalyticsGateway:
         assert len(analytics_gateway._workers) == 0
     
     @pytest.mark.asyncio
-    async def test_execute_request_with_cache(self, analytics_gateway):
+    async def test_execute_request_with_cache(self, analytics_gateway) -> None:
         """Test request execution with caching"""
         # Wrap the entire test in a timeout to prevent hanging
-        async def run_test():
+        async def run_test() -> None:
             # Start the gateway with workers (this was missing!)
             await analytics_gateway.start(num_workers=1)
             
@@ -177,7 +177,7 @@ class TestAnalyticsGateway:
                 analytics_gateway.service_registry.discover_services.return_value = [mock_service]
                 
                 # Mock the actual HTTP request method directly to avoid complex aiohttp mocking
-                async def mock_execute_service_request(request):
+                async def mock_execute_service_request(request) -> None:
                     """Mock implementation that returns a successful response"""
                     return GatewayResponse(
                         request_id=request.request_id,
@@ -237,7 +237,7 @@ class TestAnalyticsGateway:
             pytest.fail("Test timed out after 30 seconds - indicates a blocking operation")
     
     @pytest.mark.asyncio
-    async def test_circuit_breaker_functionality(self, analytics_gateway):
+    async def test_circuit_breaker_functionality(self, analytics_gateway) -> None:
         """Test circuit breaker pattern"""
         service_name = "failing-service"
         
@@ -263,7 +263,7 @@ class TestAnalyticsGateway:
         assert "circuit breaker open" in str(http_exc.detail)
     
     @pytest.mark.asyncio
-    async def test_batch_request_execution(self, analytics_gateway):
+    async def test_batch_request_execution(self, analytics_gateway) -> None:
         """Test batch request processing"""
         requests = [
             {
@@ -310,7 +310,7 @@ class TestAnalyticsGateway:
             assert results[0].operation == "centrality"
             assert results[1].operation == "clustering"
     
-    def test_load_balancing(self, analytics_gateway):
+    def test_load_balancing(self, analytics_gateway) -> None:
         """Test round-robin load balancing"""
         services = [Mock(service_id=f"service-{i}") for i in range(3)]
         service_type = "analytics_engine"
@@ -330,12 +330,12 @@ class TestServiceRegistry:
     """Test suite for AnalyticsServiceRegistry"""
     
     @pytest.fixture
-    def service_registry(self):
+    def service_registry(self) -> None:
         """Create service registry"""
         return AnalyticsServiceRegistry()
     
     @pytest.mark.asyncio
-    async def test_service_registration(self, service_registry):
+    async def test_service_registration(self, service_registry) -> None:
         """Test service registration and discovery"""
         # Disable automatic health checks for testing
         with patch.object(service_registry, '_check_service_health', new_callable=AsyncMock):
@@ -363,7 +363,7 @@ class TestServiceRegistry:
             assert services[0].service_type == ServiceType.ANALYTICS_ENGINE
     
     @pytest.mark.asyncio
-    async def test_health_monitoring(self, service_registry):
+    async def test_health_monitoring(self, service_registry) -> None:
         """Test health monitoring functionality"""
         # Register service using the correct method signature
         service = await service_registry.register_service(
@@ -386,7 +386,7 @@ class TestServiceRegistry:
             assert updated_service.health_status == ServiceHealth.UNHEALTHY
     
     @pytest.mark.asyncio
-    async def test_service_metrics_update(self, service_registry):
+    async def test_service_metrics_update(self, service_registry) -> None:
         """Test service metrics tracking"""
         # Register service using the correct method signature
         service = await service_registry.register_service(
@@ -417,7 +417,7 @@ class TestEndToEndIntegration:
     """End-to-end integration tests"""
     
     @pytest.mark.asyncio
-    async def test_complete_analytics_workflow(self):
+    async def test_complete_analytics_workflow(self) -> None:
         """Test complete analytics workflow from request to response"""
         # This would be a comprehensive test that exercises the entire system
         # For now, we'll create a simplified version
@@ -444,7 +444,7 @@ class TestEndToEndIntegration:
         assert result is not None
     
     @pytest.mark.asyncio
-    async def test_error_handling_and_recovery(self):
+    async def test_error_handling_and_recovery(self) -> None:
         """Test error handling and recovery mechanisms"""
         # Test with failing connection
         mock_connection = Mock()

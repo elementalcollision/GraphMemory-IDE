@@ -9,7 +9,7 @@ import ssl
 import os
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class MTLSConfig:
     """Configuration class for mTLS setup"""
     
-    def __init__(self, cert_dir: str = "./certs"):
+    def __init__(self, cert_dir: str = "./certs") -> None:
         self.cert_dir = Path(cert_dir)
         self.ca_cert_path = self.cert_dir / "ca-cert.pem"
         self.server_cert_path = self.cert_dir / "server-cert.pem"
@@ -161,7 +161,7 @@ def create_mtls_context(cert_dir: Optional[str] = None) -> Optional[ssl.SSLConte
         raise
 
 
-def verify_client_certificate(cert_der: bytes) -> dict:
+def verify_client_certificate(cert_der: bytes) -> Dict[str, Any]:
     """
     Verify and extract information from client certificate
     

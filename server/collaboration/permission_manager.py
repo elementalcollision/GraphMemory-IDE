@@ -117,20 +117,20 @@ class PermissionAuditLog:
 class PermissionManager:
     """Advanced permission management system."""
     
-    def __init__(self, db_pool: asyncpg.Pool):
+    def __init__(self, db_pool: asyncpg.Pool) -> None:
         self.db_pool = db_pool
         self.system_roles: Dict[str, Role] = {}
         self.permission_cache: Dict[str, Dict[str, Set[str]]] = {}
         self.cache_ttl = 300  # 5 minutes
         self.last_cache_update = datetime.utcnow()
         
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the permission system with default roles."""
         await self._create_system_roles()
         await self._create_database_tables()
         print("Permission manager initialized with system roles")
     
-    async def _create_system_roles(self):
+    async def _create_system_roles(self) -> None:
         """Create default system roles."""
         # System Administrator
         admin_permissions = [
@@ -215,7 +215,7 @@ class PermissionManager:
             is_system_role=True
         )
     
-    async def _create_database_tables(self):
+    async def _create_database_tables(self) -> None:
         """Create database tables for permission management."""
         try:
             async with self.db_pool.acquire() as conn:
@@ -576,7 +576,7 @@ class PermissionManager:
                                    resource_type: ResourceType, resource_id: str,
                                    permission_action: PermissionAction, old_value: Optional[Dict[str, Any]],
                                    new_value: Optional[Dict[str, Any]], performed_by: str,
-                                   ip_address: Optional[str] = None, user_agent: Optional[str] = None):
+                                   ip_address: Optional[str] = None, user_agent: Optional[str] = None) -> None:
         """Log permission changes for audit purposes."""
         try:
             async with self.db_pool.acquire() as conn:
@@ -608,7 +608,7 @@ class PermissionManager:
             print(f"Error logging permission change: {e}")
     
     def _cache_user_permission(self, user_id: str, resource_type: ResourceType,
-                             resource_id: str, action: PermissionAction, team_id: Optional[str]):
+                             resource_id: str, action: PermissionAction, team_id: Optional[str]) -> None:
         """Cache a user permission for faster subsequent checks."""
         cache_key = f"{user_id}:{team_id or 'global'}"
         permission_key = f"{resource_type.value}:{resource_id}:{action.value}"
@@ -618,12 +618,12 @@ class PermissionManager:
         
         self.permission_cache[cache_key].add(permission_key)
     
-    def _invalidate_cache(self):
+    def _invalidate_cache(self) -> None:
         """Invalidate the entire permission cache."""
         self.permission_cache.clear()
         self.last_cache_update = datetime.utcnow()
     
-    def _invalidate_cache_for_user(self, user_id: str):
+    def _invalidate_cache_for_user(self, user_id: str) -> None:
         """Invalidate permission cache for a specific user."""
         keys_to_remove = [key for key in self.permission_cache.keys() if key.startswith(f"{user_id}:")]
         for key in keys_to_remove:
@@ -638,7 +638,7 @@ class PermissionManager:
 _permission_manager: Optional[PermissionManager] = None
 
 
-async def initialize_permission_manager(db_pool: asyncpg.Pool):
+async def initialize_permission_manager(db_pool: asyncpg.Pool) -> None:
     """Initialize the permission manager."""
     global _permission_manager
     _permission_manager = PermissionManager(db_pool)
@@ -650,7 +650,7 @@ def get_permission_manager() -> Optional[PermissionManager]:
     return _permission_manager
 
 
-async def shutdown_permission_manager():
+async def shutdown_permission_manager() -> None:
     """Shutdown the permission manager."""
     global _permission_manager
     if _permission_manager:

@@ -393,7 +393,7 @@ class ConfigurationManager:
     detection, validation, and runtime updates.
     """
     
-    def __init__(self, config: Optional[InstrumentationConfig] = None):
+    def __init__(self, config: Optional[InstrumentationConfig] = None) -> None:
         self.config = config or InstrumentationConfig.from_environment()
         self._validation_errors = []
         

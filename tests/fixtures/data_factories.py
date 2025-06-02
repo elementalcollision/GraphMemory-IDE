@@ -15,11 +15,11 @@ import pytest
 fake = Faker()
 
 @pytest.fixture(scope="function")
-def data_factory():
+def data_factory() -> None:
     """Main data factory for generating test data."""
     
     class TestDataFactory:
-        def __init__(self):
+        def __init__(self) -> None:
             self.fake = Faker()
             self.memory_types = ["procedural", "semantic", "episodic"]
             self.alert_severities = ["low", "medium", "high", "critical"]
@@ -233,7 +233,7 @@ def correlation_test_data(data_factory) -> Dict[str, Any]:
 
 # Specialized data generators
 @pytest.fixture(scope="function")
-def memory_search_test_data():
+def memory_search_test_data() -> None:
     """Generate data specifically for testing memory search functionality."""
     return {
         "queries": [
@@ -253,7 +253,7 @@ def memory_search_test_data():
     }
 
 @pytest.fixture(scope="function")
-def real_time_test_data():
+def real_time_test_data() -> None:
     """Generate data for testing real-time features."""
     return {
         "events": [
@@ -275,7 +275,7 @@ def real_time_test_data():
     }
 
 @pytest.fixture(scope="function")
-def edge_case_test_data():
+def edge_case_test_data() -> None:
     """Generate edge case data for robust testing."""
     return {
         "empty_data": [],
@@ -289,7 +289,7 @@ def edge_case_test_data():
 
 # Data validation fixtures
 @pytest.fixture(scope="function")
-def data_validator():
+def data_validator() -> None:
     """Provide data validation utilities for tests."""
     
     class DataValidator:

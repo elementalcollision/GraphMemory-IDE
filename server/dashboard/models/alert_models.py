@@ -142,7 +142,7 @@ class AlertRule(BaseModel):
     created_by: Optional[str] = None
     
     @validator('evaluation_window')
-    def validate_evaluation_window(cls, v):
+    def validate_evaluation_window(cls, v) -> None:
         if v.total_seconds() < 30:
             raise ValueError('Evaluation window must be at least 30 seconds')
         if v.total_seconds() > 3600:
@@ -150,7 +150,7 @@ class AlertRule(BaseModel):
         return v
     
     @validator('cooldown_period')
-    def validate_cooldown_period(cls, v):
+    def validate_cooldown_period(cls, v) -> None:
         if v.total_seconds() < 60:
             raise ValueError('Cooldown period must be at least 1 minute')
         return v
@@ -226,7 +226,7 @@ class Alert(BaseModel):
         """Get alert age in minutes"""
         return self.duration.total_seconds() / 60
     
-    def acknowledge(self, user: str, note: Optional[str] = None):
+    def acknowledge(self, user: str, note: Optional[str] = None) -> None:
         """Acknowledge the alert"""
         if self.status == AlertStatus.ACTIVE:
             self.status = AlertStatus.ACKNOWLEDGED
@@ -236,7 +236,7 @@ class Alert(BaseModel):
             if note:
                 self.notes.append(f"Acknowledged by {user}: {note}")
     
-    def resolve(self, user: str, note: Optional[str] = None):
+    def resolve(self, user: str, note: Optional[str] = None) -> None:
         """Resolve the alert"""
         if self.status in [AlertStatus.ACTIVE, AlertStatus.ACKNOWLEDGED]:
             self.status = AlertStatus.RESOLVED
@@ -318,13 +318,13 @@ class NotificationConfig(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
     @validator('webhook_url')
-    def validate_webhook_url(cls, v, values):
+    def validate_webhook_url(cls, v, values) -> None:
         if values.get('channel') == NotificationChannel.WEBHOOK and not v:
             raise ValueError('Webhook URL required for webhook notifications')
         return v
     
     @validator('email_addresses')
-    def validate_email_addresses(cls, v, values):
+    def validate_email_addresses(cls, v, values) -> None:
         if values.get('channel') == NotificationChannel.EMAIL and not v:
             raise ValueError('Email addresses required for email notifications')
         return v

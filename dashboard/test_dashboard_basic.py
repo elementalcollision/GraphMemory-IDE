@@ -14,7 +14,7 @@ from pathlib import Path
 dashboard_dir = Path(__file__).parent
 sys.path.insert(0, str(dashboard_dir))
 
-def test_imports():
+def test_imports() -> bool:
     """Test that all components can be imported"""
     print("🧪 Testing component imports...")
     
@@ -40,7 +40,7 @@ def test_imports():
         return False
 
 
-def test_api_client():
+def test_api_client() -> bool:
     """Test API client initialization"""
     print("\n🧪 Testing API client...")
     
@@ -65,7 +65,7 @@ def test_api_client():
         return False
 
 
-def test_chart_configs():
+def test_chart_configs() -> bool:
     """Test chart configuration generation"""
     print("\n🧪 Testing chart configurations...")
     
@@ -121,23 +121,25 @@ def test_chart_configs():
         return False
 
 
-def test_auth_utils():
+def test_auth_utils() -> bool:
     """Test authentication utilities"""
-    print("\n🧪 Testing authentication utilities...")
+    print("\n🧪 Testing auth utilities...")
     
     try:
-        from utils.auth_utils import get_auth_headers, extract_expiry
+        from utils.auth_utils import get_auth_headers, validate_token
         
-        # Test empty headers
-        headers = get_auth_headers()
-        print(f"✅ Empty auth headers: {headers}")
+        # Test auth headers generation
+        headers = get_auth_headers("test_token")
+        assert isinstance(headers, dict)
+        assert 'Authorization' in headers
+        print("✅ Auth headers generation works")
         
-        # Test token expiry extraction (with invalid token)
+        # Test token validation (will likely fail without proper setup)
         try:
-            expiry = extract_expiry("invalid.token.here")
-            print(f"⚠️  Token expiry extraction handled gracefully: {expiry}")
+            is_valid = validate_token("test_token")
+            print(f"🔑 Token validation: {'Valid' if is_valid else 'Invalid'}")
         except Exception as e:
-            print(f"⚠️  Token expiry extraction failed gracefully: {e}")
+            print(f"⚠️  Token validation test failed (expected): {e}")
         
         return True
         
@@ -146,7 +148,7 @@ def test_auth_utils():
         return False
 
 
-def test_file_structure():
+def test_file_structure() -> bool:
     """Test that all required files exist"""
     print("\n🧪 Testing file structure...")
     
@@ -180,7 +182,7 @@ def test_file_structure():
         return True
 
 
-def main():
+def main() -> bool:
     """Run all tests"""
     print("🚀 Starting Dashboard Basic Tests\n")
     

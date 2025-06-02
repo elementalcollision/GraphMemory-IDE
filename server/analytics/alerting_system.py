@@ -138,7 +138,7 @@ class Alert:
 class MetricEvaluator:
     """Evaluates metrics against alert rules."""
     
-    def __init__(self, analytics_engine: AnalyticsEngine, db_pool: asyncpg.Pool):
+    def __init__(self, analytics_engine: AnalyticsEngine, db_pool: asyncpg.Pool) -> None:
         self.analytics_engine = analytics_engine
         self.db_pool = db_pool
     
@@ -249,7 +249,7 @@ class MetricEvaluator:
 class NotificationService:
     """Handles sending notifications through various channels."""
     
-    def __init__(self, settings):
+    def __init__(self, settings) -> None:
         self.settings = settings
         self.notification_handlers = {
             NotificationChannel.EMAIL: self._send_email,
@@ -435,7 +435,7 @@ class AlertingSystem:
         db_pool: asyncpg.Pool,
         redis_client,
         settings
-    ):
+    ) -> None:
         self.analytics_engine = analytics_engine
         self.db_pool = db_pool
         self.redis_client = redis_client
@@ -452,7 +452,7 @@ class AlertingSystem:
         self._monitoring_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the alerting system."""
         try:
             # Create database tables
@@ -475,14 +475,14 @@ class AlertingSystem:
             print(f"Failed to initialize alerting system: {e}")
             raise
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the alerting system."""
         if self._monitoring_task:
             self._monitoring_task.cancel()
         if self._cleanup_task:
             self._cleanup_task.cancel()
     
-    async def _create_tables(self):
+    async def _create_tables(self) -> None:
         """Create necessary database tables."""
         async with self.db_pool.acquire() as conn:
             # Alert rules table
@@ -531,7 +531,7 @@ class AlertingSystem:
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_active_alerts_status ON active_alerts(status)")
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_active_alerts_severity ON active_alerts(severity)")
     
-    async def _load_alert_rules(self):
+    async def _load_alert_rules(self) -> None:
         """Load alert rules from database."""
         async with self.db_pool.acquire() as conn:
             rows = await conn.fetch("SELECT * FROM alert_rules WHERE enabled = TRUE")
@@ -557,7 +557,7 @@ class AlertingSystem:
                 
                 self.alert_rules[rule.rule_id] = rule
     
-    async def _load_active_alerts(self):
+    async def _load_active_alerts(self) -> None:
         """Load active alerts from database."""
         async with self.db_pool.acquire() as conn:
             rows = await conn.fetch("SELECT * FROM active_alerts WHERE status = 'active'")
@@ -582,7 +582,7 @@ class AlertingSystem:
                 
                 self.active_alerts[alert.alert_id] = alert
     
-    async def _create_default_rules(self):
+    async def _create_default_rules(self) -> None:
         """Create default alert rules for common scenarios."""
         from typing import cast
         
@@ -697,7 +697,7 @@ class AlertingSystem:
             print(f"Failed to create alert rule: {e}")
             return False
     
-    async def _monitoring_loop(self):
+    async def _monitoring_loop(self) -> None:
         """Main monitoring loop that checks all alert rules."""
         while True:
             try:
@@ -740,7 +740,7 @@ class AlertingSystem:
                 print(f"Error in monitoring loop: {e}")
                 await asyncio.sleep(30)
     
-    async def _handle_triggered_alert(self, alert: Alert, rule: AlertRule):
+    async def _handle_triggered_alert(self, alert: Alert, rule: AlertRule) -> None:
         """Handle a triggered alert."""
         try:
             # Check if there's already an active alert for this rule
@@ -780,7 +780,7 @@ class AlertingSystem:
         except Exception as e:
             print(f"Error handling triggered alert: {e}")
     
-    async def _save_alert_to_database(self, alert: Alert):
+    async def _save_alert_to_database(self, alert: Alert) -> None:
         """Save alert to database."""
         async with self.db_pool.acquire() as conn:
             await conn.execute("""
@@ -796,7 +796,7 @@ class AlertingSystem:
             json.dumps(alert.context), json.dumps(alert.notification_history)
             )
     
-    async def _update_alert_in_database(self, alert: Alert):
+    async def _update_alert_in_database(self, alert: Alert) -> None:
         """Update alert in database."""
         async with self.db_pool.acquire() as conn:
             await conn.execute("""
@@ -812,7 +812,7 @@ class AlertingSystem:
             alert.alert_id
             )
     
-    async def _cleanup_loop(self):
+    async def _cleanup_loop(self) -> None:
         """Clean up resolved alerts periodically."""
         while True:
             try:
@@ -883,7 +883,7 @@ async def initialize_alerting_system(
     db_pool: asyncpg.Pool,
     redis_client,
     settings
-):
+) -> None:
     """Initialize alerting system."""
     global _alerting_system
     _alerting_system = AlertingSystem(analytics_engine, db_pool, redis_client, settings)
@@ -895,7 +895,7 @@ def get_alerting_system() -> Optional[AlertingSystem]:
     return _alerting_system
 
 
-async def shutdown_alerting_system():
+async def shutdown_alerting_system() -> None:
     """Shutdown alerting system."""
     global _alerting_system
     if _alerting_system:

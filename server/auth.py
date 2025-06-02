@@ -240,7 +240,7 @@ async def get_optional_current_user(token: str = Depends(oauth2_scheme)) -> Opti
     user = get_user(username=token_data.username)
     return user
 
-def require_scopes(*required_scopes: str):
+def require_scopes(*required_scopes: str) -> None:
     """Decorator factory to require specific scopes"""
     def dependency(current_user: User = Depends(get_current_user)):
         if not JWT_ENABLED:
@@ -400,7 +400,7 @@ def get_security_headers() -> Dict[str, str]:
     }
 
 # Initialize default admin user if not exists
-def initialize_default_users():
+def initialize_default_users() -> None:
     """Initialize default users for development"""
     if not fake_users_db:
         logger.info("Initializing default users")

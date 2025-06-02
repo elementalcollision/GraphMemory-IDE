@@ -83,11 +83,11 @@ class PerformanceDataStore:
     Based on research from production monitoring patterns.
     """
     
-    def __init__(self, storage_path: str = "tests/performance_data"):
+    def __init__(self, storage_path: str = "tests/performance_data") -> None:
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
         
-    def save_benchmark(self, benchmark: PerformanceBenchmark):
+    def save_benchmark(self, benchmark: PerformanceBenchmark) -> None:
         """Save performance benchmark to persistent storage."""
         filename = f"{benchmark.test_name}_{benchmark.environment}_benchmarks.json"
         filepath = self.storage_path / filename
@@ -166,7 +166,7 @@ class PrometheusMetricsCollector:
     Based on research from FastAPI observability patterns.
     """
     
-    def __init__(self, registry: Optional[CollectorRegistry] = None):
+    def __init__(self, registry: Optional[CollectorRegistry] = None) -> None:
         self.registry = registry or CollectorRegistry()
         self.response_time_histogram: Optional[Histogram] = None
         self.success_rate_gauge: Optional[Gauge] = None
@@ -175,7 +175,7 @@ class PrometheusMetricsCollector:
         self.request_counter: Optional[Counter] = None
         self._setup_metrics()
     
-    def _setup_metrics(self):
+    def _setup_metrics(self) -> None:
         """Setup Prometheus metrics for performance monitoring."""
         self.response_time_histogram = Histogram(
             'graphmemory_test_response_time_seconds',
@@ -212,7 +212,7 @@ class PrometheusMetricsCollector:
             registry=self.registry
         )
     
-    def record_metrics(self, benchmark: PerformanceBenchmark):
+    def record_metrics(self, benchmark: PerformanceBenchmark) -> None:
         """Record performance metrics to Prometheus."""
         test_name = benchmark.test_name
         
@@ -254,7 +254,7 @@ class PrometheusMetricsCollector:
                     # Alternative approach if direct access fails
                     pass
     
-    def push_metrics(self, gateway: str, job: str = "graphmemory_load_tests"):
+    def push_metrics(self, gateway: str, job: str = "graphmemory_load_tests") -> None:
         """Push metrics to Prometheus Pushgateway."""
         try:
             push_to_gateway(gateway, job=job, registry=self.registry)
@@ -269,7 +269,7 @@ class PerformanceRegressionDetector:
     Based on research from production monitoring and alerting.
     """
     
-    def __init__(self, sensitivity: float = 0.2):
+    def __init__(self, sensitivity: float = 0.2) -> None:
         self.sensitivity = sensitivity  # 20% degradation threshold
     
     def analyze_regression(
@@ -386,7 +386,7 @@ class PerformanceBenchmarkSuite:
         data_store: Optional[PerformanceDataStore] = None,
         metrics_collector: Optional[PrometheusMetricsCollector] = None,
         regression_detector: Optional[PerformanceRegressionDetector] = None
-    ):
+    ) -> None:
         self.data_store = data_store or PerformanceDataStore()
         self.metrics_collector = metrics_collector or PrometheusMetricsCollector()
         self.regression_detector = regression_detector or PerformanceRegressionDetector()
@@ -460,7 +460,7 @@ class PerformanceBenchmarkSuite:
         self, 
         benchmark: PerformanceBenchmark, 
         regression_analysis: Dict[str, Any]
-    ):
+    ) -> None:
         """Print formatted benchmark results."""
         print(f"\n📊 Performance Benchmark Results: {benchmark.test_name}")
         print("=" * 60)
@@ -501,7 +501,7 @@ class TestPerformanceBenchmarking:
     """Test performance benchmarking framework."""
     
     @pytest.mark.asyncio
-    async def test_baseline_performance_benchmark(self):
+    async def test_baseline_performance_benchmark(self) -> None:
         """Establish baseline performance benchmark."""
         suite = PerformanceBenchmarkSuite()
         
@@ -522,7 +522,7 @@ class TestPerformanceBenchmarking:
         print("✅ Baseline performance benchmark established")
     
     @pytest.mark.asyncio
-    async def test_scalability_benchmark(self):
+    async def test_scalability_benchmark(self) -> None:
         """Test scalability under increasing load."""
         suite = PerformanceBenchmarkSuite()
         
@@ -565,7 +565,7 @@ class TestPerformanceBenchmarking:
         print("✅ Scalability benchmark completed successfully")
     
     @pytest.mark.asyncio
-    async def test_analytics_performance_benchmark(self):
+    async def test_analytics_performance_benchmark(self) -> None:
         """Test performance of analytics-heavy workflows."""
         suite = PerformanceBenchmarkSuite()
         
@@ -585,7 +585,7 @@ class TestPerformanceBenchmarking:
         print("✅ Analytics performance benchmark completed")
     
     @pytest.mark.asyncio
-    async def test_performance_regression_detection(self):
+    async def test_performance_regression_detection(self) -> None:
         """Test performance regression detection with artificial degradation."""
         suite = PerformanceBenchmarkSuite()
         
@@ -636,7 +636,7 @@ if __name__ == "__main__":
     # Run benchmarks directly for development
     import asyncio
     
-    async def main():
+    async def main() -> None:
         suite = PerformanceBenchmarkSuite()
         
         print("🧪 Running development performance benchmarks...")

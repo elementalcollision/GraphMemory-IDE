@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-02T10:22:31.906637",
+    "version": "1.0.0",
+    "project": "GraphMemory-IDE",
+    "audit_type": "enhanced_security_audit"
+  },
+  "summary": {
+    "total_findings": 0,
+    "critical_findings": 0,
+    "high_findings": 0,
+    "medium_findings": 0,
+    "low_findings": 0,
+    "info_findings": 0,
+    "compliance_score": 100,
+    "security_posture": "SECURE",
+    "execution_time": 2.5033950805664062e-05
+  },
+  "findings_by_tool": {},
+  "findings_by_category": {},
+  "performance_metrics": {
+    "total_execution_time": 2.5033950805664062e-05,
+    "findings_per_second": 0.0,
+    "tools_executed": 0,
+    "parallel_execution": true,
+    "memory_usage": {
+      "rss_mb": 32.640625,
+      "vms_mb": 401533.1875,
+      "percent": 0.13281504313151044
+    }
+  },
+  "integration_status": {
+    "bandit": false,
+    "semgrep": false
+  },
+  "findings": []
+}

@@ -14,7 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def store_token(token: str):
+def store_token(token: str) -> None:
     """Store JWT token in session state"""
     try:
         st.session_state.access_token = token
@@ -59,7 +59,7 @@ def extract_expiry(token: str) -> Optional[datetime]:
     return None
 
 
-def clear_auth_session():
+def clear_auth_session() -> None:
     """Clear authentication data from session state"""
     auth_keys = ['access_token', 'token_expires', 'authenticated']
     for key in auth_keys:

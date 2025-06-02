@@ -74,13 +74,13 @@ class CollaborationRoom:
     created_at: float
     last_activity: float
     
-    def add_user(self, user_id: str, websocket: WebSocket):
+    def add_user(self, user_id: str, websocket: WebSocket) -> None:
         """Add user to the collaboration room"""
         self.connected_users.add(user_id)
         self.websockets[user_id] = websocket
         self.last_activity = time.time()
     
-    def remove_user(self, user_id: str):
+    def remove_user(self, user_id: str) -> None:
         """Remove user from the collaboration room"""
         self.connected_users.discard(user_id)
         self.websockets.pop(user_id, None)
@@ -109,7 +109,7 @@ class CollaborationWebSocketManager:
     Future: Integration with Phase 2.1 collaboration engine components
     """
     
-    def __init__(self, redis_url: str = "redis://localhost:6379"):
+    def __init__(self, redis_url: str = "redis://localhost:6379") -> None:
         # WebSocket connection management
         self.active_rooms: Dict[str, CollaborationRoom] = {}
         self.user_presence: Dict[str, UserPresence] = {}
@@ -129,7 +129,7 @@ class CollaborationWebSocketManager:
         
         logger.info("CollaborationWebSocketManager initialized")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize Redis connections and CRDT bridge"""
         try:
             self.redis_client = redis.from_url(self.redis_url)
@@ -217,7 +217,7 @@ class CollaborationWebSocketManager:
             logger.error(f"Failed to connect user {user_id}: {e}")
             raise HTTPException(status_code=500, detail="Connection failed")
     
-    async def disconnect_user(self, user_id: str, room_id: str):
+    async def disconnect_user(self, user_id: str, room_id: str) -> None:
         """Disconnect user from collaboration room"""
         try:
             if room_id in self.active_rooms:
@@ -247,7 +247,7 @@ class CollaborationWebSocketManager:
         message: Dict[str, Any],
         user_id: str,
         room_id: str
-    ):
+    ) -> None:
         """Handle incoming WebSocket message"""
         start_time = time.time()
         
@@ -297,7 +297,7 @@ class CollaborationWebSocketManager:
         data: Dict[str, Any],
         user_id: str,
         room_id: str
-    ):
+    ) -> None:
         """Handle collaborative edit operation through CRDT bridge"""
         try:
             if not self.crdt_bridge:
@@ -346,7 +346,7 @@ class CollaborationWebSocketManager:
         data: Dict[str, Any], 
         user_id: str, 
         room_id: str
-    ):
+    ) -> None:
         """Handle cursor position update"""
         try:
             # Update user presence with cursor info
@@ -375,7 +375,7 @@ class CollaborationWebSocketManager:
         data: Dict[str, Any], 
         user_id: str, 
         room_id: str
-    ):
+    ) -> None:
         """Handle user presence update"""
         try:
             if user_id in self.user_presence:
@@ -398,7 +398,7 @@ class CollaborationWebSocketManager:
         data: Dict[str, Any], 
         user_id: str, 
         room_id: str
-    ):
+    ) -> None:
         """Handle manual conflict resolution (Week 1: Basic implementation)"""
         try:
             # Week 1: Basic conflict resolution placeholder
@@ -427,7 +427,7 @@ class CollaborationWebSocketManager:
         websocket: WebSocket, 
         memory_id: str, 
         tenant_id: str
-    ):
+    ) -> None:
         """Send current memory state to newly connected user via CRDT bridge"""
         try:
             if self.crdt_bridge:
@@ -466,7 +466,7 @@ class CollaborationWebSocketManager:
         room_id: str, 
         message: Dict[str, Any],
         exclude_user: Optional[str] = None
-    ):
+    ) -> None:
         """Broadcast message to all users in a room"""
         if room_id not in self.active_rooms:
             return
@@ -501,7 +501,7 @@ class CollaborationWebSocketManager:
         room_id: str, 
         user_id: str, 
         status: str
-    ):
+    ) -> None:
         """Broadcast user presence update"""
         presence_data = None
         if user_id in self.user_presence:
@@ -526,7 +526,7 @@ class CollaborationWebSocketManager:
             }
         }, exclude_user=user_id)
     
-    async def _send_message(self, websocket: WebSocket, message: Dict[str, Any]):
+    async def _send_message(self, websocket: WebSocket, message: Dict[str, Any]) -> None:
         """Send message to specific WebSocket"""
         try:
             await websocket.send_text(json.dumps(message))
@@ -534,7 +534,7 @@ class CollaborationWebSocketManager:
             logger.error(f"Error sending WebSocket message: {e}")
             raise
     
-    async def _send_error(self, websocket: WebSocket, error_message: str):
+    async def _send_error(self, websocket: WebSocket, error_message: str) -> None:
         """Send error message to WebSocket"""
         await self._send_message(websocket, {
             "type": MessageType.ERROR,

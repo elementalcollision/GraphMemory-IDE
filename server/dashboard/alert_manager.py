@@ -33,21 +33,25 @@ from pathlib import Path
 # Internal imports
 from .models.alert_models import Alert, AlertSeverity, AlertCategory, AlertStatus
 from .notification_dispatcher import NotificationDispatcher
+from types import TracebackType
 
 # Simple fallback circuit breaker for demo purposes
 class SimpleCircuitBreaker:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
     
-    async def __aenter__(self):
+    async def __aenter__(self) -> None:
         return self
     
-    async def __aexit__(self, *args):
+    async def __aexit__(self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType]) -> None:
         pass
 
 # Simple error handler
 class SimpleErrorHandler:
-    async def handle_error(self, error, context):
+    async def handle_error(self, error, context) -> None:
         logger.error(f"Error in {context}: {error}")
 
         # Initialize with simple implementations
@@ -149,7 +153,7 @@ class AlertManager:
         notification_dispatcher: Optional[NotificationDispatcher] = None,
         max_alerts_memory: int = 10000,
         escalation_check_interval: int = 60  # seconds
-    ):
+    ) -> None:
         self.db_path = Path(db_path)
         self.notification_dispatcher = notification_dispatcher
         self.max_alerts_memory = max_alerts_memory

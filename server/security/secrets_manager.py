@@ -176,7 +176,7 @@ class APIKeyManager:
     Production-grade API key management with scoped permissions and automated rotation.
     """
     
-    def __init__(self, storage: SecureKeyStorage, config: APIKeyConfig):
+    def __init__(self, storage: SecureKeyStorage, config: APIKeyConfig) -> None:
         self.storage = storage
         self.config = config
         self.api_keys: Dict[str, SecretMetadata] = {}
@@ -473,7 +473,7 @@ class SecretsManager:
     High-level secrets management interface for all secret types.
     """
     
-    def __init__(self, storage: SecureKeyStorage):
+    def __init__(self, storage: SecureKeyStorage) -> None:
         self.storage = storage
         self.api_key_manager = APIKeyManager(storage, APIKeyConfig())
         self.environment_secrets: Dict[Environment, Dict[str, Any]] = {}

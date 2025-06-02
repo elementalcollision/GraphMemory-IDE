@@ -29,7 +29,7 @@ except ImportError:
 
 
 @st.fragment(run_every=3)
-def render_analytics_charts():
+def render_analytics_charts() -> None:
     """Render real-time analytics charts"""
     try:
         # Get streaming state
@@ -76,7 +76,7 @@ def render_analytics_charts():
 
 
 @st.fragment(run_every=5)
-def render_memory_charts():
+def render_memory_charts() -> None:
     """Render real-time memory charts"""
     try:
         # Get streaming state
@@ -123,7 +123,7 @@ def render_memory_charts():
 
 
 @st.fragment(run_every=2)
-def render_graph_charts():
+def render_graph_charts() -> None:
     """Render real-time graph charts"""
     try:
         # Get streaming state
@@ -154,7 +154,7 @@ def render_graph_charts():
         logger.error(f"Graph charts error: {e}")
 
 
-def render_fallback_performance_chart(analytics_data: Dict[str, Any]):
+def render_fallback_performance_chart(analytics_data: Dict[str, Any]) -> None:
     """Fallback chart for system performance using Streamlit native charts"""
     import pandas as pd
     
@@ -172,7 +172,7 @@ def render_fallback_performance_chart(analytics_data: Dict[str, Any]):
     st.bar_chart(df.set_index('Metric'))
 
 
-def render_fallback_response_chart(analytics_data: Dict[str, Any]):
+def render_fallback_response_chart(analytics_data: Dict[str, Any]) -> None:
     """Fallback chart for response time using Streamlit native charts"""
     import pandas as pd
     
@@ -187,7 +187,7 @@ def render_fallback_response_chart(analytics_data: Dict[str, Any]):
     st.line_chart(df.set_index('Time'))
 
 
-def render_fallback_memory_distribution(memory_data: Dict[str, Any]):
+def render_fallback_memory_distribution(memory_data: Dict[str, Any]) -> None:
     """Fallback chart for memory distribution using Streamlit native charts"""
     import pandas as pd
     
@@ -206,7 +206,7 @@ def render_fallback_memory_distribution(memory_data: Dict[str, Any]):
     st.bar_chart(df.set_index('Memory Type'))
 
 
-def render_fallback_memory_growth(memory_data: Dict[str, Any]):
+def render_fallback_memory_growth(memory_data: Dict[str, Any]) -> None:
     """Fallback chart for memory growth using Streamlit native charts"""
     import pandas as pd
     
@@ -223,7 +223,7 @@ def render_fallback_memory_growth(memory_data: Dict[str, Any]):
     st.bar_chart(df.set_index('Metric'))
 
 
-def render_fallback_graph_metrics(graph_data: Dict[str, Any]):
+def render_fallback_graph_metrics(graph_data: Dict[str, Any]) -> None:
     """Fallback chart for graph metrics using Streamlit native charts"""
     import pandas as pd
     
@@ -243,7 +243,7 @@ def render_fallback_graph_metrics(graph_data: Dict[str, Any]):
     st.line_chart(df.set_index('Metric'))
 
 
-def render_custom_chart(title: str, chart_config: Dict[str, Any], height: str = "400px"):
+def render_custom_chart(title: str, chart_config: Dict[str, Any], height: str = "400px") -> None:
     """Render a custom ECharts chart with fallback"""
     st.subheader(title)
     
@@ -257,7 +257,7 @@ def render_custom_chart(title: str, chart_config: Dict[str, Any], height: str = 
         st.info("📊 ECharts not available. Please install streamlit-echarts for enhanced visualizations.")
 
 
-def render_real_time_indicator():
+def render_real_time_indicator() -> None:
     """Render real-time streaming indicator"""
     streaming = st.session_state.get('streaming', True)
     
@@ -275,7 +275,7 @@ def render_real_time_indicator():
         """, unsafe_allow_html=True)
 
 
-def render_chart_controls():
+def render_chart_controls() -> None:
     """Render chart control options"""
     with st.expander("📊 Chart Options"):
         col1, col2 = st.columns(2)

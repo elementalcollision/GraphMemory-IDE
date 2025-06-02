@@ -74,7 +74,7 @@ class PostgreSQLBackupManager:
                  database_url: str,
                  backup_storage_path: str,
                  wal_archive_path: str,
-                 metrics_collector: Optional[MetricsCollector] = None):
+                 metrics_collector: Optional[MetricsCollector] = None) -> None:
         self.database_url = database_url
         self.backup_storage_path = Path(backup_storage_path)
         self.wal_archive_path = Path(wal_archive_path)
@@ -423,7 +423,7 @@ recovery_target_time = '{target_time.strftime("%Y-%m-%d %H:%M:%S")}'
 recovery_target_action = 'promote'
 """
     
-    async def _save_backup_metadata(self, metadata: BackupMetadata):
+    async def _save_backup_metadata(self, metadata: BackupMetadata) -> None:
         """Save backup metadata to file"""
         backup_dir = self.backup_storage_path / metadata.backup_id
         metadata_file = backup_dir / "metadata.json"
@@ -437,7 +437,7 @@ recovery_target_action = 'promote'
         async with aiofiles.open(metadata_file, 'w') as f:
             await f.write(json.dumps(metadata_dict, indent=2))
     
-    async def _upload_to_s3(self, local_path: Path, s3_key: str):
+    async def _upload_to_s3(self, local_path: Path, s3_key: str) -> None:
         """Upload file to S3 bucket"""
         if not self.s3_client:
             return

@@ -50,7 +50,7 @@ PERFORMANCE_BENCHMARKS = {
 class DatabasePerformanceTester:
     """Comprehensive database performance testing framework."""
     
-    def __init__(self, pool_manager: DatabaseConnectionPoolManager, performance_monitor: DatabasePerformanceMonitor):
+    def __init__(self, pool_manager: DatabaseConnectionPoolManager, performance_monitor: DatabasePerformanceMonitor) -> None:
         self.pool_manager = pool_manager
         self.performance_monitor = performance_monitor
         self.test_results = {}
@@ -67,11 +67,11 @@ class DatabasePerformanceTester:
             
             print(f"\n📊 Testing {pool_type.upper()} pool (ID: {pool_id})")
             
-            async def stress_test_single_pool():
+            async def stress_test_single_pool() -> None:
                 """Stress test individual pool with connection lifecycle validation."""
                 start_time = time.time()
                 
-                async def single_connection_test(connection_num: int):
+                async def single_connection_test(connection_num: int) -> None:
                     """Test individual connection with performance monitoring."""
                     connection_start = time.time()
                     
@@ -178,7 +178,7 @@ class DatabasePerformanceTester:
             for pattern_name, pattern_config in query_patterns.items():
                 print(f"  📋 Testing {pattern_name}...")
                 
-                async def benchmark_query_pattern():
+                async def benchmark_query_pattern() -> None:
                     """Benchmark specific query pattern."""
                     conn = await self.pool_manager.get_connection(pool_id)
                     if not conn:
@@ -256,7 +256,7 @@ class DatabasePerformanceTester:
             
             print(f"\n♻️  Testing {pool_type.upper()} connection lifecycle")
             
-            async def test_connection_lifecycle():
+            async def test_connection_lifecycle() -> None:
                 """Test complete connection lifecycle."""
                 lifecycle_metrics = {
                     "connection_creation_times": [],
@@ -528,7 +528,7 @@ class DatabasePerformanceTester:
 # Pytest tests using the performance tester
 
 @pytest.mark.asyncio
-async def test_connection_pool_stress_test(multi_database_setup):
+async def test_connection_pool_stress_test(multi_database_setup) -> None:
     """Test connection pool stress under 100 concurrent connections."""
     pool_manager = multi_database_setup["pool_manager"]
     performance_monitor = DatabasePerformanceMonitor()
@@ -555,7 +555,7 @@ async def test_connection_pool_stress_test(multi_database_setup):
 
 
 @pytest.mark.asyncio
-async def test_query_performance_benchmark(multi_database_setup):
+async def test_query_performance_benchmark(multi_database_setup) -> None:
     """Test query performance benchmarking for all database types."""
     pool_manager = multi_database_setup["pool_manager"]
     performance_monitor = DatabasePerformanceMonitor()
@@ -587,7 +587,7 @@ async def test_query_performance_benchmark(multi_database_setup):
 
 
 @pytest.mark.asyncio
-async def test_connection_lifecycle_validation(multi_database_setup):
+async def test_connection_lifecycle_validation(multi_database_setup) -> None:
     """Test connection creation, reuse, and cleanup lifecycle."""
     pool_manager = multi_database_setup["pool_manager"]
     performance_monitor = DatabasePerformanceMonitor()
@@ -616,7 +616,7 @@ async def test_connection_lifecycle_validation(multi_database_setup):
 
 
 @pytest.mark.asyncio
-async def test_database_specific_performance_patterns(multi_database_setup):
+async def test_database_specific_performance_patterns(multi_database_setup) -> None:
     """Test database-specific performance patterns and optimizations."""
     pool_manager = multi_database_setup["pool_manager"]
     performance_monitor = DatabasePerformanceMonitor()
@@ -664,7 +664,7 @@ async def test_database_specific_performance_patterns(multi_database_setup):
 
 
 @pytest.mark.asyncio
-async def test_performance_baseline_establishment(multi_database_setup):
+async def test_performance_baseline_establishment(multi_database_setup) -> None:
     """Test establishment and validation of performance baselines."""
     pool_manager = multi_database_setup["pool_manager"]
     performance_monitor = DatabasePerformanceMonitor()
@@ -678,7 +678,7 @@ async def test_performance_baseline_establishment(multi_database_setup):
             conn = await pool_manager.get_connection(pool_id)
             if conn:
                 try:
-                    async def operation():
+                    async def operation() -> None:
                         return await DatabasePerformanceTester(pool_manager, performance_monitor)._perform_database_operation(pool_type, conn)
                     
                     await performance_monitor.profile_operation(
@@ -710,7 +710,7 @@ if __name__ == "__main__":
     # Run performance tests standalone
     import asyncio
     
-    async def main():
+    async def main() -> None:
         from tests.fixtures.advanced_database_fixtures import multi_database_setup
         
         # This would need proper fixture setup in standalone mode

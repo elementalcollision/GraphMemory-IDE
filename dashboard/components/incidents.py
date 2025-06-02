@@ -39,7 +39,7 @@ INCIDENT_STATUS_ICONS = {
 }
 
 
-def incident_overview_dashboard():
+def incident_overview_dashboard() -> None:
     """Executive dashboard for incident overview"""
     
     st.subheader("📊 Incident Overview")
@@ -146,7 +146,7 @@ def incident_overview_dashboard():
             st.info("No category data available")
 
 
-def incident_detail_view(incident_id: str):
+def incident_detail_view(incident_id: str) -> None:
     """Detailed incident management interface"""
     
     st.subheader(f"🔍 Incident Details: {incident_id}")
@@ -213,7 +213,7 @@ def incident_detail_view(incident_id: str):
         _display_incident_actions(incident)
 
 
-def incident_timeline_display(incidents: List[Dict]):
+def incident_timeline_display(incidents: List[Dict]) -> None:
     """Visual timeline of incident events"""
     
     st.subheader("📅 Incident Timeline")
@@ -265,7 +265,7 @@ def incident_timeline_display(incidents: List[Dict]):
             st.divider()
 
 
-def incident_correlation_viewer(correlation_id: str):
+def incident_correlation_viewer(correlation_id: str) -> None:
     """Visual display of alert correlations"""
     
     st.subheader(f"🔗 Alert Correlation: {correlation_id}")
@@ -355,7 +355,7 @@ def incident_correlation_viewer(correlation_id: str):
             st.divider()
 
 
-def incident_management_controls():
+def incident_management_controls() -> None:
     """Bulk incident management operations"""
     
     st.subheader("🔧 Incident Management")
@@ -399,7 +399,7 @@ def incident_management_controls():
 
 # Helper functions
 
-def _display_incident_details(incident: Dict):
+def _display_incident_details(incident: Dict) -> None:
     """Display detailed incident information"""
     
     # Basic details
@@ -425,7 +425,7 @@ def _display_incident_details(incident: Dict):
             st.write(f"• {host}")
 
 
-def _display_incident_timeline(incident: Dict):
+def _display_incident_timeline(incident: Dict) -> None:
     """Display incident timeline events"""
     
     st.write("**Event Timeline:**")
@@ -440,7 +440,7 @@ def _display_incident_timeline(incident: Dict):
             st.write(f"• {event['event']}")
 
 
-def _display_incident_alerts(incident: Dict):
+def _display_incident_alerts(incident: Dict) -> None:
     """Display related alerts for incident"""
     
     st.write(f"**Related Alerts ({len(incident['alert_ids'])}):**")
@@ -457,7 +457,7 @@ def _display_incident_alerts(incident: Dict):
                 st.rerun()
 
 
-def _display_incident_actions(incident: Dict):
+def _display_incident_actions(incident: Dict) -> None:
     """Display incident action controls"""
     
     st.write("**Available Actions:**")
@@ -506,43 +506,43 @@ def _format_timestamp(timestamp_str: str) -> str:
 
 # Incident action functions (mock implementations)
 
-def _bulk_start_investigation(incident_ids: List[str]):
+def _bulk_start_investigation(incident_ids: List[str]) -> None:
     """Start investigation for multiple incidents"""
     # Mock implementation
     pass
 
 
-def _bulk_resolve_incidents(incident_ids: List[str]):
+def _bulk_resolve_incidents(incident_ids: List[str]) -> None:
     """Resolve multiple incidents"""
     # Mock implementation
     pass
 
 
-def _merge_incidents(incident_ids: List[str]):
+def _merge_incidents(incident_ids: List[str]) -> None:
     """Merge multiple incidents"""
     # Mock implementation
     pass
 
 
-def _start_investigation(incident_id: str):
+def _start_investigation(incident_id: str) -> None:
     """Start investigation for single incident"""
     # Mock implementation
     pass
 
 
-def _resolve_incident(incident_id: str):
+def _resolve_incident(incident_id: str) -> None:
     """Resolve single incident"""
     # Mock implementation
     pass
 
 
-def _close_incident(incident_id: str):
+def _close_incident(incident_id: str) -> None:
     """Close single incident"""
     # Mock implementation
     pass
 
 
-def _add_incident_notes(incident_id: str, notes: str):
+def _add_incident_notes(incident_id: str, notes: str) -> None:
     """Add notes to incident"""
     # Mock implementation
     pass
@@ -550,7 +550,7 @@ def _add_incident_notes(incident_id: str, notes: str):
 
 # Main incident dashboard component
 
-def incident_dashboard():
+def incident_dashboard() -> None:
     """Main incident management dashboard"""
     
     st.title("🚨 Incident Management Dashboard")

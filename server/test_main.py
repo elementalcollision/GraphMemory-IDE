@@ -17,7 +17,7 @@ TELEMETRY_EVENT = {
     "data": {"filename": "main.py", "language": "python"}
 }
 
-def test_ingest_telemetry_success():
+def test_ingest_telemetry_success() -> None:
     with patch("server.main.conn.execute") as mock_execute:
         mock_execute.return_value = None
         response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
@@ -25,34 +25,34 @@ def test_ingest_telemetry_success():
         assert response.json()["status"] == "ok"
         assert "Event ingested" in response.json()["message"]
 
-def test_ingest_telemetry_db_error():
+def test_ingest_telemetry_db_error() -> None:
     with patch("server.main.conn.execute", side_effect=Exception("DB error")):
         response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
         assert response.status_code == 500
         assert "Failed to store event" in response.json()["detail"]
 
-def test_ingest_telemetry_missing_event_type():
+def test_ingest_telemetry_missing_event_type() -> None:
     bad_event = deepcopy(TELEMETRY_EVENT)
     del bad_event["event_type"]
     response = client.post("/telemetry/ingest", json=bad_event)
     assert response.status_code == 422
     assert "event_type" in response.text
 
-def test_ingest_telemetry_invalid_timestamp_type():
+def test_ingest_telemetry_invalid_timestamp_type() -> None:
     bad_event = deepcopy(TELEMETRY_EVENT)
-    bad_event["timestamp"] = 1234567890  # type: ignore
+    bad_event["timestamp"] = 1234567890
     response = client.post("/telemetry/ingest", json=bad_event)
     assert response.status_code == 422
     assert "timestamp" in response.text
 
-def test_ingest_telemetry_missing_data():
+def test_ingest_telemetry_missing_data() -> None:
     bad_event = deepcopy(TELEMETRY_EVENT)
     del bad_event["data"]
     response = client.post("/telemetry/ingest", json=bad_event)
     assert response.status_code == 422
     assert "data" in response.text
 
-def test_ingest_telemetry_empty_data():
+def test_ingest_telemetry_empty_data() -> None:
     with patch("server.main.conn.execute") as mock_execute:
         bad_event = deepcopy(TELEMETRY_EVENT)
         bad_event["data"] = {}
@@ -61,19 +61,19 @@ def test_ingest_telemetry_empty_data():
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
 
-def make_mock_query_result(rows, col_names):
+def make_mock_query_result(rows, col_names) -> None:
     class MockQueryResult:
-        def __init__(self, rows, col_names):
+        def __init__(self, rows, col_names) -> None:
             self._rows = rows
             self._col_names = col_names
             self._idx = 0
-        def has_next(self):
+        def has_next(self) -> None:
             return self._idx < len(self._rows)
-        def get_next(self):
+        def get_next(self) -> None:
             row = self._rows[self._idx]
             self._idx += 1
             return row
-        def get_column_names(self):
+        def get_column_names(self) -> None:
             return self._col_names
     return MockQueryResult(rows, col_names)
 
@@ -91,7 +91,7 @@ MOCK_COL_NAMES = ["e"]
 
 # /telemetry/list success
 
-def test_list_telemetry_success():
+def test_list_telemetry_success() -> None:
     mock_result = make_mock_query_result([[MOCK_EVENT_ROW[0]]], MOCK_COL_NAMES)
     with patch("server.main.conn.execute", return_value=mock_result):
         response = client.get("/telemetry/list")
@@ -103,7 +103,7 @@ def test_list_telemetry_success():
 
 # /telemetry/list DB error
 
-def test_list_telemetry_db_error():
+def test_list_telemetry_db_error() -> None:
     with patch("server.main.conn.execute", side_effect=Exception("DB error")):
         response = client.get("/telemetry/list")
         assert response.status_code == 500
@@ -111,7 +111,7 @@ def test_list_telemetry_db_error():
 
 # /telemetry/list empty result
 
-def test_list_telemetry_empty():
+def test_list_telemetry_empty() -> None:
     mock_result = make_mock_query_result([], MOCK_COL_NAMES)
     with patch("server.main.conn.execute", return_value=mock_result):
         response = client.get("/telemetry/list")
@@ -120,7 +120,7 @@ def test_list_telemetry_empty():
 
 # /telemetry/query success with filter
 
-def test_query_telemetry_success():
+def test_query_telemetry_success() -> None:
     mock_result = make_mock_query_result([[MOCK_EVENT_ROW[0]]], MOCK_COL_NAMES)
     with patch("server.main.conn.execute", return_value=mock_result) as mock_exec:
         response = client.get("/telemetry/query?event_type=file_open")
@@ -132,7 +132,7 @@ def test_query_telemetry_success():
 
 # /telemetry/query DB error
 
-def test_query_telemetry_db_error():
+def test_query_telemetry_db_error() -> None:
     with patch("server.main.conn.execute", side_effect=Exception("DB error")):
         response = client.get("/telemetry/query?event_type=file_open")
         assert response.status_code == 500
@@ -140,7 +140,7 @@ def test_query_telemetry_db_error():
 
 # /telemetry/query empty result
 
-def test_query_telemetry_empty():
+def test_query_telemetry_empty() -> None:
     mock_result = make_mock_query_result([], MOCK_COL_NAMES)
     with patch("server.main.conn.execute", return_value=mock_result):
         response = client.get("/telemetry/query?event_type=file_open")
@@ -148,7 +148,7 @@ def test_query_telemetry_empty():
         assert response.json() == []
 
 # /telemetry/query invalid filter value (should just return empty, as FastAPI validates types)
-def test_query_telemetry_invalid_filter():
+def test_query_telemetry_invalid_filter() -> None:
     mock_result = make_mock_query_result([], MOCK_COL_NAMES)
     with patch("server.main.conn.execute", return_value=mock_result):
         response = client.get("/telemetry/query?event_type=not_a_real_type")
@@ -156,23 +156,23 @@ def test_query_telemetry_invalid_filter():
         assert response.json() == []
 
 # --- Top-K Endpoint Tests ---
-def make_mock_query_result_topk(rows, col_names):
+def make_mock_query_result_topk(rows, col_names) -> None:
     class MockQueryResult:
-        def __init__(self, rows, col_names):
+        def __init__(self, rows, col_names) -> None:
             self._rows = rows
             self._col_names = col_names
             self._idx = 0
-        def has_next(self):
+        def has_next(self) -> None:
             return self._idx < len(self._rows)
-        def get_next(self):
+        def get_next(self) -> None:
             row = self._rows[self._idx]
             self._idx += 1
             return row
-        def get_column_names(self):
+        def get_column_names(self) -> None:
             return self._col_names
     return MockQueryResult(rows, col_names)
 
-def test_topk_success():
+def test_topk_success() -> None:
     mock_embedding = [0.1] * 384
     mock_embedding_obj = MagicMock()
     mock_embedding_obj.tolist.return_value = mock_embedding
@@ -200,7 +200,7 @@ def test_topk_success():
         assert len(data) == 2
         assert data[0]["distance"] <= data[1]["distance"]
 
-def test_topk_auto_create_index():
+def test_topk_auto_create_index() -> None:
     mock_embedding = [0.1] * 384
     mock_embedding_obj = MagicMock()
     mock_embedding_obj.tolist.return_value = mock_embedding
@@ -224,7 +224,7 @@ def test_topk_auto_create_index():
             print("test_topk_auto_create_index error:", response.status_code, response.text)
         assert response.status_code == 200
 
-def test_topk_error():
+def test_topk_error() -> None:
     with patch("server.main.SentenceTransformer") as MockModel, \
          patch("server.main.conn") as mock_conn:
         MockModel.return_value.encode.side_effect = Exception("embedding error")
@@ -239,7 +239,7 @@ def test_topk_error():
         assert response.status_code == 500
         assert "Top-K query failed" in response.text
 
-def test_topk_with_filters():
+def test_topk_with_filters() -> None:
     mock_embedding = [0.1] * 384
     mock_embedding_obj = MagicMock()
     mock_embedding_obj.tolist.return_value = mock_embedding
@@ -267,13 +267,13 @@ def test_topk_with_filters():
         data = response.json()
         assert data[0]["node"]["snippet"] == "baz"
 
-def test_ingest_telemetry_readonly(monkeypatch):
+def test_ingest_telemetry_readonly(monkeypatch) -> None:
     monkeypatch.setenv("KUZU_READ_ONLY", "true")
     response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
     assert response.status_code == 403
     assert "Read-only mode enabled" in response.text
 
-def test_topk_readonly(monkeypatch):
+def test_topk_readonly(monkeypatch) -> None:
     monkeypatch.setenv("KUZU_READ_ONLY", "true")
     payload = {
         "query_text": "find foo",
@@ -286,7 +286,7 @@ def test_topk_readonly(monkeypatch):
     assert response.status_code == 403
     assert "Read-only mode enabled" in response.text
 
-def test_ingest_telemetry_not_readonly(monkeypatch):
+def test_ingest_telemetry_not_readonly(monkeypatch) -> None:
     monkeypatch.setenv("KUZU_READ_ONLY", "false")
     with patch("server.main.conn.execute") as mock_execute:
         mock_execute.return_value = None
@@ -294,7 +294,7 @@ def test_ingest_telemetry_not_readonly(monkeypatch):
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
 
-def test_topk_not_readonly(monkeypatch):
+def test_topk_not_readonly(monkeypatch) -> None:
     monkeypatch.setenv("KUZU_READ_ONLY", "false")
     mock_embedding = [0.1] * 384
     mock_embedding_obj = MagicMock()

@@ -92,12 +92,12 @@ class Alert:
 class HealthCheckRegistry:
     """Registry for health checks"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._checks: Dict[str, Callable] = {}
         self._intervals: Dict[str, int] = {}
         self._last_results: Dict[str, HealthCheck] = {}
     
-    def register(self, name: str, check_func: Callable, interval: int = 30):
+    def register(self, name: str, check_func: Callable, interval: int = 30) -> None:
         """Register a health check function"""
         self._checks[name] = check_func
         self._intervals[name] = interval
@@ -115,14 +115,14 @@ class HealthCheckRegistry:
         """Get last result for a health check"""
         return self._last_results.get(name)
     
-    def update_result(self, name: str, result: HealthCheck):
+    def update_result(self, name: str, result: HealthCheck) -> None:
         """Update last result for a health check"""
         self._last_results[name] = result
 
 class MetricsCollector:
     """Collects and aggregates system and database metrics"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._system_metrics: List[SystemMetrics] = []
         self._database_metrics: Dict[str, List[DatabaseMetrics]] = {}
         self._max_history = 1000  # Keep last 1000 metrics
@@ -293,7 +293,7 @@ class MetricsCollector:
 class AlertManager:
     """Manages alerts and notifications"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._alerts: Dict[str, Alert] = {}
         self._notification_channels: List[Callable] = []
         self._thresholds: Dict[str, Dict[str, float]] = {
@@ -305,12 +305,12 @@ class AlertManager:
             'connection_count': {'warning': 80, 'critical': 95}
         }
     
-    def add_notification_channel(self, channel_func: Callable):
+    def add_notification_channel(self, channel_func: Callable) -> None:
         """Add a notification channel"""
         self._notification_channels.append(channel_func)
         logger.info(f"Added notification channel: {channel_func.__name__}")
     
-    async def check_thresholds(self, metrics: Union[SystemMetrics, DatabaseMetrics]):
+    async def check_thresholds(self, metrics: Union[SystemMetrics, DatabaseMetrics]) -> None:
         """Check metrics against thresholds and generate alerts"""
         alerts_generated = []
         
@@ -454,7 +454,7 @@ class AlertManager:
         logger.warning(f"Alert created: {alert.title} - {alert.message}")
         return alert
     
-    async def _send_notifications(self, alert: Alert):
+    async def _send_notifications(self, alert: Alert) -> None:
         """Send notifications for an alert"""
         for channel in self._notification_channels:
             try:
@@ -494,7 +494,7 @@ class AlertManager:
 class HealthMonitor:
     """Main health monitoring system"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.registry = HealthCheckRegistry()
         self.metrics_collector = MetricsCollector()
         self.alert_manager = AlertManager()
@@ -507,19 +507,19 @@ class HealthMonitor:
         # Register default notification channels
         self._register_default_notifications()
     
-    def _register_default_checks(self):
+    def _register_default_checks(self) -> None:
         """Register default health checks"""
         self.registry.register("postgresql", self._check_postgresql_health, 30)
         self.registry.register("kuzu", self._check_kuzu_health, 30)
         self.registry.register("system", self._check_system_health, 15)
         self.registry.register("synchronization", self._check_sync_health, 60)
     
-    def _register_default_notifications(self):
+    def _register_default_notifications(self) -> None:
         """Register default notification channels"""
         self.alert_manager.add_notification_channel(self._log_notification)
         # TODO: Add email, Slack, webhook notifications
     
-    async def start_monitoring(self):
+    async def start_monitoring(self) -> None:
         """Start the health monitoring system"""
         if self._running:
             logger.warning("Health monitoring already running")
@@ -539,7 +539,7 @@ class HealthMonitor:
         
         logger.info(f"Started {len(self._monitoring_tasks)} monitoring tasks")
     
-    async def stop_monitoring(self):
+    async def stop_monitoring(self) -> None:
         """Stop the health monitoring system"""
         if not self._running:
             return
@@ -558,7 +558,7 @@ class HealthMonitor:
         self._monitoring_tasks.clear()
         logger.info("Health monitoring system stopped")
     
-    async def _run_health_check_loop(self, name: str, check_func: Callable):
+    async def _run_health_check_loop(self, name: str, check_func: Callable) -> None:
         """Run a health check in a loop"""
         interval = self.registry._intervals.get(name, 30)
         
@@ -592,7 +592,7 @@ class HealthMonitor:
                 
                 await asyncio.sleep(interval)
     
-    async def _run_metrics_collection_loop(self):
+    async def _run_metrics_collection_loop(self) -> None:
         """Run metrics collection in a loop"""
         while self._running:
             try:
@@ -798,7 +798,7 @@ class HealthMonitor:
                 error=str(e)
             )
     
-    async def _log_notification(self, alert: Alert):
+    async def _log_notification(self, alert: Alert) -> None:
         """Log notification channel"""
         level = logging.WARNING if alert.severity in [AlertSeverity.WARNING] else logging.CRITICAL
         logger.log(level, f"ALERT [{alert.severity.value.upper()}] {alert.title}: {alert.message}")
@@ -854,13 +854,13 @@ async def get_health_monitor() -> HealthMonitor:
 health_router = APIRouter(prefix="/health", tags=["health"])
 
 @health_router.get("/")
-async def get_health():
+async def get_health() -> None:
     """Get overall system health"""
     monitor = await get_health_monitor()
     return monitor.get_overall_health()
 
 @health_router.get("/checks/{check_name}")
-async def get_health_check(check_name: str):
+async def get_health_check(check_name: str) -> None:
     """Get specific health check result"""
     monitor = await get_health_monitor()
     result = monitor.registry.get_last_result(check_name)
@@ -879,7 +879,7 @@ async def get_health_check(check_name: str):
     }
 
 @health_router.get("/metrics/system")
-async def get_system_metrics(limit: int = 100):
+async def get_system_metrics(limit: int = 100) -> None:
     """Get recent system metrics"""
     monitor = await get_health_monitor()
     metrics = monitor.metrics_collector.get_recent_system_metrics(limit)
@@ -897,7 +897,7 @@ async def get_system_metrics(limit: int = 100):
     }
 
 @health_router.get("/metrics/database/{database_type}")
-async def get_database_metrics(database_type: str, limit: int = 100):
+async def get_database_metrics(database_type: str, limit: int = 100) -> None:
     """Get recent database metrics"""
     monitor = await get_health_monitor()
     metrics = monitor.metrics_collector.get_recent_database_metrics(database_type, limit)
@@ -917,7 +917,7 @@ async def get_database_metrics(database_type: str, limit: int = 100):
     }
 
 @health_router.get("/alerts")
-async def get_alerts(severity: Optional[str] = None, resolved: Optional[bool] = None):
+async def get_alerts(severity: Optional[str] = None, resolved: Optional[bool] = None) -> None:
     """Get alerts with optional filtering"""
     monitor = await get_health_monitor()
     
@@ -947,7 +947,7 @@ async def get_alerts(severity: Optional[str] = None, resolved: Optional[bool] = 
     }
 
 @health_router.post("/alerts/{alert_id}/acknowledge")
-async def acknowledge_alert(alert_id: str):
+async def acknowledge_alert(alert_id: str) -> None:
     """Acknowledge an alert"""
     monitor = await get_health_monitor()
     success = monitor.alert_manager.acknowledge_alert(alert_id)
@@ -958,7 +958,7 @@ async def acknowledge_alert(alert_id: str):
     return {"message": "Alert acknowledged successfully"}
 
 @health_router.post("/alerts/{alert_id}/resolve")
-async def resolve_alert(alert_id: str):
+async def resolve_alert(alert_id: str) -> None:
     """Resolve an alert"""
     monitor = await get_health_monitor()
     success = monitor.alert_manager.resolve_alert(alert_id)

@@ -22,7 +22,7 @@ from tests.fixtures.advanced_database_fixtures import (
 class CrossDatabaseIntegrationTester:
     """Comprehensive cross-database integration testing framework."""
     
-    def __init__(self, pool_manager: DatabaseConnectionPoolManager, transaction_coordinator: TransactionCoordinator):
+    def __init__(self, pool_manager: DatabaseConnectionPoolManager, transaction_coordinator: TransactionCoordinator) -> None:
         self.pool_manager = pool_manager
         self.transaction_coordinator = transaction_coordinator
         self.test_data = {}
@@ -539,7 +539,7 @@ class CrossDatabaseIntegrationTester:
 # Pytest tests for cross-database integration
 
 @pytest.mark.asyncio
-async def test_multi_database_transaction_coordination(multi_database_setup, transaction_coordinator):
+async def test_multi_database_transaction_coordination(multi_database_setup, transaction_coordinator) -> None:
     """Test coordinated transactions across all database types."""
     pool_manager = multi_database_setup["pool_manager"]
     
@@ -566,7 +566,7 @@ async def test_multi_database_transaction_coordination(multi_database_setup, tra
 
 
 @pytest.mark.asyncio
-async def test_cache_database_synchronization(multi_database_setup):
+async def test_cache_database_synchronization(multi_database_setup) -> None:
     """Test cache synchronization with persistent databases."""
     pool_manager = multi_database_setup["pool_manager"]
     transaction_coordinator = TransactionCoordinator(pool_manager)
@@ -588,7 +588,7 @@ async def test_cache_database_synchronization(multi_database_setup):
 
 
 @pytest.mark.asyncio
-async def test_multi_database_workflow_validation(multi_database_setup):
+async def test_multi_database_workflow_validation(multi_database_setup) -> None:
     """Test complete multi-database workflows and user journeys."""
     pool_manager = multi_database_setup["pool_manager"]
     transaction_coordinator = TransactionCoordinator(pool_manager)
@@ -612,7 +612,7 @@ async def test_multi_database_workflow_validation(multi_database_setup):
 
 
 @pytest.mark.asyncio
-async def test_cross_database_error_recovery(multi_database_setup):
+async def test_cross_database_error_recovery(multi_database_setup) -> None:
     """Test error recovery and resilience across databases."""
     pool_manager = multi_database_setup["pool_manager"]
     transaction_coordinator = TransactionCoordinator(pool_manager)
@@ -650,7 +650,7 @@ if __name__ == "__main__":
     # Run cross-database integration tests standalone
     import asyncio
     
-    async def main():
+    async def main() -> None:
         print("Cross-Database Integration Tests")
         print("Run with: pytest tests/integration/test_cross_database_transactions.py -v")
     

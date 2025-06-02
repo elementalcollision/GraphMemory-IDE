@@ -10,11 +10,11 @@ from unittest.mock import Mock, AsyncMock, patch
 import pytest
 
 @pytest.fixture(scope="function")
-def mock_email_service():
+def mock_email_service() -> None:
     """Mock email service for testing notifications."""
     
     class MockEmailService:
-        def __init__(self):
+        def __init__(self) -> None:
             self.sent_emails = []
             self.config = {
                 "smtp_host": "smtp.test.com",
@@ -23,7 +23,7 @@ def mock_email_service():
                 "password": "test-password"
             }
         
-        async def send_email(self, to: str, subject: str, body: str, html: bool = False):
+        async def send_email(self, to: str, subject: str, body: str, html: bool = False) -> None:
             """Mock sending an email."""
             email = {
                 "to": to,
@@ -35,26 +35,26 @@ def mock_email_service():
             self.sent_emails.append(email)
             return {"status": "sent", "message_id": f"mock-{len(self.sent_emails)}"}
         
-        def get_sent_emails(self):
+        def get_sent_emails(self) -> None:
             """Get all sent emails."""
             return self.sent_emails.copy()
         
-        def clear_sent_emails(self):
+        def clear_sent_emails(self) -> None:
             """Clear sent emails history."""
             self.sent_emails.clear()
     
     return MockEmailService()
 
 @pytest.fixture(scope="function")
-def mock_webhook_service():
+def mock_webhook_service() -> None:
     """Mock webhook service for testing external integrations."""
     
     class MockWebhookService:
-        def __init__(self):
+        def __init__(self) -> None:
             self.webhook_calls = []
             self.endpoints = {}
         
-        def register_endpoint(self, name: str, url: str, secret: str = None):
+        def register_endpoint(self, name: str, url: str, secret: str = None) -> None:
             """Register a webhook endpoint."""
             self.endpoints[name] = {
                 "url": url,
@@ -62,7 +62,7 @@ def mock_webhook_service():
                 "active": True
             }
         
-        async def send_webhook(self, endpoint_name: str, payload: Dict[str, Any]):
+        async def send_webhook(self, endpoint_name: str, payload: Dict[str, Any]) -> None:
             """Mock sending a webhook."""
             if endpoint_name not in self.endpoints:
                 raise ValueError(f"Endpoint {endpoint_name} not registered")
@@ -77,27 +77,27 @@ def mock_webhook_service():
             self.webhook_calls.append(webhook_call)
             return {"status": "success", "response_code": 200}
         
-        def get_webhook_calls(self):
+        def get_webhook_calls(self) -> None:
             """Get all webhook calls."""
             return self.webhook_calls.copy()
         
-        def clear_webhook_history(self):
+        def clear_webhook_history(self) -> None:
             """Clear webhook call history."""
             self.webhook_calls.clear()
     
     return MockWebhookService()
 
 @pytest.fixture(scope="function")
-def mock_slack_service():
+def mock_slack_service() -> None:
     """Mock Slack service for testing Slack notifications."""
     
     class MockSlackService:
-        def __init__(self):
+        def __init__(self) -> None:
             self.messages = []
             self.channels = ["#alerts", "#general", "#monitoring"]
             self.bot_token = "xoxb-mock-token"
         
-        async def send_message(self, channel: str, message: str, blocks: List[Dict] = None):
+        async def send_message(self, channel: str, message: str, blocks: List[Dict] = None) -> None:
             """Mock sending a Slack message."""
             slack_message = {
                 "channel": channel,
@@ -109,7 +109,7 @@ def mock_slack_service():
             self.messages.append(slack_message)
             return {"ok": True, "ts": slack_message["message_ts"]}
         
-        async def send_alert(self, alert_data: Dict[str, Any]):
+        async def send_alert(self, alert_data: Dict[str, Any]) -> None:
             """Mock sending an alert to Slack."""
             message = f"🚨 Alert: {alert_data.get('message', 'Unknown alert')}"
             blocks = [
@@ -123,22 +123,22 @@ def mock_slack_service():
             ]
             return await self.send_message("#alerts", message, blocks)
         
-        def get_messages(self):
+        def get_messages(self) -> None:
             """Get all sent messages."""
             return self.messages.copy()
         
-        def clear_message_history(self):
+        def clear_message_history(self) -> None:
             """Clear message history."""
             self.messages.clear()
     
     return MockSlackService()
 
 @pytest.fixture(scope="function")
-def service_toggle_manager():
+def service_toggle_manager() -> None:
     """Manage toggling between real and mock services."""
     
     class ServiceToggleManager:
-        def __init__(self):
+        def __init__(self) -> None:
             self.use_real_services = os.getenv("USE_REAL_SERVICES", "false").lower() == "true"
             self.service_configs = {
                 "email": {"enabled": True, "mock_failures": False},
@@ -152,12 +152,12 @@ def service_toggle_manager():
             """Check if a real service should be used."""
             return self.use_real_services and self.service_configs.get(service_name, {}).get("enabled", False)
         
-        def enable_service(self, service_name: str, enabled: bool = True):
+        def enable_service(self, service_name: str, enabled: bool = True) -> None:
             """Enable or disable a service."""
             if service_name in self.service_configs:
                 self.service_configs[service_name]["enabled"] = enabled
         
-        def set_mock_failures(self, service_name: str, mock_failures: bool = True):
+        def set_mock_failures(self, service_name: str, mock_failures: bool = True) -> None:
             """Set whether to mock failures for a service."""
             if service_name in self.service_configs:
                 self.service_configs[service_name]["mock_failures"] = mock_failures
@@ -169,11 +169,11 @@ def service_toggle_manager():
     return ServiceToggleManager()
 
 @pytest.fixture(scope="function")
-def external_service_health_checker():
+def external_service_health_checker() -> None:
     """Check health of external services."""
     
     class ExternalServiceHealthChecker:
-        def __init__(self):
+        def __init__(self) -> None:
             self.health_checks = {}
         
         async def check_service_health(self, service_name: str) -> Dict[str, Any]:
@@ -216,18 +216,18 @@ def external_service_health_checker():
     return ExternalServiceHealthChecker()
 
 @pytest.fixture(scope="function")
-def circuit_breaker_mock():
+def circuit_breaker_mock() -> None:
     """Mock circuit breaker for testing failure scenarios."""
     
     class MockCircuitBreaker:
-        def __init__(self):
+        def __init__(self) -> None:
             self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
             self.failure_count = 0
             self.failure_threshold = 5
             self.success_count = 0
             self.reset_timeout = 60
         
-        def call(self, func, *args, **kwargs):
+        def call(self, func, *args, **kwargs) -> None:
             """Mock circuit breaker call."""
             if self.state == "OPEN":
                 raise Exception("Circuit breaker is OPEN")
@@ -240,26 +240,26 @@ def circuit_breaker_mock():
                 self.on_failure()
                 raise e
         
-        def on_success(self):
+        def on_success(self) -> None:
             """Handle successful call."""
             self.success_count += 1
             if self.state == "HALF_OPEN" and self.success_count >= 3:
                 self.state = "CLOSED"
                 self.failure_count = 0
         
-        def on_failure(self):
+        def on_failure(self) -> None:
             """Handle failed call."""
             self.failure_count += 1
             if self.failure_count >= self.failure_threshold:
                 self.state = "OPEN"
         
-        def reset(self):
+        def reset(self) -> None:
             """Reset circuit breaker."""
             self.state = "CLOSED"
             self.failure_count = 0
             self.success_count = 0
         
-        def get_state(self):
+        def get_state(self) -> None:
             """Get current state."""
             return {
                 "state": self.state,
@@ -270,15 +270,15 @@ def circuit_breaker_mock():
     return MockCircuitBreaker()
 
 @pytest.fixture(scope="function")
-def performance_service_mock():
+def performance_service_mock() -> None:
     """Mock performance monitoring service."""
     
     class MockPerformanceService:
-        def __init__(self):
+        def __init__(self) -> None:
             self.metrics = []
             self.alerts = []
         
-        def record_metric(self, name: str, value: float, tags: Dict[str, str] = None):
+        def record_metric(self, name: str, value: float, tags: Dict[str, str] = None) -> None:
             """Record a performance metric."""
             metric = {
                 "name": name,
@@ -288,7 +288,7 @@ def performance_service_mock():
             }
             self.metrics.append(metric)
         
-        def record_request_duration(self, endpoint: str, duration: float, status_code: int):
+        def record_request_duration(self, endpoint: str, duration: float, status_code: int) -> None:
             """Record request duration."""
             self.record_metric(
                 "request_duration",
@@ -296,7 +296,7 @@ def performance_service_mock():
                 {"endpoint": endpoint, "status_code": str(status_code)}
             )
         
-        def record_database_query(self, query_type: str, duration: float):
+        def record_database_query(self, query_type: str, duration: float) -> None:
             """Record database query performance."""
             self.record_metric(
                 "database_query_duration",
@@ -304,11 +304,11 @@ def performance_service_mock():
                 {"query_type": query_type}
             )
         
-        def get_metrics(self):
+        def get_metrics(self) -> None:
             """Get all recorded metrics."""
             return self.metrics.copy()
         
-        def get_metric_summary(self):
+        def get_metric_summary(self) -> None:
             """Get metrics summary."""
             if not self.metrics:
                 return {"total_metrics": 0}
@@ -324,7 +324,7 @@ def performance_service_mock():
 
 # Environment setup for service testing
 @pytest.fixture(scope="function")
-def service_test_environment():
+def service_test_environment() -> None:
     """Setup test environment for service testing."""
     test_env = {
         "EMAIL_ENABLED": "true",

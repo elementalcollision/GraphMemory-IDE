@@ -67,7 +67,7 @@ class MemoryOperationEvent(StreamEvent):
     relation_count: int = 0
     processing_time_ms: float = 0.0
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.event_type = EventType.MEMORY_OPERATION
 
 @dataclass
@@ -77,7 +77,7 @@ class UserInteractionEvent(StreamEvent):
     target_resource: Optional[str] = None
     duration_ms: float = 0.0
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.event_type = EventType.USER_INTERACTION
 
 @dataclass
@@ -87,7 +87,7 @@ class SystemMetricEvent(StreamEvent):
     metric_value: Optional[Union[int, float]] = None
     metric_unit: str = "count"
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.event_type = EventType.SYSTEM_METRIC
 
 class StreamProducer:
@@ -95,7 +95,7 @@ class StreamProducer:
     Handles streaming events to DragonflyDB streams for real-time analytics
     """
     
-    def __init__(self, source_identifier: str = "mcp-server"):
+    def __init__(self, source_identifier: str = "mcp-server") -> None:
         self.source = source_identifier
         self._event_buffer: List[StreamEvent] = []
         self._buffer_size = 100
@@ -116,13 +116,13 @@ class StreamProducer:
             EventType.ERROR: "analytics:errors",
         }
     
-    async def start(self):
+    async def start(self) -> None:
         """Start the stream producer"""
         logger.info("Starting stream producer service")
         self._flush_task = asyncio.create_task(self._periodic_flush())
         logger.info(f"Stream producer started (buffer_size={self._buffer_size}, flush_interval={self._flush_interval}s)")
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the stream producer and flush remaining events"""
         logger.info("Stopping stream producer service")
         
@@ -137,7 +137,7 @@ class StreamProducer:
         await self._flush_buffer()
         logger.info("Stream producer stopped")
     
-    async def produce_event(self, event: StreamEvent):
+    async def produce_event(self, event: StreamEvent) -> None:
         """Add event to buffer for streaming"""
         self._event_buffer.append(event)
         
@@ -155,7 +155,7 @@ class StreamProducer:
         relation_count: int = 0,
         processing_time_ms: float = 0.0,
         additional_data: Optional[Dict[str, Any]] = None
-    ):
+    ) -> None:
         """Produce a memory operation event"""
         event = MemoryOperationEvent(
             event_id=str(uuid.uuid4()),
@@ -183,7 +183,7 @@ class StreamProducer:
         session_id: Optional[str] = None,
         duration_ms: float = 0.0,
         additional_data: Optional[Dict[str, Any]] = None
-    ):
+    ) -> None:
         """Produce a user interaction event"""
         event = UserInteractionEvent(
             event_id=str(uuid.uuid4()),
@@ -208,7 +208,7 @@ class StreamProducer:
         metric_value: Union[int, float],
         metric_unit: str = "count",
         additional_data: Optional[Dict[str, Any]] = None
-    ):
+    ) -> None:
         """Produce a system metric event"""
         event = SystemMetricEvent(
             event_id=str(uuid.uuid4()),
@@ -230,7 +230,7 @@ class StreamProducer:
         telemetry_data: Dict[str, Any],
         user_id: Optional[str] = None,
         session_id: Optional[str] = None
-    ):
+    ) -> None:
         """Produce a telemetry event from existing telemetry ingestion"""
         event = StreamEvent(
             event_id=str(uuid.uuid4()),
@@ -247,7 +247,7 @@ class StreamProducer:
         )
         await self.produce_event(event)
     
-    async def _periodic_flush(self):
+    async def _periodic_flush(self) -> None:
         """Periodically flush events from buffer to streams"""
         while True:
             try:
@@ -258,7 +258,7 @@ class StreamProducer:
             except Exception as e:
                 logger.error(f"Error in periodic flush: {e}")
     
-    async def _flush_buffer(self):
+    async def _flush_buffer(self) -> None:
         """Flush buffered events to DragonflyDB streams"""
         if not self._event_buffer:
             return
@@ -357,13 +357,13 @@ async def get_stream_producer() -> StreamProducer:
         raise RuntimeError("Stream producer not initialized")
     return _stream_producer
 
-async def initialize_stream_producer(source_identifier: str = "mcp-server"):
+async def initialize_stream_producer(source_identifier: str = "mcp-server") -> None:
     """Initialize the global stream producer"""
     global _stream_producer
     _stream_producer = StreamProducer(source_identifier)
     await _stream_producer.start()
 
-async def shutdown_stream_producer():
+async def shutdown_stream_producer() -> None:
     """Shutdown the global stream producer"""
     global _stream_producer
     if _stream_producer:

@@ -134,7 +134,7 @@ class NotificationContext:
 class EnhancedNotificationDispatcher:
     """Enhanced notification dispatcher with correlation awareness and escalation"""
     
-    def __init__(self, base_dispatcher: Optional[NotificationDispatcher] = None):
+    def __init__(self, base_dispatcher: Optional[NotificationDispatcher] = None) -> None:
         # Use existing dispatcher or create new one
         self.base_dispatcher = base_dispatcher or NotificationDispatcher()
         
@@ -165,7 +165,7 @@ class EnhancedNotificationDispatcher:
         
         logger.info("EnhancedNotificationDispatcher initialized")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the enhanced notification dispatcher"""
         try:
             # Initialize base dispatcher
@@ -184,7 +184,7 @@ class EnhancedNotificationDispatcher:
             logger.error(f"Failed to initialize EnhancedNotificationDispatcher: {e}")
             raise
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the enhanced notification dispatcher"""
         try:
             # Cancel any pending escalations
@@ -502,7 +502,7 @@ Related alerts: {len(alert_group.correlated_alerts)} additional alerts correlate
         
         return enhanced_alert
     
-    async def _check_escalation(self, alert_group: AlertGroup, context: NotificationContext):
+    async def _check_escalation(self, alert_group: AlertGroup, context: NotificationContext) -> None:
         """Check and handle alert escalation"""
         # Get applicable escalation policies
         policies = await self._get_applicable_escalation_policies(alert_group)
@@ -547,7 +547,7 @@ Related alerts: {len(alert_group.correlated_alerts)} additional alerts correlate
         
         return policies
     
-    async def _trigger_escalation(self, escalation_context: EscalationContext):
+    async def _trigger_escalation(self, escalation_context: EscalationContext) -> None:
         """Trigger escalation for alert group"""
         try:
             escalation_context.current_level += 1
@@ -585,7 +585,7 @@ Related alerts: {len(alert_group.correlated_alerts)} additional alerts correlate
                 'status': 'failed'
             })
     
-    async def _execute_escalation_action(self, action: EscalationAction, context: EscalationContext):
+    async def _execute_escalation_action(self, action: EscalationAction, context: EscalationContext) -> None:
         """Execute specific escalation action"""
         logger.info(f"Executing escalation action: {action.value}")
         
@@ -610,7 +610,7 @@ Related alerts: {len(alert_group.correlated_alerts)} additional alerts correlate
             # Execute automated runbook
             logger.info("Executing automated runbook")
     
-    async def _send_escalation_notifications(self, escalation_context: EscalationContext):
+    async def _send_escalation_notifications(self, escalation_context: EscalationContext) -> None:
         """Send escalation-specific notifications"""
         # Create escalation alert
         escalation_alert = self._create_escalation_alert(escalation_context)
@@ -655,7 +655,7 @@ Escalation Policy: {escalation_context.policy.name}
         
         return escalation_alert
     
-    async def _load_escalation_policies(self):
+    async def _load_escalation_policies(self) -> None:
         """Load escalation policies from storage"""
         # Implementation would load from database
         # For now, create a default policy
@@ -686,14 +686,14 @@ Escalation Policy: {escalation_context.policy.name}
             'escalation_policies': len(self.escalation_policies)
         }
     
-    async def suppress_notifications(self, group_id: str, duration: timedelta):
+    async def suppress_notifications(self, group_id: str, duration: timedelta) -> None:
         """Suppress notifications for specific alert group"""
         if group_id in self.notification_contexts:
             context = self.notification_contexts[group_id]
             context.suppressed_until = datetime.utcnow() + duration
             logger.info(f"Suppressed notifications for group {group_id} until {context.suppressed_until}")
     
-    async def add_maintenance_window(self, group_id: str, start_time: datetime, end_time: datetime):
+    async def add_maintenance_window(self, group_id: str, start_time: datetime, end_time: datetime) -> None:
         """Add maintenance window for alert group"""
         if group_id in self.notification_contexts:
             context = self.notification_contexts[group_id]

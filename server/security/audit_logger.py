@@ -26,7 +26,7 @@ import logging
 import json
 import hashlib
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, TYPE_CHECKING
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from pathlib import Path
@@ -34,13 +34,11 @@ import gzip
 import threading
 from queue import Queue
 
-try:
+if TYPE_CHECKING:
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa, padding
     from cryptography.fernet import Fernet
     from cryptography.hazmat.backends import default_backend
-except ImportError as e:
-    raise ImportError(f"Required cryptography packages not installed: {e}")
 
 logger = logging.getLogger(__name__)
 
@@ -177,13 +175,13 @@ class AuditConfig:
 class AuditLogWriter:
     """Secure audit log writer with encryption and integrity verification"""
     
-    def __init__(self, config: AuditConfig):
+    def __init__(self, config: AuditConfig) -> None:
         self.config = config
         self.log_directory = Path(config.log_directory)
         self.log_directory.mkdir(parents=True, exist_ok=True)
         
         # Initialize encryption if enabled
-        self.cipher = None
+        self.cipher: Optional['Fernet'] = None
         if config.enable_encryption:
             self._initialize_encryption()
         
@@ -364,7 +362,7 @@ class SecurityAuditLogger:
     Comprehensive security audit logging system with real-time monitoring and compliance reporting.
     """
     
-    def __init__(self, config: Optional[AuditConfig] = None):
+    def __init__(self, config: Optional[AuditConfig] = None) -> None:
         self.config = config or AuditConfig()
         self.writer = AuditLogWriter(self.config)
         self.event_buffer: Queue = Queue(maxsize=self.config.buffer_size)
@@ -442,7 +440,7 @@ class SecurityAuditLogger:
                   tags: Optional[List[str]] = None,
                   compliance_frameworks: Optional[List[ComplianceFramework]] = None,
                   risk_score: Optional[int] = None,
-                  **kwargs) -> str:
+                  **kwargs: Any) -> str:
         """
         Log security audit event.
         

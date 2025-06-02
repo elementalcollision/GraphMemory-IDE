@@ -57,13 +57,13 @@ class DeliveryContext:
 class WebSocketManager:
     """Manages WebSocket connections for real-time alerts"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.connections: Dict[str, Set[Any]] = defaultdict(set)  # user_id -> connections
         self.alert_subscriptions: Dict[str, Set[AlertSeverity]] = {}  # user_id -> severities
         self.connection_metadata: Dict[Any, Dict[str, Any]] = {}  # connection -> metadata
     
     def add_connection(self, connection: Any, user_id: str, 
-                      severities: Optional[List[AlertSeverity]] = None):
+                      severities: Optional[List[AlertSeverity]] = None) -> None:
         """Add a WebSocket connection"""
         self.connections[user_id].add(connection)
         if severities:
@@ -80,7 +80,7 @@ class WebSocketManager:
         
         logger.info(f"Added WebSocket connection for user {user_id}")
     
-    def remove_connection(self, connection: Any):
+    def remove_connection(self, connection: Any) -> None:
         """Remove a WebSocket connection"""
         if connection in self.connection_metadata:
             user_id = self.connection_metadata[connection]['user_id']
@@ -94,7 +94,7 @@ class WebSocketManager:
             del self.connection_metadata[connection]
             logger.info(f"Removed WebSocket connection for user {user_id}")
     
-    async def broadcast_alert(self, alert: Alert, user_filter: Optional[Callable[[str], bool]] = None):
+    async def broadcast_alert(self, alert: Alert, user_filter: Optional[Callable[[str], bool]] = None) -> None:
         """Broadcast alert to connected WebSocket clients"""
         event = AlertEvent(
             event_type="alert_created",
@@ -155,7 +155,7 @@ class EmailNotifier:
     
     def __init__(self, smtp_host: str = "localhost", smtp_port: int = 587,
                  smtp_user: Optional[str] = None, smtp_password: Optional[str] = None,
-                 use_tls: bool = True):
+                 use_tls: bool = True) -> None:
         self.smtp_host = smtp_host
         self.smtp_port = smtp_port
         self.smtp_user = smtp_user
@@ -197,7 +197,7 @@ class EmailNotifier:
             logger.error(f"Failed to send email notification: {e}")
             return False
     
-    def _send_smtp(self, msg: MIMEMultipart, recipients: List[str]):
+    def _send_smtp(self, msg: MIMEMultipart, recipients: List[str]) -> None:
         """Send email via SMTP (blocking operation)"""
         with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
             if self.use_tls:
@@ -315,7 +315,7 @@ Rule: {context.alert.rule_name}
 class WebhookNotifier:
     """HTTP webhook notification handler"""
     
-    def __init__(self, timeout: int = 30, max_retries: int = 3):
+    def __init__(self, timeout: int = 30, max_retries: int = 3) -> None:
         self.timeout = timeout
         self.max_retries = max_retries
         self.session: Optional[Any] = None  # aiohttp.ClientSession when available
@@ -324,7 +324,7 @@ class WebhookNotifier:
         if not self.available:
             logger.warning("aiohttp not available, webhook notifications disabled")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize HTTP session"""
         if not self.available:
             return
@@ -333,7 +333,7 @@ class WebhookNotifier:
             timeout = aiohttp.ClientTimeout(total=self.timeout)
             self.session = aiohttp.ClientSession(timeout=timeout)
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown HTTP session"""
         if self.session:
             await self.session.close()
@@ -421,7 +421,7 @@ class WebhookNotifier:
 class SlackNotifier:
     """Slack webhook notification handler"""
     
-    def __init__(self, timeout: int = 30):
+    def __init__(self, timeout: int = 30) -> None:
         self.timeout = timeout
         self.session: Optional[Any] = None  # aiohttp.ClientSession when available
         self.available = HAS_AIOHTTP
@@ -429,7 +429,7 @@ class SlackNotifier:
         if not self.available:
             logger.warning("aiohttp not available, Slack notifications disabled")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize HTTP session"""
         if not self.available:
             return
@@ -438,7 +438,7 @@ class SlackNotifier:
             timeout = aiohttp.ClientTimeout(total=self.timeout)
             self.session = aiohttp.ClientSession(timeout=timeout)
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown HTTP session"""
         if self.session:
             await self.session.close()
@@ -548,7 +548,7 @@ class SlackNotifier:
 class NotificationQueue:
     """Background queue processor for notifications"""
     
-    def __init__(self, max_workers: int = 5, max_queue_size: int = 1000):
+    def __init__(self, max_workers: int = 5, max_queue_size: int = 1000) -> None:
         self.max_workers = max_workers
         self.max_queue_size = max_queue_size
         self.queue: asyncio.Queue = asyncio.Queue(maxsize=max_queue_size)
@@ -561,7 +561,7 @@ class NotificationQueue:
             'success_rate': 0.0
         }
     
-    async def start(self):
+    async def start(self) -> None:
         """Start queue processing workers"""
         if self.is_running:
             return
@@ -574,7 +574,7 @@ class NotificationQueue:
         
         logger.info(f"Started notification queue with {self.max_workers} workers")
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop queue processing"""
         self.is_running = False
         
@@ -613,7 +613,7 @@ class NotificationQueue:
             logger.error(f"Failed to enqueue notification: {e}")
             return False
     
-    async def _worker(self, worker_name: str):
+    async def _worker(self, worker_name: str) -> None:
         """Queue worker process"""
         logger.info(f"Notification worker {worker_name} started")
         
@@ -678,7 +678,7 @@ class NotificationQueue:
 class NotificationDispatcher:
     """Central notification dispatcher with multi-channel support"""
     
-    def __init__(self, max_workers: int = 5, queue_size: int = 1000):
+    def __init__(self, max_workers: int = 5, queue_size: int = 1000) -> None:
         # Channel handlers
         self.websocket_manager = WebSocketManager()
         self.email_notifier = EmailNotifier()
@@ -701,7 +701,7 @@ class NotificationDispatcher:
         
         logger.info("NotificationDispatcher initialized")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the notification dispatcher"""
         try:
             # Get external dependencies
@@ -721,7 +721,7 @@ class NotificationDispatcher:
             logger.error(f"Failed to initialize NotificationDispatcher: {e}")
             raise
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the notification dispatcher"""
         try:
             # Stop queue processing
@@ -806,7 +806,7 @@ class NotificationDispatcher:
         return applicable_configs
     
     async def _dispatch_websocket(self, alert: Alert, config: NotificationConfig, 
-                                delivery: NotificationDelivery):
+                                delivery: NotificationDelivery) -> None:
         """Dispatch alert via WebSocket"""
         try:
             # Broadcast to WebSocket connections
@@ -826,7 +826,7 @@ class NotificationDispatcher:
             delivery.error_message = str(e)
     
     async def _queue_notification(self, alert: Alert, config: NotificationConfig,
-                                delivery: NotificationDelivery):
+                                delivery: NotificationDelivery) -> None:
         """Queue notification for background processing"""
         context = DeliveryContext(
             alert=alert,
@@ -922,11 +922,11 @@ Alert ID: {alert.id}
     # Public API methods
     
     def add_websocket_connection(self, connection: Any, user_id: str,
-                               severities: Optional[List[AlertSeverity]] = None):
+                               severities: Optional[List[AlertSeverity]] = None) -> None:
         """Add WebSocket connection for real-time alerts"""
         self.websocket_manager.add_connection(connection, user_id, severities)
     
-    def remove_websocket_connection(self, connection: Any):
+    def remove_websocket_connection(self, connection: Any) -> None:
         """Remove WebSocket connection"""
         self.websocket_manager.remove_connection(connection)
     
@@ -1029,7 +1029,7 @@ async def initialize_notification_dispatcher(max_workers: int = 5,
     return _notification_dispatcher
 
 
-async def shutdown_notification_dispatcher():
+async def shutdown_notification_dispatcher() -> None:
     """Shutdown the global notification dispatcher"""
     global _notification_dispatcher
     

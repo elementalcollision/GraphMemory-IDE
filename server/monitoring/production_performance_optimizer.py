@@ -124,7 +124,7 @@ class ProductionPerformanceOptimizer:
     - Resource optimization with auto-scaling recommendations
     """
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         self.config = config or self._get_default_config()
         self.monitoring_active = False
         self.optimization_active = False
@@ -179,7 +179,7 @@ class ProductionPerformanceOptimizer:
             }
         }
     
-    def _setup_prometheus_metrics(self):
+    def _setup_prometheus_metrics(self) -> None:
         """Initialize Prometheus metrics for monitoring"""
         try:
             self.system_health_score = Gauge(
@@ -260,7 +260,7 @@ class ProductionPerformanceOptimizer:
             )
         }
 
-    async def start_production_monitoring(self):
+    async def start_production_monitoring(self) -> None:
         """Start comprehensive production monitoring system"""
         logger.info("Starting production performance monitoring system...")
         
@@ -280,7 +280,7 @@ class ProductionPerformanceOptimizer:
         logger.info("Production monitoring system started successfully")
         return self.background_tasks
 
-    async def stop_production_monitoring(self):
+    async def stop_production_monitoring(self) -> None:
         """Stop monitoring system gracefully"""
         logger.info("Stopping production monitoring system...")
         
@@ -296,7 +296,7 @@ class ProductionPerformanceOptimizer:
         
         logger.info("Production monitoring system stopped")
 
-    async def _continuous_monitoring(self):
+    async def _continuous_monitoring(self) -> None:
         """Main monitoring loop for real-time performance tracking"""
         while self.monitoring_active:
             try:
@@ -409,7 +409,7 @@ class ProductionPerformanceOptimizer:
             logger.error(f"Application metrics collection failed: {e}")
             return {"timestamp": time.time()}
 
-    async def _process_metrics(self, metrics: Dict[str, float]):
+    async def _process_metrics(self, metrics: Dict[str, float]) -> None:
         """Process collected metrics and generate alerts if needed"""
         timestamp = time.time()
         
@@ -435,7 +435,7 @@ class ProductionPerformanceOptimizer:
                 if severity != AlertSeverity.INFO:
                     await self._generate_alert(metric_name, value, severity, threshold)
 
-    def _update_prometheus_metrics(self, metrics: Dict[str, float]):
+    def _update_prometheus_metrics(self, metrics: Dict[str, float]) -> None:
         """Update Prometheus metrics with current values"""
         try:
             # Update system health score if available
@@ -458,7 +458,7 @@ class ProductionPerformanceOptimizer:
         except Exception as e:
             logger.error(f"Prometheus metrics update failed: {e}")
 
-    async def _generate_alert(self, metric_name: str, value: float, severity: AlertSeverity, threshold: PerformanceThreshold):
+    async def _generate_alert(self, metric_name: str, value: float, severity: AlertSeverity, threshold: PerformanceThreshold) -> None:
         """Generate and process performance alert"""
         alert = {
             "timestamp": time.time(),
@@ -482,7 +482,7 @@ class ProductionPerformanceOptimizer:
             "priority": "high" if severity in [AlertSeverity.CRITICAL, AlertSeverity.EMERGENCY] else "medium"
         })
 
-    async def _optimization_processor(self):
+    async def _optimization_processor(self) -> None:
         """Process optimization requests and execute automated optimizations"""
         while self.optimization_active:
             try:
@@ -501,7 +501,7 @@ class ProductionPerformanceOptimizer:
             except Exception as e:
                 logger.error(f"Optimization processor error: {e}")
 
-    async def _execute_optimization(self, alert: Dict[str, Any]):
+    async def _execute_optimization(self, alert: Dict[str, Any]) -> None:
         """Execute automated optimization based on alert"""
         metric_name = alert["metric_name"]
         value = alert["value"]
@@ -636,7 +636,7 @@ class ProductionPerformanceOptimizer:
                 details={"error": str(e)}
             )
 
-    async def _health_assessor(self):
+    async def _health_assessor(self) -> None:
         """Continuous health assessment and reporting"""
         while self.monitoring_active:
             try:
@@ -789,7 +789,7 @@ class ProductionPerformanceOptimizer:
             "sla_compliance": uptime_percent
         }
 
-    async def _baseline_learner(self):
+    async def _baseline_learner(self) -> None:
         """Learn performance baselines using machine learning approaches"""
         while self.monitoring_active:
             try:
@@ -799,7 +799,7 @@ class ProductionPerformanceOptimizer:
             
             await asyncio.sleep(300)  # Update baselines every 5 minutes
 
-    async def _update_performance_baselines(self):
+    async def _update_performance_baselines(self) -> None:
         """Update performance baselines with recent data"""
         current_time = time.time()
         learning_period = self.config["baseline_learning_period"]
@@ -830,7 +830,7 @@ class ProductionPerformanceOptimizer:
                 self.performance_baselines[metric_name] = baseline_data
 
     @asynccontextmanager
-    async def performance_monitoring_context(self):
+    async def performance_monitoring_context(self) -> None:
         """Context manager for performance monitoring session"""
         try:
             await self.start_production_monitoring()
@@ -869,7 +869,7 @@ class ProductionPerformanceOptimizer:
         successful = sum(1 for opt in self.optimization_history if opt.success)
         return (successful / len(self.optimization_history)) * 100
 
-    async def _check_optimization_triggers(self, metrics: Dict[str, float]):
+    async def _check_optimization_triggers(self, metrics: Dict[str, float]) -> None:
         """Check if any metrics trigger optimization actions"""
         for metric_name, value in metrics.items():
             if metric_name == "timestamp":
@@ -910,7 +910,7 @@ async def deploy_production_monitoring(config: Optional[Dict[str, Any]] = None) 
     return optimizer
 
 if __name__ == "__main__":
-    async def main():
+    async def main() -> None:
         # Example usage for production deployment
         config = {
             "monitoring_interval": 5,

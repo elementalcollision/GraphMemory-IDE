@@ -69,7 +69,7 @@ class AnalyticsServiceRegistry:
     service discovery, and automatic failover capabilities.
     """
     
-    def __init__(self, health_check_interval: int = 30):
+    def __init__(self, health_check_interval: int = 30) -> None:
         self.services: Dict[str, ServiceEndpoint] = {}
         self.service_subscriptions: Dict[str, Set[str]] = {}
         self.health_check_interval = health_check_interval
@@ -93,7 +93,7 @@ class AnalyticsServiceRegistry:
         
         logger.info("Analytics Service Registry initialized")
     
-    async def start(self):
+    async def start(self) -> None:
         """Start the service registry and health monitoring"""
         if self._health_check_task and not self._health_check_task.done():
             return
@@ -103,7 +103,7 @@ class AnalyticsServiceRegistry:
         
         logger.info("Service registry health monitoring started")
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the service registry and health monitoring"""
         self._shutdown_event.set()
         
@@ -314,7 +314,7 @@ class AnalyticsServiceRegistry:
         response_time: Optional[float] = None,
         request_count_increment: int = 0,
         error_count_increment: int = 0
-    ):
+    ) -> None:
         """Update service performance metrics"""
         service = self.services.get(service_id)
         if not service:
@@ -338,7 +338,7 @@ class AnalyticsServiceRegistry:
     
     # Private methods
     
-    async def _health_check_loop(self):
+    async def _health_check_loop(self) -> None:
         """Main health check loop"""
         while not self._shutdown_event.is_set():
             try:
@@ -365,7 +365,7 @@ class AnalyticsServiceRegistry:
                 logger.error(f"Health check cycle failed: {e}")
                 await asyncio.sleep(self.health_check_interval)
     
-    async def _perform_health_checks(self):
+    async def _perform_health_checks(self) -> None:
         """Perform health checks on all registered services"""
         if not self.services:
             return
@@ -379,7 +379,7 @@ class AnalyticsServiceRegistry:
         await asyncio.gather(*health_check_tasks, return_exceptions=True)
         self._update_registry_stats()
     
-    async def _check_service_health(self, service: ServiceEndpoint):
+    async def _check_service_health(self, service: ServiceEndpoint) -> None:
         """Check health of a single service"""
         try:
             import aiohttp
@@ -425,7 +425,7 @@ class AnalyticsServiceRegistry:
         finally:
             service.last_health_check = datetime.utcnow()
     
-    def _invalidate_discovery_cache(self):
+    def _invalidate_discovery_cache(self) -> None:
         """Invalidate the service discovery cache"""
         self._discovery_cache.clear()
         self._last_cache_update.clear()
@@ -441,7 +441,7 @@ class AnalyticsServiceRegistry:
         
         return (datetime.utcnow() - last_update).total_seconds() < self._cache_ttl
     
-    def _update_registry_stats(self):
+    def _update_registry_stats(self) -> None:
         """Update registry statistics"""
         self.registry_stats["total_services"] = len(self.services)
         
@@ -480,7 +480,7 @@ async def initialize_service_registry() -> AnalyticsServiceRegistry:
     logger.info("Service registry initialized with core services")
     return registry
 
-async def _register_core_services(registry: AnalyticsServiceRegistry):
+async def _register_core_services(registry: AnalyticsServiceRegistry) -> None:
     """Register core analytics services"""
     try:
         # Register MCP Server
@@ -544,7 +544,7 @@ async def _register_core_services(registry: AnalyticsServiceRegistry):
     except Exception as e:
         logger.error(f"Failed to register core services: {e}")
 
-async def shutdown_service_registry():
+async def shutdown_service_registry() -> None:
     """Shutdown the global service registry"""
     global _global_registry
     

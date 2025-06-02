@@ -18,12 +18,12 @@ logger = logging.getLogger(__name__)
 class ConnectionManager:
     """Manages WebSocket connections for real-time analytics"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: Dict[str, WebSocket] = {}
         self.subscriptions: Dict[str, Set[str]] = {}  # analytics_type -> set of connection_ids
         self.connection_metadata: Dict[str, Dict[str, Any]] = {}
     
-    async def connect(self, websocket: WebSocket, connection_id: str, user_id: Optional[str] = None):
+    async def connect(self, websocket: WebSocket, connection_id: str, user_id: Optional[str] = None) -> None:
         """Accept a new WebSocket connection"""
         await websocket.accept()
         self.active_connections[connection_id] = websocket
@@ -34,7 +34,7 @@ class ConnectionManager:
         }
         logger.info(f"WebSocket connection established: {connection_id}")
     
-    def disconnect(self, connection_id: str):
+    def disconnect(self, connection_id: str) -> None:
         """Remove a WebSocket connection"""
         if connection_id in self.active_connections:
             del self.active_connections[connection_id]
@@ -48,7 +48,7 @@ class ConnectionManager:
         
         logger.info(f"WebSocket connection closed: {connection_id}")
     
-    async def subscribe(self, connection_id: str, analytics_type: str):
+    async def subscribe(self, connection_id: str, analytics_type: str) -> None:
         """Subscribe a connection to analytics updates"""
         if analytics_type not in self.subscriptions:
             self.subscriptions[analytics_type] = set()
@@ -60,7 +60,7 @@ class ConnectionManager:
         
         logger.info(f"Connection {connection_id} subscribed to {analytics_type}")
     
-    async def unsubscribe(self, connection_id: str, analytics_type: str):
+    async def unsubscribe(self, connection_id: str, analytics_type: str) -> None:
         """Unsubscribe a connection from analytics updates"""
         if analytics_type in self.subscriptions:
             self.subscriptions[analytics_type].discard(connection_id)
@@ -70,7 +70,7 @@ class ConnectionManager:
         
         logger.info(f"Connection {connection_id} unsubscribed from {analytics_type}")
     
-    async def broadcast_to_subscribers(self, analytics_type: str, update: RealtimeUpdate):
+    async def broadcast_to_subscribers(self, analytics_type: str, update: RealtimeUpdate) -> None:
         """Broadcast an update to all subscribers of an analytics type"""
         if analytics_type not in self.subscriptions:
             return
@@ -95,7 +95,7 @@ class ConnectionManager:
         for connection_id in disconnected:
             self.disconnect(connection_id)
     
-    async def send_to_connection(self, connection_id: str, message: Dict[str, Any]):
+    async def send_to_connection(self, connection_id: str, message: Dict[str, Any]) -> None:
         """Send a message to a specific connection"""
         if connection_id in self.active_connections:
             try:
@@ -132,19 +132,19 @@ class RealtimeAnalytics:
     Manages live updates and streaming analytics data.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.connection_manager = ConnectionManager()
         self.update_handlers: Dict[str, List[Callable]] = {}
         self.analytics_streams: Dict[str, asyncio.Queue] = {}
         self.background_tasks: Set[asyncio.Task] = set()
     
-    def register_update_handler(self, analytics_type: str, handler: Callable):
+    def register_update_handler(self, analytics_type: str, handler: Callable) -> None:
         """Register a handler for analytics updates"""
         if analytics_type not in self.update_handlers:
             self.update_handlers[analytics_type] = []
         self.update_handlers[analytics_type].append(handler)
     
-    async def start_analytics_stream(self, analytics_type: str, interval: float = 1.0):
+    async def start_analytics_stream(self, analytics_type: str, interval: float = 1.0) -> None:
         """Start a background stream for analytics updates"""
         if analytics_type in self.analytics_streams:
             return  # Already running
@@ -159,14 +159,14 @@ class RealtimeAnalytics:
         self.background_tasks.add(task)
         task.add_done_callback(self.background_tasks.discard)
     
-    async def stop_analytics_stream(self, analytics_type: str):
+    async def stop_analytics_stream(self, analytics_type: str) -> None:
         """Stop a background analytics stream"""
         if analytics_type in self.analytics_streams:
             queue = self.analytics_streams[analytics_type]
             await queue.put(None)  # Signal to stop
             del self.analytics_streams[analytics_type]
     
-    async def _process_analytics_stream(self, analytics_type: str, queue: asyncio.Queue, interval: float):
+    async def _process_analytics_stream(self, analytics_type: str, queue: asyncio.Queue, interval: float) -> None:
         """Process analytics stream updates"""
         logger.info(f"Started analytics stream for {analytics_type}")
         
@@ -198,7 +198,7 @@ class RealtimeAnalytics:
         
         logger.info(f"Stopped analytics stream for {analytics_type}")
     
-    async def _generate_periodic_update(self, analytics_type: str):
+    async def _generate_periodic_update(self, analytics_type: str) -> None:
         """Generate a periodic heartbeat or status update"""
         update = RealtimeUpdate(
             update_type="heartbeat",
@@ -210,7 +210,7 @@ class RealtimeAnalytics:
         )
         await self.connection_manager.broadcast_to_subscribers(analytics_type, update)
     
-    async def publish_update(self, analytics_type: str, update: RealtimeUpdate):
+    async def publish_update(self, analytics_type: str, update: RealtimeUpdate) -> None:
         """Publish an analytics update to the stream"""
         if analytics_type in self.analytics_streams:
             await self.analytics_streams[analytics_type].put(update)
@@ -223,7 +223,7 @@ class RealtimeAnalytics:
         websocket: WebSocket, 
         connection_id: str,
         user_id: Optional[str] = None
-    ):
+    ) -> None:
         """Handle a WebSocket connection for real-time analytics"""
         await self.connection_manager.connect(websocket, connection_id, user_id)
         
@@ -241,7 +241,7 @@ class RealtimeAnalytics:
             logger.error(f"WebSocket error for {connection_id}: {e}")
             self.connection_manager.disconnect(connection_id)
     
-    async def _handle_client_message(self, connection_id: str, message: Dict[str, Any]):
+    async def _handle_client_message(self, connection_id: str, message: Dict[str, Any]) -> None:
         """Handle messages from WebSocket clients"""
         message_type = message.get("type")
         
@@ -277,13 +277,13 @@ class RealtimeAnalytics:
                 "timestamp": datetime.utcnow().isoformat()
             })
     
-    async def generate_sse_stream(self, analytics_type: str):
+    async def generate_sse_stream(self, analytics_type: str) -> None:
         """Generate Server-Sent Events stream for analytics"""
         # This would be used with FastAPI's StreamingResponse
         queue = asyncio.Queue()
         
         # Subscribe to updates
-        def update_handler(update: RealtimeUpdate):
+        def update_handler(update: RealtimeUpdate) -> None:
             asyncio.create_task(queue.put(update))
         
         self.register_update_handler(analytics_type, update_handler)
@@ -307,7 +307,7 @@ class RealtimeAnalytics:
             }
         }
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown real-time analytics system"""
         # Stop all streams
         for analytics_type in list(self.analytics_streams.keys()):

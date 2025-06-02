@@ -66,7 +66,7 @@ class AnalyticsEvent:
     priority: EventPriority = EventPriority.NORMAL
     source: str = "unknown"
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Post-initialization processing."""
         if not self.event_name and self.event_type != EventType.CUSTOM:
             self.event_name = self.event_type.value
@@ -137,7 +137,7 @@ class AnalyticsEvent:
 class AnalyticsMetrics:
     """Prometheus metrics for analytics."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.events_total = Counter(
             'analytics_events_total',
             'Total number of analytics events',
@@ -170,7 +170,7 @@ class AnalyticsMetrics:
 class EventCollector:
     """Collects and validates analytics events."""
     
-    def __init__(self, settings):
+    def __init__(self, settings) -> None:
         self.settings = settings
         self.metrics = AnalyticsMetrics()
     
@@ -321,7 +321,7 @@ class EventCollector:
 class EventProcessor:
     """Processes analytics events in batches."""
     
-    def __init__(self, settings, db_pool, redis_client):
+    def __init__(self, settings, db_pool, redis_client) -> None:
         self.settings = settings
         self.db_pool = db_pool
         self.redis = redis_client
@@ -330,12 +330,12 @@ class EventProcessor:
         self.batch_processor_task = None
         self.running = False
     
-    async def start(self):
+    async def start(self) -> None:
         """Start the event processor."""
         self.running = True
         self.batch_processor_task = asyncio.create_task(self._batch_processor())
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the event processor."""
         self.running = False
         if self.batch_processor_task:
@@ -345,7 +345,7 @@ class EventProcessor:
             except asyncio.CancelledError:
                 pass
     
-    async def queue_event(self, event: AnalyticsEvent):
+    async def queue_event(self, event: AnalyticsEvent) -> None:
         """Queue an event for processing."""
         # Apply sampling if configured
         if self.settings.ANALYTICS_SAMPLE_RATE < 1.0:
@@ -365,7 +365,7 @@ class EventProcessor:
             source=event.source
         ).inc()
     
-    async def _batch_processor(self):
+    async def _batch_processor(self) -> None:
         """Process events in batches."""
         batch = []
         last_flush = time.time()
@@ -405,7 +405,7 @@ class EventProcessor:
                 # Continue processing even if there's an error
                 batch = []
     
-    async def _process_batch(self, events: List[AnalyticsEvent]):
+    async def _process_batch(self, events: List[AnalyticsEvent]) -> None:
         """Process a batch of events."""
         if not events:
             return
@@ -419,7 +419,7 @@ class EventProcessor:
         # Update real-time metrics
         await self._update_real_time_metrics(events)
     
-    async def _store_events_in_database(self, events: List[AnalyticsEvent]):
+    async def _store_events_in_database(self, events: List[AnalyticsEvent]) -> None:
         """Store events in PostgreSQL database."""
         try:
             async with self.db_pool.acquire() as conn:
@@ -462,7 +462,7 @@ class EventProcessor:
                 operation="insert", status="error"
             ).inc()
     
-    async def _store_events_in_redis(self, events: List[AnalyticsEvent]):
+    async def _store_events_in_redis(self, events: List[AnalyticsEvent]) -> None:
         """Store events in Redis for real-time analytics."""
         try:
             pipe = self.redis.pipeline()
@@ -490,7 +490,7 @@ class EventProcessor:
         except Exception as e:
             print(f"Error storing events in Redis: {e}")
     
-    async def _update_real_time_metrics(self, events: List[AnalyticsEvent]):
+    async def _update_real_time_metrics(self, events: List[AnalyticsEvent]) -> None:
         """Update real-time analytics metrics."""
         try:
             # Group events by type for efficient processing
@@ -514,7 +514,7 @@ class EventProcessor:
 class AnalyticsEngine:
     """Main analytics engine coordinating all components."""
     
-    def __init__(self, settings, db_pool):
+    def __init__(self, settings, db_pool) -> None:
         self.settings = settings
         self.db_pool = db_pool
         self.redis_client = None
@@ -522,7 +522,7 @@ class AnalyticsEngine:
         self.processor = None
         self.initialized = False
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the analytics engine."""
         if not self.settings.ANALYTICS_ENABLED:
             return
@@ -549,7 +549,7 @@ class AnalyticsEngine:
         except Exception as e:
             print(f"Failed to initialize analytics engine: {e}")
     
-    async def close(self):
+    async def close(self) -> None:
         """Close the analytics engine."""
         if self.processor:
             await self.processor.stop()
@@ -659,14 +659,14 @@ class AnalyticsEngine:
 analytics_engine = None
 
 
-async def initialize_analytics_engine(settings, db_pool):
+async def initialize_analytics_engine(settings, db_pool) -> None:
     """Initialize the global analytics engine."""
     global analytics_engine
     analytics_engine = AnalyticsEngine(settings, db_pool)
     await analytics_engine.initialize()
 
 
-async def close_analytics_engine():
+async def close_analytics_engine() -> None:
     """Close the global analytics engine."""
     global analytics_engine
     if analytics_engine:

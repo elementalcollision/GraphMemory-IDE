@@ -68,7 +68,7 @@ class OAuth2Error(SSOError):
 class SAMLRequest:
     """SAML Authentication Request builder."""
     
-    def __init__(self, settings):
+    def __init__(self, settings) -> None:
         self.settings = settings
     
     def build_auth_request(
@@ -139,7 +139,7 @@ class SAMLRequest:
 class SAMLResponse:
     """SAML Response parser and validator."""
     
-    def __init__(self, settings):
+    def __init__(self, settings) -> None:
         self.settings = settings
     
     def parse_response(self, saml_response: str) -> Dict[str, Any]:
@@ -198,7 +198,7 @@ class SAMLResponse:
 class OAuth2Client:
     """OAuth2/OpenID Connect client implementation."""
     
-    def __init__(self, settings):
+    def __init__(self, settings) -> None:
         self.settings = settings
     
     async def get_authorization_url(
@@ -276,7 +276,7 @@ class OAuth2Client:
 class UserProvisioner:
     """Handles automatic user provisioning from SSO providers."""
     
-    def __init__(self, db_session):
+    def __init__(self, db_session) -> None:
         self.db = db_session
     
     async def provision_user(
@@ -378,7 +378,7 @@ class UserProvisioner:
         # Implementation depends on your user model
         pass
     
-    async def _update_user_from_sso(self, user: User, provider: SSOProvider, user_data: Dict[str, Any]):
+    async def _update_user_from_sso(self, user: User, provider: SSOProvider, user_data: Dict[str, Any]) -> None:
         """Update existing user from SSO data."""
         first_name, last_name = self._extract_name(user_data)
         
@@ -394,7 +394,7 @@ class UserProvisioner:
 class SessionManager:
     """Manages SSO sessions and tokens."""
     
-    def __init__(self, settings):
+    def __init__(self, settings) -> None:
         self.settings = settings
     
     def create_session(self, user: User, provider: SSOProvider, sso_data: Dict[str, Any]) -> str:
@@ -488,7 +488,7 @@ class SSOManager:
     - Session management and security
     """
     
-    def __init__(self, settings, db_session):
+    def __init__(self, settings, db_session) -> None:
         self.settings = settings
         self.db = db_session
         self.saml_request = SAMLRequest(settings)
@@ -639,7 +639,7 @@ class SSOManager:
 sso_manager = None
 
 
-async def initialize_sso_manager(settings, db_session):
+async def initialize_sso_manager(settings, db_session) -> None:
     """Initialize the global SSO manager."""
     global sso_manager
     if settings.SSO_ENABLED:

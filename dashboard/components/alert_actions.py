@@ -38,7 +38,7 @@ ACTION_ICONS = {
 }
 
 
-def alert_action_panel(alert_id: str, current_status: str = 'ACTIVE'):
+def alert_action_panel(alert_id: str, current_status: str = 'ACTIVE') -> None:
     """Individual alert action panel with available actions"""
     
     st.subheader(f"🔧 Alert Actions: {alert_id}")
@@ -69,7 +69,7 @@ def alert_action_panel(alert_id: str, current_status: str = 'ACTIVE'):
             _render_action_form(alert_id, action, current_status)
 
 
-def bulk_alert_actions():
+def bulk_alert_actions() -> None:
     """Bulk alert operation controls"""
     
     st.subheader("🔄 Bulk Alert Operations")
@@ -150,7 +150,7 @@ def bulk_alert_actions():
         st.caption(f"This action will affect {selected_count} selected alerts")
 
 
-def alert_workflow_manager():
+def alert_workflow_manager() -> None:
     """Alert workflow and automation management"""
     
     st.subheader("⚙️ Alert Workflow Manager")
@@ -170,7 +170,7 @@ def alert_workflow_manager():
         _alert_workflow_statistics()
 
 
-def _alert_auto_actions():
+def _alert_auto_actions() -> None:
     """Configure automatic alert actions"""
     
     st.write("**Automatic Action Rules**")
@@ -252,7 +252,7 @@ def _alert_auto_actions():
         st.info("No auto-action rules configured")
 
 
-def _alert_action_templates():
+def _alert_action_templates() -> None:
     """Manage alert action templates"""
     
     st.write("**Action Templates**")
@@ -310,7 +310,7 @@ def _alert_action_templates():
         st.info("No action templates available")
 
 
-def _alert_workflow_statistics():
+def _alert_workflow_statistics() -> None:
     """Display alert workflow statistics"""
     
     st.write("**Workflow Performance Statistics**")
@@ -356,7 +356,7 @@ def _alert_workflow_statistics():
         st.info("No response time trend data available")
 
 
-def quick_action_bar(alert_ids: List[str]):
+def quick_action_bar(alert_ids: List[str]) -> None:
     """Quick action bar for rapid alert processing"""
     
     if not alert_ids:
@@ -394,7 +394,7 @@ def quick_action_bar(alert_ids: List[str]):
 
 # Helper functions
 
-def _render_action_form(alert_id: str, action: str, current_status: str):
+def _render_action_form(alert_id: str, action: str, current_status: str) -> None:
     """Render action-specific form"""
     
     st.write(f"**{action.title()} Alert**")
@@ -660,7 +660,7 @@ def _export_alert_data(alert_ids: List[str]) -> str:
 
 # Main alert actions dashboard
 
-def alert_actions_dashboard():
+def alert_actions_dashboard() -> None:
     """Main alert actions and workflow management dashboard"""
     
     st.title("🔧 Alert Actions & Workflow Management")

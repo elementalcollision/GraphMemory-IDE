@@ -137,7 +137,7 @@ class OperationalTransform:
     and decomposition of operations for efficient processing.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.operation_history: List[Operation] = []
         self.state_vector: Dict[str, int] = {}  # user_id -> latest sequence number
         self.composition_cache: Dict[str, Operation] = {}

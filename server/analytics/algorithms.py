@@ -27,7 +27,7 @@ class GraphAlgorithms:
     Provides centrality measures, community detection, and path analysis.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.graph_cache = {}
         self.executor = ThreadPoolExecutor(max_workers=4)
     
@@ -61,7 +61,7 @@ class GraphAlgorithms:
     ) -> Dict[str, float]:
         """Calculate centrality measures for graph nodes"""
         
-        def _calculate():
+        def _calculate() -> None:
             if centrality_type == CentralityType.BETWEENNESS:
                 return nx.betweenness_centrality(graph, normalized=normalized)
             elif centrality_type == CentralityType.CLOSENESS:
@@ -101,7 +101,7 @@ class GraphAlgorithms:
     ) -> Tuple[Dict[str, str], float, List[CommunityMetrics]]:
         """Detect communities in the graph"""
         
-        def _detect():
+        def _detect() -> None:
             if algorithm == "louvain":
                 try:
                     import community as community_louvain
@@ -159,7 +159,7 @@ class GraphAlgorithms:
     ) -> List[CommunityMetrics]:
         """Calculate metrics for each community"""
         
-        def _calculate():
+        def _calculate() -> None:
             communities = {}
             for node, comm_id in partition.items():
                 if comm_id not in communities:
@@ -217,7 +217,7 @@ class GraphAlgorithms:
     ) -> Dict[str, Any]:
         """Analyze paths between nodes"""
         
-        def _analyze():
+        def _analyze() -> None:
             results = {
                 "paths": [],
                 "statistics": {},
@@ -283,7 +283,7 @@ class GraphAlgorithms:
     async def calculate_graph_metrics(self, graph: nx.Graph) -> GraphMetrics:
         """Calculate overall graph metrics"""
         
-        def _calculate():
+        def _calculate() -> None:
             # Basic metrics
             node_count = graph.number_of_nodes()
             edge_count = graph.number_of_edges()
@@ -350,7 +350,7 @@ class MLAnalytics:
     Provides clustering, pattern detection, and predictive analytics.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.scaler = StandardScaler()
         self.models = {}
         self.executor = ThreadPoolExecutor(max_workers=2)
@@ -364,7 +364,7 @@ class MLAnalytics:
     ) -> Tuple[np.ndarray, float, Optional[np.ndarray]]:
         """Perform clustering on node features"""
         
-        def _cluster():
+        def _cluster() -> None:
             # Scale features
             features_scaled = self.scaler.fit_transform(features)
             
@@ -413,7 +413,7 @@ class MLAnalytics:
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Detect anomalous nodes using isolation forest"""
         
-        def _detect():
+        def _detect() -> None:
             from sklearn.ensemble import IsolationForest
             
             # Scale features
@@ -441,7 +441,7 @@ class MLAnalytics:
     ) -> Tuple[np.ndarray, List[str], List[str]]:
         """Extract numerical features from graph nodes for ML analysis"""
         
-        def _extract():
+        def _extract() -> None:
             nodes = list(graph.nodes())
             features = []
             feature_names = []

@@ -39,7 +39,7 @@ class ScalabilityTestResult:
 class KubernetesScalingValidator:
     """Validates Kubernetes auto-scaling capabilities"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.namespace = os.getenv('K8S_NAMESPACE', 'graphmemory-prod')
         self.app_name = 'graphmemory-ide'
         
@@ -139,7 +139,7 @@ class KubernetesScalingValidator:
 class LoadBalancerValidator:
     """Validates load balancer performance under scaling"""
     
-    def __init__(self, lb_url: str):
+    def __init__(self, lb_url: str) -> None:
         self.lb_url = lb_url
         
     async def test_load_distribution(self, requests_count: int = 1000) -> Dict[str, Any]:
@@ -189,16 +189,16 @@ class LoadBalancerValidator:
 class ResourceMonitoringValidator:
     """Validates resource monitoring during scaling"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.monitoring_interval = 5  # seconds
         self.resource_history = []
         
-    def start_monitoring(self):
+    def start_monitoring(self) -> None:
         """Start resource monitoring"""
         self.monitoring = True
         logger.info("Starting resource monitoring")
         
-    def stop_monitoring(self):
+    def stop_monitoring(self) -> None:
         """Stop resource monitoring"""
         self.monitoring = False
         logger.info("Stopped resource monitoring")
@@ -261,7 +261,7 @@ class ResourceMonitoringValidator:
 class ScalabilityTestSuite:
     """Comprehensive scalability testing suite"""
     
-    def __init__(self, config_path: str = None):
+    def __init__(self, config_path: str = None) -> None:
         self.config = self._load_config(config_path)
         self.k8s_validator = KubernetesScalingValidator()
         self.resource_monitor = ResourceMonitoringValidator()
@@ -313,7 +313,7 @@ class ScalabilityTestSuite:
         # Generate comprehensive report
         return self._generate_scalability_report()
     
-    async def _test_kubernetes_autoscaling(self):
+    async def _test_kubernetes_autoscaling(self) -> None:
         """Test Kubernetes Horizontal Pod Autoscaler"""
         logger.info("🔄 Testing Kubernetes Auto-Scaling")
         
@@ -357,7 +357,7 @@ class ScalabilityTestSuite:
         self.test_results.append(result)
         logger.info(f"✅ Kubernetes scaling test completed: {result.success}")
     
-    async def _test_load_balancer_scaling(self):
+    async def _test_load_balancer_scaling(self) -> None:
         """Test load balancer performance during scaling"""
         logger.info("⚖️ Testing Load Balancer Scaling Performance")
         
@@ -391,7 +391,7 @@ class ScalabilityTestSuite:
         self.test_results.append(result)
         logger.info(f"✅ Load balancer scaling test completed: {result.success}")
     
-    async def _test_resource_monitoring(self):
+    async def _test_resource_monitoring(self) -> None:
         """Test resource monitoring during scaling events"""
         logger.info("📊 Testing Resource Monitoring During Scaling")
         
@@ -418,7 +418,7 @@ class ScalabilityTestSuite:
         self.test_results.append(result)
         logger.info(f"✅ Resource monitoring test completed: {result.success}")
     
-    async def _test_database_connection_scaling(self):
+    async def _test_database_connection_scaling(self) -> None:
         """Test database connection pool scaling"""
         logger.info("🗄️ Testing Database Connection Scaling")
         
@@ -451,7 +451,7 @@ class ScalabilityTestSuite:
         self.test_results.append(result)
         logger.info(f"✅ Database connection scaling test completed: {result.success}")
     
-    async def _test_cdn_scaling_performance(self):
+    async def _test_cdn_scaling_performance(self) -> None:
         """Test CDN performance under scaled load"""
         logger.info("🌐 Testing CDN Scaling Performance")
         
@@ -575,7 +575,7 @@ class ScalabilityTestSuite:
         return recommendations
 
 # CLI Interface
-async def main():
+async def main() -> None:
     """Main CLI interface for scalability testing"""
     import argparse
     

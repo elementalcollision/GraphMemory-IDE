@@ -38,7 +38,7 @@ class CloudEnvironment:
 class DigitalOceanDeploymentValidator:
     """Comprehensive deployment validation for DigitalOcean App Platform."""
     
-    def __init__(self, environment: CloudEnvironment):
+    def __init__(self, environment: CloudEnvironment) -> None:
         self.environment = environment
         self.deployment_logs: List[Dict[str, Any]] = []
     
@@ -279,7 +279,7 @@ class TestDigitalOceanDeployment:
     """Comprehensive DigitalOcean deployment testing."""
     
     @pytest.mark.asyncio
-    async def test_production_deployment_validation(self):
+    async def test_production_deployment_validation(self) -> None:
         """Test complete production deployment validation pipeline."""
         # Load environment from env vars
         production_url = os.getenv("DO_PRODUCTION_URL")
@@ -308,7 +308,7 @@ class TestDigitalOceanDeployment:
         print("✅ Production deployment validation passed")
     
     @pytest.mark.asyncio
-    async def test_staging_deployment_validation(self):
+    async def test_staging_deployment_validation(self) -> None:
         """Test staging deployment validation with relaxed requirements."""
         staging_url = os.getenv("DO_STAGING_URL")
         if not staging_url:
@@ -334,7 +334,7 @@ class TestDigitalOceanDeployment:
         print("✅ Staging deployment validation passed")
     
     @pytest.mark.asyncio
-    async def test_deployment_performance_benchmarks(self):
+    async def test_deployment_performance_benchmarks(self) -> None:
         """Test deployment performance meets benchmarks."""
         base_url = os.getenv("DO_PRODUCTION_URL") or os.getenv("DO_STAGING_URL")
         if not base_url:
@@ -371,7 +371,7 @@ class TestDigitalOceanDeployment:
         print(f"✅ Performance benchmarks passed: avg={avg_response_time:.3f}s, max={max_response_time:.3f}s")
     
     @pytest.mark.asyncio
-    async def test_cloud_deployment_recovery(self):
+    async def test_cloud_deployment_recovery(self) -> None:
         """Test deployment recovery and error handling."""
         base_url = os.getenv("DO_STAGING_URL", "http://localhost:8000")
         
@@ -404,7 +404,7 @@ if __name__ == "__main__":
     # Run cloud tests directly for development
     import asyncio
     
-    async def main():
+    async def main() -> None:
         env_manager = DigitalOceanEnvironmentManager()
         
         if env_manager.environments:

@@ -12,7 +12,7 @@ This module provides comprehensive performance testing including:
 
 import asyncio
 import time
-import psutil  # type: ignore
+import psutil
 import pytest
 import statistics
 from concurrent.futures import ThreadPoolExecutor
@@ -45,13 +45,13 @@ class PerformanceMetrics:
 class PerformanceTestSuite:
     """Comprehensive performance testing suite"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics_history: List[PerformanceMetrics] = []
         self.response_times: List[float] = []
         self.start_time: float = 0
         self.end_time: float = 0
     
-    def start_monitoring(self):
+    def start_monitoring(self) -> None:
         """Start performance monitoring"""
         self.start_time = time.time()
         self.response_times.clear()
@@ -94,8 +94,8 @@ class PerformanceTestSuite:
         # Get system metrics with proper error handling
         try:
             process = psutil.Process()
-            memory_usage_mb = process.memory_info().rss / 1024 / 1024  # type: ignore
-            cpu_usage_percent = process.cpu_percent()  # type: ignore
+            memory_usage_mb = process.memory_info().rss / 1024 / 1024
+            cpu_usage_percent = process.cpu_percent()
         except Exception:
             # Fallback values if psutil fails
             memory_usage_mb = 0.0
@@ -119,7 +119,7 @@ class PerformanceTestSuite:
         self.metrics_history.append(metrics)
         return metrics
     
-    def record_response_time(self, response_time: float):
+    def record_response_time(self, response_time: float) -> None:
         """Record a response time measurement"""
         self.response_times.append(response_time)
 
@@ -128,7 +128,7 @@ class TestAnalyticsPerformance:
     """Analytics Engine Performance Tests"""
     
     @pytest.fixture
-    def mock_connection(self):
+    def mock_connection(self) -> None:
         """Mock Kuzu database connection for performance testing"""
         mock_conn = Mock()
         mock_result = Mock()
@@ -141,17 +141,17 @@ class TestAnalyticsPerformance:
         return mock_conn
     
     @pytest.fixture
-    def analytics_engine(self, mock_connection):
+    def analytics_engine(self, mock_connection) -> None:
         """Create analytics engine for performance testing"""
         return KuzuAnalyticsEngine(mock_connection)
     
     @pytest.fixture
-    def performance_suite(self):
+    def performance_suite(self) -> None:
         """Create performance test suite"""
         return PerformanceTestSuite()
     
     @pytest.mark.asyncio
-    async def test_centrality_analysis_performance(self, analytics_engine, performance_suite):
+    async def test_centrality_analysis_performance(self, analytics_engine, performance_suite) -> None:
         """Test centrality analysis performance under load"""
         performance_suite.start_monitoring()
         
@@ -177,7 +177,7 @@ class TestAnalyticsPerformance:
         
         print(f"Centrality Performance: {metrics.average_response_time:.2f}ms avg, {metrics.requests_per_second:.2f} RPS")
     
-    async def _run_centrality_test(self, analytics_engine, performance_suite, iteration: int):
+    async def _run_centrality_test(self, analytics_engine, performance_suite, iteration: int) -> None:
         """Single centrality analysis test"""
         start_time = time.time()
         
@@ -202,7 +202,7 @@ class TestAnalyticsPerformance:
             raise e
     
     @pytest.mark.asyncio
-    async def test_concurrent_analytics_stress(self, analytics_engine, performance_suite):
+    async def test_concurrent_analytics_stress(self, analytics_engine, performance_suite) -> None:
         """Stress test with high concurrency"""
         performance_suite.start_monitoring()
         
@@ -248,7 +248,7 @@ class TestAnalyticsPerformance:
         
         print(f"Stress Test: {metrics.average_response_time:.2f}ms avg, {success_rate:.2%} success rate")
     
-    async def _run_stress_test(self, analytics_engine, performance_suite, analytics_type, iteration: int):
+    async def _run_stress_test(self, analytics_engine, performance_suite, analytics_type, iteration: int) -> None:
         """Single stress test operation"""
         start_time = time.time()
         
@@ -300,7 +300,7 @@ class TestGatewayPerformance:
     """Gateway Performance Tests"""
     
     @pytest.fixture
-    def mock_service_registry(self):
+    def mock_service_registry(self) -> None:
         """Mock service registry for performance testing"""
         registry = Mock()
         
@@ -318,12 +318,12 @@ class TestGatewayPerformance:
         return registry
     
     @pytest.fixture
-    def analytics_gateway(self, mock_service_registry):
+    def analytics_gateway(self, mock_service_registry) -> None:
         """Create analytics gateway for performance testing"""
         return AnalyticsGateway(mock_service_registry)
     
     @pytest.mark.asyncio
-    async def test_gateway_throughput_performance(self, analytics_gateway):
+    async def test_gateway_throughput_performance(self, analytics_gateway) -> None:
         """Test gateway throughput under high load"""
         await analytics_gateway.start(num_workers=8)  # High worker count
         
@@ -370,7 +370,7 @@ class TestGatewayPerformance:
         
         print(f"Gateway Throughput: {metrics.requests_per_second:.2f} RPS, {success_rate:.2%} success")
     
-    async def _run_gateway_request(self, gateway, performance_suite, iteration: int):
+    async def _run_gateway_request(self, gateway, performance_suite, iteration: int) -> None:
         """Single gateway request for performance testing"""
         start_time = time.time()
         
@@ -394,7 +394,7 @@ class TestGatewayPerformance:
             raise e
     
     @pytest.mark.asyncio
-    async def test_cache_performance_impact(self, analytics_gateway):
+    async def test_cache_performance_impact(self, analytics_gateway) -> None:
         """Test performance impact of caching"""
         await analytics_gateway.start(num_workers=4)
         
@@ -448,11 +448,11 @@ class TestMemoryAndResourceUsage:
     """Memory and Resource Usage Tests"""
     
     @pytest.mark.asyncio
-    async def test_memory_leak_detection(self):
+    async def test_memory_leak_detection(self) -> None:
         """Test for memory leaks during extended operation"""
         try:
             process = psutil.Process()
-            initial_memory = process.memory_info().rss / 1024 / 1024  # type: ignore
+            initial_memory = process.memory_info().rss / 1024 / 1024
         except Exception:
             # Skip test if psutil is not available
             pytest.skip("psutil not available for memory monitoring")
@@ -477,7 +477,7 @@ class TestMemoryAndResourceUsage:
             # Periodic memory check
             if i % 20 == 0:
                 try:
-                    current_memory = process.memory_info().rss / 1024 / 1024  # type: ignore
+                    current_memory = process.memory_info().rss / 1024 / 1024
                     memory_growth = current_memory - initial_memory
                     
                     # Memory growth should be reasonable
@@ -487,7 +487,7 @@ class TestMemoryAndResourceUsage:
                     continue
         
         try:
-            final_memory = process.memory_info().rss / 1024 / 1024  # type: ignore
+            final_memory = process.memory_info().rss / 1024 / 1024
             total_growth = final_memory - initial_memory
             
             # Final memory check
@@ -498,7 +498,7 @@ class TestMemoryAndResourceUsage:
             print("Memory monitoring not available - test passed")
     
     @pytest.mark.asyncio
-    async def test_cache_memory_management(self):
+    async def test_cache_memory_management(self) -> None:
         """Test cache memory management and cleanup"""
         mock_conn = Mock()
         mock_result = Mock()

@@ -57,13 +57,13 @@ STATUS_ICONS = {
 class AlertStreamConnection:
     """Manages SSE connection for real-time alert updates"""
     
-    def __init__(self, user_id: str, api_client: APIClient):
+    def __init__(self, user_id: str, api_client: APIClient) -> None:
         self.user_id = user_id
         self.api_client = api_client
         self.connected = False
         self.last_event_time = datetime.utcnow()
         
-    def connect(self):
+    def connect(self) -> None:
         """Establish SSE connection for alert streaming"""
         try:
             # In a real implementation, this would establish EventSource connection
@@ -88,7 +88,7 @@ class AlertStreamConnection:
 
 
 @st.fragment(run_every=2)
-def realtime_alert_feed():
+def realtime_alert_feed() -> None:
     """Live alert feed with real-time updates"""
     
     # Get current user and API client
@@ -168,7 +168,7 @@ def realtime_alert_feed():
         st.info("No recent alerts found")
 
 
-def _display_alert_cards(alerts: List[Dict]):
+def _display_alert_cards(alerts: List[Dict]) -> None:
     """Display alerts as interactive cards"""
     
     for alert in alerts:
@@ -220,7 +220,7 @@ def _display_alert_cards(alerts: List[Dict]):
             st.divider()
 
 
-def alert_summary_cards():
+def alert_summary_cards() -> None:
     """Summary cards showing alert metrics"""
     
     api_client = get_api_client()
@@ -260,7 +260,7 @@ def alert_summary_cards():
         st.metric("Acknowledged", acknowledged_alerts)
 
 
-def alert_severity_distribution():
+def alert_severity_distribution() -> None:
     """Display alert severity distribution chart"""
     
     api_client = get_api_client()
@@ -300,7 +300,7 @@ def alert_severity_distribution():
         st.info("No alert data available for severity distribution")
 
 
-def alert_timeline_chart():
+def alert_timeline_chart() -> None:
     """Display alert timeline over the last 24 hours"""
     
     api_client = get_api_client()
@@ -334,7 +334,7 @@ def alert_timeline_chart():
         st.info("No timeline data available")
 
 
-def alert_acknowledgment_controls():
+def alert_acknowledgment_controls() -> None:
     """UI controls for bulk alert operations"""
     
     if 'selected_alerts' not in st.session_state:
@@ -376,7 +376,7 @@ def alert_acknowledgment_controls():
         st.info(f"Selected: {len(st.session_state.selected_alerts)} alerts")
 
 
-def alert_history_table():
+def alert_history_table() -> None:
     """Paginated alert history with search and filtering"""
     
     st.subheader("📋 Alert History")
@@ -469,7 +469,7 @@ def alert_history_table():
         st.info("No alerts found matching the criteria")
 
 
-def alert_detail_modal(alert_id: str):
+def alert_detail_modal(alert_id: str) -> None:
     """Display detailed alert information in a modal-style container"""
     
     api_client = get_api_client()
@@ -529,7 +529,7 @@ def alert_detail_modal(alert_id: str):
 
 # Alert action functions
 
-def _acknowledge_alert(alert_id: str):
+def _acknowledge_alert(alert_id: str) -> None:
     """Acknowledge a single alert"""
     api_client = get_api_client()
     user = get_current_user()
@@ -543,7 +543,7 @@ def _acknowledge_alert(alert_id: str):
         return False
 
 
-def _bulk_acknowledge_alerts(alert_ids: List[str]):
+def _bulk_acknowledge_alerts(alert_ids: List[str]) -> None:
     """Acknowledge multiple alerts"""
     api_client = get_api_client()
     user = get_current_user()
@@ -557,7 +557,7 @@ def _bulk_acknowledge_alerts(alert_ids: List[str]):
         return False
 
 
-def _bulk_suppress_alerts(alert_ids: List[str]):
+def _bulk_suppress_alerts(alert_ids: List[str]) -> None:
     """Suppress multiple alerts"""
     api_client = get_api_client()
     user = get_current_user()
@@ -571,7 +571,7 @@ def _bulk_suppress_alerts(alert_ids: List[str]):
         return False
 
 
-def _bulk_resolve_alerts(alert_ids: List[str]):
+def _bulk_resolve_alerts(alert_ids: List[str]) -> None:
     """Resolve multiple alerts"""
     api_client = get_api_client()
     user = get_current_user()
@@ -587,7 +587,7 @@ def _bulk_resolve_alerts(alert_ids: List[str]):
 
 # Main alert dashboard component
 
-def alert_dashboard():
+def alert_dashboard() -> None:
     """Main alert dashboard with all components"""
     
     # Require authentication

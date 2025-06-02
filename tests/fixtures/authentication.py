@@ -162,19 +162,19 @@ def readonly_auth_headers(readonly_jwt_token) -> Dict[str, str]:
     }
 
 @pytest.fixture(scope="function") 
-def mock_auth_dependencies():
+def mock_auth_dependencies() -> None:
     """Mock authentication dependencies for testing."""
     
     class MockAuthManager:
-        def __init__(self):
+        def __init__(self) -> None:
             self.current_user = None
             self.bypass_auth = False
         
-        def set_current_user(self, user_data: Dict[str, Any]):
+        def set_current_user(self, user_data: Dict[str, Any]) -> None:
             """Set the current authenticated user."""
             self.current_user = user_data
         
-        def set_bypass_auth(self, bypass: bool):
+        def set_bypass_auth(self, bypass: bool) -> None:
             """Set whether to bypass authentication."""
             self.bypass_auth = bypass
         
@@ -204,7 +204,7 @@ def mock_auth_dependencies():
     return MockAuthManager()
 
 @pytest.fixture(scope="function")
-def auth_test_scenarios():
+def auth_test_scenarios() -> None:
     """Provide various authentication test scenarios."""
     return {
         "valid_admin_access": {
@@ -233,7 +233,7 @@ def auth_test_scenarios():
     }
 
 @pytest.fixture(scope="function")
-def permission_test_matrix():
+def permission_test_matrix() -> None:
     """Provide permission testing matrix."""
     return {
         "endpoints": {
@@ -250,7 +250,7 @@ def permission_test_matrix():
     }
 
 @pytest.fixture(scope="function")
-def auth_environment_setup(jwt_secret_key, jwt_algorithm):
+def auth_environment_setup(jwt_secret_key, jwt_algorithm) -> None:
     """Setup authentication environment variables."""
     auth_env = {
         "JWT_SECRET_KEY": jwt_secret_key,
@@ -264,7 +264,7 @@ def auth_environment_setup(jwt_secret_key, jwt_algorithm):
         yield auth_env
 
 @pytest.fixture(scope="function")
-def auth_bypass_mode():
+def auth_bypass_mode() -> None:
     """Enable authentication bypass for integration tests."""
     bypass_env = {
         "AUTH_BYPASS_FOR_TESTING": "true",
@@ -276,15 +276,15 @@ def auth_bypass_mode():
 
 # Authentication performance monitoring
 @pytest.fixture(scope="function")
-def auth_performance_monitor():
+def auth_performance_monitor() -> None:
     """Monitor authentication performance during tests."""
     
     class AuthPerformanceMonitor:
-        def __init__(self):
+        def __init__(self) -> None:
             self.token_validations = []
             self.permission_checks = []
         
-        def record_token_validation(self, duration: float, success: bool):
+        def record_token_validation(self, duration: float, success: bool) -> None:
             """Record token validation performance."""
             self.token_validations.append({
                 "duration": duration,
@@ -292,7 +292,7 @@ def auth_performance_monitor():
                 "timestamp": datetime.utcnow()
             })
         
-        def record_permission_check(self, duration: float, permission: str, success: bool):
+        def record_permission_check(self, duration: float, permission: str, success: bool) -> None:
             """Record permission check performance."""
             self.permission_checks.append({
                 "duration": duration,
@@ -301,7 +301,7 @@ def auth_performance_monitor():
                 "timestamp": datetime.utcnow()
             })
         
-        def get_auth_stats(self):
+        def get_auth_stats(self) -> None:
             """Get authentication performance statistics."""
             token_times = [v["duration"] for v in self.token_validations]
             permission_times = [p["duration"] for p in self.permission_checks]

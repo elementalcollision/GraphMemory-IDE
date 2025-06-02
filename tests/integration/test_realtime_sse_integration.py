@@ -81,7 +81,7 @@ class SSEStreamMetrics:
 class SSEStreamTester:
     """Core SSE stream testing with live analytics data integration"""
     
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8000") -> None:
         self.base_url = base_url
         self.analytics_tester = AnalyticsEngineIntegrationTester()
         self.db_pool_manager = DatabaseConnectionPoolManager()
@@ -173,7 +173,7 @@ class SSEStreamTester:
 class SSEPerformanceMonitor:
     """Advanced performance monitoring for SSE streams"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.performance_baselines: Dict[str, float] = {
             "max_latency_ms": 100.0,
             "min_throughput_eps": 10.0,  # events per second
@@ -248,7 +248,7 @@ class SSEPerformanceMonitor:
 class SSEConnectionManager:
     """Advanced SSE connection lifecycle and stability testing"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.connection_registry: Dict[str, Dict[str, Any]] = {}
         self.stability_metrics: Dict[str, float] = {}
         
@@ -351,7 +351,7 @@ class SSEConnectionManager:
 class SSEIntegrationValidator:
     """End-to-end SSE pipeline validation with database integration"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.validation_results: Dict[str, Any] = {}
         self.integration_metrics: Dict[str, float] = {}
         
@@ -423,7 +423,7 @@ class SSEIntegrationValidator:
 
 # Integration test cases
 @pytest_asyncio.async_test
-async def test_sse_stream_single_client():
+async def test_sse_stream_single_client() -> None:
     """Test single client SSE streaming with analytics data"""
     tester = SSEStreamTester()
     metrics = await tester.test_single_client_sse_streaming()
@@ -434,7 +434,7 @@ async def test_sse_stream_single_client():
     assert metrics.error_count / metrics.total_events < 0.05
 
 @pytest_asyncio.async_test
-async def test_sse_concurrent_performance():
+async def test_sse_concurrent_performance() -> None:
     """Test SSE performance under concurrent load"""
     monitor = SSEPerformanceMonitor()
     results = await monitor.measure_concurrent_sse_performance(concurrent_clients=25)
@@ -445,7 +445,7 @@ async def test_sse_concurrent_performance():
     assert results["successful_streams"] / results["concurrent_clients"] > 0.95
 
 @pytest_asyncio.async_test
-async def test_sse_connection_stability():
+async def test_sse_connection_stability() -> None:
     """Test SSE connection stability over time"""
     manager = SSEConnectionManager()
     results = await manager.test_connection_stability_sustained(duration_minutes=5)  # Reduced for testing
@@ -455,7 +455,7 @@ async def test_sse_connection_stability():
     assert results["total_events_received"] > 0
 
 @pytest_asyncio.async_test
-async def test_sse_database_integration():
+async def test_sse_database_integration() -> None:
     """Test end-to-end SSE integration with database"""
     validator = SSEIntegrationValidator()
     results = await validator.validate_sse_database_integration()

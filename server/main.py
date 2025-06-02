@@ -147,7 +147,7 @@ def setup_lifecycle_events(app: FastAPI, settings: Settings) -> None:
     """Setup application lifecycle events"""
     
     @app.on_event("startup")
-    async def startup_event():
+    async def startup_event() -> None:
         """Initialize services on startup"""
         logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
         logger.info(f"Environment: {settings.ENVIRONMENT.value}")
@@ -192,7 +192,7 @@ def setup_lifecycle_events(app: FastAPI, settings: Settings) -> None:
             raise
 
     @app.on_event("shutdown")
-    async def shutdown_event():
+    async def shutdown_event() -> None:
         """Cleanup services on shutdown"""
         logger.info("Shutting down services...")
         
@@ -237,7 +237,7 @@ class TopKQueryRequest(BaseModel):
     filters: Optional[dict] = None
 
 
-def enforce_read_only():
+def enforce_read_only() -> None:
     """Enforce read-only mode if enabled"""
     settings = get_settings()
     if settings.database.KUZU_READ_ONLY:
@@ -552,7 +552,7 @@ async def topk_query(
 
 # Additional utility endpoints for production monitoring
 @app.get("/api/v1/status", summary="Application status", response_model=dict)
-async def get_application_status():
+async def get_application_status() -> None:
     """Get comprehensive application status"""
     settings = get_settings()
     metrics_collector = get_metrics_collector()

@@ -18,34 +18,34 @@ logger = logging.getLogger(__name__)
 class ResourceCleanupManager:
     """Manages cleanup of test resources."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.cleanup_tasks: List[Callable] = []
         self.temp_files: Set[Path] = set()
         self.temp_dirs: Set[Path] = set()
         self.active_processes: List[Any] = []
         self.database_connections: List[Any] = []
     
-    def register_cleanup_task(self, task: Callable):
+    def register_cleanup_task(self, task: Callable) -> None:
         """Register a cleanup task to be executed later."""
         self.cleanup_tasks.append(task)
     
-    def register_temp_file(self, file_path: Path):
+    def register_temp_file(self, file_path: Path) -> None:
         """Register a temporary file for cleanup."""
         self.temp_files.add(file_path)
     
-    def register_temp_dir(self, dir_path: Path):
+    def register_temp_dir(self, dir_path: Path) -> None:
         """Register a temporary directory for cleanup."""
         self.temp_dirs.add(dir_path)
     
-    def register_process(self, process: Any):
+    def register_process(self, process: Any) -> None:
         """Register a process for cleanup."""
         self.active_processes.append(process)
     
-    def register_database_connection(self, connection: Any):
+    def register_database_connection(self, connection: Any) -> None:
         """Register a database connection for cleanup."""
         self.database_connections.append(connection)
     
-    async def cleanup_all(self):
+    async def cleanup_all(self) -> None:
         """Execute all cleanup tasks."""
         logger.info("Starting comprehensive cleanup")
         
@@ -78,7 +78,7 @@ class ResourceCleanupManager:
         
         logger.info("Cleanup completed")
     
-    async def _cleanup_database_connections(self):
+    async def _cleanup_database_connections(self) -> None:
         """Cleanup database connections."""
         for connection in self.database_connections:
             try:
@@ -91,7 +91,7 @@ class ResourceCleanupManager:
             except Exception as e:
                 logger.warning(f"Failed to close database connection: {e}")
     
-    async def _cleanup_processes(self):
+    async def _cleanup_processes(self) -> None:
         """Cleanup active processes."""
         for process in self.active_processes:
             try:
@@ -111,7 +111,7 @@ class ResourceCleanupManager:
             except Exception as e:
                 logger.warning(f"Failed to terminate process: {e}")
     
-    def _cleanup_temp_files(self):
+    def _cleanup_temp_files(self) -> None:
         """Cleanup temporary files and directories."""
         # Cleanup temporary files
         for file_path in self.temp_files:
@@ -134,24 +134,24 @@ class ResourceCleanupManager:
 class DatabaseCleanupManager:
     """Specialized cleanup for database resources."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.kuzu_databases: List[Path] = []
         self.redis_databases: List[int] = []
         self.sqlite_databases: List[Path] = []
     
-    def register_kuzu_database(self, db_path: Path):
+    def register_kuzu_database(self, db_path: Path) -> None:
         """Register Kuzu database for cleanup."""
         self.kuzu_databases.append(db_path)
     
-    def register_redis_database(self, db_number: int):
+    def register_redis_database(self, db_number: int) -> None:
         """Register Redis database for cleanup."""
         self.redis_databases.append(db_number)
     
-    def register_sqlite_database(self, db_path: Path):
+    def register_sqlite_database(self, db_path: Path) -> None:
         """Register SQLite database for cleanup."""
         self.sqlite_databases.append(db_path)
     
-    async def cleanup_databases(self):
+    async def cleanup_databases(self) -> None:
         """Cleanup all registered databases."""
         logger.info("Starting database cleanup")
         
@@ -183,7 +183,7 @@ class DatabaseCleanupManager:
         
         logger.info("Database cleanup completed")
     
-    async def _cleanup_redis_databases(self):
+    async def _cleanup_redis_databases(self) -> None:
         """Cleanup Redis test databases."""
         try:
             import redis.asyncio as redis
@@ -206,7 +206,7 @@ class DatabaseCleanupManager:
 class FileCleanupManager:
     """Manages cleanup of test files and directories."""
     
-    def __init__(self, base_test_dir: Optional[Path] = None):
+    def __init__(self, base_test_dir: Optional[Path] = None) -> None:
         self.base_test_dir = base_test_dir or Path(tempfile.gettempdir()) / "graphmemory_tests"
         self.tracked_files: Set[Path] = set()
         self.tracked_dirs: Set[Path] = set()
@@ -233,7 +233,7 @@ class FileCleanupManager:
         return temp_dir
     
     @contextmanager
-    def temp_file_context(self, suffix: str = "", prefix: str = "test_", content: Optional[str] = None):
+    def temp_file_context(self, suffix: str = "", prefix: str = "test_", content: Optional[str] = None) -> None:
         """Context manager for temporary file that's automatically cleaned up."""
         temp_file = self.create_temp_file(suffix, prefix, content)
         try:
@@ -242,7 +242,7 @@ class FileCleanupManager:
             self.cleanup_file(temp_file)
     
     @contextmanager
-    def temp_dir_context(self, suffix: str = "", prefix: str = "test_"):
+    def temp_dir_context(self, suffix: str = "", prefix: str = "test_") -> None:
         """Context manager for temporary directory that's automatically cleaned up."""
         temp_dir = self.create_temp_dir(suffix, prefix)
         try:
@@ -250,15 +250,15 @@ class FileCleanupManager:
         finally:
             self.cleanup_dir(temp_dir)
     
-    def track_file(self, file_path: Path):
+    def track_file(self, file_path: Path) -> None:
         """Track an existing file for cleanup."""
         self.tracked_files.add(file_path)
     
-    def track_dir(self, dir_path: Path):
+    def track_dir(self, dir_path: Path) -> None:
         """Track an existing directory for cleanup."""
         self.tracked_dirs.add(dir_path)
     
-    def cleanup_file(self, file_path: Path):
+    def cleanup_file(self, file_path: Path) -> None:
         """Cleanup a specific file."""
         try:
             if file_path.exists():
@@ -271,7 +271,7 @@ class FileCleanupManager:
         except Exception as e:
             logger.warning(f"Failed to remove file {file_path}: {e}")
     
-    def cleanup_dir(self, dir_path: Path):
+    def cleanup_dir(self, dir_path: Path) -> None:
         """Cleanup a specific directory."""
         try:
             if dir_path.exists():
@@ -284,7 +284,7 @@ class FileCleanupManager:
         except Exception as e:
             logger.warning(f"Failed to remove directory {dir_path}: {e}")
     
-    def cleanup_all_files(self):
+    def cleanup_all_files(self) -> None:
         """Cleanup all tracked files and directories."""
         logger.info("Starting file cleanup")
         
@@ -317,24 +317,24 @@ class FileCleanupManager:
 class TestSessionCleanup:
     """Comprehensive cleanup manager for test sessions."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.resource_manager = ResourceCleanupManager()
         self.database_manager = DatabaseCleanupManager()
         self.file_manager = FileCleanupManager()
         self.is_cleanup_registered = False
     
-    def register_all_cleanup(self):
+    def register_all_cleanup(self) -> None:
         """Register cleanup for all managers."""
         if not self.is_cleanup_registered:
             import atexit
             atexit.register(self._sync_cleanup)
             self.is_cleanup_registered = True
     
-    def _sync_cleanup(self):
+    def _sync_cleanup(self) -> None:
         """Synchronous cleanup for atexit."""
         asyncio.run(self.cleanup_all())
     
-    async def cleanup_all(self):
+    async def cleanup_all(self) -> None:
         """Cleanup all test resources."""
         logger.info("Starting comprehensive test session cleanup")
         
@@ -349,7 +349,7 @@ class TestSessionCleanup:
         logger.info("Test session cleanup completed")
     
     @asynccontextmanager
-    async def session_context(self):
+    async def session_context(self) -> None:
         """Context manager for test session with automatic cleanup."""
         try:
             yield self
@@ -358,7 +358,7 @@ class TestSessionCleanup:
 
 # Utility functions for common cleanup patterns
 @contextmanager
-def auto_cleanup_files(*file_paths: Path):
+def auto_cleanup_files(*file_paths: Path) -> None:
     """Context manager to automatically cleanup files."""
     try:
         yield
@@ -371,7 +371,7 @@ def auto_cleanup_files(*file_paths: Path):
                 logger.warning(f"Failed to cleanup file {file_path}: {e}")
 
 @contextmanager
-def auto_cleanup_dirs(*dir_paths: Path):
+def auto_cleanup_dirs(*dir_paths: Path) -> None:
     """Context manager to automatically cleanup directories."""
     try:
         yield
@@ -384,7 +384,7 @@ def auto_cleanup_dirs(*dir_paths: Path):
                 logger.warning(f"Failed to cleanup directory {dir_path}: {e}")
 
 @asynccontextmanager
-async def auto_cleanup_async_resources(*resources):
+async def auto_cleanup_async_resources(*resources) -> None:
     """Context manager to automatically cleanup async resources."""
     try:
         yield
@@ -399,13 +399,13 @@ async def auto_cleanup_async_resources(*resources):
             except Exception as e:
                 logger.warning(f"Failed to cleanup resource {resource}: {e}")
 
-def force_remove_readonly(func, path, exc_info):
+def force_remove_readonly(func, path, exc_info) -> None:
     """Error handler for removing read-only files on Windows."""
     import stat
     os.chmod(path, stat.S_IWRITE)
     func(path)
 
-def safe_remove_tree(path: Path):
+def safe_remove_tree(path: Path) -> None:
     """Safely remove a directory tree, handling read-only files."""
     if path.exists():
         try:
@@ -413,7 +413,7 @@ def safe_remove_tree(path: Path):
         except Exception as e:
             logger.warning(f"Failed to remove tree {path}: {e}")
 
-def cleanup_old_test_files(max_age_hours: int = 24):
+def cleanup_old_test_files(max_age_hours: int = 24) -> None:
     """Cleanup old test files from temporary directory."""
     temp_dir = Path(tempfile.gettempdir())
     current_time = time.time()

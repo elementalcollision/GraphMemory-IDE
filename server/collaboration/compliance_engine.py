@@ -247,7 +247,7 @@ class SOC2GDPRComplianceEngine:
         # Initialize compliance requirements
         self._initialize_compliance_requirements()
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize compliance engine and start monitoring"""
         try:
             # Start real-time monitoring if enabled
@@ -435,7 +435,7 @@ class SOC2GDPRComplianceEngine:
             self.logger.error(f"Failed to check real-time compliance: {e}")
             return []
 
-    def _initialize_compliance_requirements(self):
+    def _initialize_compliance_requirements(self) -> None:
         """Initialize SOC2 and GDPR compliance requirements"""
         
         # SOC2 Security Requirements
@@ -828,7 +828,7 @@ processes to ensure comprehensive coverage of all compliance requirements.
         
         return recommendations
 
-    async def _compliance_monitor(self):
+    async def _compliance_monitor(self) -> None:
         """Background compliance monitoring task"""
         while not self._shutdown_event.is_set():
             try:
@@ -842,7 +842,7 @@ processes to ensure comprehensive coverage of all compliance requirements.
                 self.logger.error(f"Error in compliance monitor: {e}")
                 await asyncio.sleep(300)  # Wait 5 minutes before retry
 
-    async def _perform_scheduled_validations(self):
+    async def _perform_scheduled_validations(self) -> None:
         """Perform scheduled compliance validations for all tenants"""
         # This would iterate through all tenants and perform validations
         # For now, this is a placeholder for the actual implementation
@@ -854,7 +854,7 @@ processes to ensure comprehensive coverage of all compliance requirements.
         event_type: str,
         framework: Optional[ComplianceFrameworkType] = None,
         **kwargs
-    ):
+    ) -> None:
         """Log compliance-related events"""
         if not self.audit_logger:
             return
@@ -935,7 +935,7 @@ processes to ensure comprehensive coverage of all compliance requirements.
             'monitored_tenants': len(self._validation_results)
         }
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup compliance engine resources"""
         # Signal shutdown
         self._shutdown_event.set()

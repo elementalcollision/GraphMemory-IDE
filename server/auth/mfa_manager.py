@@ -55,7 +55,7 @@ class BackupCodeError(MFAError):
 class MFADeviceManager:
     """Manages MFA devices for users."""
     
-    def __init__(self, db_session):
+    def __init__(self, db_session: Any) -> None:
         self.db = db_session
     
     async def create_totp_device(
@@ -215,7 +215,7 @@ class QRCodeGenerator:
 class BackupCodeManager:
     """Manages backup codes for account recovery."""
     
-    def __init__(self, db_session):
+    def __init__(self, db_session: Any) -> None:
         self.db = db_session
     
     async def generate_backup_codes(
@@ -290,7 +290,7 @@ class BackupCodeManager:
         combined = f"{salt}{code}"
         return hashlib.sha256(combined.encode()).hexdigest()
     
-    async def _delete_existing_backup_codes(self, user: User):
+    async def _delete_existing_backup_codes(self, user: User) -> None:
         """Delete all existing backup codes for user."""
         # Implementation depends on your database setup
         pass
@@ -304,7 +304,7 @@ class BackupCodeManager:
 class TOTPValidator:
     """Validates TOTP codes."""
     
-    def __init__(self, db_session):
+    def __init__(self, db_session: Any) -> None:
         self.db = db_session
     
     async def verify_totp_code(
@@ -372,7 +372,7 @@ class TOTPValidator:
 class RecoveryManager:
     """Handles account recovery scenarios."""
     
-    def __init__(self, db_session):
+    def __init__(self, db_session: Any) -> None:
         self.db = db_session
     
     async def initiate_recovery(self, user: User) -> str:
@@ -416,12 +416,12 @@ class RecoveryManager:
             logger.error(f"Failed to reset MFA for user {user.email}: {e}")
             return False
     
-    async def _delete_all_user_devices(self, user: User):
+    async def _delete_all_user_devices(self, user: User) -> None:
         """Delete all MFA devices for user."""
         # Implementation depends on your database setup
         pass
     
-    async def _delete_all_backup_codes(self, user: User):
+    async def _delete_all_backup_codes(self, user: User) -> None:
         """Delete all backup codes for user."""
         # Implementation depends on your database setup
         pass
@@ -439,7 +439,7 @@ class MFAManager:
     - Security monitoring and logging
     """
     
-    def __init__(self, settings, db_session):
+    def __init__(self, settings, db_session: Any) -> None:
         self.settings = settings
         self.db = db_session
         self.device_manager = MFADeviceManager(db_session)
@@ -601,7 +601,7 @@ class MFAManager:
 mfa_manager = None
 
 
-async def initialize_mfa_manager(settings, db_session):
+async def initialize_mfa_manager(settings, db_session: Any) -> None:
     """Initialize the global MFA manager."""
     global mfa_manager
     if settings.MFA_ENABLED:

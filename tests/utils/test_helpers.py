@@ -16,7 +16,7 @@ import inspect
 class AsyncConditionWaiter:
     """Utility for waiting on async conditions with timeout."""
     
-    def __init__(self, timeout: float = 30.0, check_interval: float = 0.1):
+    def __init__(self, timeout: float = 30.0, check_interval: float = 0.1) -> None:
         self.timeout = timeout
         self.check_interval = check_interval
     
@@ -68,7 +68,7 @@ class AsyncConditionWaiter:
         timeout: Optional[float] = None
     ) -> Any:
         """Wait for a value to change from its initial value."""
-        async def condition():
+        async def condition() -> None:
             current_value = value_func()
             if asyncio.iscoroutine(current_value):
                 current_value = await current_value
@@ -120,12 +120,12 @@ class AsyncConditionWaiter:
 class ExecutionTimer:
     """Utility for measuring execution time and performance."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.measurements = {}
         self.active_timers = {}
     
     @contextmanager
-    def measure(self, operation_name: str):
+    def measure(self, operation_name: str) -> None:
         """Context manager to measure execution time."""
         start_time = time.time()
         try:
@@ -154,7 +154,7 @@ class ExecutionTimer:
             }
     
     @asynccontextmanager
-    async def measure_async(self, operation_name: str):
+    async def measure_async(self, operation_name: str) -> None:
         """Async context manager to measure execution time."""
         start_time = time.time()
         try:
@@ -182,7 +182,7 @@ class ExecutionTimer:
                 "timestamp": datetime.utcnow().isoformat()
             }
     
-    def start_timer(self, operation_name: str):
+    def start_timer(self, operation_name: str) -> None:
         """Start a named timer."""
         try:
             process = psutil.Process()
@@ -246,7 +246,7 @@ class ExecutionTimer:
             ]
         }
     
-    def reset_measurements(self):
+    def reset_measurements(self) -> None:
         """Reset all measurements."""
         self.measurements.clear()
         self.active_timers.clear()
@@ -518,22 +518,22 @@ class DataComparator:
 class MemoryProfiler:
     """Utility for memory profiling during tests."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.snapshots = {}
         self.is_tracing = False
     
-    def start_tracing(self):
+    def start_tracing(self) -> None:
         """Start memory tracing."""
         tracemalloc.start()
         self.is_tracing = True
     
-    def stop_tracing(self):
+    def stop_tracing(self) -> None:
         """Stop memory tracing."""
         if self.is_tracing:
             tracemalloc.stop()
             self.is_tracing = False
     
-    def take_snapshot(self, name: str):
+    def take_snapshot(self, name: str) -> None:
         """Take a memory snapshot."""
         if not self.is_tracing:
             self.start_tracing()
@@ -636,19 +636,19 @@ class MemoryProfiler:
         }
 
 # Convenience functions for common testing patterns
-async def wait_for_condition(condition_func: Callable, timeout: float = 30.0, error_message: str = "Condition not met"):
+async def wait_for_condition(condition_func: Callable, timeout: float = 30.0, error_message: str = "Condition not met") -> None:
     """Convenience function for waiting on conditions."""
     waiter = AsyncConditionWaiter(timeout)
     return await waiter.wait_for_condition(condition_func, error_message, timeout)
 
 def measure_execution_time(func: Callable) -> Callable:
     """Decorator to measure function execution time."""
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs) -> None:
         timer = ExecutionTimer()
         func_name = func.__name__
         
         if inspect.iscoroutinefunction(func):
-            async def async_wrapper():
+            async def async_wrapper() -> None:
                 async with timer.measure_async(func_name):
                     result = await func(*args, **kwargs)
                 return result, timer.get_measurements()[func_name]

@@ -18,7 +18,7 @@ from unittest.mock import Mock, AsyncMock
 
 # Import with error handling for psutil
 try:
-    import psutil  # type: ignore
+    import psutil
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
@@ -50,7 +50,7 @@ class BenchmarkResult:
 class AnalyticsBenchmark:
     """Main benchmark orchestrator"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.results: List[BenchmarkResult] = []
         # Properly type these attributes as Optional initially
         self.mock_connection: Optional[Mock] = None
@@ -58,7 +58,7 @@ class AnalyticsBenchmark:
         self.gateway: Optional[AnalyticsGateway] = None
         self.service_registry: Optional[AnalyticsServiceRegistry] = None
     
-    async def setup(self):
+    async def setup(self) -> None:
         """Setup benchmark environment"""
         print("Setting up benchmark environment...")
         
@@ -94,7 +94,7 @@ class AnalyticsBenchmark:
         
         print("✓ Benchmark environment ready")
     
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup benchmark environment"""
         if self.gateway:
             await self.gateway.stop()
@@ -102,7 +102,7 @@ class AnalyticsBenchmark:
             await self.service_registry.stop()
         print("✓ Benchmark environment cleaned up")
     
-    async def run_all_benchmarks(self):
+    async def run_all_benchmarks(self) -> None:
         """Run all benchmark tests"""
         print("\n" + "="*80)
         print("ANALYTICS INTEGRATION LAYER - PERFORMANCE BENCHMARK")
@@ -143,7 +143,7 @@ class AnalyticsBenchmark:
         finally:
             await self.cleanup()
     
-    async def benchmark_centrality_analysis(self):
+    async def benchmark_centrality_analysis(self) -> None:
         """Benchmark centrality analysis performance"""
         # Ensure setup has been called
         assert self.analytics_engine is not None, "Setup must be called before benchmarking"
@@ -199,7 +199,7 @@ class AnalyticsBenchmark:
         self.results.append(result)
         self._print_result(result)
     
-    async def benchmark_community_detection(self):
+    async def benchmark_community_detection(self) -> None:
         """Benchmark community detection performance"""
         # Ensure setup has been called
         assert self.analytics_engine is not None, "Setup must be called before benchmarking"
@@ -251,7 +251,7 @@ class AnalyticsBenchmark:
         self.results.append(result)
         self._print_result(result)
     
-    async def benchmark_path_analysis(self):
+    async def benchmark_path_analysis(self) -> None:
         """Benchmark path analysis performance"""
         # Ensure setup has been called
         assert self.analytics_engine is not None, "Setup must be called before benchmarking"
@@ -304,7 +304,7 @@ class AnalyticsBenchmark:
         self.results.append(result)
         self._print_result(result)
     
-    async def benchmark_mixed_analytics_load(self):
+    async def benchmark_mixed_analytics_load(self) -> None:
         """Benchmark mixed analytics workload"""
         test_name = "Mixed Analytics Load"
         print(f"Running {test_name}...")
@@ -356,7 +356,7 @@ class AnalyticsBenchmark:
         self.results.append(result)
         self._print_result(result)
     
-    async def benchmark_gateway_throughput(self):
+    async def benchmark_gateway_throughput(self) -> None:
         """Benchmark gateway throughput"""
         test_name = "Gateway Throughput"
         print(f"Running {test_name}...")
@@ -411,7 +411,7 @@ class AnalyticsBenchmark:
         self.results.append(result)
         self._print_result(result)
     
-    async def benchmark_gateway_caching(self):
+    async def benchmark_gateway_caching(self) -> None:
         """Benchmark gateway caching performance"""
         test_name = "Gateway Caching"
         print(f"Running {test_name}...")
@@ -483,7 +483,7 @@ class AnalyticsBenchmark:
         self.results.append(result)
         self._print_result(result)
     
-    async def benchmark_gateway_load_balancing(self):
+    async def benchmark_gateway_load_balancing(self) -> None:
         """Benchmark gateway load balancing"""
         test_name = "Gateway Load Balancing"
         print(f"Running {test_name}...")
@@ -537,7 +537,7 @@ class AnalyticsBenchmark:
         self.results.append(result)
         self._print_result(result)
     
-    async def benchmark_high_concurrency(self):
+    async def benchmark_high_concurrency(self) -> None:
         """Benchmark high concurrency performance"""
         test_name = "High Concurrency Stress"
         print(f"Running {test_name}...")
@@ -592,7 +592,7 @@ class AnalyticsBenchmark:
         self.results.append(result)
         self._print_result(result)
     
-    async def benchmark_memory_efficiency(self):
+    async def benchmark_memory_efficiency(self) -> None:
         """Benchmark memory efficiency"""
         test_name = "Memory Efficiency"
         print(f"Running {test_name}...")
@@ -724,7 +724,7 @@ class AnalyticsBenchmark:
             additional_metrics=additional_metrics
         )
     
-    def _print_result(self, result: BenchmarkResult):
+    def _print_result(self, result: BenchmarkResult) -> None:
         """Print benchmark result"""
         print(f"  ✓ {result.test_name}")
         print(f"    Operations: {result.successful_operations}/{result.total_operations} successful")
@@ -740,7 +740,7 @@ class AnalyticsBenchmark:
                     print(f"    {key.replace('_', ' ').title()}: {value}")
         print()
     
-    def print_summary(self):
+    def print_summary(self) -> None:
         """Print benchmark summary"""
         if not self.results:
             print("No benchmark results available")
@@ -772,7 +772,7 @@ class AnalyticsBenchmark:
         # Save results to file
         self.save_results()
     
-    def save_results(self):
+    def save_results(self) -> None:
         """Save benchmark results to JSON file"""
         timestamp = int(time.time())
         filename = f"benchmark_results_{timestamp}.json"
@@ -789,7 +789,7 @@ class AnalyticsBenchmark:
         print(f"📄 Results saved to {filename}")
 
 
-async def main():
+async def main() -> None:
     """Main benchmark execution"""
     benchmark = AnalyticsBenchmark()
     await benchmark.run_all_benchmarks()

@@ -27,33 +27,33 @@ logger = logging.getLogger(__name__)
 class TestAnalyticsEngineClient:
     """Test cases for AnalyticsEngineClient"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.client: Optional[AnalyticsEngineClient] = None
     
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup for each test method"""
         self.client = AnalyticsEngineClient()
     
-    def teardown_method(self):
+    def teardown_method(self) -> None:
         """Cleanup after each test method"""
         # Reset any global state
         pass
     
-    def test_client_initialization(self):
+    def test_client_initialization(self) -> None:
         """Test client initialization without Kuzu connection"""
         assert self.client is not None
         assert not self.client.initialized
         assert not self.client._connection_healthy
         assert self.client.analytics_engine is None
     
-    async def test_health_check_uninitialized(self):
+    async def test_health_check_uninitialized(self) -> None:
         """Test health check when client is not initialized"""
         assert self.client is not None
         result = await self.client.health_check()
         assert result is False
         assert not self.client._connection_healthy
     
-    async def test_fallback_system_metrics(self):
+    async def test_fallback_system_metrics(self) -> None:
         """Test fallback system metrics when analytics engine is unavailable"""
         assert self.client is not None
         result = await self.client.get_system_metrics()
@@ -77,7 +77,7 @@ class TestAnalyticsEngineClient:
         
         logger.info(f"Fallback system metrics: {result}")
     
-    async def test_fallback_memory_insights(self):
+    async def test_fallback_memory_insights(self) -> None:
         """Test fallback memory insights when analytics engine is unavailable"""
         assert self.client is not None
         result = await self.client.get_memory_insights()
@@ -102,7 +102,7 @@ class TestAnalyticsEngineClient:
         
         logger.info(f"Fallback memory insights: {result}")
     
-    async def test_fallback_graph_metrics(self):
+    async def test_fallback_graph_metrics(self) -> None:
         """Test fallback graph metrics when analytics engine is unavailable"""
         assert self.client is not None
         result = await self.client.get_graph_metrics()
@@ -127,7 +127,7 @@ class TestAnalyticsEngineClient:
         
         logger.info(f"Fallback graph metrics: {result}")
     
-    async def test_comprehensive_status_uninitialized(self):
+    async def test_comprehensive_status_uninitialized(self) -> None:
         """Test comprehensive status when client is not initialized"""
         assert self.client is not None
         result = await self.client.get_comprehensive_status()
@@ -138,7 +138,7 @@ class TestAnalyticsEngineClient:
         
         logger.info(f"Uninitialized status: {result}")
     
-    def test_query_rate_estimation(self):
+    def test_query_rate_estimation(self) -> None:
         """Test query rate estimation"""
         assert self.client is not None
         rate = self.client._estimate_query_rate()
@@ -147,21 +147,21 @@ class TestAnalyticsEngineClient:
         
         logger.info(f"Estimated query rate: {rate}")
     
-    async def test_centrality_calculation_fallback(self):
+    async def test_centrality_calculation_fallback(self) -> None:
         """Test centrality calculation fallback"""
         assert self.client is not None
         result = await self.client._calculate_average_centrality()
         assert isinstance(result, float)
         assert result == 0.0  # Should be 0 when no analytics engine
     
-    async def test_modularity_calculation_fallback(self):
+    async def test_modularity_calculation_fallback(self) -> None:
         """Test modularity calculation fallback"""
         assert self.client is not None
         result = await self.client._calculate_modularity()
         assert isinstance(result, float)
         assert result == 0.0  # Should be 0 when no analytics engine
     
-    async def test_caching_mechanism(self):
+    async def test_caching_mechanism(self) -> None:
         """Test caching mechanism for system metrics"""
         assert self.client is not None
         # First call should populate cache
@@ -183,7 +183,7 @@ class TestAnalyticsEngineClient:
 class TestGlobalFunctions:
     """Test global utility functions"""
     
-    def test_get_analytics_client_singleton(self):
+    def test_get_analytics_client_singleton(self) -> None:
         """Test that get_analytics_client returns singleton instance"""
         client1 = get_analytics_client()
         client2 = get_analytics_client()
@@ -191,7 +191,7 @@ class TestGlobalFunctions:
         assert client1 is client2
         assert isinstance(client1, AnalyticsEngineClient)
     
-    async def test_initialize_analytics_client(self):
+    async def test_initialize_analytics_client(self) -> None:
         """Test global client initialization"""
         # Should handle None connection gracefully
         result = await initialize_analytics_client(None)
@@ -199,14 +199,14 @@ class TestGlobalFunctions:
         
         logger.info("Global client initialization test completed")
     
-    async def test_shutdown_analytics_client(self):
+    async def test_shutdown_analytics_client(self) -> None:
         """Test global client shutdown"""
         # Should handle shutdown gracefully even if not initialized
         await shutdown_analytics_client()
         logger.info("Global client shutdown test completed")
 
 
-async def run_all_tests():
+async def run_all_tests() -> None:
     """Run all tests manually"""
     logger.info("Starting Analytics Client Tests...")
     

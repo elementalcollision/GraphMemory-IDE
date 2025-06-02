@@ -61,7 +61,7 @@ class UserJourney:
     authentication_method: str = ""
     conversion_goals: List[str] = field(default_factory=list)
     
-    def add_event(self, event: Dict[str, Any]):
+    def add_event(self, event: Dict[str, Any]) -> None:
         """Add an event to the user journey."""
         event['timestamp'] = datetime.utcnow().isoformat()
         event['sequence_number'] = len(self.events) + 1
@@ -115,11 +115,11 @@ class RealTimeMetric:
 class WebSocketManager:
     """Manages WebSocket connections for real-time updates."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: List[WebSocket] = []
         self.connection_metadata: Dict[WebSocket, Dict[str, Any]] = {}
     
-    async def connect(self, websocket: WebSocket, user_id: Optional[str] = None):
+    async def connect(self, websocket: WebSocket, user_id: Optional[str] = None) -> None:
         """Accept a new WebSocket connection."""
         await websocket.accept()
         self.active_connections.append(websocket)
@@ -129,21 +129,21 @@ class WebSocketManager:
             'last_ping': datetime.utcnow()
         }
     
-    def disconnect(self, websocket: WebSocket):
+    def disconnect(self, websocket: WebSocket) -> None:
         """Remove a WebSocket connection."""
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
         if websocket in self.connection_metadata:
             del self.connection_metadata[websocket]
     
-    async def send_personal_message(self, message: Dict[str, Any], websocket: WebSocket):
+    async def send_personal_message(self, message: Dict[str, Any], websocket: WebSocket) -> None:
         """Send a message to a specific WebSocket connection."""
         try:
             await websocket.send_text(json.dumps(message))
         except Exception:
             self.disconnect(websocket)
     
-    async def broadcast(self, message: Dict[str, Any]):
+    async def broadcast(self, message: Dict[str, Any]) -> None:
         """Broadcast a message to all connected clients."""
         disconnected = []
         for connection in self.active_connections:
@@ -156,7 +156,7 @@ class WebSocketManager:
         for connection in disconnected:
             self.disconnect(connection)
     
-    async def broadcast_to_users(self, message: Dict[str, Any], user_ids: List[str]):
+    async def broadcast_to_users(self, message: Dict[str, Any], user_ids: List[str]) -> None:
         """Broadcast message to specific users."""
         disconnected = []
         for connection in self.active_connections:
@@ -183,7 +183,7 @@ class WebSocketManager:
 class RealTimeTracker:
     """Real-time analytics tracking system."""
     
-    def __init__(self, analytics_engine: AnalyticsEngine, redis_client, db_pool: asyncpg.Pool):
+    def __init__(self, analytics_engine: AnalyticsEngine, redis_client, db_pool: asyncpg.Pool) -> None:
         self.analytics_engine = analytics_engine
         self.redis_client = redis_client
         self.db_pool = db_pool
@@ -203,7 +203,7 @@ class RealTimeTracker:
         self._cleanup_task: Optional[asyncio.Task] = None
         self._broadcast_task: Optional[asyncio.Task] = None
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the real-time tracking system."""
         try:
             # Create database tables if needed
@@ -222,14 +222,14 @@ class RealTimeTracker:
             print(f"Failed to initialize real-time tracker: {e}")
             raise
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the real-time tracking system."""
         if self._cleanup_task:
             self._cleanup_task.cancel()
         if self._broadcast_task:
             self._broadcast_task.cancel()
     
-    async def _create_tables(self):
+    async def _create_tables(self) -> None:
         """Create necessary database tables."""
         async with self.db_pool.acquire() as conn:
             # User journeys table
@@ -269,10 +269,10 @@ class RealTimeTracker:
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_journeys_start_time ON user_journeys(start_time)")
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_metrics_name_time ON real_time_metrics(metric_name, timestamp)")
     
-    def _register_default_handlers(self):
+    def _register_default_handlers(self) -> None:
         """Register default event handlers."""
         
-        async def handle_authentication_event(event_data: Dict[str, Any]):
+        async def handle_authentication_event(event_data: Dict[str, Any]) -> None:
             """Handle authentication-related events."""
             await self.record_metric(
                 "authentication_events",
@@ -283,7 +283,7 @@ class RealTimeTracker:
                 }
             )
         
-        async def handle_session_event(event_data: Dict[str, Any]):
+        async def handle_session_event(event_data: Dict[str, Any]) -> None:
             """Handle session-related events."""
             await self.record_metric(
                 "active_sessions",
@@ -291,7 +291,7 @@ class RealTimeTracker:
                 labels={"action": event_data.get("action", "unknown")}
             )
         
-        async def handle_error_event(event_data: Dict[str, Any]):
+        async def handle_error_event(event_data: Dict[str, Any]) -> None:
             """Handle error events."""
             await self.record_metric(
                 "error_rate",
@@ -310,7 +310,7 @@ class RealTimeTracker:
         self.register_event_handler(UserActivityType.SESSION_END, handle_session_event)
         self.register_event_handler(UserActivityType.ERROR_ENCOUNTER, handle_error_event)
     
-    def register_event_handler(self, activity_type: UserActivityType, handler: Callable):
+    def register_event_handler(self, activity_type: UserActivityType, handler: Callable) -> None:
         """Register an event handler for a specific activity type."""
         if activity_type not in self.event_handlers:
             self.event_handlers[activity_type] = []
@@ -322,7 +322,7 @@ class RealTimeTracker:
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
         event_data: Optional[Dict[str, Any]] = None
-    ):
+    ) -> None:
         """Track a user activity event."""
         if event_data is None:
             event_data = {}
@@ -378,7 +378,7 @@ class RealTimeTracker:
         activity_type: UserActivityType,
         event_data: Dict[str, Any],
         user_id: Optional[str] = None
-    ):
+    ) -> None:
         """Update or create user journey."""
         try:
             # Get or create journey
@@ -420,7 +420,7 @@ class RealTimeTracker:
         value: float,
         labels: Optional[Dict[str, str]] = None,
         unit: str = ""
-    ):
+    ) -> None:
         """Record a real-time metric."""
         if labels is None:
             labels = {}
@@ -506,7 +506,7 @@ class RealTimeTracker:
         
         return None
     
-    async def _broadcast_activity_update(self, activity_type: UserActivityType, event_data: Dict[str, Any]):
+    async def _broadcast_activity_update(self, activity_type: UserActivityType, event_data: Dict[str, Any]) -> None:
         """Broadcast activity update to connected clients."""
         message = {
             'type': 'activity_update',
@@ -517,7 +517,7 @@ class RealTimeTracker:
         
         await self.websocket_manager.broadcast(message)
     
-    async def _broadcast_metrics(self):
+    async def _broadcast_metrics(self) -> None:
         """Periodically broadcast metrics to connected clients."""
         while True:
             try:
@@ -537,7 +537,7 @@ class RealTimeTracker:
             except Exception as e:
                 print(f"Error broadcasting metrics: {e}")
     
-    async def _cleanup_expired_data(self):
+    async def _cleanup_expired_data(self) -> None:
         """Clean up expired journeys and metrics."""
         while True:
             try:
@@ -573,7 +573,7 @@ class RealTimeTracker:
             except Exception as e:
                 print(f"Error in cleanup task: {e}")
     
-    async def _save_journey_to_database(self, journey: UserJourney):
+    async def _save_journey_to_database(self, journey: UserJourney) -> None:
         """Save completed journey to database."""
         try:
             async with self.db_pool.acquire() as conn:
@@ -611,7 +611,7 @@ async def initialize_real_time_tracker(
     analytics_engine: AnalyticsEngine,
     redis_client,
     db_pool: asyncpg.Pool
-):
+) -> None:
     """Initialize real-time tracking system."""
     global _real_time_tracker
     _real_time_tracker = RealTimeTracker(analytics_engine, redis_client, db_pool)
@@ -623,7 +623,7 @@ def get_real_time_tracker() -> Optional[RealTimeTracker]:
     return _real_time_tracker
 
 
-async def shutdown_real_time_tracker():
+async def shutdown_real_time_tracker() -> None:
     """Shutdown real-time tracking system."""
     global _real_time_tracker
     if _real_time_tracker:

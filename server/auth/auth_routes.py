@@ -229,7 +229,7 @@ async def sso_callback(
 
 
 @router.get("/sso/metadata/{provider}")
-async def get_sso_metadata(provider: str):
+async def get_sso_metadata(provider: str) -> None:
     """Get SSO metadata (SAML SP metadata)."""
     try:
         sso_manager = get_sso_manager()
@@ -653,7 +653,7 @@ async def get_user_by_email(db, email: str) -> Optional[User]:
 
 # Health check route
 @router.get("/health")
-async def auth_health_check():
+async def auth_health_check() -> None:
     """Health check for authentication service."""
     sso_available = get_sso_manager() is not None
     mfa_available = get_mfa_manager() is not None

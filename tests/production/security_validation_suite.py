@@ -67,7 +67,7 @@ class SecurityTestResult:
 class OWASPZAPScanner:
     """OWASP ZAP security scanner integration"""
     
-    def __init__(self, zap_proxy: str = "http://127.0.0.1:8080"):
+    def __init__(self, zap_proxy: str = "http://127.0.0.1:8080") -> None:
         self.zap_proxy = zap_proxy
         self.zap_available = self._check_zap_availability()
         
@@ -146,17 +146,17 @@ class OWASPZAPScanner:
         
         return findings
     
-    async def _spider_application(self, target_url: str):
+    async def _spider_application(self, target_url: str) -> None:
         """Spider the application to discover endpoints"""
         logger.info("Spidering application endpoints")
         await asyncio.sleep(2)  # Simulate spidering
     
-    async def _perform_passive_scan(self):
+    async def _perform_passive_scan(self) -> None:
         """Perform passive security scan"""
         logger.info("Performing passive security scan")
         await asyncio.sleep(3)  # Simulate passive scan
     
-    async def _perform_active_scan(self, target_url: str):
+    async def _perform_active_scan(self, target_url: str) -> None:
         """Perform active security scan"""
         logger.info("Performing active security scan")
         await asyncio.sleep(5)  # Simulate active scan
@@ -168,7 +168,7 @@ class OWASPZAPScanner:
 class VulnerabilityAssessment:
     """Comprehensive vulnerability assessment"""
     
-    def __init__(self, target_url: str):
+    def __init__(self, target_url: str) -> None:
         self.target_url = target_url
         self.session = None
         
@@ -514,7 +514,7 @@ class VulnerabilityAssessment:
 class ComplianceValidator:
     """Compliance validation for GDPR, CCPA, SOX, ISO27001"""
     
-    def __init__(self, target_url: str):
+    def __init__(self, target_url: str) -> None:
         self.target_url = target_url
         
     async def validate_all_compliance(self) -> List[ComplianceResult]:
@@ -714,7 +714,7 @@ class ComplianceValidator:
 class SecurityValidationSuite:
     """Comprehensive security validation suite"""
     
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None) -> None:
         self.config = self._load_config(config_path)
         self.zap_scanner = OWASPZAPScanner()
         self.vulnerability_assessor = VulnerabilityAssessment(self.config['target_url'])
@@ -771,7 +771,7 @@ class SecurityValidationSuite:
         # Generate comprehensive security report
         return self._generate_security_report()
     
-    async def _run_owasp_zap_scan(self):
+    async def _run_owasp_zap_scan(self) -> None:
         """Run OWASP ZAP security scan"""
         logger.info("🔍 Running OWASP ZAP Security Scan")
         
@@ -802,7 +802,7 @@ class SecurityValidationSuite:
         self.test_results.append(result)
         logger.info(f"✅ OWASP ZAP scan completed: {status}")
     
-    async def _run_vulnerability_assessment(self):
+    async def _run_vulnerability_assessment(self) -> None:
         """Run comprehensive vulnerability assessment"""
         logger.info("🛡️ Running Vulnerability Assessment")
         
@@ -833,7 +833,7 @@ class SecurityValidationSuite:
         self.test_results.append(result)
         logger.info(f"✅ Vulnerability assessment completed: {status}")
     
-    async def _run_compliance_validation(self):
+    async def _run_compliance_validation(self) -> None:
         """Run compliance validation"""
         logger.info("📋 Running Compliance Validation")
         
@@ -860,7 +860,7 @@ class SecurityValidationSuite:
         self.test_results.append(result)
         logger.info(f"✅ Compliance validation completed: {status} ({compliance_score:.1f}% compliant)")
     
-    async def _run_penetration_testing(self):
+    async def _run_penetration_testing(self) -> None:
         """Run simulated penetration testing"""
         logger.info("🎯 Running Penetration Testing")
         
@@ -893,7 +893,7 @@ class SecurityValidationSuite:
         self.test_results.append(result)
         logger.info("✅ Penetration testing completed: pass")
     
-    async def _run_security_configuration_review(self):
+    async def _run_security_configuration_review(self) -> None:
         """Run security configuration review"""
         logger.info("⚙️ Running Security Configuration Review")
         
@@ -1117,7 +1117,7 @@ class SecurityValidationSuite:
         return recommendations
 
 # CLI Interface
-async def main():
+async def main() -> None:
     """Main CLI interface for security validation"""
     import argparse
     

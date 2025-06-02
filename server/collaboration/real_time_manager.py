@@ -98,7 +98,7 @@ class Comment:
 class RealTimeCollaborationManager:
     """Manager for real-time collaboration features."""
     
-    def __init__(self, db_pool: asyncpg.Pool, redis_client: Optional[redis.Redis] = None):
+    def __init__(self, db_pool: asyncpg.Pool, redis_client: Optional[redis.Redis] = None) -> None:
         self.db_pool = db_pool
         self.redis_client = redis_client
         
@@ -121,7 +121,7 @@ class RealTimeCollaborationManager:
         ]
         self.color_index = 0
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the collaboration manager."""
         await self._create_database_tables()
         
@@ -131,7 +131,7 @@ class RealTimeCollaborationManager:
         
         print("Real-time collaboration manager initialized")
     
-    async def _create_database_tables(self):
+    async def _create_database_tables(self) -> None:
         """Create database tables for collaboration features."""
         try:
             async with self.db_pool.acquire() as conn:
@@ -236,7 +236,7 @@ class RealTimeCollaborationManager:
             raise
     
     async def disconnect_user(self, websocket: WebSocket, user_id: str, 
-                            resource_type: str, resource_id: str):
+                            resource_type: str, resource_id: str) -> None:
         """Disconnect a user from a collaborative resource."""
         try:
             resource_key = f"{resource_type}:{resource_id}"
@@ -274,7 +274,7 @@ class RealTimeCollaborationManager:
             print(f"Error disconnecting user: {e}")
     
     async def handle_cursor_move(self, user_id: str, resource_type: str, resource_id: str,
-                                cursor_data: Dict[str, Any]):
+                                cursor_data: Dict[str, Any]) -> None:
         """Handle cursor movement events."""
         try:
             # Update user presence
@@ -302,7 +302,7 @@ class RealTimeCollaborationManager:
             print(f"Error handling cursor move: {e}")
     
     async def handle_element_selection(self, user_id: str, resource_type: str, resource_id: str,
-                                     element_id: Optional[str]):
+                                     element_id: Optional[str]) -> None:
         """Handle element selection events."""
         try:
             # Update user presence
@@ -464,7 +464,7 @@ class RealTimeCollaborationManager:
             return []
     
     async def _broadcast_event(self, resource_type: str, resource_id: str,
-                             event: CollaborationEvent, exclude_user: Optional[str] = None):
+                             event: CollaborationEvent, exclude_user: Optional[str] = None) -> None:
         """Broadcast an event to all connected users for a resource."""
         try:
             resource_key = f"{resource_type}:{resource_id}"
@@ -498,7 +498,7 @@ class RealTimeCollaborationManager:
         except Exception as e:
             print(f"Error broadcasting event: {e}")
     
-    async def _send_current_presence(self, websocket: WebSocket, resource_type: str, resource_id: str):
+    async def _send_current_presence(self, websocket: WebSocket, resource_type: str, resource_id: str) -> None:
         """Send current user presence to a newly connected user."""
         try:
             presence_data = []
@@ -524,7 +524,7 @@ class RealTimeCollaborationManager:
         except Exception as e:
             print(f"Error sending current presence: {e}")
     
-    async def _release_user_locks(self, user_id: str):
+    async def _release_user_locks(self, user_id: str) -> None:
         """Release all locks held by a user."""
         try:
             locks_to_remove = []
@@ -538,7 +538,7 @@ class RealTimeCollaborationManager:
         except Exception as e:
             print(f"Error releasing user locks: {e}")
     
-    async def _cleanup_expired_locks(self):
+    async def _cleanup_expired_locks(self) -> None:
         """Background task to clean up expired locks."""
         while True:
             try:
@@ -557,7 +557,7 @@ class RealTimeCollaborationManager:
             except Exception as e:
                 print(f"Error cleaning up expired locks: {e}")
     
-    async def _cleanup_inactive_presence(self):
+    async def _cleanup_inactive_presence(self) -> None:
         """Background task to clean up inactive user presence."""
         while True:
             try:
@@ -595,7 +595,7 @@ class RealTimeCollaborationManager:
             print(f"Error starting collaboration session: {e}")
             return ""
     
-    async def _end_collaboration_session(self, user_id: str, resource_type: str, resource_id: str):
+    async def _end_collaboration_session(self, user_id: str, resource_type: str, resource_id: str) -> None:
         """End a collaboration session."""
         try:
             async with self.db_pool.acquire() as conn:
@@ -626,7 +626,7 @@ class RealTimeCollaborationManager:
 _collaboration_manager: Optional[RealTimeCollaborationManager] = None
 
 
-async def initialize_collaboration_manager(db_pool: asyncpg.Pool, redis_client: Optional[redis.Redis] = None):
+async def initialize_collaboration_manager(db_pool: asyncpg.Pool, redis_client: Optional[redis.Redis] = None) -> None:
     """Initialize the collaboration manager."""
     global _collaboration_manager
     _collaboration_manager = RealTimeCollaborationManager(db_pool, redis_client)
@@ -638,7 +638,7 @@ def get_collaboration_manager() -> Optional[RealTimeCollaborationManager]:
     return _collaboration_manager
 
 
-async def shutdown_collaboration_manager():
+async def shutdown_collaboration_manager() -> None:
     """Shutdown the collaboration manager."""
     global _collaboration_manager
     if _collaboration_manager:

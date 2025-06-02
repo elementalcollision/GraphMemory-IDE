@@ -52,7 +52,7 @@ class GraphMemoryPrometheusMiddleware(BaseHTTPMiddleware):
         enable_exemplars: bool = True,
         track_request_size: bool = True,
         track_response_size: bool = True
-    ):
+    ) -> None:
         super().__init__(app)
         self.registry = registry or CollectorRegistry()
         self.enable_exemplars = enable_exemplars
@@ -64,7 +64,7 @@ class GraphMemoryPrometheusMiddleware(BaseHTTPMiddleware):
         
         logger.info("GraphMemory Prometheus middleware initialized")
     
-    def _setup_metrics(self):
+    def _setup_metrics(self) -> None:
         """Initialize all Prometheus metrics."""
         
         # Request metrics
@@ -382,7 +382,7 @@ class GraphMemoryPrometheusMiddleware(BaseHTTPMiddleware):
         user_id: str,
         duration: float,
         success: bool
-    ):
+    ) -> None:
         """Record GraphMemory-specific operation metrics."""
         labels = {
             "operation_type": operation_type,
@@ -408,7 +408,7 @@ class GraphMemoryPrometheusMiddleware(BaseHTTPMiddleware):
         user_id: str,
         results_count: int,
         has_filters: bool = False
-    ):
+    ) -> None:
         """Record search operation metrics."""
         search_labels = {
             "search_type": search_type,
@@ -425,16 +425,16 @@ class GraphMemoryPrometheusMiddleware(BaseHTTPMiddleware):
         
         self.graphmemory_search_results_count.labels(**results_labels).observe(results_count)
     
-    def update_memory_stats(self, total_nodes: int, total_relationships: int):
+    def update_memory_stats(self, total_nodes: int, total_relationships: int) -> None:
         """Update memory graph statistics."""
         self.graphmemory_total_nodes.set(total_nodes)
         self.graphmemory_total_relationships.set(total_relationships)
     
-    def update_session_count(self, user_id: str, count: int):
+    def update_session_count(self, user_id: str, count: int) -> None:
         """Update active session count for a user."""
         self.graphmemory_active_sessions.labels(user_id=user_id).set(count)
     
-    def record_authentication_attempt(self, user_id: str, success: bool):
+    def record_authentication_attempt(self, user_id: str, success: bool) -> None:
         """Record API authentication attempt."""
         result = "success" if success else "failure"
         self.api_authentication_attempts_total.labels(
@@ -442,7 +442,7 @@ class GraphMemoryPrometheusMiddleware(BaseHTTPMiddleware):
             user_id=user_id
         ).inc()
     
-    def set_system_health(self, status: str):
+    def set_system_health(self, status: str) -> None:
         """Set current system health status."""
         valid_statuses = ["healthy", "degraded", "unhealthy"]
         if status in valid_statuses:
@@ -464,7 +464,7 @@ class GraphMemoryPrometheusInstrumentator:
         registry: Optional[CollectorRegistry] = None,
         enable_default_metrics: bool = True,
         enable_exemplars: bool = True
-    ):
+    ) -> None:
         self.registry = registry or CollectorRegistry()
         self.enable_default_metrics = enable_default_metrics
         self.enable_exemplars = enable_exemplars
@@ -474,7 +474,7 @@ class GraphMemoryPrometheusInstrumentator:
         if enable_default_metrics:
             self._setup_default_instrumentator()
     
-    def _setup_default_instrumentator(self):
+    def _setup_default_instrumentator(self) -> None:
         """Setup default FastAPI instrumentator."""
         self.default_instrumentator = Instrumentator(
             registry=self.registry,
@@ -560,7 +560,7 @@ class GraphMemoryPrometheusInstrumentator:
             Self for method chaining
         """
         @app.get(endpoint)
-        async def metrics_endpoint():
+        async def metrics_endpoint() -> None:
             """Prometheus metrics endpoint."""
             try:
                 # Generate metrics in Prometheus format

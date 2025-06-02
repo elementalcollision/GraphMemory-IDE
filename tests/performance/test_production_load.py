@@ -29,7 +29,7 @@ pytestmark = [
 class LoadTestManager:
     """Manages load testing scenarios and concurrent user simulation."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_tasks = []
         self.results = {}
         self.error_counts = {}
@@ -43,7 +43,7 @@ class LoadTestManager:
     ) -> Dict[str, Any]:
         """Execute concurrent requests from multiple simulated users."""
         
-        async def user_session(user_id: int):
+        async def user_session(user_id: int) -> None:
             """Simulate a single user session."""
             user_results = []
             user_errors = []
@@ -137,7 +137,7 @@ class LoadTestManager:
         # Calculate ramp-up rate
         ramp_up_rate = max_concurrent_users / ramp_up_duration
         
-        async def user_worker(user_id: int, start_delay: float):
+        async def user_worker(user_id: int, start_delay: float) -> None:
             """Individual user worker with start delay."""
             await asyncio.sleep(start_delay)
             
@@ -225,7 +225,7 @@ class LoadTestManager:
 class TestProductionLoadScenarios:
     """Test suite for production load scenarios."""
 
-    async def test_analytics_engine_concurrent_load(self, real_service_integration):
+    async def test_analytics_engine_concurrent_load(self, real_service_integration) -> None:
         """Test analytics engine under concurrent user load."""
         load_manager = LoadTestManager()
         
@@ -234,7 +234,7 @@ class TestProductionLoadScenarios:
         if not analytics_client:
             pytest.skip("Analytics client not available")
         
-        async def analytics_request(user_id: int, request_num: int):
+        async def analytics_request(user_id: int, request_num: int) -> None:
             """Make analytics request."""
             request_types = ["system_metrics", "memory_insights", "graph_metrics"]
             request_type = request_types[request_num % len(request_types)]
@@ -266,14 +266,14 @@ class TestProductionLoadScenarios:
         print(f"  Avg Response Time: {results['avg_response_time']:.3f}s")
         print(f"  Throughput: {results['requests_per_second']:.1f} RPS")
 
-    async def test_database_connection_pool_stress(self, real_service_integration):
+    async def test_database_connection_pool_stress(self, real_service_integration) -> None:
         """Test database connection pools under stress."""
         load_manager = LoadTestManager()
         
         # Get database connections
         databases = real_service_integration.services.get("databases", {}).get("connections", {})
         
-        async def database_request(user_id: int, request_num: int):
+        async def database_request(user_id: int, request_num: int) -> None:
             """Make database request."""
             results = {}
             
@@ -326,7 +326,7 @@ class TestProductionLoadScenarios:
         print(f"  Success Rate: {results['success_rate']:.2%}")
         print(f"  Avg Response Time: {results['avg_response_time']:.3f}s")
 
-    async def test_memory_leak_detection_under_load(self, real_service_integration):
+    async def test_memory_leak_detection_under_load(self, real_service_integration) -> None:
         """Test for memory leaks under sustained load."""
         memory_profiler = MemoryProfiler()
         load_manager = LoadTestManager()
@@ -336,7 +336,7 @@ class TestProductionLoadScenarios:
         if not analytics_client:
             pytest.skip("Analytics client not available")
         
-        async def memory_intensive_request(user_id: int, request_num: int):
+        async def memory_intensive_request(user_id: int, request_num: int) -> None:
             """Make memory-intensive request."""
             # Get all three types of analytics data
             system_metrics = await analytics_client.get_system_metrics()
@@ -379,7 +379,7 @@ class TestProductionLoadScenarios:
         print(f"  Memory Growth: {memory_growth_mb:.1f}MB")
         print(f"  Total Requests: {results['total_requests']}")
 
-    async def test_error_recovery_under_load(self, real_service_integration):
+    async def test_error_recovery_under_load(self, real_service_integration) -> None:
         """Test system recovery from errors under load."""
         load_manager = LoadTestManager()
         
@@ -391,7 +391,7 @@ class TestProductionLoadScenarios:
         # Inject failures
         error_injection_rate = 0.1  # 10% error rate
         
-        async def error_prone_request(user_id: int, request_num: int):
+        async def error_prone_request(user_id: int, request_num: int) -> None:
             """Request that may fail deliberately."""
             # Randomly inject errors
             if random.random() < error_injection_rate:
@@ -421,7 +421,7 @@ class TestProductionLoadScenarios:
         print(f"  Actual Success Rate: {actual_success_rate:.1%}")
         print(f"  System Recovery: {'PASS' if actual_success_rate >= (expected_success_rate - 0.1) else 'FAIL'}")
 
-    async def test_ramp_up_stress_test(self, real_service_integration):
+    async def test_ramp_up_stress_test(self, real_service_integration) -> None:
         """Test system behavior under gradual load ramp-up."""
         load_manager = LoadTestManager()
         
@@ -430,7 +430,7 @@ class TestProductionLoadScenarios:
         if not analytics_client:
             pytest.skip("Analytics client not available")
         
-        async def ramp_up_request(user_id: int, request_count: int):
+        async def ramp_up_request(user_id: int, request_count: int) -> None:
             """Request for ramp-up test."""
             return await analytics_client.get_system_metrics()
         
@@ -452,7 +452,7 @@ class TestProductionLoadScenarios:
         print(f"  Success Rate: {results['success_rate']:.2%}")
         print(f"  Peak RPS: {results['peak_rps']:.1f}")
 
-    async def test_sustained_load_endurance(self, real_service_integration):
+    async def test_sustained_load_endurance(self, real_service_integration) -> None:
         """Test system endurance under sustained load."""
         
         # Get analytics client

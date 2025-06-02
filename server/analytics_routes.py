@@ -60,7 +60,7 @@ def get_realtime_analytics() -> RealtimeAnalytics:
         raise HTTPException(status_code=503, detail="Real-time analytics not initialized")
     return realtime_analytics
 
-async def initialize_analytics_engine(kuzu_conn, redis_url: str):
+async def initialize_analytics_engine(kuzu_conn, redis_url: str) -> None:
     """Initialize the analytics engine"""
     global analytics_engine, analytics_engine_initialized, kuzu_connection
     
@@ -86,7 +86,7 @@ async def initialize_analytics_engine(kuzu_conn, redis_url: str):
         analytics_engine_initialized = False
         return False
 
-async def shutdown_analytics_engine():
+async def shutdown_analytics_engine() -> None:
     """Shutdown the analytics engine"""
     global analytics_engine, analytics_engine_initialized
     
@@ -298,7 +298,7 @@ async def stream_analytics(
         if analytics_type not in ["centrality", "community", "clustering", "path_analysis", "graph_metrics"]:
             raise HTTPException(status_code=400, detail="Invalid analytics type")
         
-        async def generate_stream():
+        async def generate_stream() -> None:
             async for data in realtime.generate_sse_stream(analytics_type):
                 yield data
         
@@ -347,7 +347,7 @@ async def publish_update(
 
 # Health check endpoint
 @router.get("/health")
-async def get_analytics_health():
+async def get_analytics_health() -> None:
     """Get analytics service health status"""
     return {
         "status": "healthy" if analytics_engine_initialized else "unhealthy",
@@ -516,7 +516,7 @@ async def get_monitoring_health() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
 
 @router.get("/monitoring/prometheus")
-async def get_prometheus_metrics():
+async def get_prometheus_metrics() -> None:
     """Get Prometheus metrics for monitoring"""
     if not PHASE3_AVAILABLE:
         raise HTTPException(status_code=503, detail="Prometheus monitoring not available")

@@ -80,7 +80,7 @@ class KubernetesRemediationEngine:
     custom resource management, and intelligent failure recovery.
     """
     
-    def __init__(self, kubeconfig_path: Optional[str] = None):
+    def __init__(self, kubeconfig_path: Optional[str] = None) -> None:
         self.kubeconfig_path = kubeconfig_path
         self.k8s_client = None
         self.apps_v1 = None
@@ -369,7 +369,7 @@ class IntelligentRemediationPlanner:
     based on patterns, success history, and system state.
     """
     
-    def __init__(self, k8s_engine: KubernetesRemediationEngine):
+    def __init__(self, k8s_engine: KubernetesRemediationEngine) -> None:
         self.k8s_engine = k8s_engine
         self.remediation_patterns = self._load_remediation_patterns()
         self.success_rate_threshold = 0.7
@@ -507,7 +507,7 @@ class AutomatedIncidentManager:
     and learning from outcomes.
     """
     
-    def __init__(self, kubeconfig_path: Optional[str] = None):
+    def __init__(self, kubeconfig_path: Optional[str] = None) -> None:
         self.k8s_engine = KubernetesRemediationEngine(kubeconfig_path)
         self.planner = IntelligentRemediationPlanner(self.k8s_engine)
         

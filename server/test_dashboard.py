@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def test_sse_manager():
+async def test_sse_manager() -> bool:
     """Test the DashboardSSEManager functionality"""
     print("🧪 Testing Dashboard SSE Manager...")
     
@@ -66,7 +66,7 @@ async def test_sse_manager():
         return False
 
 
-async def test_dashboard_routes():
+async def test_dashboard_routes() -> bool:
     """Test the dashboard routes functionality"""
     print("\n🧪 Testing Dashboard Routes...")
     
@@ -117,7 +117,7 @@ async def test_dashboard_routes():
         return False
 
 
-async def test_integration():
+async def test_integration() -> bool:
     """Test integration with main FastAPI app"""
     print("\n🧪 Testing FastAPI Integration...")
     
@@ -153,7 +153,7 @@ async def test_integration():
         return False
 
 
-async def main():
+async def main() -> bool:
     """Run all tests"""
     print("🚀 Starting Dashboard Phase 1 Tests")
     print("=" * 50)

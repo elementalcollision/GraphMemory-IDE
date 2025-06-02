@@ -89,7 +89,7 @@ class DashboardPerformanceMetrics:
 class DashboardIntegrationTester:
     """Complete pipeline validation for dashboard integration"""
     
-    def __init__(self, dashboard_url: str = "http://localhost:8501"):
+    def __init__(self, dashboard_url: str = "http://localhost:8501") -> None:
         self.dashboard_url = dashboard_url
         self.analytics_tester = AnalyticsEngineIntegrationTester()
         self.sse_tester = SSEStreamTester()
@@ -357,7 +357,7 @@ class DashboardIntegrationTester:
 class DashboardPerformanceValidator:
     """Dashboard performance validation under live data loads"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.performance_baselines = {
             "max_page_load_time": 5.0,  # seconds
             "max_refresh_time": 2.0,    # seconds
@@ -503,7 +503,7 @@ class DashboardPerformanceValidator:
 class DashboardUserInteractionTester:
     """Real-time user interaction validation testing"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.interaction_results: Dict[str, Any] = {}
     
     async def test_realtime_user_interactions(self) -> Dict[str, Any]:
@@ -573,7 +573,7 @@ class DashboardUserInteractionTester:
 class DashboardDataFlowValidator:
     """Complete data flow integrity testing"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.validation_results: Dict[str, Any] = {}
     
     async def validate_data_flow_integrity(self) -> Dict[str, Any]:
@@ -680,7 +680,7 @@ class DashboardDataFlowValidator:
 
 # Integration test cases
 @pytest_asyncio.async_test
-async def test_complete_dashboard_pipeline():
+async def test_complete_dashboard_pipeline() -> None:
     """Test complete dashboard pipeline integration"""
     tester = DashboardIntegrationTester()
     
@@ -697,7 +697,7 @@ async def test_complete_dashboard_pipeline():
         await tester.cleanup_dashboard_environment()
 
 @pytest_asyncio.async_test
-async def test_dashboard_performance_under_load():
+async def test_dashboard_performance_under_load() -> None:
     """Test dashboard performance under concurrent user load"""
     validator = DashboardPerformanceValidator()
     results = await validator.test_dashboard_responsiveness_under_load(concurrent_users=5)
@@ -707,7 +707,7 @@ async def test_dashboard_performance_under_load():
     assert results["average_interaction_latency"] < 1.0
 
 @pytest_asyncio.async_test
-async def test_realtime_user_interactions():
+async def test_realtime_user_interactions() -> None:
     """Test real-time user interactions with dashboard"""
     tester = DashboardUserInteractionTester()
     results = await tester.test_realtime_user_interactions()
@@ -718,7 +718,7 @@ async def test_realtime_user_interactions():
     assert results["state_consistency_validated"] is True
 
 @pytest_asyncio.async_test
-async def test_data_flow_integrity():
+async def test_data_flow_integrity() -> None:
     """Test complete data flow integrity validation"""
     validator = DashboardDataFlowValidator()
     results = await validator.validate_data_flow_integrity()

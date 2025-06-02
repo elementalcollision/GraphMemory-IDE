@@ -26,7 +26,7 @@ CHART_COLORS = {
 }
 
 
-def alert_performance_metrics():
+def alert_performance_metrics() -> None:
     """Real-time alert system performance dashboard"""
     
     st.subheader("⚡ Alert System Performance")
@@ -142,7 +142,7 @@ def alert_performance_metrics():
             st.info("No success rate data available")
 
 
-def notification_delivery_metrics():
+def notification_delivery_metrics() -> None:
     """Multi-channel notification delivery analytics"""
     
     st.subheader("📬 Notification Delivery Analytics")
@@ -225,7 +225,7 @@ def notification_delivery_metrics():
             st.info("No delivery time data available")
 
 
-def escalation_analytics():
+def escalation_analytics() -> None:
     """Escalation policy effectiveness analysis"""
     
     st.subheader("🔄 Escalation Analytics")
@@ -349,7 +349,7 @@ def escalation_analytics():
         st.caption(f"{escalation_response['compliance']:.1f}% compliance")
 
 
-def alert_trend_analysis():
+def alert_trend_analysis() -> None:
     """Historical alert trends and patterns"""
     
     st.subheader("📊 Alert Trend Analysis")
@@ -435,7 +435,7 @@ def alert_trend_analysis():
         st.info(f"💡 {insight}")
 
 
-def alert_sla_dashboard():
+def alert_sla_dashboard() -> None:
     """SLA compliance and performance dashboard"""
     
     st.subheader("📋 SLA Compliance Dashboard")
@@ -653,7 +653,7 @@ def _generate_trend_insights(trend_data: Dict) -> List[str]:
 
 # Main alert metrics dashboard
 
-def alert_metrics_dashboard():
+def alert_metrics_dashboard() -> None:
     """Main alert metrics and analytics dashboard"""
     
     st.title("📈 Alert System Analytics")

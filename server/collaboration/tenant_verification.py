@@ -122,7 +122,7 @@ class TenantVerificationService:
         enable_audit_logging: bool = True,
         cache_ttl_seconds: int = 300,  # 5 minutes
         performance_monitoring: bool = True
-    ):
+    ) -> None:
         """
         Initialize Tenant Verification Service
         
@@ -158,7 +158,7 @@ class TenantVerificationService:
         
         self.logger = logging.getLogger(__name__)
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize Redis connections and setup"""
         try:
             self._redis_pool = redis.ConnectionPool.from_url(
@@ -528,7 +528,7 @@ class TenantVerificationService:
         
         return None
 
-    async def _set_cache(self, key: str, result: VerificationResult):
+    async def _set_cache(self, key: str, result: VerificationResult) -> None:
         """Set cached verification result"""
         # Update in-memory cache
         self._verification_cache[key] = result
@@ -548,7 +548,7 @@ class TenantVerificationService:
         except Exception as e:
             self.logger.error(f"Failed to set cache: {e}")
 
-    async def _invalidate_cache(self, key: str):
+    async def _invalidate_cache(self, key: str) -> None:
         """Invalidate cached verification result"""
         # Remove from in-memory cache
         self._verification_cache.pop(key, None)
@@ -563,7 +563,7 @@ class TenantVerificationService:
         except Exception as e:
             self.logger.error(f"Failed to invalidate cache: {e}")
 
-    async def _log_verification_audit(self, result: VerificationResult):
+    async def _log_verification_audit(self, result: VerificationResult) -> None:
         """Log verification for audit trail"""
         audit_log = {
             'user_id': result.user_id,
@@ -579,7 +579,7 @@ class TenantVerificationService:
         # In production, store to database or external audit system
         self.logger.info(f"Tenant verification audit: {json.dumps(audit_log)}")
 
-    def _update_performance_metrics(self, verification_time_ms: float, authorized: bool):
+    def _update_performance_metrics(self, verification_time_ms: float, authorized: bool) -> None:
         """Update performance metrics"""
         self.verification_count += 1
         self.total_verification_time += verification_time_ms
@@ -620,7 +620,7 @@ class TenantVerificationService:
             'authorization_failure_rate': authorization_failure_rate
         }
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup Redis connections"""
         if self._redis_client:
             await self._redis_client.close()

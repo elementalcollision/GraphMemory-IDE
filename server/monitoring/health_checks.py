@@ -72,7 +72,7 @@ class HealthCheckResult:
 class HealthChecker:
     """Comprehensive health checking system"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.checks: Dict[str, Callable] = {}
         self.last_results: Dict[str, HealthCheckResult] = {}
         
@@ -89,7 +89,7 @@ class HealthChecker:
         
         logger.info("HealthChecker initialized")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize health checker dependencies"""
         try:
             self.cache_manager = await get_cache_manager()
@@ -98,7 +98,7 @@ class HealthChecker:
         except Exception as e:
             logger.error(f"Failed to initialize HealthChecker: {e}")
     
-    def _register_default_checks(self):
+    def _register_default_checks(self) -> None:
         """Register default health checks"""
         self.checks.update({
             'application': self._check_application_health,
@@ -558,7 +558,7 @@ class HealthChecker:
         else:
             return HealthStatus.UNKNOWN
     
-    def register_custom_check(self, name: str, check_func: Callable):
+    def register_custom_check(self, name: str, check_func: Callable) -> None:
         """Register a custom health check"""
         self.checks[name] = check_func
         logger.info(f"Registered custom health check: {name}")

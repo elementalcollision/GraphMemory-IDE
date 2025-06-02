@@ -204,7 +204,7 @@ class DatabaseCredentialManager:
     Production-grade database credential management with automated rotation and security.
     """
     
-    def __init__(self, storage: SecureKeyStorage):
+    def __init__(self, storage: SecureKeyStorage) -> None:
         self.storage = storage
         self.credentials: Dict[str, DatabaseCredential] = {}
         self.connection_pools: Dict[str, DatabaseConnectionPool] = {}

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses"""
     
-    def __init__(self, app, enable_hsts: bool = True, environment: str = "development"):
+    def __init__(self, app, enable_hsts: bool = True, environment: str = "development") -> None:
         super().__init__(app)
         self.enable_hsts = enable_hsts
         self.environment = environment
@@ -86,7 +86,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         requests_per_minute: int = 60, 
         burst_limit: int = 20,
         whitelist_ips: Optional[List[str]] = None
-    ):
+    ) -> None:
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
         self.burst_limit = burst_limit
@@ -178,7 +178,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
     """Redirect HTTP requests to HTTPS in production"""
     
-    def __init__(self, app, environment: str = "development", enabled: bool = True):
+    def __init__(self, app, environment: str = "development", enabled: bool = True) -> None:
         super().__init__(app)
         self.environment = environment
         self.enabled = enabled and environment == "production"
@@ -201,7 +201,7 @@ class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Log HTTP requests and responses for debugging and monitoring"""
     
-    def __init__(self, app, log_body: bool = False, environment: str = "development"):
+    def __init__(self, app, log_body: bool = False, environment: str = "development") -> None:
         super().__init__(app)
         self.log_body = log_body and environment != "production"
         self.environment = environment

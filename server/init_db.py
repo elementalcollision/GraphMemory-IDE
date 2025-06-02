@@ -7,7 +7,7 @@ Sets up the Kuzu database with required node types and schema.
 import kuzu
 import os
 
-def init_database():
+def init_database() -> None:
     """Initialize the Kuzu database with required schema."""
     
     # Get database path

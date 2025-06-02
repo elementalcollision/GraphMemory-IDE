@@ -27,7 +27,7 @@ pytestmark = [
 class TestRealAnalyticsEngineIntegration:
     """Test suite for real analytics engine integration."""
 
-    async def test_analytics_engine_health_check(self, real_analytics_engine):
+    async def test_analytics_engine_health_check(self, real_analytics_engine) -> None:
         """Test analytics engine health and connectivity."""
         # Verify engine is accessible
         assert real_analytics_engine is not None
@@ -40,7 +40,7 @@ class TestRealAnalyticsEngineIntegration:
         if hasattr(real_analytics_engine, 'embedded_engine'):
             assert health_status is True
 
-    async def test_real_system_metrics_collection(self, real_analytics_engine):
+    async def test_real_system_metrics_collection(self, real_analytics_engine) -> None:
         """Test real system metrics collection with performance validation."""
         timer = ExecutionTimer()
         
@@ -73,7 +73,7 @@ class TestRealAnalyticsEngineIntegration:
         duration = measurements["system_metrics_collection"]["duration"]
         assert duration < 5.0, "System metrics collection too slow"
 
-    async def test_real_memory_insights_processing(self, real_analytics_engine):
+    async def test_real_memory_insights_processing(self, real_analytics_engine) -> None:
         """Test real memory insights with data processing validation."""
         memory_profiler = MemoryProfiler()
         
@@ -114,7 +114,7 @@ class TestRealAnalyticsEngineIntegration:
         memory_usage = memory_profiler.get_current_memory_usage()
         assert memory_usage["current_rss"] < 100 * 1024 * 1024  # Max 100MB
 
-    async def test_real_graph_metrics_calculation(self, real_analytics_engine):
+    async def test_real_graph_metrics_calculation(self, real_analytics_engine) -> None:
         """Test real graph metrics calculation with performance benchmarking."""
         timer = ExecutionTimer()
         
@@ -146,7 +146,7 @@ class TestRealAnalyticsEngineIntegration:
         duration = measurements["graph_metrics_calculation"]["duration"]
         assert duration < 10.0, "Graph metrics calculation too slow"
 
-    async def test_analytics_data_processing_pipeline(self, real_analytics_engine):
+    async def test_analytics_data_processing_pipeline(self, real_analytics_engine) -> None:
         """Test complete analytics data processing pipeline."""
         # Create test dataset for processing
         test_data = {
@@ -179,9 +179,9 @@ class TestRealAnalyticsEngineIntegration:
             assert len(result) > 0, f"{key} should not be empty"
             assert "timestamp" in result, f"{key} should have timestamp"
 
-    async def test_concurrent_analytics_requests(self, real_analytics_engine):
+    async def test_concurrent_analytics_requests(self, real_analytics_engine) -> None:
         """Test analytics engine under concurrent load."""
-        async def make_request(request_type: str):
+        async def make_request(request_type: str) -> None:
             """Make a single analytics request."""
             if request_type == "system":
                 return await real_analytics_engine.get_system_metrics()
@@ -222,13 +222,13 @@ class TestRealAnalyticsEngineIntegration:
             for i, error in enumerate(failed_results[:3]):  # Show first 3 errors
                 print(f"Error {i+1}: {error}")
 
-    async def test_analytics_error_handling_and_fallbacks(self, real_analytics_engine):
+    async def test_analytics_error_handling_and_fallbacks(self, real_analytics_engine) -> None:
         """Test analytics engine error handling and fallback mechanisms."""
         # Test health check failure scenarios
         original_health_check = real_analytics_engine.health_check
         
         # Mock a health check failure
-        async def mock_failing_health_check():
+        async def mock_failing_health_check() -> None:
             return False
         
         real_analytics_engine.health_check = mock_failing_health_check
@@ -251,7 +251,7 @@ class TestRealAnalyticsEngineIntegration:
             # Restore original health check
             real_analytics_engine.health_check = original_health_check
 
-    async def test_analytics_performance_baseline(self, real_analytics_engine):
+    async def test_analytics_performance_baseline(self, real_analytics_engine) -> None:
         """Establish performance baseline for analytics operations."""
         timer = ExecutionTimer()
         memory_profiler = MemoryProfiler()
@@ -304,7 +304,7 @@ class TestRealAnalyticsEngineIntegration:
 class TestRealServiceIntegration:
     """Test complete real service integration scenarios."""
 
-    async def test_full_service_health_check(self, real_service_integration):
+    async def test_full_service_health_check(self, real_service_integration) -> None:
         """Test health check across all real services."""
         health_results = await real_service_integration.health_check_all()
         
@@ -328,7 +328,7 @@ class TestRealServiceIntegration:
                     assert "status" in db_status
                     assert db_status["status"] in ["healthy", "unhealthy"]
 
-    async def test_service_dependency_coordination(self, real_service_integration):
+    async def test_service_dependency_coordination(self, real_service_integration) -> None:
         """Test coordination between different services."""
         # Get analytics client
         analytics_client = real_service_integration.services.get("analytics_engine", {}).get("client")
@@ -354,12 +354,12 @@ class TestRealServiceIntegration:
             assert edge_count >= 0
             assert total_memories >= 0
 
-    async def test_real_data_flow_integrity(self, real_service_integration):
+    async def test_real_data_flow_integrity(self, real_service_integration) -> None:
         """Test data flow integrity across real services."""
         waiter = AsyncConditionWaiter()
         
         # Wait for services to be fully initialized
-        async def services_ready():
+        async def services_ready() -> None:
             health = await real_service_integration.health_check_all()
             return len(health) > 0 and all(
                 status.get("status") in ["healthy", "degraded"] 

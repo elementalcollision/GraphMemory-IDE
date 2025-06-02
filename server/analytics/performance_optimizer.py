@@ -47,7 +47,7 @@ class PerformanceMetrics:
 class DatabaseOptimizer:
     """Database performance optimization."""
     
-    def __init__(self, db_pool: asyncpg.Pool):
+    def __init__(self, db_pool: asyncpg.Pool) -> None:
         self.db_pool = db_pool
         self.query_stats: Dict[str, List[float]] = {}
         self.slow_query_threshold = 1.0  # seconds
@@ -237,7 +237,7 @@ class DatabaseOptimizer:
 class MemoryOptimizer:
     """Memory usage optimization."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.memory_stats: List[float] = []
         self.gc_stats: List[Dict[str, Any]] = []
     
@@ -324,11 +324,11 @@ class MemoryOptimizer:
 class ResponseTimeOptimizer:
     """Response time optimization."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.response_times: Dict[str, List[float]] = {}
         self.slow_endpoints: List[Dict[str, Any]] = []
     
-    def record_response_time(self, endpoint: str, response_time: float):
+    def record_response_time(self, endpoint: str, response_time: float) -> None:
         """Record response time for an endpoint."""
         if endpoint not in self.response_times:
             self.response_times[endpoint] = []
@@ -376,7 +376,7 @@ class ResponseTimeOptimizer:
 class PerformanceOptimizer:
     """Main performance optimization coordinator."""
     
-    def __init__(self, db_pool: asyncpg.Pool, settings):
+    def __init__(self, db_pool: asyncpg.Pool, settings) -> None:
         self.db_pool = db_pool
         self.settings = settings
         
@@ -387,7 +387,7 @@ class PerformanceOptimizer:
         # Background optimization task
         self._optimization_task: Optional[asyncio.Task] = None
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize performance optimization."""
         try:
             # Create performance indexes
@@ -403,7 +403,7 @@ class PerformanceOptimizer:
             print(f"Failed to initialize performance optimizer: {e}")
             raise
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown performance optimizer."""
         if self._optimization_task:
             self._optimization_task.cancel()
@@ -443,7 +443,7 @@ class PerformanceOptimizer:
             print(f"Error during full optimization: {e}")
             return {"error": str(e), "timestamp": datetime.utcnow().isoformat()}
     
-    async def _optimization_loop(self):
+    async def _optimization_loop(self) -> None:
         """Background optimization loop."""
         while True:
             try:
@@ -500,7 +500,7 @@ class PerformanceOptimizer:
 _performance_optimizer: Optional[PerformanceOptimizer] = None
 
 
-async def initialize_performance_optimizer(db_pool: asyncpg.Pool, settings):
+async def initialize_performance_optimizer(db_pool: asyncpg.Pool, settings) -> None:
     """Initialize performance optimizer."""
     global _performance_optimizer
     _performance_optimizer = PerformanceOptimizer(db_pool, settings)
@@ -512,7 +512,7 @@ def get_performance_optimizer() -> Optional[PerformanceOptimizer]:
     return _performance_optimizer
 
 
-async def shutdown_performance_optimizer():
+async def shutdown_performance_optimizer() -> None:
     """Shutdown performance optimizer."""
     global _performance_optimizer
     if _performance_optimizer:

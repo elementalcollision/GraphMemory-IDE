@@ -55,7 +55,7 @@ class EnvironmentSecretsInjector:
     Secure environment secrets injection with template support and validation.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         # Initialize secrets manager
         self.storage = SecureKeyStorage(FilesystemKeyStorage("./secrets"))
         self.secrets_manager = SecretsManager(self.storage)
@@ -95,7 +95,7 @@ class EnvironmentSecretsInjector:
         Returns:
             Text with substituted values
         """
-        def replace_var(match):
+        def replace_var(match) -> None:
             var_name = match.group(1)
             if var_name in variables:
                 return variables[var_name]
@@ -379,7 +379,7 @@ class EnvironmentSecretsInjector:
         pass
 
 
-async def main():
+async def main() -> None:
     """Main entry point for the secrets injection script"""
     parser = argparse.ArgumentParser(description="Environment Secrets Injection")
     parser.add_argument('--environment', type=str, required=True,

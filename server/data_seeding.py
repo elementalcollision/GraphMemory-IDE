@@ -33,7 +33,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 class DataSeeder:
     """Production data seeding manager"""
     
-    def __init__(self, database_url: Optional[str] = None):
+    def __init__(self, database_url: Optional[str] = None) -> None:
         """Initialize seeder with database connection"""
         if not database_url:
             settings = get_settings()
@@ -51,7 +51,7 @@ class DataSeeder:
             expire_on_commit=False
         )
 
-    async def close(self):
+    async def close(self) -> None:
         """Close database connections"""
         await self.engine.dispose()
 
@@ -157,7 +157,7 @@ class DataSeeder:
         
         return created_users
 
-    async def seed_sample_telemetry(self, users: List[User], count: int = 100):
+    async def seed_sample_telemetry(self, users: List[User], count: int = 100) -> None:
         """Seed sample telemetry events"""
         event_types = [
             "user_action", "system_event", "error", 
@@ -211,7 +211,7 @@ class DataSeeder:
                 await session.commit()
                 logger.info(f"Created {len(events_to_create)} telemetry events")
 
-    async def seed_sample_queries(self, users: List[User], count: int = 50):
+    async def seed_sample_queries(self, users: List[User], count: int = 50) -> None:
         """Seed sample analytics and Kuzu queries"""
         query_types = [
             "entity_analytics", "user_behavior", "performance_metrics",
@@ -298,7 +298,7 @@ class DataSeeder:
             
             await session.commit()
 
-    async def seed_system_metrics(self, count: int = 200):
+    async def seed_system_metrics(self, count: int = 200) -> None:
         """Seed sample system metrics"""
         metric_names = [
             "cpu_usage", "memory_usage", "disk_usage", "network_io",
@@ -361,7 +361,7 @@ class DataSeeder:
                 await session.commit()
                 logger.info(f"Created {len(metrics_to_create)} system metrics")
 
-    async def cleanup_test_data(self):
+    async def cleanup_test_data(self) -> None:
         """Remove test/demo data (for production cleanup)"""
         async with self.async_session() as session:
             # Delete demo users (keep admin)
@@ -384,7 +384,7 @@ class DataSeeder:
             await session.commit()
             logger.info("Cleaned up test/demo data")
 
-    async def seed_all(self, include_demo: bool = True):
+    async def seed_all(self, include_demo: bool = True) -> None:
         """Run all seeding operations"""
         logger.info("Starting production data seeding...")
         
@@ -410,7 +410,7 @@ class DataSeeder:
             raise
 
 
-async def main():
+async def main() -> None:
     """Main seeding function for direct execution"""
     seeder = DataSeeder()
     

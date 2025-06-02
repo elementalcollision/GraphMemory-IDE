@@ -94,7 +94,7 @@ class RequestValidator:
             True if valid, False otherwise
         """
         try:
-            def check_depth(obj, current_depth=0):
+            def check_depth(obj, current_depth=0) -> None:
                 if current_depth > max_depth:
                     return False
                 
@@ -169,7 +169,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     - Error handling without information disclosure
     """
     
-    def __init__(self, app: ASGIApp, config: Optional[SecurityConfig] = None):
+    def __init__(self, app: ASGIApp, config: Optional[SecurityConfig] = None) -> None:
         super().__init__(app)
         self.config = config or SecurityConfig()
         self.validator = RequestValidator()
@@ -281,7 +281,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             headers={"Content-Type": "application/json"}
         )
     
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next) -> None:
         """Process request through security middleware."""
         try:
             # Skip security checks for health endpoints
@@ -352,7 +352,7 @@ class EnhancedCORSMiddleware(CORSMiddleware):
         expose_headers: List[str] = None,
         max_age: int = 600,
         allow_origin_regex: str = None,
-    ):
+    ) -> None:
         # Default secure configuration
         if allow_origins is None:
             allow_origins = SecurityConfig.CORS_ALLOWED_ORIGINS

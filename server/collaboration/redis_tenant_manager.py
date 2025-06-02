@@ -134,7 +134,7 @@ class RedisTenantManager:
         enable_audit_logging: bool = True,
         enable_performance_monitoring: bool = True,
         max_key_size: int = 1024 * 1024,  # 1MB max key size
-    ):
+    ) -> None:
         """
         Initialize Redis Tenant Manager
         

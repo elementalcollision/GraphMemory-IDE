@@ -34,7 +34,8 @@ import asyncio
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional, Set, Union, Tuple, Protocol
+from typing import Any, Dict, List, Optional, Set, Union, Tuple, Protocol, Type
+from types import TracebackType
 from dataclasses import dataclass, field
 from enum import Enum
 import uuid
@@ -57,29 +58,32 @@ except ImportError:
         pass
     
     class Connection:
-        async def fetch(self, query: str, *args):
+        async def fetch(self, query: str, *args) -> None:
             raise ImportError("asyncpg not available")
         
-        async def fetchrow(self, query: str, *args):
+        async def fetchrow(self, query: str, *args) -> None:
             raise ImportError("asyncpg not available")
             
-        async def execute(self, query: str, *args):
+        async def execute(self, query: str, *args) -> None:
             raise ImportError("asyncpg not available")
             
-        async def executemany(self, query: str, args):
+        async def executemany(self, query: str, args) -> None:
             raise ImportError("asyncpg not available")
     
     class Pool:
         async def acquire(self) -> Connection:
             raise ImportError("asyncpg not available")
         
-        async def close(self):
+        async def close(self) -> None:
             pass
         
-        def __aenter__(self):
+        def __aenter__(self) -> None:
             return self
         
-        def __aexit__(self, exc_type, exc_val, exc_tb):
+        def __aexit__(self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType]) -> None:
             pass
     
     class asyncpg:
@@ -245,7 +249,7 @@ class AuditStorageSystem:
         cleanup_interval_hours: int = 24,
         performance_monitoring: bool = True,
         data_integrity_checks: bool = True
-    ):
+    ) -> None:
         """
         Initialize Audit Storage System
         
@@ -288,7 +292,7 @@ class AuditStorageSystem:
         
         self.logger = logging.getLogger(__name__)
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize storage system and background tasks"""
         try:
             # Create database connection pool
@@ -353,7 +357,7 @@ class AuditStorageSystem:
             self.logger.error(f"Unexpected error storing audit events: {e}")
             return False
 
-    async def _store_events_batch(self, conn: Connection, events: List[AuditEvent], start_time: float):
+    async def _store_events_batch(self, conn: Connection, events: List[AuditEvent], start_time: float) -> None:
         """Store events batch using database connection"""
         # Prepare batch insert values
         values = []
@@ -803,7 +807,7 @@ class AuditStorageSystem:
         
         return '\n'.join(csv_lines)
 
-    async def _initialize_storage_schema(self):
+    async def _initialize_storage_schema(self) -> None:
         """Initialize database schema with optimizations"""
         if not self._db_pool:
             return
@@ -875,7 +879,7 @@ class AuditStorageSystem:
             self.logger.error(f"Failed to initialize storage schema: {e}")
             raise
 
-    async def _update_storage_metrics(self):
+    async def _update_storage_metrics(self) -> None:
         """Update storage metrics for monitoring"""
         if not self._db_pool:
             return
@@ -904,7 +908,7 @@ class AuditStorageSystem:
         except Exception as e:
             self.logger.error(f"Failed to update storage metrics: {e}")
 
-    async def _archive_expired_logs(self, conn):
+    async def _archive_expired_logs(self, conn) -> None:
         """Archive expired logs before deletion"""
         try:
             # Get expired logs grouped by date and tenant
@@ -940,7 +944,7 @@ class AuditStorageSystem:
         except Exception as e:
             self.logger.error(f"Failed to archive expired logs: {e}")
 
-    async def _cleanup_scheduler(self):
+    async def _cleanup_scheduler(self) -> None:
         """Background task for scheduled cleanup operations"""
         while not self._shutdown_event.is_set():
             try:
@@ -954,7 +958,7 @@ class AuditStorageSystem:
                 self.logger.error(f"Error in cleanup scheduler: {e}")
                 await asyncio.sleep(300)  # Wait 5 minutes before retry
 
-    async def _integrity_checker(self):
+    async def _integrity_checker(self) -> None:
         """Background task for periodic integrity checks"""
         while not self._shutdown_event.is_set():
             try:
@@ -972,7 +976,7 @@ class AuditStorageSystem:
         """Get current storage metrics"""
         return self.metrics.to_dict()
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup storage system resources"""
         # Signal shutdown
         self._shutdown_event.set()

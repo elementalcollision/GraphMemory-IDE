@@ -19,7 +19,7 @@ try:
     from docker.errors import NotFound
     DOCKER_AVAILABLE = True
 except ImportError:
-    docker = None  # type: ignore
+    docker = None
     NotFound = Exception
     DOCKER_AVAILABLE = False
 
@@ -36,14 +36,14 @@ class TestContainerSecurity:
     """Test container security hardening features"""
     
     @pytest.fixture(scope="class")
-    def docker_client(self):
+    def docker_client(self) -> None:
         """Docker client fixture"""
         if not DOCKER_AVAILABLE or docker is None:
             pytest.skip("Docker library not available")
-        return docker.from_env()  # type: ignore
+        return docker.from_env()
     
     @pytest.fixture(scope="class")
-    def mcp_container(self, docker_client):
+    def mcp_container(self, docker_client) -> None:
         """MCP server container fixture"""
         try:
             return docker_client.containers.get(MCP_CONTAINER_NAME)
@@ -51,14 +51,14 @@ class TestContainerSecurity:
             pytest.skip(f"Container {MCP_CONTAINER_NAME} not found")
     
     @pytest.fixture(scope="class")
-    def kestra_container(self, docker_client):
+    def kestra_container(self, docker_client) -> None:
         """Kestra container fixture"""
         try:
             return docker_client.containers.get(KESTRA_CONTAINER_NAME)
         except NotFound:
             pytest.skip(f"Container {KESTRA_CONTAINER_NAME} not found")
     
-    def test_container_runs_as_non_root(self, mcp_container, kestra_container):
+    def test_container_runs_as_non_root(self, mcp_container, kestra_container) -> None:
         """Test that containers run as non-root user"""
         # Test MCP server container
         result = mcp_container.exec_run("id -u")
@@ -72,7 +72,7 @@ class TestContainerSecurity:
         assert uid != 0, f"Kestra container should not run as root (UID 0), got UID {uid}"
         assert uid == 1001, f"Kestra container should run as UID 1001, got UID {uid}"
     
-    def test_container_filesystem_readonly(self, mcp_container, kestra_container):
+    def test_container_filesystem_readonly(self, mcp_container, kestra_container) -> None:
         """Test that container filesystem is read-only"""
         # Test MCP server container
         result = mcp_container.exec_run("touch /test-file")
@@ -82,7 +82,7 @@ class TestContainerSecurity:
         result = kestra_container.exec_run("touch /test-file")
         assert result.exit_code != 0, "Kestra container root filesystem should be read-only"
     
-    def test_container_writable_volumes(self, mcp_container):
+    def test_container_writable_volumes(self, mcp_container) -> None:
         """Test that designated writable volumes work"""
         # Test writable log directory
         result = mcp_container.exec_run("touch /var/log/mcp/test.log")
@@ -95,7 +95,7 @@ class TestContainerSecurity:
         # Clean up
         mcp_container.exec_run("rm -f /var/log/mcp/test.log /tmp/mcp/test.tmp")
     
-    def test_container_capabilities_dropped(self, mcp_container, kestra_container):
+    def test_container_capabilities_dropped(self, mcp_container, kestra_container) -> None:
         """Test that dangerous capabilities are dropped"""
         # Test MCP server container
         result = mcp_container.exec_run("cat /proc/self/status | grep CapEff")
@@ -114,7 +114,7 @@ class TestContainerSecurity:
         assert "CapEff:\t0000000000000000" in caps_output, \
                f"Kestra container should have no capabilities, got: {caps_output}"
     
-    def test_container_security_options(self, docker_client, mcp_container, kestra_container):
+    def test_container_security_options(self, docker_client, mcp_container, kestra_container) -> None:
         """Test container security options"""
         # Test MCP server container
         mcp_inspect = docker_client.api.inspect_container(mcp_container.id)
@@ -147,7 +147,7 @@ class TestContainerSecurity:
         assert any('no-new-privileges:true' in opt for opt in kestra_security_opts), \
                "Kestra container should have no-new-privileges enabled"
     
-    def test_container_resource_limits(self, docker_client, mcp_container, kestra_container):
+    def test_container_resource_limits(self, docker_client, mcp_container, kestra_container) -> None:
         """Test container resource limits"""
         # Test MCP server container
         mcp_inspect = docker_client.api.inspect_container(mcp_container.id)
@@ -173,7 +173,7 @@ class TestContainerSecurity:
         assert kestra_memory_limit > 0, "Kestra container should have memory limit set"
         assert kestra_memory_limit <= 2147483648, f"Kestra container memory limit should be <= 2GB, got {kestra_memory_limit}"
     
-    def test_container_no_privileged_mode(self, docker_client, mcp_container, kestra_container):
+    def test_container_no_privileged_mode(self, docker_client, mcp_container, kestra_container) -> None:
         """Test that containers are not running in privileged mode"""
         # Test MCP server container
         mcp_inspect = docker_client.api.inspect_container(mcp_container.id)
@@ -185,7 +185,7 @@ class TestContainerSecurity:
         assert not kestra_inspect['HostConfig'].get('Privileged', False), \
                "Kestra container should not run in privileged mode"
     
-    def test_container_health_checks(self, mcp_container, kestra_container):
+    def test_container_health_checks(self, mcp_container, kestra_container) -> None:
         """Test that containers have health checks configured"""
         # Wait for health checks to complete
         time.sleep(10)
@@ -206,7 +206,7 @@ class TestContainerSecurity:
 class TestMTLSImplementation:
     """Test mTLS implementation and certificate management"""
     
-    def test_certificate_files_exist(self):
+    def test_certificate_files_exist(self) -> None:
         """Test that certificate files exist if mTLS is enabled"""
         if not os.getenv("MTLS_ENABLED", "false").lower() == "true":
             pytest.skip("mTLS not enabled")
@@ -223,7 +223,7 @@ class TestMTLSImplementation:
         for cert_file in required_files:
             assert cert_file.exists(), f"Required certificate file not found: {cert_file}"
     
-    def test_certificate_permissions(self):
+    def test_certificate_permissions(self) -> None:
         """Test certificate file permissions"""
         if not os.getenv("MTLS_ENABLED", "false").lower() == "true":
             pytest.skip("mTLS not enabled")
@@ -256,7 +256,7 @@ class TestMTLSImplementation:
                 assert permissions == 0o444, \
                        f"Certificate {cert_file} should have 444 permissions, got {oct(permissions)}"
     
-    def test_certificate_validation(self):
+    def test_certificate_validation(self) -> None:
         """Test certificate chain validation"""
         if not os.getenv("MTLS_ENABLED", "false").lower() == "true":
             pytest.skip("mTLS not enabled")
@@ -279,7 +279,7 @@ class TestMTLSImplementation:
         assert result.returncode == 0, f"Client certificate validation failed: {result.stderr}"
         assert "OK" in result.stdout, "Client certificate should be valid"
     
-    def test_mtls_port_accessibility(self):
+    def test_mtls_port_accessibility(self) -> None:
         """Test mTLS port accessibility"""
         if not os.getenv("MTLS_ENABLED", "false").lower() == "true":
             pytest.skip("mTLS not enabled")
@@ -291,7 +291,7 @@ class TestMTLSImplementation:
         except (ConnectionRefusedError, socket.timeout):
             pytest.fail(f"mTLS port {MTLS_PORT} is not accessible")
     
-    def test_mtls_connection_with_client_cert(self):
+    def test_mtls_connection_with_client_cert(self) -> None:
         """Test mTLS connection with client certificate"""
         if not os.getenv("MTLS_ENABLED", "false").lower() == "true":
             pytest.skip("mTLS not enabled")
@@ -318,7 +318,7 @@ class TestMTLSImplementation:
         except Exception as e:
             pytest.fail(f"mTLS connection failed: {e}")
     
-    def test_mtls_connection_without_client_cert_fails(self):
+    def test_mtls_connection_without_client_cert_fails(self) -> None:
         """Test that mTLS connection fails without client certificate"""
         if not os.getenv("MTLS_ENABLED", "false").lower() == "true":
             pytest.skip("mTLS not enabled")
@@ -337,7 +337,7 @@ class TestMTLSImplementation:
 class TestNetworkSecurity:
     """Test network security configurations"""
     
-    def test_http_endpoint_accessible(self):
+    def test_http_endpoint_accessible(self) -> None:
         """Test that HTTP endpoint is accessible"""
         try:
             import requests
@@ -348,7 +348,7 @@ class TestNetworkSecurity:
         except Exception as e:
             pytest.fail(f"HTTP endpoint not accessible: {e}")
     
-    def test_container_network_isolation(self, docker_client):
+    def test_container_network_isolation(self, docker_client) -> None:
         """Test container network isolation"""
         # Get network information
         networks = docker_client.networks.list(names=["docker_memory-net"])
@@ -362,7 +362,7 @@ class TestNetworkSecurity:
         subnet = network_config['Subnet']
         assert subnet.startswith('172.20.'), f"Network should use 172.20.x.x subnet, got {subnet}"
     
-    def test_no_docker_socket_exposure(self, docker_client, kestra_container):
+    def test_no_docker_socket_exposure(self, docker_client, kestra_container) -> None:
         """Test that Docker socket is not exposed to containers"""
         # Check Kestra container mounts
         kestra_inspect = docker_client.api.inspect_container(kestra_container.id)
@@ -379,7 +379,7 @@ class TestNetworkSecurity:
 class TestSecurityMonitoring:
     """Test security monitoring and logging"""
     
-    def test_security_monitoring_script_exists(self):
+    def test_security_monitoring_script_exists(self) -> None:
         """Test that security monitoring script exists and is executable"""
         monitor_script = Path("monitoring/resource-monitor.sh")
         assert monitor_script.exists(), "Resource monitor script should exist"
@@ -388,7 +388,7 @@ class TestSecurityMonitoring:
         stat = monitor_script.stat()
         assert stat.st_mode & 0o111, "Resource monitor script should be executable"
     
-    def test_security_monitoring_script_runs(self):
+    def test_security_monitoring_script_runs(self) -> None:
         """Test that security monitoring script runs successfully"""
         monitor_script = Path("monitoring/resource-monitor.sh")
         if not monitor_script.exists():
@@ -406,7 +406,7 @@ class TestSecurityMonitoring:
         assert "Container Security Status" in output, "Should show security status"
         assert "Volume Usage" in output, "Should show volume usage"
     
-    def test_log_file_creation(self):
+    def test_log_file_creation(self) -> None:
         """Test that monitoring creates log files"""
         # Run monitoring script to create logs
         monitor_script = Path("monitoring/resource-monitor.sh")
@@ -421,14 +421,14 @@ class TestSecurityMonitoring:
 
 # Test configuration and utilities
 @pytest.fixture(scope="session", autouse=True)
-def setup_test_environment():
+def setup_test_environment() -> None:
     """Setup test environment"""
     # Ensure Docker is available
     if not DOCKER_AVAILABLE or docker is None:
         pytest.skip("Docker library not available")
     
     try:
-        docker.from_env().ping()  # type: ignore
+        docker.from_env().ping()
     except Exception:
         pytest.skip("Docker not available")
     

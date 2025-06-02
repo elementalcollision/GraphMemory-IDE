@@ -43,7 +43,7 @@ class DashboardSSEManager:
     """
     
     def __init__(self, analytics_engine=None, data_adapter: Optional[DataAdapter] = None, 
-                 background_collector: Optional[BackgroundDataCollector] = None):
+                 background_collector: Optional[BackgroundDataCollector] = None) -> None:
         self.analytics_engine = analytics_engine
         self.data_adapter = data_adapter or get_data_adapter()
         self.background_collector = background_collector or get_background_collector()
@@ -62,12 +62,12 @@ class DashboardSSEManager:
             "graph": None
         }
     
-    async def start(self):
+    async def start(self) -> None:
         """Start the SSE manager"""
         self._running = True
         logger.info("Dashboard SSE Manager started")
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the SSE manager"""
         self._running = False
         logger.info("Dashboard SSE Manager stopped")
@@ -169,7 +169,7 @@ class DashboardSSEManager:
         pass
     
     # Connection management methods
-    def add_connection(self, connection_id: str):
+    def add_connection(self, connection_id: str) -> None:
         """Add a new SSE connection"""
         self.active_connections.add(connection_id)
         self.connection_stats[connection_id] = {
@@ -178,7 +178,7 @@ class DashboardSSEManager:
         }
         logger.info(f"SSE connection added: {connection_id}")
     
-    def remove_connection(self, connection_id: str):
+    def remove_connection(self, connection_id: str) -> None:
         """Remove an SSE connection"""
         self.active_connections.discard(connection_id)
         if connection_id in self.connection_stats:
@@ -236,7 +236,7 @@ class DashboardSSEManager:
             logger.error(f"Error getting health status: {e}")
             return {"error": str(e), "status": "unknown"}
     
-    async def start_background_collection(self):
+    async def start_background_collection(self) -> None:
         """Start background data collection"""
         try:
             await self.background_collector.start_collection()
@@ -245,7 +245,7 @@ class DashboardSSEManager:
             logger.error(f"Failed to start background collection: {e}")
             raise
     
-    async def stop_background_collection(self):
+    async def stop_background_collection(self) -> None:
         """Stop background data collection"""
         try:
             await self.background_collector.stop_collection()

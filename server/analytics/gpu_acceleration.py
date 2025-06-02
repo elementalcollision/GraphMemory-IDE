@@ -9,14 +9,14 @@ logger = logging.getLogger(__name__)
 class GPUAccelerationManager:
     """Manages GPU acceleration with cuGraph backend for NetworkX"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.gpu_available = False
         self.cugraph_backend = False
         self.fallback_reason: Optional[str] = None
         self.gpu_info: Dict[str, Any] = {}
         self._initialize_gpu_backend()
     
-    def _initialize_gpu_backend(self):
+    def _initialize_gpu_backend(self) -> None:
         """Initialize GPU acceleration if available"""
         try:
             # Check for NVIDIA GPU
@@ -43,8 +43,8 @@ class GPUAccelerationManager:
             
             # Try to import cuGraph
             try:
-                import cugraph  # type: ignore
-                import nx_cugraph  # type: ignore
+                import cugraph
+                import nx_cugraph
                 self.gpu_available = True
                 
                 # Enable cuGraph backend
@@ -87,8 +87,8 @@ class GPUAccelerationManager:
         
         if self.cugraph_backend:
             try:
-                import cugraph  # type: ignore
-                import nx_cugraph  # type: ignore
+                import cugraph
+                import nx_cugraph
                 info["cugraph_version"] = cugraph.__version__
                 info["nx_cugraph_version"] = nx_cugraph.__version__
                 info["supported_algorithms"] = self._get_supported_algorithms()

@@ -6,9 +6,12 @@ Provides Redis-based caching for analytics results to improve performance.
 import json
 import hashlib
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, TYPE_CHECKING
 from datetime import datetime, timedelta
 import asyncio
+
+if TYPE_CHECKING:
+    import redis.asyncio as redis
 
 logger = logging.getLogger(__name__)
 
@@ -18,13 +21,16 @@ class AnalyticsCache:
     Provides automatic expiration and cache invalidation.
     """
     
-    def __init__(self, redis_url: str = "redis://localhost:6379", default_ttl: int = 3600):
+    def __init__(self, redis_url: str = "redis://localhost:6379", default_ttl: int = 3600) -> None:
         self.redis_url = redis_url
         self.default_ttl = default_ttl
-        self.redis_client = None
+        self.redis_client: Optional[Any] = None
         self._connected = False
+        # Initialize in-memory cache attributes (used as fallback)
+        self._memory_cache: Dict[str, Dict[str, Any]] = {}
+        self._cache_timestamps: Dict[str, datetime] = {}
     
-    async def connect(self):
+    async def connect(self) -> None:
         """Initialize Redis connection"""
         try:
             import redis.asyncio as redis
@@ -202,7 +208,7 @@ class AnalyticsCache:
             "misses": 0
         }
     
-    async def close(self):
+    async def close(self) -> None:
         """Close cache connection"""
         if self._connected and self.redis_client:
             await self.redis_client.close()

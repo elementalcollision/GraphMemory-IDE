@@ -29,7 +29,7 @@ class TelemetryEvent(BaseModel):
     data: Dict[str, Any] = Field(default_factory=dict, description="Event data payload")
     
     @validator('timestamp')
-    def validate_timestamp(cls, v):
+    def validate_timestamp(cls, v: str) -> str:
         """Validate timestamp format"""
         try:
             datetime.fromisoformat(v.replace('Z', '+00:00'))
@@ -102,7 +102,7 @@ class AnalyticsQuery(BaseModel):
     limit: int = Field(100, description="Maximum number of results")
     
     @validator('limit')
-    def validate_limit(cls, v):
+    def validate_limit(cls, v: int) -> int:
         """Validate limit range"""
         if v < 1 or v > 10000:
             raise ValueError('limit must be between 1 and 10000')
@@ -182,14 +182,14 @@ class KuzuQueryRequest(BaseModel):
     return_format: str = Field("json", description="Result return format")
     
     @validator('cypher_query')
-    def validate_cypher_query(cls, v):
+    def validate_cypher_query(cls, v: str) -> str:
         """Basic validation for Cypher query"""
         if not v or not v.strip():
             raise ValueError('Cypher query cannot be empty')
         return v.strip()
     
     @validator('timeout_seconds')
-    def validate_timeout(cls, v):
+    def validate_timeout(cls, v: int) -> int:
         """Validate timeout range"""
         if v < 1 or v > 300:
             raise ValueError('timeout_seconds must be between 1 and 300')

@@ -42,7 +42,7 @@ class SubscriptionRequest(BaseModel):
 class ConnectionManager:
     """Manages WebSocket connections for real-time analytics"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: Dict[str, WebSocket] = {}
         self.client_subscriptions: Dict[str, SubscriptionRequest] = {}
         self.connection_stats = {
@@ -54,7 +54,7 @@ class ConnectionManager:
         self._broadcast_task: Optional[asyncio.Task] = None
         self._running = False
     
-    async def start(self):
+    async def start(self) -> None:
         """Start the connection manager"""
         if self._running:
             return
@@ -64,7 +64,7 @@ class ConnectionManager:
         self._broadcast_task = asyncio.create_task(self._broadcast_loop())
         logger.info("WebSocket Connection Manager started")
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the connection manager"""
         if not self._running:
             return
@@ -90,7 +90,7 @@ class ConnectionManager:
         self.client_subscriptions.clear()
         logger.info("WebSocket Connection Manager stopped")
     
-    async def connect(self, websocket: WebSocket, client_id: str):
+    async def connect(self, websocket: WebSocket, client_id: str) -> None:
         """Accept a new WebSocket connection"""
         await websocket.accept()
         self.active_connections[client_id] = websocket
@@ -114,7 +114,7 @@ class ConnectionManager:
         )
         await self._send_to_client(client_id, welcome_msg)
     
-    async def disconnect(self, client_id: str):
+    async def disconnect(self, client_id: str) -> None:
         """Handle WebSocket disconnection"""
         if client_id in self.active_connections:
             del self.active_connections[client_id]
@@ -124,7 +124,7 @@ class ConnectionManager:
         self.connection_stats["active_connections"] = len(self.active_connections)
         logger.info(f"WebSocket disconnected: {client_id} (remaining: {len(self.active_connections)})")
     
-    async def subscribe(self, client_id: str, subscription: SubscriptionRequest):
+    async def subscribe(self, client_id: str, subscription: SubscriptionRequest) -> None:
         """Subscribe client to specific data streams"""
         if client_id not in self.active_connections:
             return False
@@ -145,7 +145,7 @@ class ConnectionManager:
         await self._send_to_client(client_id, confirmation)
         return True
     
-    async def _send_to_client(self, client_id: str, message: WebSocketMessage):
+    async def _send_to_client(self, client_id: str, message: WebSocketMessage) -> None:
         """Send message to a specific client"""
         if client_id not in self.active_connections:
             return False
@@ -161,7 +161,7 @@ class ConnectionManager:
             await self.disconnect(client_id)
             return False
     
-    async def broadcast(self, message: WebSocketMessage, event_type: str):
+    async def broadcast(self, message: WebSocketMessage, event_type: str) -> None:
         """Broadcast message to subscribed clients"""
         if not self.active_connections:
             return
@@ -180,7 +180,7 @@ class ConnectionManager:
         if send_tasks:
             await asyncio.gather(*send_tasks, return_exceptions=True)
     
-    async def _broadcast_loop(self):
+    async def _broadcast_loop(self) -> None:
         """Main broadcasting loop"""
         last_feature_update = 0
         last_pattern_update = 0
@@ -218,7 +218,7 @@ class ConnectionManager:
                 logger.error(f"Error in broadcast loop: {e}")
                 await asyncio.sleep(1)
     
-    async def _broadcast_features(self):
+    async def _broadcast_features(self) -> None:
         """Broadcast latest features to subscribed clients"""
         try:
             worker_manager = await get_worker_manager()
@@ -250,7 +250,7 @@ class ConnectionManager:
         except Exception as e:
             logger.error(f"Error broadcasting features: {e}")
     
-    async def _broadcast_patterns(self):
+    async def _broadcast_patterns(self) -> None:
         """Broadcast detected patterns to subscribed clients"""
         try:
             worker_manager = await get_worker_manager()
@@ -288,7 +288,7 @@ class ConnectionManager:
         except Exception as e:
             logger.error(f"Error broadcasting patterns: {e}")
     
-    async def _broadcast_stats(self):
+    async def _broadcast_stats(self) -> None:
         """Broadcast system statistics to subscribed clients"""
         try:
             # Get DragonflyDB stats
@@ -346,7 +346,7 @@ def create_analytics_router() -> FastAPI:
     router = FastAPI()
     
     @router.websocket("/ws/analytics/{client_id}")
-    async def analytics_websocket(websocket: WebSocket, client_id: str):
+    async def analytics_websocket(websocket: WebSocket, client_id: str) -> None:
         """WebSocket endpoint for real-time analytics"""
         await connection_manager.connect(websocket, client_id)
         try:
@@ -537,10 +537,10 @@ def create_analytics_router() -> FastAPI:
     
     return router
 
-async def initialize_analytics_websocket():
+async def initialize_analytics_websocket() -> None:
     """Initialize analytics WebSocket service"""
     await connection_manager.start()
 
-async def shutdown_analytics_websocket():
+async def shutdown_analytics_websocket() -> None:
     """Shutdown analytics WebSocket service"""
     await connection_manager.stop() 

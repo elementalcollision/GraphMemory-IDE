@@ -22,7 +22,7 @@ def check_authentication() -> bool:
     return True
 
 
-def render_login_page():
+def render_login_page() -> None:
     """Render the complete login page"""
     st.set_page_config(
         page_title="GraphMemory-IDE Login",
@@ -68,7 +68,7 @@ def render_login_page():
             """)
 
 
-def render_login_form():
+def render_login_form() -> None:
     """Render the login form"""
     with st.form("login_form", clear_on_submit=False):
         st.markdown("### Enter your credentials")
@@ -159,7 +159,7 @@ def authenticate_user(username: str, password: str) -> bool:
         return False
 
 
-def render_logout_button():
+def render_logout_button() -> None:
     """Render logout button in sidebar"""
     if st.button("🚪 Logout", key="logout_btn"):
         clear_auth_session()
@@ -167,7 +167,7 @@ def render_logout_button():
         st.rerun()
 
 
-def render_user_info():
+def render_user_info() -> None:
     """Render user information in sidebar"""
     from utils.auth_utils import get_user_info
     
@@ -184,9 +184,9 @@ def render_user_info():
             st.sidebar.markdown(f"**Session expires:** {exp_time.strftime('%H:%M:%S')}")
 
 
-def require_authentication(func):
+def require_authentication(func) -> None:
     """Decorator to require authentication for a function"""
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs) -> None:
         if not check_authentication():
             return None
         return func(*args, **kwargs)

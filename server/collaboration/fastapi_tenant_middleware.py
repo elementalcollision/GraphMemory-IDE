@@ -57,7 +57,7 @@ try:
 except ImportError:
     # Handle relative imports during development
     class KuzuTenantManager:
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs) -> None:
             pass
         
         async def get_tenant_info(self, tenant_id: str) -> Dict[str, Any]:
@@ -162,7 +162,7 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
         cache_ttl_seconds: int = 300,  # 5 minutes
         max_cache_size: int = 10000,
         excluded_paths: Optional[List[str]] = None
-    ):
+    ) -> None:
         """
         Initialize FastAPI Tenant Middleware
         
@@ -322,7 +322,7 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
                 detail=f"Invalid tenant access: {tenant_id}"
             )
 
-    async def _validate_tenant_access(self, request: Request, context: TenantContext):
+    async def _validate_tenant_access(self, request: Request, context: TenantContext) -> None:
         """Validate user access to tenant with role-based permissions"""
         
         if not context.is_active:
@@ -507,7 +507,7 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
         
         return None
 
-    def _set_cache(self, key: str, value: Any):
+    def _set_cache(self, key: str, value: Any) -> None:
         """Set value in permission cache"""
         # Implement LRU eviction if cache is full
         if len(self._permission_cache) >= self.max_cache_size:
@@ -527,7 +527,7 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
         success: bool,
         processing_time_ms: float,
         error_detail: Optional[str] = None
-    ):
+    ) -> None:
         """Log request for audit trail"""
         if not self.enable_audit_logging:
             return
@@ -548,7 +548,7 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
         # In production, store to database or external audit system
         self.logger.info(f"Tenant middleware audit: {json.dumps(audit_log)}")
 
-    def _update_performance_metrics(self, processing_time_ms: float):
+    def _update_performance_metrics(self, processing_time_ms: float) -> None:
         """Update performance metrics"""
         self.request_count += 1
         self.total_processing_time += processing_time_ms

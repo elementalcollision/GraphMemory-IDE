@@ -27,7 +27,7 @@ class CursorAction:
 class CursorWorkflowSimulator:
     """Simulate realistic Cursor IDE workflows for testing."""
     
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str) -> None:
         self.base_url = base_url
         self.session_data = {}
         self.workflow_results = []
@@ -236,7 +236,7 @@ class TestCursorWorkflowIntegration:
     """Test real-world Cursor IDE workflow integration."""
     
     @pytest.mark.asyncio
-    async def test_daily_development_workflow(self):
+    async def test_daily_development_workflow(self) -> None:
         """Test complete daily development workflow simulation."""
         base_url = "http://localhost:8000"
         simulator = CursorWorkflowSimulator(base_url)
@@ -251,7 +251,7 @@ class TestCursorWorkflowIntegration:
         print("✅ Daily development workflow test passed")
     
     @pytest.mark.asyncio
-    async def test_team_collaboration_scenario(self):
+    async def test_team_collaboration_scenario(self) -> None:
         """Test multi-user team collaboration scenario."""
         base_url = "http://localhost:8000"
         
@@ -272,7 +272,7 @@ class TestCursorWorkflowIntegration:
         print("✅ Team collaboration scenario test passed")
     
     @pytest.mark.asyncio
-    async def test_code_exploration_workflow(self):
+    async def test_code_exploration_workflow(self) -> None:
         """Test code exploration and understanding workflow."""
         base_url = "http://localhost:8000"
         simulator = CursorWorkflowSimulator(base_url)
@@ -286,7 +286,7 @@ class TestCursorWorkflowIntegration:
         print("✅ Code exploration workflow test passed")
     
     @pytest.mark.asyncio
-    async def test_high_frequency_interaction_pattern(self):
+    async def test_high_frequency_interaction_pattern(self) -> None:
         """Test high-frequency interaction patterns typical in active development."""
         base_url = "http://localhost:8000"
         
@@ -330,7 +330,7 @@ class TestCursorWorkflowIntegration:
             print(f"✅ High-frequency interaction test passed: {success_rate:.1f}% success in {total_time:.3f}s")
     
     @pytest.mark.asyncio
-    async def test_memory_intensive_workflow(self):
+    async def test_memory_intensive_workflow(self) -> None:
         """Test workflow that creates and manages many memory nodes."""
         base_url = "http://localhost:8000"
         

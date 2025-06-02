@@ -25,7 +25,7 @@ class CollaborationSession:
     functionality including persistence and lifecycle management.
     """
 
-    def __init__(self, state: CollaborationState, redis_client: redis.Redis):
+    def __init__(self, state: CollaborationState, redis_client: redis.Redis[bytes]) -> None:
         self.state = state
         self.redis = redis_client
         self._session_key = f"collaboration:session:{state.session_id}"
@@ -48,7 +48,7 @@ class CollaborationSession:
     def users(self) -> Dict[str, Any]:
         return self.state.users
 
-    async def add_user(self, user_id: str, username: str, role: UserRole = UserRole.COLLABORATOR):
+    async def add_user(self, user_id: str, username: str, role: UserRole = UserRole.COLLABORATOR) -> None:
         """Add a user to the session"""
         presence = await self.state.add_user(user_id, username, role)
         self._mark_dirty()
@@ -63,14 +63,14 @@ class CollaborationSession:
             await self._persist_if_needed()
         return success
 
-    async def update_user_activity(self, user_id: str, activity_type, cursor_position=None, selection=None):
+    async def update_user_activity(self, user_id: str, activity_type, cursor_position=None, selection=None) -> None:
         """Update user activity"""
         success = await self.state.update_user_activity(user_id, activity_type, cursor_position, selection)
         if success:
             self._mark_dirty()
         return success
 
-    async def get_active_users(self):
+    async def get_active_users(self) -> None:
         """Get active users in the session"""
         return await self.state.get_active_users()
 
@@ -89,7 +89,7 @@ class CollaborationSession:
             await self._persist_if_needed()
         return success
 
-    async def register_conflict(self, conflict_id: str, conflict_data: Dict[str, Any]):
+    async def register_conflict(self, conflict_id: str, conflict_data: Dict[str, Any]) -> None:
         """Register a conflict"""
         await self.state.register_conflict(conflict_id, conflict_data)
         self._mark_dirty()
@@ -107,11 +107,11 @@ class CollaborationSession:
         """Get session summary"""
         return await self.state.get_session_summary()
 
-    def _mark_dirty(self):
+    def _mark_dirty(self) -> None:
         """Mark session as needing persistence"""
         self._dirty = True
 
-    async def _persist_if_needed(self, force: bool = False):
+    async def _persist_if_needed(self, force: bool = False) -> None:
         """Persist session state if needed"""
         now = datetime.now(timezone.utc)
         
@@ -119,7 +119,7 @@ class CollaborationSession:
         if (self._dirty and (now - self._last_persisted).total_seconds() > 1.0) or force:
             await self._persist()
 
-    async def _persist(self, force: bool = False):
+    async def _persist(self, force: bool = False) -> None:
         """Persist session state to Redis"""
         try:
             state_data = self.state.to_dict()
@@ -134,7 +134,7 @@ class CollaborationSession:
         except Exception as e:
             logger.error(f"Failed to persist session {self.session_id}: {e}")
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Clean up session resources"""
         try:
             await self.redis.delete(self._session_key)
@@ -148,7 +148,7 @@ class SessionManager:
     lifecycle management, and cleanup operations.
     """
 
-    def __init__(self, redis_client: redis.Redis):
+    def __init__(self, redis_client: redis.Redis[bytes]) -> None:
         self.redis = redis_client
         self._sessions: Dict[str, CollaborationSession] = {}
         self._resource_to_session: Dict[str, str] = {}  # Maps resource_type:resource_id -> session_id
@@ -391,7 +391,7 @@ class SessionManager:
             logger.error(f"Failed to restore session {session_id}: {e}")
             return None
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the session manager and persist all sessions"""
         logger.info("Shutting down session manager")
         

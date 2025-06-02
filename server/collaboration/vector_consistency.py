@@ -216,7 +216,7 @@ class VectorState:
     domain_context: Dict[str, Any]
     hierarchical_position: Optional[Tuple[int, int]] = None  # (level, cluster_id)
 
-    def update_session_statistics(self, new_embedding: np.ndarray, user_id: str):
+    def update_session_statistics(self, new_embedding: np.ndarray, user_id: str) -> None:
         """Update session statistics for lifelong normalization"""
         # Update running statistics for collaborative session
         current_mean = self.session_statistics.get('mean_embedding', 0.0)
@@ -256,7 +256,7 @@ class EmbeddingAlignmentEngine:
     hierarchical fuzzy clustering with matrix factorization within contrastive learning.
     """
 
-    def __init__(self, embedding_dim: int = 384):
+    def __init__(self, embedding_dim: int = 384) -> None:
         self.embedding_dim = embedding_dim
         self.hierarchical_clusterer = HierarchicalEmbeddingClusterer(embedding_dim)
         self.contrastive_learner = ContrastiveLearningEngine(embedding_dim)
@@ -428,7 +428,7 @@ class HierarchicalEmbeddingClusterer:
     Implements hierarchical fuzzy clustering for domain-specific memory content organization.
     """
 
-    def __init__(self, embedding_dim: int):
+    def __init__(self, embedding_dim: int) -> None:
         self.embedding_dim = embedding_dim
         self.cluster_hierarchies = {}
         self.scaler = StandardScaler()
@@ -481,7 +481,7 @@ class HierarchicalEmbeddingClusterer:
                 'level_assignments': {}
             }
 
-    async def _initialize_domain_hierarchy(self, domain_type: str):
+    async def _initialize_domain_hierarchy(self, domain_type: str) -> None:
         """Initialize hierarchical cluster structure for domain"""
         # Create multi-level hierarchy with decreasing cluster sizes
         # This would typically be trained on domain-specific data
@@ -535,7 +535,7 @@ class ContrastiveLearningEngine:
     Implements contrastive loss computation within hierarchical framework.
     """
 
-    def __init__(self, embedding_dim: int):
+    def __init__(self, embedding_dim: int) -> None:
         self.embedding_dim = embedding_dim
         self.margin = 0.5
         self.temperature = 0.07
@@ -601,7 +601,7 @@ class VectorCRDTDocument:
     """
 
     def __init__(self, memory_id: str, initial_embedding: np.ndarray, 
-                 domain_context: Dict[str, Any]):
+                 domain_context: Dict[str, Any]) -> None:
         self.memory_id = memory_id
         self.vector_state = VectorState(
             memory_id=memory_id,
@@ -726,7 +726,7 @@ class VectorCRDTDocument:
         # Simple transformation for now - can be enhanced with more sophisticated algorithms
         return operation
 
-    def add_operation_observer(self, observer: Callable[[VectorOperation], None]):
+    def add_operation_observer(self, observer: Callable[[VectorOperation], None]) -> None:
         """Add observer for operation events"""
         self.operation_observers.append(observer)
 
@@ -743,13 +743,13 @@ class CollaborativeEmbeddingStore:
     with shared model training coordination across multiple collaborators.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.embedding_store: Dict[str, Dict[str, Any]] = {}
         self.shared_statistics: Dict[str, float] = {}
         self.collaboration_metrics: Dict[str, Any] = {}
 
     async def update_embedding(self, memory_id: str, operation: VectorOperation, 
-                             vector_state: VectorState):
+                             vector_state: VectorState) -> None:
         """Update collaborative embedding store with new operation"""
         try:
             if memory_id not in self.embedding_store:
@@ -780,7 +780,7 @@ class CollaborativeEmbeddingStore:
         except Exception as e:
             logger.error(f"Error updating collaborative embedding store: {e}")
 
-    async def _update_shared_statistics(self, memory_id: str, vector_state: VectorState):
+    async def _update_shared_statistics(self, memory_id: str, vector_state: VectorState) -> None:
         """Update shared statistics for collaborative coordination"""
         try:
             # Update global collaboration metrics
@@ -803,7 +803,7 @@ class EmbeddingUpdateCoordinator:
     embedding updates with 7x speed improvement and <1/3 VRAM usage.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.parameter_shift_calculator = ParameterShiftCalculator()
         self.normalization_strategy = LifelongNormalizationStrategy()
         self.update_cache: Dict[str, Dict[str, Any]] = {}
@@ -1023,7 +1023,7 @@ class VectorIndexConsistency:
     vector index consistency during collaborative memory editing.
     """
 
-    def __init__(self, kuzu_connection):
+    def __init__(self, kuzu_connection) -> None:
         self.kuzu_conn = kuzu_connection
         self.index_cache: Dict[str, Dict[str, Any]] = {}
         self.consistency_metrics = {
@@ -1032,7 +1032,7 @@ class VectorIndexConsistency:
             'rollback_count': 0
         }
 
-    async def maintain_index_consistency(self, embedding_updates: List[VectorOperation]):
+    async def maintain_index_consistency(self, embedding_updates: List[VectorOperation]) -> None:
         """
         Maintain Kuzu vector index consistency during collaboration
         
@@ -1058,7 +1058,7 @@ class VectorIndexConsistency:
             await self._rollback_failed_updates(embedding_updates)
 
     async def _process_memory_index_updates(self, memory_id: str, 
-                                          updates: List[VectorOperation]):
+                                          updates: List[VectorOperation]) -> None:
         """Process index updates for a specific memory"""
         try:
             # Get the latest embedding update
@@ -1091,7 +1091,7 @@ class VectorIndexConsistency:
             logger.error(f"Error processing memory index updates for {memory_id}: {e}")
             raise
 
-    async def _perform_consistency_check(self, memory_ids: List[str]):
+    async def _perform_consistency_check(self, memory_ids: List[str]) -> None:
         """Perform consistency check on updated indexes"""
         try:
             for memory_id in memory_ids:
@@ -1112,7 +1112,7 @@ class VectorIndexConsistency:
         except Exception as e:
             logger.error(f"Error performing consistency check: {e}")
 
-    async def _rollback_failed_updates(self, failed_updates: List[VectorOperation]):
+    async def _rollback_failed_updates(self, failed_updates: List[VectorOperation]) -> None:
         """Rollback failed index updates"""
         try:
             for update in failed_updates:
@@ -1138,7 +1138,7 @@ class VectorIndexConsistency:
             logger.error(f"Error executing Kuzu query: {e}")
             raise
 
-    async def coordinate_with_memory_crdt(self, memory_changes: List[Dict[str, Any]]):
+    async def coordinate_with_memory_crdt(self, memory_changes: List[Dict[str, Any]]) -> None:
         """
         Coordinate vector updates with Memory CRDT operations
         
@@ -1179,7 +1179,7 @@ class VectorConsistencyManager:
     """
 
     def __init__(self, redis_client: Redis, sentence_transformer: SentenceTransformer, 
-                 kuzu_connection, memory_crdt_manager: MemoryCRDTManager):
+                 kuzu_connection, memory_crdt_manager: MemoryCRDTManager) -> None:
         self.redis_client = redis_client
         self.embedding_model = sentence_transformer
         self.kuzu_conn = kuzu_connection
@@ -1444,7 +1444,7 @@ class VectorConsistencyManager:
         
         return None
 
-    async def _broadcast_vector_operation(self, operation: VectorOperation):
+    async def _broadcast_vector_operation(self, operation: VectorOperation) -> None:
         """Broadcast vector operation to collaborators"""
         try:
             ops_key = self.VECTOR_OPS_KEY.format(memory_id=operation.memory_id)
@@ -1460,7 +1460,7 @@ class VectorConsistencyManager:
         except Exception as e:
             logger.error(f"Error broadcasting vector operation: {e}")
 
-    async def maintain_vector_consistency(self, session_context: Dict[str, Any]):
+    async def maintain_vector_consistency(self, session_context: Dict[str, Any]) -> None:
         """
         Maintain vector consistency across collaborative session
         
@@ -1485,7 +1485,7 @@ class VectorConsistencyManager:
         except Exception as e:
             logger.error(f"Error maintaining vector consistency: {e}")
 
-    async def _maintain_memory_vector_consistency(self, memory_id: str, session_context: Dict[str, Any]):
+    async def _maintain_memory_vector_consistency(self, memory_id: str, session_context: Dict[str, Any]) -> None:
         """Maintain consistency for specific memory vector"""
         try:
             document = self.vector_documents.get(memory_id)
@@ -1516,7 +1516,7 @@ class VectorConsistencyManager:
             logger.error(f"Error getting pending operations: {e}")
             return []
 
-    async def _update_session_statistics(self, session_id: str, session_context: Dict[str, Any]):
+    async def _update_session_statistics(self, session_id: str, session_context: Dict[str, Any]) -> None:
         """Update session statistics in Redis"""
         try:
             stats_key = self.VECTOR_STATS_KEY.format(session_id=session_id)
@@ -1532,7 +1532,7 @@ class VectorConsistencyManager:
         except Exception as e:
             logger.error(f"Error updating session statistics: {e}")
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown vector consistency manager and cleanup resources"""
         try:
             # Save all vector documents to cache
@@ -1546,7 +1546,7 @@ class VectorConsistencyManager:
         except Exception as e:
             logger.error(f"Error during shutdown: {e}")
 
-    async def _save_vector_state_to_cache(self, memory_id: str, vector_state: VectorState):
+    async def _save_vector_state_to_cache(self, memory_id: str, vector_state: VectorState) -> None:
         """Save vector state to Redis cache"""
         try:
             cache_key = self.VECTOR_STATE_KEY.format(memory_id=memory_id)
@@ -1608,13 +1608,13 @@ async def handle_concurrent_embedding_updates(updates: List[VectorOperation]) ->
     return await manager.handle_concurrent_embedding_updates(updates)
 
 
-async def maintain_vector_consistency(session_context: Dict[str, Any]):
+async def maintain_vector_consistency(session_context: Dict[str, Any]) -> None:
     """Maintain vector consistency across collaborative session"""
     manager = await get_vector_consistency_manager()
     await manager.maintain_vector_consistency(session_context)
 
 
-async def shutdown_vector_consistency():
+async def shutdown_vector_consistency() -> None:
     """Shutdown vector consistency system"""
     global _vector_consistency_manager
     if _vector_consistency_manager:
@@ -1626,28 +1626,28 @@ async def shutdown_vector_consistency():
 class VectorConsistencyMetrics:
     """Metrics collector for vector consistency operations"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.embedding_updates = 0
         self.alignment_operations = 0
         self.consensus_merges = 0
         self.average_sync_time = 0.0
         self.memory_usage_reduction = 0.0
     
-    def record_embedding_update(self, sync_time: float):
+    def record_embedding_update(self, sync_time: float) -> None:
         """Record an embedding update operation"""
         self.embedding_updates += 1
         self.average_sync_time = ((self.average_sync_time * (self.embedding_updates - 1) + sync_time) 
                                  / self.embedding_updates)
     
-    def record_alignment_operation(self):
+    def record_alignment_operation(self) -> None:
         """Record a HEAL alignment operation"""
         self.alignment_operations += 1
     
-    def record_consensus_merge(self):
+    def record_consensus_merge(self) -> None:
         """Record a consensus merge operation"""
         self.consensus_merges += 1
     
-    def update_memory_usage_reduction(self, reduction_ratio: float):
+    def update_memory_usage_reduction(self, reduction_ratio: float) -> None:
         """Update memory usage reduction metric"""
         self.memory_usage_reduction = reduction_ratio
     

@@ -119,7 +119,7 @@ class RealTimeMetrics:
 class RealTimePerformanceMonitor:
     """Live performance metrics collection and validation"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.monitoring_active = False
         self.metrics_registry = CollectorRegistry()
         self.monitoring_thread: Optional[threading.Thread] = None
@@ -498,7 +498,7 @@ class RealTimePerformanceMonitor:
 class AlertingSystemTester:
     """Enterprise alerting integration testing"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.alert_endpoints: Dict[str, str] = {
             "email": "http://localhost:8080/alerts/email",
             "slack": "http://localhost:8080/alerts/slack",
@@ -671,7 +671,7 @@ class AlertingSystemTester:
 class PerformanceDegradationDetector:
     """Real-time performance regression detection"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.performance_baselines: Dict[str, float] = {}
         self.degradation_thresholds: Dict[str, float] = {
             "response_time_increase": 0.5,    # 50% increase
@@ -753,7 +753,7 @@ class PerformanceDegradationDetector:
 class ResourceUtilizationMonitor:
     """System resource monitoring under load"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.resource_alerts: List[Dict[str, Any]] = []
         self.utilization_history: Dict[str, List[float]] = {
             "cpu": [],
@@ -860,7 +860,7 @@ class ResourceUtilizationMonitor:
 
 # Integration test cases
 @pytest_asyncio.async_test
-async def test_realtime_performance_monitoring():
+async def test_realtime_performance_monitoring() -> None:
     """Test comprehensive real-time performance monitoring"""
     monitor = RealTimePerformanceMonitor()
     metrics = await monitor.start_performance_monitoring(duration_seconds=60)  # Reduced for testing
@@ -872,7 +872,7 @@ async def test_realtime_performance_monitoring():
     assert metrics.peak_memory_usage > 0  # Should have valid memory metrics
 
 @pytest_asyncio.async_test
-async def test_enterprise_alerting_integration():
+async def test_enterprise_alerting_integration() -> None:
     """Test enterprise alerting system integration"""
     alerting_tester = AlertingSystemTester()
     results = await alerting_tester.test_enterprise_alerting_integration()
@@ -883,7 +883,7 @@ async def test_enterprise_alerting_integration():
     assert results["escalation_workflows_tested"] > 0
 
 @pytest_asyncio.async_test
-async def test_performance_degradation_detection():
+async def test_performance_degradation_detection() -> None:
     """Test performance degradation detection"""
     monitor = RealTimePerformanceMonitor()
     detector = PerformanceDegradationDetector()
@@ -900,7 +900,7 @@ async def test_performance_degradation_detection():
     assert "components_affected" in results
 
 @pytest_asyncio.async_test
-async def test_resource_utilization_monitoring():
+async def test_resource_utilization_monitoring() -> None:
     """Test system resource utilization monitoring under load"""
     resource_monitor = ResourceUtilizationMonitor()
     results = await resource_monitor.monitor_resource_utilization_under_load(load_duration=60)

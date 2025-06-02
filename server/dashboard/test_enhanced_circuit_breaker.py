@@ -23,7 +23,7 @@ from enhanced_circuit_breaker import (
 class TestErrorClassifier:
     """Test error classification functionality"""
     
-    def test_classify_transient_errors(self):
+    def test_classify_transient_errors(self) -> None:
         """Test classification of transient errors"""
         errors = [
             ConnectionError("Network connection failed"),
@@ -34,7 +34,7 @@ class TestErrorClassifier:
         for error in errors:
             assert ErrorClassifier.classify_error(error) == ErrorType.TRANSIENT
     
-    def test_classify_rate_limit_errors(self):
+    def test_classify_rate_limit_errors(self) -> None:
         """Test classification of rate limit errors"""
         errors = [
             Exception("RateLimitError: Too many requests"),
@@ -45,7 +45,7 @@ class TestErrorClassifier:
         for error in errors:
             assert ErrorClassifier.classify_error(error) == ErrorType.RATE_LIMIT
     
-    def test_classify_authentication_errors(self):
+    def test_classify_authentication_errors(self) -> None:
         """Test classification of authentication errors"""
         errors = [
             PermissionError("Access denied"),
@@ -56,7 +56,7 @@ class TestErrorClassifier:
         for error in errors:
             assert ErrorClassifier.classify_error(error) == ErrorType.AUTHENTICATION
     
-    def test_classify_data_validation_errors(self):
+    def test_classify_data_validation_errors(self) -> None:
         """Test classification of data validation errors"""
         errors = [
             ValueError("ValidationError: Invalid data format"),
@@ -67,7 +67,7 @@ class TestErrorClassifier:
         for error in errors:
             assert ErrorClassifier.classify_error(error) == ErrorType.DATA_VALIDATION
     
-    def test_classify_permanent_errors(self):
+    def test_classify_permanent_errors(self) -> None:
         """Test classification of permanent errors"""
         errors = [
             NotImplementedError("Feature not implemented"),
@@ -78,7 +78,7 @@ class TestErrorClassifier:
         for error in errors:
             assert ErrorClassifier.classify_error(error) == ErrorType.PERMANENT
     
-    def test_classify_unknown_errors(self):
+    def test_classify_unknown_errors(self) -> None:
         """Test classification of unknown errors"""
         error = Exception("Some random error message")
         assert ErrorClassifier.classify_error(error) == ErrorType.UNKNOWN
@@ -88,7 +88,7 @@ class TestRecoveryStrategies:
     """Test recovery strategy implementations"""
     
     @pytest.mark.asyncio
-    async def test_exponential_backoff_strategy(self):
+    async def test_exponential_backoff_strategy(self) -> None:
         """Test exponential backoff recovery strategy"""
         strategy = ExponentialBackoffStrategy(initial_delay=1.0, max_delay=10.0, multiplier=2.0)
         
@@ -104,7 +104,7 @@ class TestRecoveryStrategies:
         assert strategy.get_backoff_delay(4) == 10.0  # Capped at max_delay
     
     @pytest.mark.asyncio
-    async def test_adaptive_recovery_strategy(self):
+    async def test_adaptive_recovery_strategy(self) -> None:
         """Test adaptive recovery strategy"""
         strategy = AdaptiveRecoveryStrategy(min_success_rate=0.2)
         
@@ -135,7 +135,7 @@ class TestRecoveryStrategies:
 class TestCircuitBreakerConfig:
     """Test circuit breaker configuration"""
     
-    def test_default_config(self):
+    def test_default_config(self) -> None:
         """Test default configuration values"""
         config = CircuitBreakerConfig()
         
@@ -150,7 +150,7 @@ class TestCircuitBreakerConfig:
         assert config.exponential_backoff is True
         assert config.enable_metrics is True
     
-    def test_custom_config(self):
+    def test_custom_config(self) -> None:
         """Test custom configuration values"""
         config = CircuitBreakerConfig(
             failure_threshold=10,
@@ -171,7 +171,7 @@ class TestEnhancedCircuitBreaker:
     """Test enhanced circuit breaker functionality"""
     
     @pytest.fixture
-    def circuit_breaker(self):
+    def circuit_breaker(self) -> None:
         """Create a circuit breaker for testing"""
         config = CircuitBreakerConfig(
             failure_threshold=3,
@@ -181,7 +181,7 @@ class TestEnhancedCircuitBreaker:
         )
         return EnhancedCircuitBreaker("test-breaker", config)
     
-    def test_initial_state(self, circuit_breaker):
+    def test_initial_state(self, circuit_breaker) -> None:
         """Test initial circuit breaker state"""
         assert circuit_breaker.state == CircuitState.CLOSED
         assert circuit_breaker.is_closed is True
@@ -190,10 +190,10 @@ class TestEnhancedCircuitBreaker:
         assert circuit_breaker.name == "test-breaker"
     
     @pytest.mark.asyncio
-    async def test_successful_call(self, circuit_breaker):
+    async def test_successful_call(self, circuit_breaker) -> None:
         """Test successful function call through circuit breaker"""
         
-        async def success_func():
+        async def success_func() -> None:
             return "success"
         
         result = await circuit_breaker.call(success_func)
@@ -208,10 +208,10 @@ class TestEnhancedCircuitBreaker:
         assert metrics.success_rate == 1.0
     
     @pytest.mark.asyncio
-    async def test_failed_call(self, circuit_breaker):
+    async def test_failed_call(self, circuit_breaker) -> None:
         """Test failed function call through circuit breaker"""
         
-        async def fail_func():
+        async def fail_func() -> None:
             raise ValueError("Test error")
         
         with pytest.raises(ValueError):
@@ -227,10 +227,10 @@ class TestEnhancedCircuitBreaker:
         assert metrics.failure_rate == 1.0
     
     @pytest.mark.asyncio
-    async def test_circuit_opens_after_failures(self, circuit_breaker):
+    async def test_circuit_opens_after_failures(self, circuit_breaker) -> None:
         """Test circuit opens after threshold failures"""
         
-        async def fail_func():
+        async def fail_func() -> None:
             raise ValueError("Test error")
         
         # Generate failures to trip circuit
@@ -252,10 +252,10 @@ class TestEnhancedCircuitBreaker:
         assert metrics.current_state == CircuitState.OPEN
     
     @pytest.mark.asyncio
-    async def test_circuit_transitions_to_half_open(self, circuit_breaker):
+    async def test_circuit_transitions_to_half_open(self, circuit_breaker) -> None:
         """Test circuit transitions from open to half-open"""
         
-        async def fail_func():
+        async def fail_func() -> None:
             raise ValueError("Test error")
         
         # Trip the circuit
@@ -269,7 +269,7 @@ class TestEnhancedCircuitBreaker:
         await asyncio.sleep(1.1)
         
         # Next call should transition to half-open
-        async def success_func():
+        async def success_func() -> None:
             return "success"
         
         result = await circuit_breaker.call(success_func)
@@ -277,11 +277,11 @@ class TestEnhancedCircuitBreaker:
         assert circuit_breaker.is_half_open is True
     
     @pytest.mark.asyncio
-    async def test_circuit_closes_from_half_open(self, circuit_breaker):
+    async def test_circuit_closes_from_half_open(self, circuit_breaker) -> None:
         """Test circuit closes from half-open after successful calls"""
         
         # Trip the circuit
-        async def fail_func():
+        async def fail_func() -> None:
             raise ValueError("Test error")
         
         for i in range(3):
@@ -292,7 +292,7 @@ class TestEnhancedCircuitBreaker:
         await asyncio.sleep(1.1)
         
         # Make successful calls to close circuit
-        async def success_func():
+        async def success_func() -> None:
             return "success"
         
         # First success should transition to half-open
@@ -308,11 +308,11 @@ class TestEnhancedCircuitBreaker:
         assert metrics.current_state == CircuitState.CLOSED
     
     @pytest.mark.asyncio
-    async def test_circuit_opens_from_half_open_on_failure(self, circuit_breaker):
+    async def test_circuit_opens_from_half_open_on_failure(self, circuit_breaker) -> None:
         """Test circuit opens from half-open on any failure"""
         
         # Trip the circuit
-        async def fail_func():
+        async def fail_func() -> None:
             raise ValueError("Test error")
         
         for i in range(3):
@@ -329,7 +329,7 @@ class TestEnhancedCircuitBreaker:
         assert circuit_breaker.is_open is True
     
     @pytest.mark.asyncio
-    async def test_context_manager_usage(self, circuit_breaker):
+    async def test_context_manager_usage(self, circuit_breaker) -> None:
         """Test circuit breaker as context manager"""
         
         # Successful context
@@ -350,7 +350,7 @@ class TestEnhancedCircuitBreaker:
         assert metrics.failed_requests == 1
     
     @pytest.mark.asyncio
-    async def test_ignored_exceptions(self):
+    async def test_ignored_exceptions(self) -> None:
         """Test ignored exceptions are not monitored"""
         config = CircuitBreakerConfig(
             failure_threshold=2,
@@ -376,7 +376,7 @@ class TestEnhancedCircuitBreaker:
         assert metrics.failed_requests == 1  # Only the ValueError
     
     @pytest.mark.asyncio
-    async def test_failure_rate_threshold(self):
+    async def test_failure_rate_threshold(self) -> None:
         """Test failure rate threshold triggering"""
         config = CircuitBreakerConfig(
             failure_threshold=10,  # High count threshold
@@ -401,7 +401,7 @@ class TestEnhancedCircuitBreaker:
         assert breaker.is_open is True
     
     @pytest.mark.asyncio
-    async def test_metrics_accuracy(self, circuit_breaker):
+    async def test_metrics_accuracy(self, circuit_breaker) -> None:
         """Test metrics accuracy and completeness"""
         
         # Generate some requests
@@ -430,11 +430,11 @@ class TestEnhancedCircuitBreaker:
         assert ErrorType.UNKNOWN in metrics.error_counts
     
     @pytest.mark.asyncio
-    async def test_reset_functionality(self, circuit_breaker):
+    async def test_reset_functionality(self, circuit_breaker) -> None:
         """Test circuit breaker reset"""
         
         # Trip the circuit
-        async def fail_func():
+        async def fail_func() -> None:
             raise ValueError("Test error")
         
         for i in range(3):
@@ -449,7 +449,7 @@ class TestEnhancedCircuitBreaker:
         assert circuit_breaker.is_closed is True
         
         # Should work normally after reset
-        async def success_func():
+        async def success_func() -> None:
             return "success"
         
         result = await circuit_breaker.call(success_func)
@@ -459,7 +459,7 @@ class TestEnhancedCircuitBreaker:
 class TestCircuitBreakerManager:
     """Test circuit breaker manager functionality"""
     
-    def test_create_and_get_breaker(self):
+    def test_create_and_get_breaker(self) -> None:
         """Test creating and retrieving circuit breakers"""
         manager = CircuitBreakerManager()
         
@@ -475,7 +475,7 @@ class TestCircuitBreakerManager:
         # Non-existent breaker should return None
         assert manager.get_breaker("non-existent") is None
     
-    def test_duplicate_breaker_names(self):
+    def test_duplicate_breaker_names(self) -> None:
         """Test handling of duplicate breaker names"""
         manager = CircuitBreakerManager()
         
@@ -485,7 +485,7 @@ class TestCircuitBreakerManager:
             manager.create_breaker("test-breaker")
     
     @pytest.mark.asyncio
-    async def test_global_metrics(self):
+    async def test_global_metrics(self) -> None:
         """Test global metrics collection"""
         manager = CircuitBreakerManager()
         
@@ -517,7 +517,7 @@ class TestCircuitBreakerManager:
         assert "breaker-2" in metrics["breakers"]
     
     @pytest.mark.asyncio
-    async def test_reset_all_breakers(self):
+    async def test_reset_all_breakers(self) -> None:
         """Test resetting all circuit breakers"""
         manager = CircuitBreakerManager()
         
@@ -542,14 +542,14 @@ class TestCircuitBreakerManager:
 class TestGlobalFunctions:
     """Test global circuit breaker functions"""
     
-    def test_global_manager_singleton(self):
+    def test_global_manager_singleton(self) -> None:
         """Test global manager is singleton"""
         manager1 = get_circuit_breaker_manager()
         manager2 = get_circuit_breaker_manager()
         
         assert manager1 is manager2
     
-    def test_create_global_circuit_breaker(self):
+    def test_create_global_circuit_breaker(self) -> None:
         """Test creating circuit breaker through global function"""
         breaker = create_circuit_breaker("global-test")
         assert breaker.name == "global-test"
@@ -561,7 +561,7 @@ class TestGlobalFunctions:
 
 
 @pytest.mark.asyncio
-async def test_real_world_scenario():
+async def test_real_world_scenario() -> None:
     """Test realistic usage scenario"""
     
     # Create circuit breaker for database operations
@@ -578,7 +578,7 @@ async def test_real_world_scenario():
     success_count = 0
     failure_count = 0
     
-    async def db_operation(should_fail=False):
+    async def db_operation(should_fail=False) -> None:
         async with db_breaker.protect():
             if should_fail:
                 raise ConnectionError("Database connection failed")

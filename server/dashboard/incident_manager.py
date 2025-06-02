@@ -124,7 +124,7 @@ class Incident:
     timeline_events: List[Dict[str, Any]] = field(default_factory=list)
     
     def add_timeline_event(self, event_type: str, description: str, 
-                          user: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None):
+                          user: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None) -> None:
         """Add event to incident timeline"""
         event = {
             'timestamp': datetime.utcnow().isoformat(),
@@ -210,7 +210,7 @@ class IncidentManager:
         alert_correlator: Optional[AlertCorrelator] = None,
         alert_manager: Optional[AlertManager] = None,
         notification_dispatcher: Optional[NotificationDispatcher] = None
-    ):
+    ) -> None:
         self.db_path = Path(db_path)
         self.alert_correlator = alert_correlator
         self.alert_manager = alert_manager
@@ -241,7 +241,7 @@ class IncidentManager:
         
         logger.info(f"IncidentManager initialized with DB: {self.db_path}")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the incident manager"""
         try:
             # Ensure database directory exists
@@ -275,7 +275,7 @@ class IncidentManager:
             logger.error(f"Failed to initialize IncidentManager: {e}")
             raise
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the incident manager"""
         try:
             self.running = False
@@ -638,13 +638,13 @@ class IncidentManager:
         await self._update_metrics()
         return self.metrics
     
-    def add_incident_callback(self, callback: Callable):
+    def add_incident_callback(self, callback: Callable) -> None:
         """Add callback for incident events"""
         self.incident_callbacks.append(callback)
     
     # Private methods
     
-    async def _on_correlation_created(self, correlation: CorrelationResult):
+    async def _on_correlation_created(self, correlation: CorrelationResult) -> None:
         """Handle new correlation from AlertCorrelator"""
         try:
             if correlation.is_significant():
@@ -784,7 +784,7 @@ class IncidentManager:
             )
         }
     
-    async def _initialize_database(self):
+    async def _initialize_database(self) -> None:
         """Initialize SQLite database for incidents"""
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
@@ -817,7 +817,7 @@ class IncidentManager:
             """)
             await db.commit()
     
-    async def _load_incidents_from_database(self):
+    async def _load_incidents_from_database(self) -> None:
         """Load incidents from database"""
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -835,7 +835,7 @@ class IncidentManager:
         except Exception as e:
             logger.error(f"Failed to load incidents from database: {e}")
     
-    async def _save_incident_to_database(self, incident: Incident):
+    async def _save_incident_to_database(self, incident: Incident) -> None:
         """Save incident to database"""
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -878,7 +878,7 @@ class IncidentManager:
         except Exception as e:
             logger.error(f"Failed to save incident to database: {e}")
     
-    async def _save_all_incidents_to_database(self):
+    async def _save_all_incidents_to_database(self) -> None:
         """Save all incidents to database"""
         for incident in self.incidents.values():
             await self._save_incident_to_database(incident)
@@ -912,7 +912,7 @@ class IncidentManager:
             timeline_events=json.loads(row['timeline_events'] or '[]')
         )
     
-    async def _update_metrics(self):
+    async def _update_metrics(self) -> None:
         """Update incident metrics"""
         # Count incidents by status
         open_count = sum(1 for i in self.incidents.values() if i.status == IncidentStatus.OPEN)
@@ -963,7 +963,7 @@ class IncidentManager:
         metric_snapshot['timestamp'] = datetime.utcnow()
         self.metrics_history.append(metric_snapshot)
     
-    async def _trigger_incident_callbacks(self, event_type: str, incident: Incident):
+    async def _trigger_incident_callbacks(self, event_type: str, incident: Incident) -> None:
         """Trigger incident event callbacks"""
         for callback in self.incident_callbacks:
             try:
@@ -974,17 +974,17 @@ class IncidentManager:
             except Exception as e:
                 logger.error(f"Error in incident callback: {e}")
     
-    async def _send_incident_notification(self, incident: Incident, event_type: str):
+    async def _send_incident_notification(self, incident: Incident, event_type: str) -> None:
         """Send incident notification"""
         # Implementation depends on notification dispatcher capabilities
         pass
     
-    async def _start_background_tasks(self):
+    async def _start_background_tasks(self) -> None:
         """Start background monitoring tasks"""
         self.escalation_task = asyncio.create_task(self._escalation_monitor())
         self.auto_close_task = asyncio.create_task(self._auto_close_monitor())
     
-    async def _escalation_monitor(self):
+    async def _escalation_monitor(self) -> None:
         """Monitor incidents for escalation"""
         while self.running:
             try:
@@ -1006,7 +1006,7 @@ class IncidentManager:
             except Exception as e:
                 logger.error(f"Error in escalation monitor: {e}")
     
-    async def _auto_close_monitor(self):
+    async def _auto_close_monitor(self) -> None:
         """Monitor resolved incidents for auto-close"""
         while self.running:
             try:
@@ -1061,7 +1061,7 @@ async def initialize_incident_manager(
     return _incident_manager
 
 
-async def shutdown_incident_manager():
+async def shutdown_incident_manager() -> None:
     """Shutdown the global incident manager"""
     global _incident_manager
     

@@ -83,7 +83,7 @@ class BackupOrchestrator:
                  kuzu_manager=None,
                  backup_jobs_config_path: str = "backups/config/jobs.json",
                  execution_logs_path: str = "backups/logs",
-                 metrics_collector=None):
+                 metrics_collector=None) -> None:
         
         self.postgresql_manager = postgresql_manager
         self.redis_manager = redis_manager
@@ -105,7 +105,7 @@ class BackupOrchestrator:
         # Execution tracking
         self.active_executions: Dict[str, BackupExecution] = {}
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the backup orchestrator"""
         try:
             await self._load_backup_jobs()
@@ -117,7 +117,7 @@ class BackupOrchestrator:
             logger.error(f"Failed to initialize backup orchestrator: {e}")
             raise
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the backup orchestrator"""
         try:
             self.scheduler.shutdown()
@@ -378,7 +378,7 @@ class BackupOrchestrator:
             logger.error(f"Failed to get backup status: {e}")
             return status
     
-    async def _load_backup_jobs(self):
+    async def _load_backup_jobs(self) -> None:
         """Load backup job configurations from file"""
         try:
             if self.jobs_config_path.exists():
@@ -402,7 +402,7 @@ class BackupOrchestrator:
         except Exception as e:
             logger.error(f"Failed to load backup jobs: {e}")
     
-    async def _save_backup_jobs(self):
+    async def _save_backup_jobs(self) -> None:
         """Save backup job configurations to file"""
         try:
             jobs_data = []
@@ -428,13 +428,13 @@ class BackupOrchestrator:
         except Exception as e:
             logger.error(f"Failed to save backup jobs: {e}")
     
-    async def _schedule_backup_jobs(self):
+    async def _schedule_backup_jobs(self) -> None:
         """Schedule all enabled backup jobs"""
         for job in self.backup_jobs.values():
             if job.enabled:
                 await self._schedule_job(job)
     
-    async def _schedule_job(self, job: BackupJob):
+    async def _schedule_job(self, job: BackupJob) -> None:
         """Schedule a single backup job"""
         try:
             trigger = CronTrigger.from_crontab(job.schedule_cron)
@@ -486,7 +486,7 @@ class BackupOrchestrator:
             logger.error(f"Backup validation failed: {e}")
             return {"error": str(e)}
     
-    async def _save_execution_log(self, execution: BackupExecution):
+    async def _save_execution_log(self, execution: BackupExecution) -> None:
         """Save execution log to file"""
         try:
             log_file = self.execution_logs_path / f"{execution.execution_id}.json"

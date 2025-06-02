@@ -62,7 +62,7 @@ class DigitalOceanMonitoringClient:
     load balancers, and networking components.
     """
     
-    def __init__(self, api_token: str):
+    def __init__(self, api_token: str) -> None:
         self.api_token = api_token
         self.base_url = "https://api.digitalocean.com/v2"
         self.headers = {
@@ -220,7 +220,7 @@ class DOKSObservabilityEngine:
     for comprehensive production monitoring.
     """
     
-    def __init__(self, api_token: str, cluster_id: str):
+    def __init__(self, api_token: str, cluster_id: str) -> None:
         self.do_client = DigitalOceanMonitoringClient(api_token)
         self.cluster_id = cluster_id
         
@@ -496,7 +496,7 @@ class DOKSIntegrationManager:
     and incident management for production deployments.
     """
     
-    def __init__(self, api_token: str, cluster_id: str):
+    def __init__(self, api_token: str, cluster_id: str) -> None:
         self.observability_engine = DOKSObservabilityEngine(api_token, cluster_id)
         self.integration_health = {
             'api_connectivity': False,

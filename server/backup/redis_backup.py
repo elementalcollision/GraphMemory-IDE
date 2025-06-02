@@ -67,7 +67,7 @@ class RedisBackupManager:
     def __init__(self, 
                  redis_url: str,
                  backup_storage_path: str,
-                 metrics_collector=None):
+                 metrics_collector=None) -> None:
         self.redis_url = redis_url
         self.backup_storage_path = Path(backup_storage_path)
         self.metrics = metrics_collector
@@ -576,7 +576,7 @@ class RedisBackupManager:
         except:
             return 0
     
-    async def _copy_file(self, source: Path, destination: Path):
+    async def _copy_file(self, source: Path, destination: Path) -> None:
         """Copy file asynchronously"""
         async with aiofiles.open(source, 'rb') as src:
             async with aiofiles.open(destination, 'wb') as dst:
@@ -599,7 +599,7 @@ class RedisBackupManager:
         
         return sha256_hash.hexdigest()
     
-    async def _save_backup_metadata(self, metadata: RedisBackupMetadata):
+    async def _save_backup_metadata(self, metadata: RedisBackupMetadata) -> None:
         """Save backup metadata to file"""
         backup_dir = self.backup_storage_path / metadata.backup_id
         metadata_file = backup_dir / "metadata.json"

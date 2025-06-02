@@ -83,7 +83,7 @@ class AlertCorrelationEngine:
     and identifying root cause relationships.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.correlation_window = 600  # 10 minutes
         self.correlation_cache = {}
         self.alert_history = []
@@ -356,7 +356,7 @@ class SmartAlertingSystem:
     - Rate limiting and noise reduction
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.correlation_engine = AlertCorrelationEngine()
         self.notification_targets = {}
         self.escalation_policies = {}
@@ -367,7 +367,7 @@ class SmartAlertingSystem:
         # Load configuration
         self._load_configuration()
         
-    def _load_configuration(self):
+    def _load_configuration(self) -> None:
         """Load alerting configuration."""
         # Load notification targets
         self.notification_targets = {

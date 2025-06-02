@@ -16,7 +16,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Add authentication tables."""
     
     # SSO Providers table
@@ -105,7 +105,7 @@ def upgrade():
     op.create_index('idx_backup_codes_used', 'backup_codes', ['is_used'])
 
 
-def downgrade():
+def downgrade() -> None:
     """Remove authentication tables."""
     
     # Drop indexes

@@ -1,0 +1,531 @@
+# Enhanced Semgrep Configuration for GraphMemory-IDE Enterprise Security Audit
+# Integrates with existing security_validation_suite.py and OWASP ZAP scanning
+# Custom patterns for FastAPI, GraphMemory-IDE specific vulnerabilities
+
+rules:
+  # GraphMemory-IDE Custom FastAPI Security Patterns
+  - id: graphmemory-fastapi-auth-bypass
+    patterns:
+      - pattern: |
+          @$ROUTER.$METHOD(...)
+          def $FUNC(...):
+            ...
+      - pattern-not-inside: |
+          @$ROUTER.$METHOD(..., dependencies=[Depends($AUTH)])
+          def $FUNC(...):
+            ...
+      - pattern-not-inside: |
+          def $FUNC(..., current_user: ... = Depends($AUTH)):
+            ...
+      - metavariable-pattern:
+          metavariable: $METHOD
+          patterns:
+            - pattern-either:
+                - pattern: post
+                - pattern: put
+                - pattern: delete
+                - pattern: patch
+    message: "FastAPI endpoint lacks authentication dependency"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-306: Missing Authentication for Critical Function"
+      owasp: "A01: Broken Access Control"
+      confidence: HIGH
+      impact: MEDIUM
+      likelihood: HIGH
+      technology:
+        - fastapi
+      references:
+        - https://fastapi.tiangolo.com/tutorial/security/
+
+  - id: graphmemory-fastapi-cors-wildcard
+    patterns:
+      - pattern: |
+          CORSMiddleware(..., allow_origins=["*"], ...)
+      - pattern: |
+          CORSMiddleware(..., allow_origins="*", ...)
+    message: "Overly permissive CORS configuration using wildcard"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-942: Permissive Cross-domain Policy with Untrusted Domains"
+      owasp: "A05: Security Misconfiguration"
+      confidence: HIGH
+      impact: HIGH
+      likelihood: MEDIUM
+
+  - id: graphmemory-rate-limit-bypass
+    patterns:
+      - pattern: |
+          rate_limit(..., enabled=False)
+      - pattern: |
+          @rate_limit(..., bypass=True)
+      - pattern: |
+          RateLimiter(..., disabled=True)
+    message: "Rate limiting is disabled or bypassed"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-770: Allocation of Resources Without Limits or Throttling"
+      owasp: "A04: Insecure Design"
+      confidence: HIGH
+      impact: MEDIUM
+      likelihood: MEDIUM
+
+  # Database Security Patterns
+  - id: graphmemory-sql-injection-format
+    patterns:
+      - pattern: |
+          $CONN.execute(f"... {$VAR} ...")
+      - pattern: |
+          $CONN.execute("... {} ...".format($VAR))
+      - pattern: |
+          $CONN.execute("... %s ..." % $VAR)
+    message: "Potential SQL injection via string formatting"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A03: Injection"
+      confidence: HIGH
+      impact: HIGH
+      likelihood: HIGH
+
+  - id: graphmemory-raw-sql-execution
+    patterns:
+      - pattern: |
+          $DB.execute_raw($SQL, ...)
+      - pattern: |
+          raw_sql($QUERY, ...)
+      - pattern: |
+          $CONN.exec_driver_sql($SQL, ...)
+    message: "Raw SQL execution detected - ensure proper parameterization"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A03: Injection"
+      confidence: MEDIUM
+      impact: HIGH
+      likelihood: MEDIUM
+
+  # Authentication and Authorization Patterns
+  - id: graphmemory-jwt-verification-disabled
+    patterns:
+      - pattern: |
+          jwt.decode(..., verify=False, ...)
+      - pattern: |
+          jwt.decode(..., options={"verify_signature": False}, ...)
+      - pattern: |
+          decode_token(..., verify=False, ...)
+    message: "JWT signature verification is disabled"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-347: Improper Verification of Cryptographic Signature"
+      owasp: "A02: Cryptographic Failures"
+      confidence: HIGH
+      impact: HIGH
+      likelihood: HIGH
+
+  - id: graphmemory-rbac-bypass
+    patterns:
+      - pattern: |
+          @require_permission(..., bypass=True)
+      - pattern: |
+          check_permission(..., skip_check=True)
+      - pattern: |
+          rbac_validate(..., enabled=False)
+    message: "RBAC permission check is bypassed"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-285: Improper Authorization"
+      owasp: "A01: Broken Access Control"
+      confidence: HIGH
+      impact: HIGH
+      likelihood: MEDIUM
+
+  # Cryptographic Security Patterns
+  - id: graphmemory-weak-hash-algorithm
+    patterns:
+      - pattern: |
+          hashlib.md5(...)
+      - pattern: |
+          hashlib.sha1(...)
+      - pattern: |
+          Crypto.Hash.MD5.new(...)
+      - pattern: |
+          Crypto.Hash.SHA1.new(...)
+    message: "Weak cryptographic hash algorithm detected"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+      owasp: "A02: Cryptographic Failures"
+      confidence: HIGH
+      impact: MEDIUM
+      likelihood: HIGH
+
+  - id: graphmemory-hardcoded-secrets
+    patterns:
+      - pattern: |
+          $VAR = "sk_live_..."
+      - pattern: |
+          $VAR = "pk_live_..."
+      - pattern: |
+          SECRET_KEY = "..."
+      - pattern: |
+          API_KEY = "..."
+      - pattern: |
+          PASSWORD = "..."
+    message: "Hardcoded secret or API key detected"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+      owasp: "A02: Cryptographic Failures"
+      confidence: HIGH
+      impact: HIGH
+      likelihood: HIGH
+
+  # Logging Security Patterns
+  - id: graphmemory-sensitive-data-logging
+    patterns:
+      - pattern: |
+          $LOGGER.info(f"... {$TOKEN} ...")
+      - pattern: |
+          $LOGGER.debug(f"... {$PASSWORD} ...")
+      - pattern: |
+          $LOGGER.error(f"... {$SECRET} ...")
+      - pattern: |
+          print(f"... {$API_KEY} ...")
+    message: "Potential logging of sensitive data"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-532: Insertion of Sensitive Information into Log File"
+      owasp: "A09: Security Logging and Monitoring Failures"
+      confidence: MEDIUM
+      impact: MEDIUM
+      likelihood: HIGH
+
+  # File Security Patterns
+  - id: graphmemory-unsafe-file-permissions
+    patterns:
+      - pattern: |
+          os.chmod($PATH, 0o777)
+      - pattern: |
+          os.chmod($PATH, 0o666)
+      - pattern: |
+          $FILE.chmod(0o777)
+    message: "Overly permissive file permissions"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-732: Incorrect Permission Assignment for Critical Resource"
+      owasp: "A05: Security Misconfiguration"
+      confidence: HIGH
+      impact: MEDIUM
+      likelihood: MEDIUM
+
+  - id: graphmemory-path-traversal
+    patterns:
+      - pattern: |
+          open($USER_INPUT, ...)
+      - pattern: |
+          Path($USER_INPUT)
+      - pattern: |
+          os.path.join(..., $USER_INPUT, ...)
+    message: "Potential path traversal vulnerability"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-22: Path Traversal"
+      owasp: "A01: Broken Access Control"
+      confidence: MEDIUM
+      impact: HIGH
+      likelihood: HIGH
+
+  # Command Injection Patterns
+  - id: graphmemory-command-injection
+    patterns:
+      - pattern: |
+          os.system($USER_INPUT)
+      - pattern: |
+          subprocess.call($USER_INPUT, shell=True)
+      - pattern: |
+          subprocess.run($USER_INPUT, shell=True)
+      - pattern: |
+          os.popen($USER_INPUT)
+    message: "Potential command injection vulnerability"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+      owasp: "A03: Injection"
+      confidence: HIGH
+      impact: HIGH
+      likelihood: HIGH
+
+  # API Security Patterns
+  - id: graphmemory-missing-input-validation
+    patterns:
+      - pattern: |
+          @$ROUTER.$METHOD(...)
+          def $FUNC($PARAM: str):
+            ...
+            $DB.query($PARAM)
+      - pattern-not-inside: |
+          @$ROUTER.$METHOD(...)
+          def $FUNC($PARAM: str = Query(..., regex="...")):
+            ...
+      - pattern-not-inside: |
+          def $FUNC($PARAM: str):
+            if not validate($PARAM):
+              ...
+            ...
+    message: "Missing input validation on API parameter"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-20: Improper Input Validation"
+      owasp: "A03: Injection"
+      confidence: MEDIUM
+      impact: MEDIUM
+      likelihood: HIGH
+
+  # GraphMemory-IDE Specific Patterns
+  - id: graphmemory-memory-graph-injection
+    patterns:
+      - pattern: |
+          graph.execute($USER_QUERY)
+      - pattern: |
+          memory_graph.query($USER_INPUT)
+      - pattern: |
+          kuzu_connection.execute($DYNAMIC_QUERY)
+    message: "Potential graph injection in memory graph queries"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-943: Improper Neutralization of Special Elements in Data Query Logic"
+      owasp: "A03: Injection"
+      confidence: HIGH
+      impact: HIGH
+      likelihood: MEDIUM
+      technology:
+        - kuzu
+        - graph-database
+
+  - id: graphmemory-analytics-data-exposure
+    patterns:
+      - pattern: |
+          analytics_data = $USER.get_all_data()
+      - pattern: |
+          return {"analytics": $SENSITIVE_DATA, ...}
+      - pattern: |
+          response.data = $USER_ANALYTICS
+    message: "Potential exposure of sensitive analytics data"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor"
+      owasp: "A01: Broken Access Control"
+      confidence: MEDIUM
+      impact: MEDIUM
+      likelihood: MEDIUM
+
+  # Performance Security Patterns
+  - id: graphmemory-unbounded-resource-consumption
+    patterns:
+      - pattern: |
+          for $ITEM in $USER_LIST:
+            ...
+      - pattern-not-inside: |
+          if len($USER_LIST) > $LIMIT:
+            raise ValueError(...)
+          for $ITEM in $USER_LIST:
+            ...
+    message: "Potential unbounded resource consumption"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-770: Allocation of Resources Without Limits or Throttling"
+      owasp: "A04: Insecure Design"
+      confidence: LOW
+      impact: MEDIUM
+      likelihood: MEDIUM
+
+  # WebSocket Security Patterns
+  - id: graphmemory-websocket-origin-validation
+    patterns:
+      - pattern: |
+          WebSocket(..., check_origin=False)
+      - pattern: |
+          websocket.accept()
+      - pattern-not-inside: |
+          if not validate_origin(websocket.headers.get("origin")):
+            ...
+          websocket.accept()
+    message: "WebSocket connection lacks origin validation"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-942: Permissive Cross-domain Policy with Untrusted Domains"
+      owasp: "A05: Security Misconfiguration"
+      confidence: MEDIUM
+      impact: MEDIUM
+      likelihood: MEDIUM
+
+# Configuration
+options:
+  # Integration with existing CI/CD pipeline
+  junit_xml: true
+  json: true
+  
+  # Performance optimization
+  max_target_bytes: 5000000  # 5MB file size limit
+  timeout: 300  # 5 minute timeout
+  jobs: 4  # Parallel execution
+  
+  # Reporting configuration
+  output: enhanced_semgrep_report.json
+  verbose: true
+  debug: false
+  
+  # Integration settings
+  error_on_findings: false  # Don't fail CI on findings
+  strict: false  # Allow some flexibility
+  
+  # Baseline and differential scanning
+  baseline_ref: main
+  
+# Paths configuration
+include:
+  - server/
+  - dashboard/
+  - scripts/
+  - monitoring/
+  - docker/security/
+
+exclude:
+  - tests/
+  - "**/test_*"
+  - .venv/
+  - node_modules/
+  - "**/__pycache__"
+  - build/
+  - dist/
+  - coverage/
+  - htmlcov/
+  - .git/
+
+# Language-specific configurations
+python:
+  extensions:
+    - .py
+  
+# Integration with existing security tools
+integrations:
+  bandit:
+    enabled: true
+    report_format: json
+    
+  safety:
+    enabled: true
+    report_format: json
+    
+  owasp_zap:
+    enabled: true
+    integration_endpoint: "http://localhost:8080"
+    
+  security_validation_suite:
+    enabled: true
+    findings_integration: true
+    compliance_mapping: true
+
+# Compliance framework mapping
+compliance:
+  owasp_top_10:
+    enabled: true
+    version: "2021"
+    
+  cwe:
+    enabled: true
+    version: "4.6"
+    
+  nist:
+    enabled: true
+    framework: "cybersecurity"
+    
+  iso27001:
+    enabled: true
+    version: "2013"
+
+# Custom rule configuration
+custom_rules:
+  graphmemory_patterns:
+    enabled: true
+    severity_override: true
+    
+  fastapi_security:
+    enabled: true
+    auth_required: true
+    cors_validation: true
+    
+  database_security:
+    enabled: true
+    injection_detection: true
+    
+  cryptographic_security:
+    enabled: true
+    weak_algorithms: true
+    
+  logging_security:
+    enabled: true
+    sensitive_data_detection: true
+
+# Performance tuning
+performance:
+  parallel_execution: true
+  max_memory_mb: 2048
+  cache_findings: true
+  incremental_scan: true
+  
+# Notification and reporting
+notifications:
+  security_team: true
+  slack_webhook: "${SLACK_SECURITY_WEBHOOK}"
+  email_alerts: true
+  
+reporting:
+  formats:
+    - json
+    - html
+    - junit
+  
+  include_metrics: true
+  include_confidence: true
+  include_remediation: true
+  
+  upload_artifacts: true
+  retention_days: 30 

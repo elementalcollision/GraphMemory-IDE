@@ -52,7 +52,7 @@ except ImportError as e:
     st.stop()
 
 
-def main():
+def main() -> None:
     """Main alerts dashboard page"""
     
     # Page configuration
@@ -131,7 +131,7 @@ def main():
         _render_actions_dashboard()
 
 
-def _render_overview_dashboard():
+def _render_overview_dashboard() -> None:
     """Render the overview dashboard with key metrics and summaries"""
     
     st.header("📋 Alert System Overview")
@@ -222,7 +222,7 @@ def _render_overview_dashboard():
         alert_timeline_chart()
 
 
-def _render_live_alerts_dashboard():
+def _render_live_alerts_dashboard() -> None:
     """Render the live alerts dashboard with real-time feeds"""
     
     st.header("🚨 Live Alert Monitoring")
@@ -277,7 +277,7 @@ def _render_live_alerts_dashboard():
     alert_history_table()
 
 
-def _render_incident_dashboard():
+def _render_incident_dashboard() -> None:
     """Render the incident management dashboard"""
     
     st.header("🚨 Incident Management")
@@ -330,7 +330,7 @@ def _render_incident_dashboard():
                 st.rerun()
 
 
-def _render_analytics_dashboard():
+def _render_analytics_dashboard() -> None:
     """Render the analytics and metrics dashboard"""
     
     st.header("📈 Alert System Analytics")
@@ -356,7 +356,7 @@ def _render_analytics_dashboard():
     alert_metrics_dashboard()
 
 
-def _render_actions_dashboard():
+def _render_actions_dashboard() -> None:
     """Render the actions and workflow dashboard"""
     
     st.header("🔧 Alert Actions & Workflow")
@@ -382,7 +382,7 @@ def _render_actions_dashboard():
     alert_actions_dashboard()
 
 
-def _render_connection_status():
+def _render_connection_status() -> None:
     """Render connection status indicator"""
     
     status_col1, status_col2, status_col3 = st.columns(3)
@@ -397,7 +397,7 @@ def _render_connection_status():
         st.success("🟢 Database Connected")
 
 
-def _render_emergency_controls():
+def _render_emergency_controls() -> None:
     """Render emergency controls"""
     
     st.subheader("🚨 Emergency Controls")
@@ -420,7 +420,7 @@ def _render_emergency_controls():
 
 
 # Custom CSS for enhanced styling
-def _inject_custom_css():
+def _inject_custom_css() -> None:
     """Inject custom CSS for better dashboard appearance"""
     
     st.markdown("""

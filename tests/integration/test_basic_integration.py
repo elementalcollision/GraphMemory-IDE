@@ -10,7 +10,7 @@ from httpx import AsyncClient
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_basic_app_health(http_client: AsyncClient):
+async def test_basic_app_health(http_client: AsyncClient) -> None:
     """Test basic application health endpoint."""
     response = await http_client.get("/health")
     assert response.status_code == 200
@@ -22,7 +22,7 @@ async def test_basic_app_health(http_client: AsyncClient):
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_analytics_client_functionality(analytics_client):
+async def test_analytics_client_functionality(analytics_client) -> None:
     """Test analytics client basic functionality."""
     # Test data processing
     test_data = {"test": "data", "value": 42}
@@ -39,7 +39,7 @@ async def test_analytics_client_functionality(analytics_client):
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_mcp_client_functionality(mcp_client):
+async def test_mcp_client_functionality(mcp_client) -> None:
     """Test MCP client basic functionality."""
     # Test memory creation
     memory_data = {
@@ -60,7 +60,7 @@ async def test_mcp_client_functionality(mcp_client):
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_alert_system_functionality(alert_client):
+async def test_alert_system_functionality(alert_client) -> None:
     """Test alert system basic functionality."""
     # Test alert creation
     alert_data = {
@@ -82,7 +82,7 @@ async def test_alert_system_functionality(alert_client):
 @pytest.mark.integration
 @pytest.mark.asyncio
 @pytest.mark.real_time
-async def test_dashboard_real_time_flow(dashboard_client):
+async def test_dashboard_real_time_flow(dashboard_client) -> None:
     """Test end-to-end real-time dashboard flow."""
     # Test real-time data flow validation
     flow_result = await dashboard_client.validate_real_time_flow()
@@ -96,7 +96,7 @@ async def test_dashboard_real_time_flow(dashboard_client):
 @pytest.mark.integration
 @pytest.mark.performance
 @pytest.mark.asyncio
-async def test_performance_under_load(load_test_clients):
+async def test_performance_under_load(load_test_clients) -> None:
     """Test system performance under concurrent load."""
     # Test concurrent requests
     responses = await load_test_clients.concurrent_requests("/health", count=10)
@@ -110,7 +110,7 @@ async def test_performance_under_load(load_test_clients):
 
 @pytest.mark.integration
 @pytest.mark.database
-def test_database_isolation(isolated_databases, check_database_health):
+def test_database_isolation(isolated_databases, check_database_health) -> None:
     """Test database isolation and health checks."""
     # Check that all databases are healthy
     health_status = check_database_health
@@ -122,7 +122,7 @@ def test_database_isolation(isolated_databases, check_database_health):
 
 @pytest.mark.integration
 @pytest.mark.authentication
-async def test_authentication_flow(http_client: AsyncClient, auth_headers):
+async def test_authentication_flow(http_client: AsyncClient, auth_headers) -> None:
     """Test authentication flow with different user roles."""
     # Test with authentication headers
     response = await http_client.get("/mcp/memory/test-id", headers=auth_headers)
@@ -133,7 +133,7 @@ async def test_authentication_flow(http_client: AsyncClient, auth_headers):
 
 @pytest.mark.integration
 @pytest.mark.mock_data
-def test_data_factory_generation(data_factory):
+def test_data_factory_generation(data_factory) -> None:
     """Test data factory functionality."""
     # Test memory entry generation
     memory = data_factory.generate_memory_entry()
@@ -150,7 +150,7 @@ def test_data_factory_generation(data_factory):
 
 @pytest.mark.integration
 @pytest.mark.external
-async def test_external_service_integration(mock_email_service, mock_slack_service):
+async def test_external_service_integration(mock_email_service, mock_slack_service) -> None:
     """Test external service integrations."""
     # Test email service
     await mock_email_service.send_email(
@@ -179,7 +179,7 @@ async def test_comprehensive_workflow(
     alert_client,
     dashboard_client,
     data_factory
-):
+) -> None:
     """Test comprehensive workflow across all components."""
     # 1. Create test data
     test_dataset = data_factory.generate_test_dataset(

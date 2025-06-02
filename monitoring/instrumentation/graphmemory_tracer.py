@@ -51,7 +51,7 @@ class GraphMemoryInstrumentor:
     - Custom span attributes for GraphMemory context
     """
     
-    def __init__(self, service_name: str = "graphmemory-ide"):
+    def __init__(self, service_name: str = "graphmemory-ide") -> None:
         self.service_name = service_name
         self.tracer = trace.get_tracer(__name__)
         self.meter = metrics.get_meter(__name__)
@@ -65,7 +65,7 @@ class GraphMemoryInstrumentor:
         
         logger.info("GraphMemory instrumentation initialized")
     
-    def _setup_metrics(self):
+    def _setup_metrics(self) -> None:
         """Initialize GraphMemory-specific metrics."""
         # Node operation metrics
         self.node_operations_counter = self.meter.create_counter(
@@ -126,7 +126,7 @@ class GraphMemoryInstrumentor:
         self,
         operation: NodeOperation,
         span_name: Optional[str] = None
-    ):
+    ) -> None:
         """
         Trace a node operation with comprehensive metadata.
         
@@ -209,7 +209,7 @@ class GraphMemoryInstrumentor:
         self,
         relationship: GraphRelationship,
         span_name: Optional[str] = None
-    ):
+    ) -> None:
         """
         Trace a relationship operation between nodes.
         
@@ -262,7 +262,7 @@ class GraphMemoryInstrumentor:
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
         filters: Optional[Dict[str, Any]] = None
-    ):
+    ) -> None:
         """
         Trace a search operation with query analysis.
         
@@ -361,7 +361,7 @@ class GraphMemoryInstrumentor:
             logger.info(f"Started session {session_id} for user {user_id}")
             return session_id
     
-    def end_user_session(self, session_id: str):
+    def end_user_session(self, session_id: str) -> None:
         """
         End tracking a user session.
         
@@ -391,13 +391,13 @@ class GraphMemoryInstrumentor:
             
             logger.info(f"Ended session {session_id}, duration: {duration:.2f}s")
     
-    def update_session_activity(self, session_id: str):
+    def update_session_activity(self, session_id: str) -> None:
         """Update last activity time for a session."""
         if session_id in self.active_sessions:
             self.active_sessions[session_id]["last_activity"] = time.time()
             self.active_sessions[session_id]["operation_count"] += 1
     
-    def instrument_api_endpoint(self, endpoint_name: str):
+    def instrument_api_endpoint(self, endpoint_name: str) -> None:
         """
         Decorator to instrument API endpoints with GraphMemory context.
         
@@ -407,9 +407,9 @@ class GraphMemoryInstrumentor:
         Returns:
             Decorator function
         """
-        def decorator(func):
+        def decorator(func) -> None:
             @wraps(func)
-            async def async_wrapper(*args, **kwargs):
+            async def async_wrapper(*args, **kwargs) -> None:
                 start_time = time.time()
                 
                 with self.tracer.start_as_current_span(f"graphmemory.api.{endpoint_name}") as span:
@@ -452,7 +452,7 @@ class GraphMemoryInstrumentor:
                         )
             
             @wraps(func)
-            def sync_wrapper(*args, **kwargs):
+            def sync_wrapper(*args, **kwargs) -> None:
                 start_time = time.time()
                 
                 with self.tracer.start_as_current_span(f"graphmemory.api.{endpoint_name}") as span:
@@ -524,7 +524,7 @@ class GraphMemoryInstrumentor:
             "avg_operations_per_session": sum(operation_counts) / len(operation_counts) if operation_counts else 0
         }
     
-    def cleanup_stale_sessions(self, timeout_seconds: int = 3600):
+    def cleanup_stale_sessions(self, timeout_seconds: int = 3600) -> None:
         """Clean up sessions that have been inactive for too long."""
         current_time = time.time()
         stale_sessions = []

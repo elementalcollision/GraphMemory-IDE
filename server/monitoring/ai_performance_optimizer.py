@@ -122,7 +122,7 @@ class AIPerformanceOptimizer:
     Uses machine learning for predictive analytics and automated optimization
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.redis_client = None
         self.db_pool = None
         self.metrics_history = []
@@ -134,7 +134,7 @@ class AIPerformanceOptimizer:
         self.alert_cache = {}
         self.optimization_queue = asyncio.Queue()
         
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the AI performance optimizer"""
         logger.info("Initializing AI Performance Optimizer...")
         
@@ -162,7 +162,7 @@ class AIPerformanceOptimizer:
         
         logger.info("AI Performance Optimizer initialized successfully")
     
-    async def _load_historical_data(self):
+    async def _load_historical_data(self) -> None:
         """Load historical performance data for ML training"""
         logger.info("Loading historical performance data...")
         
@@ -213,7 +213,7 @@ class AIPerformanceOptimizer:
         
         logger.info(f"Loaded {len(self.metrics_history)} historical performance metrics")
     
-    async def _train_models(self):
+    async def _train_models(self) -> None:
         """Train machine learning models for anomaly detection and prediction"""
         logger.info("Training AI models for performance optimization...")
         
@@ -264,7 +264,7 @@ class AIPerformanceOptimizer:
         self.is_trained = True
         logger.info("AI models trained successfully")
     
-    async def _start_monitoring(self):
+    async def _start_monitoring(self) -> None:
         """Start continuous performance monitoring with AI analysis"""
         logger.info("Starting AI-powered performance monitoring...")
         self.monitoring_active = True
@@ -284,7 +284,7 @@ class AIPerformanceOptimizer:
             logger.error(f"Monitoring error: {e}")
             self.monitoring_active = False
     
-    async def _collect_metrics(self):
+    async def _collect_metrics(self) -> None:
         """Continuously collect performance metrics from all components"""
         while self.monitoring_active:
             try:
@@ -347,7 +347,7 @@ class AIPerformanceOptimizer:
                 logger.error(f"Metric collection error: {e}")
                 await asyncio.sleep(60)  # Wait longer on error
     
-    async def _process_metric(self, metric: PerformanceMetric):
+    async def _process_metric(self, metric: PerformanceMetric) -> None:
         """Process a new performance metric with AI analysis"""
         # Store in Redis for real-time access
         metric_key = f"metrics:{metric.component}:{metric.metric_name}"
@@ -368,7 +368,7 @@ class AIPerformanceOptimizer:
         if self.is_trained:
             await self._detect_anomaly(metric)
     
-    async def _detect_anomaly(self, metric: PerformanceMetric):
+    async def _detect_anomaly(self, metric: PerformanceMetric) -> None:
         """Detect performance anomalies using AI"""
         try:
             # Prepare features for anomaly detection
@@ -561,7 +561,7 @@ class AIPerformanceOptimizer:
         else:
             return "Performance variation within acceptable range"
     
-    async def _handle_alert(self, alert: PerformanceAlert):
+    async def _handle_alert(self, alert: PerformanceAlert) -> None:
         """Handle performance alert with intelligent deduplication"""
         
         # Check for duplicate alerts (same metric, component within 5 minutes)
@@ -587,7 +587,7 @@ class AIPerformanceOptimizer:
         if alert.confidence_score > 0.8 and alert.severity in [AlertSeverity.CRITICAL, AlertSeverity.HIGH]:
             await self._trigger_automated_remediation(alert)
     
-    async def _store_alert(self, alert: PerformanceAlert):
+    async def _store_alert(self, alert: PerformanceAlert) -> None:
         """Store alert in database for audit and analysis"""
         try:
             async with self.db_pool.acquire() as conn:
@@ -604,14 +604,14 @@ class AIPerformanceOptimizer:
         except Exception as e:
             logger.error(f"Failed to store alert: {e}")
     
-    async def _trigger_automated_remediation(self, alert: PerformanceAlert):
+    async def _trigger_automated_remediation(self, alert: PerformanceAlert) -> None:
         """Trigger automated remediation based on alert analysis"""
         logger.info(f"Triggering automated remediation for alert: {alert.alert_id}")
         
         # Add to optimization queue for processing
         await self.optimization_queue.put(alert)
     
-    async def _process_optimizations(self):
+    async def _process_optimizations(self) -> None:
         """Process optimization queue with automated remediation"""
         while self.monitoring_active:
             try:
@@ -626,7 +626,7 @@ class AIPerformanceOptimizer:
             except Exception as e:
                 logger.error(f"Optimization processing error: {e}")
     
-    async def _execute_optimization(self, alert: PerformanceAlert):
+    async def _execute_optimization(self, alert: PerformanceAlert) -> None:
         """Execute automated optimization actions"""
         logger.info(f"Executing optimization for {alert.metric_name} on {alert.component}")
         
@@ -653,28 +653,28 @@ class AIPerformanceOptimizer:
         # Record optimization in database
         await self._record_optimization(alert, optimizations_executed)
     
-    async def _optimize_memory_usage(self):
+    async def _optimize_memory_usage(self) -> None:
         """Automated memory optimization"""
         logger.info("Executing memory optimization...")
         # Trigger garbage collection, optimize caches, etc.
         # This would implement actual memory optimization logic
         await asyncio.sleep(1)  # Simulate optimization time
     
-    async def _optimize_connection_pools(self):
+    async def _optimize_connection_pools(self) -> None:
         """Automated connection pool optimization"""
         logger.info("Executing connection pool optimization...")
         # Adjust pool sizes, timeouts, etc.
         # This would implement actual connection pool optimization
         await asyncio.sleep(1)  # Simulate optimization time
     
-    async def _optimize_permission_cache(self):
+    async def _optimize_permission_cache(self) -> None:
         """Automated permission cache optimization"""
         logger.info("Executing permission cache optimization...")
         # Optimize cache sizes, eviction policies, etc.
         # This would implement actual cache optimization
         await asyncio.sleep(1)  # Simulate optimization time
     
-    async def _record_optimization(self, alert: PerformanceAlert, actions: List[str]):
+    async def _record_optimization(self, alert: PerformanceAlert, actions: List[str]) -> None:
         """Record optimization actions for audit and analysis"""
         try:
             async with self.db_pool.acquire() as conn:
@@ -724,7 +724,7 @@ class AIPerformanceOptimizer:
             base_overhead += np.random.normal(5, 2)
         return max(0, base_overhead)
     
-    async def _analyze_anomalies(self):
+    async def _analyze_anomalies(self) -> None:
         """Continuous anomaly analysis with trend detection"""
         while self.monitoring_active:
             try:
@@ -740,7 +740,7 @@ class AIPerformanceOptimizer:
             except Exception as e:
                 logger.error(f"Anomaly analysis error: {e}")
     
-    async def _analyze_performance_trends(self):
+    async def _analyze_performance_trends(self) -> None:
         """Analyze performance trends for predictive insights"""
         logger.info("Analyzing performance trends...")
         
@@ -778,7 +778,7 @@ class AIPerformanceOptimizer:
         }
         return thresholds.get(metric_name, 0.1)
     
-    async def _generate_predictions(self):
+    async def _generate_predictions(self) -> None:
         """Generate performance predictions for capacity planning"""
         while self.monitoring_active:
             try:
@@ -791,7 +791,7 @@ class AIPerformanceOptimizer:
             except Exception as e:
                 logger.error(f"Prediction generation error: {e}")
     
-    async def _predict_future_performance(self):
+    async def _predict_future_performance(self) -> None:
         """Predict future performance for proactive optimization"""
         logger.info("Generating performance predictions...")
         
@@ -805,7 +805,7 @@ class AIPerformanceOptimizer:
         
         logger.info(f"Performance predictions: {predictions}")
     
-    async def _cleanup_old_data(self):
+    async def _cleanup_old_data(self) -> None:
         """Cleanup old performance data"""
         while self.monitoring_active:
             try:
@@ -849,7 +849,7 @@ class AIPerformanceOptimizer:
         
         return summary
     
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup resources"""
         logger.info("Cleaning up AI Performance Optimizer...")
         

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
         from tensorflow.keras.layers import LSTM, Dense, Dropout
         TensorFlowModel = Sequential
     except ImportError:
-        TensorFlowModel = type(None)  # type: ignore
+        TensorFlowModel = type(None)
 
 # Optional TensorFlow import with robust fallback
 try:
@@ -37,13 +37,13 @@ try:
     from tensorflow.keras.models import Sequential
     from tensorflow.keras.layers import LSTM, Dense, Dropout
     HAS_TENSORFLOW = True
-    TensorFlowModel = Sequential  # type: ignore
+    TensorFlowModel = Sequential
 except ImportError:
     tf = None
     Sequential = None
     LSTM = Dense = Dropout = None
     HAS_TENSORFLOW = False
-    TensorFlowModel = type(None)  # type: ignore
+    TensorFlowModel = type(None)
 
 from prometheus_client.parser import text_string_to_metric_families
 import httpx
@@ -168,7 +168,7 @@ class EnsembleAnomalyDetector:
         contamination: float = 0.1,
         lstm_sequence_length: int = 50,
         model_weights: Optional[Dict[str, float]] = None
-    ):
+    ) -> None:
         self.contamination = contamination
         self.lstm_sequence_length = lstm_sequence_length
         self.model_weights = model_weights or {
@@ -474,7 +474,7 @@ class RealTimeAnomalyMonitor:
         prometheus_url: str = "http://localhost:9090",
         check_interval: int = 60,
         detector: Optional[EnsembleAnomalyDetector] = None
-    ):
+    ) -> None:
         self.prometheus_url = prometheus_url
         self.check_interval = check_interval
         self.detector = detector or EnsembleAnomalyDetector()

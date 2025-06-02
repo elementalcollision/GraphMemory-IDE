@@ -61,7 +61,7 @@ class APIKeyRotationManager:
     High-level API key rotation manager with environment segregation and automated lifecycle management.
     """
     
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None) -> None:
         # Initialize storage and managers
         self.storage = SecureKeyStorage(FilesystemKeyStorage("./secrets/api_keys"))
         self.secrets_manager = SecretsManager(self.storage)
@@ -484,7 +484,7 @@ class APIKeyRotationManager:
             return {"error": str(e)}
 
 
-async def main():
+async def main() -> None:
     """Main entry point for the API key rotation script"""
     parser = argparse.ArgumentParser(description="API Key Rotation Management")
     parser.add_argument('--create-key', action='store_true', help='Create new API key')

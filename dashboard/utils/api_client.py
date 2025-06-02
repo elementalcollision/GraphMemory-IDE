@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class DashboardAPIClient:
     """Client for fetching data from FastAPI SSE endpoints"""
     
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8000") -> None:
         self.base_url = base_url
         self.session = requests.Session()
         self.timeout = 10

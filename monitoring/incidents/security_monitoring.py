@@ -87,7 +87,7 @@ class SecurityPatternEngine:
     to detect threats and anomalous behavior.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.patterns = self._load_default_patterns()
         self.pattern_statistics = {}
         
@@ -390,7 +390,7 @@ class ComplianceMonitor:
     and regulatory requirements.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.compliance_checks = self._load_compliance_checks()
         self.compliance_history: List[ComplianceCheck] = []
     
@@ -538,7 +538,7 @@ class SecurityMonitoringEngine:
     and security event response.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.pattern_engine = SecurityPatternEngine()
         self.compliance_monitor = ComplianceMonitor()
         

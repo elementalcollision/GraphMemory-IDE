@@ -100,7 +100,7 @@ class AlertGroup:
     suppressed: bool = False
     group_status: AlertStatus = AlertStatus.ACTIVE
     
-    def add_alert(self, alert: Alert, rule_name: str, confidence: float):
+    def add_alert(self, alert: Alert, rule_name: str, confidence: float) -> None:
         """Add alert to group"""
         self.correlated_alerts.append(alert)
         if rule_name not in self.correlation_rules:
@@ -138,7 +138,7 @@ class CorrelationResult(NamedTuple):
 class AlertCorrelationEngine:
     """Advanced alert correlation engine with multiple strategies"""
     
-    def __init__(self, max_groups: int = 1000, cleanup_interval: int = 3600):
+    def __init__(self, max_groups: int = 1000, cleanup_interval: int = 3600) -> None:
         self.correlation_rules: Dict[str, CorrelationRule] = {}
         self.alert_groups: Dict[str, AlertGroup] = {}
         self.pending_alerts: deque = deque(maxlen=10000)
@@ -166,7 +166,7 @@ class AlertCorrelationEngine:
         
         logger.info("AlertCorrelationEngine initialized")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the correlation engine"""
         try:
             self.cache_manager = await get_cache_manager()
@@ -175,7 +175,7 @@ class AlertCorrelationEngine:
             logger.error(f"Failed to initialize AlertCorrelationEngine: {e}")
             raise
     
-    def _initialize_default_rules(self):
+    def _initialize_default_rules(self) -> None:
         """Initialize default correlation rules based on research findings"""
         
         # Rule 1: Same Entity Correlation (highest priority)
@@ -252,18 +252,18 @@ class AlertCorrelationEngine:
             suppress_after_count=10
         ))
     
-    def add_rule(self, rule: CorrelationRule):
+    def add_rule(self, rule: CorrelationRule) -> None:
         """Add correlation rule"""
         self.correlation_rules[rule.name] = rule
         logger.info(f"Added correlation rule: {rule.name} ({rule.strategy.value})")
     
-    def remove_rule(self, rule_name: str):
+    def remove_rule(self, rule_name: str) -> None:
         """Remove correlation rule"""
         if rule_name in self.correlation_rules:
             del self.correlation_rules[rule_name]
             logger.info(f"Removed correlation rule: {rule_name}")
     
-    def enable_rule(self, rule_name: str, enabled: bool = True):
+    def enable_rule(self, rule_name: str, enabled: bool = True) -> None:
         """Enable/disable correlation rule"""
         if rule_name in self.correlation_rules:
             self.correlation_rules[rule_name].enabled = enabled
@@ -526,7 +526,7 @@ class AlertCorrelationEngine:
         """Correlate alerts using ML-based similarity (simplified implementation)"""
         try:
             # Simple feature extraction for ML similarity
-            def extract_features(alert_obj):
+            def extract_features(alert_obj) -> None:
                 features = []
                 # Text features
                 text = f"{alert_obj.title} {alert_obj.description}".lower()
@@ -614,14 +614,14 @@ class AlertCorrelationEngine:
         logger.info(f"Created new alert group {group_id} for alert {alert.id}")
         return group
     
-    async def _periodic_cleanup(self):
+    async def _periodic_cleanup(self) -> None:
         """Periodic cleanup of old groups"""
         current_time = datetime.utcnow()
         if (current_time - self._last_cleanup).total_seconds() >= self.cleanup_interval:
             await self._cleanup_old_groups()
             self._last_cleanup = current_time
     
-    async def _cleanup_old_groups(self):
+    async def _cleanup_old_groups(self) -> None:
         """Clean up old and resolved alert groups"""
         current_time = datetime.utcnow()
         groups_to_remove = []
@@ -670,7 +670,7 @@ class AlertCorrelationEngine:
             return True
         return False
     
-    def add_maintenance_window(self, rule_name: str, start_time: datetime, end_time: datetime):
+    def add_maintenance_window(self, rule_name: str, start_time: datetime, end_time: datetime) -> None:
         """Add maintenance window to correlation rule"""
         if rule_name in self.correlation_rules:
             self.correlation_rules[rule_name].maintenance_windows.append((start_time, end_time))

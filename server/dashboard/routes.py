@@ -41,7 +41,7 @@ def get_sse_manager() -> DashboardSSEManager:
 
 
 @dashboard_router.on_event("startup")
-async def startup_dashboard():
+async def startup_dashboard() -> None:
     """Initialize dashboard services on startup"""
     manager = get_sse_manager()
     await manager.start()
@@ -49,7 +49,7 @@ async def startup_dashboard():
 
 
 @dashboard_router.on_event("shutdown")
-async def shutdown_dashboard():
+async def shutdown_dashboard() -> None:
     """Cleanup dashboard services on shutdown"""
     manager = get_sse_manager()
     await manager.stop()

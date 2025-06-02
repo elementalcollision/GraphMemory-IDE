@@ -167,7 +167,7 @@ class CacheEntry:
         expiry_time = self.created_at + timedelta(seconds=self.ttl_seconds)
         return (expiry_time - datetime.now()).total_seconds()
     
-    def touch(self):
+    def touch(self) -> None:
         """Update last accessed time and increment access count"""
         self.last_accessed = datetime.now()
         self.access_count += 1
@@ -206,8 +206,8 @@ class CacheMetrics:
     entry_count: int = 0
     
     # Recent operation times
-    recent_get_times: deque = field(default_factory=lambda: deque(maxlen=100))
-    recent_set_times: deque = field(default_factory=lambda: deque(maxlen=100))
+    recent_get_times: deque[float] = field(default_factory=lambda: deque(maxlen=100))
+    recent_set_times: deque[float] = field(default_factory=lambda: deque(maxlen=100))
     
     def get_hit_rate(self) -> float:
         """Get cache hit rate as percentage"""
@@ -224,7 +224,7 @@ class CacheMetrics:
         total = self.l2_hits + self.l2_misses
         return (self.l2_hits / total * 100) if total > 0 else 0.0
     
-    def update_performance_metrics(self):
+    def update_performance_metrics(self) -> None:
         """Update calculated performance metrics"""
         if self.recent_get_times:
             self.avg_get_time_ms = sum(self.recent_get_times) / len(self.recent_get_times)
@@ -242,12 +242,12 @@ class CacheMetrics:
 class CacheWarmer:
     """Cache warming and preloading strategies"""
     
-    def __init__(self, cache_manager: 'CacheManager'):
+    def __init__(self, cache_manager: 'CacheManager') -> None:
         self.cache_manager = cache_manager
-        self.warming_tasks: Dict[str, asyncio.Task] = {}
+        self.warming_tasks: Dict[str, asyncio.Task[None]] = {}
         self.warming_enabled = True
         
-    async def warm_cache(self, keys: List[str], data_loader: Callable):
+    async def warm_cache(self, keys: List[str], data_loader: Callable[..., Any]) -> None:
         """Warm cache with specific keys"""
         if not self.warming_enabled:
             return
@@ -266,7 +266,7 @@ class CacheWarmer:
             except Exception as e:
                 print(f"Cache warming failed for key {key}: {e}")
     
-    async def preload_analytics_data(self):
+    async def preload_analytics_data(self) -> None:
         """Preload common analytics data"""
         if not self.warming_enabled:
             return
@@ -285,12 +285,12 @@ class CacheWarmer:
             except Exception as e:
                 print(f"Preload failed for {key}: {e}")
     
-    async def start_background_warming(self, interval_seconds: int = 600):
+    async def start_background_warming(self, interval_seconds: int = 600) -> None:
         """Start background cache warming task"""
         if not self.warming_enabled:
             return
         
-        async def warming_loop():
+        async def warming_loop() -> None:
             while self.warming_enabled:
                 try:
                     await self.preload_analytics_data()
@@ -305,7 +305,7 @@ class CacheWarmer:
         self.warming_tasks["background"] = task
         return task
     
-    async def stop_all_warming(self):
+    async def stop_all_warming(self) -> None:
         """Stop all cache warming tasks"""
         self.warming_enabled = False
         for task in self.warming_tasks.values():
@@ -321,12 +321,12 @@ class CacheWarmer:
 class CacheInvalidator:
     """Intelligent cache invalidation strategies"""
     
-    def __init__(self, cache_manager: 'CacheManager'):
+    def __init__(self, cache_manager: 'CacheManager') -> None:
         self.cache_manager = cache_manager
         self.invalidation_patterns: Dict[str, Set[str]] = defaultdict(set)
         self.invalidation_history: List[Dict[str, Any]] = []
         
-    async def invalidate_by_key(self, key: str, trigger: InvalidationTrigger = InvalidationTrigger.MANUAL):
+    async def invalidate_by_key(self, key: str, trigger: InvalidationTrigger = InvalidationTrigger.MANUAL) -> None:
         """Invalidate specific cache key"""
         try:
             await self.cache_manager._invalidate_key(key)
@@ -334,7 +334,7 @@ class CacheInvalidator:
         except Exception as e:
             print(f"Invalidation failed for key {key}: {e}")
     
-    async def invalidate_by_pattern(self, pattern: str, trigger: InvalidationTrigger = InvalidationTrigger.PATTERN_BASED):
+    async def invalidate_by_pattern(self, pattern: str, trigger: InvalidationTrigger = InvalidationTrigger.PATTERN_BASED) -> None:
         """Invalidate keys matching pattern"""
         try:
             invalidated_keys = await self.cache_manager._invalidate_pattern(pattern)
@@ -343,7 +343,7 @@ class CacheInvalidator:
         except Exception as e:
             print(f"Pattern invalidation failed for {pattern}: {e}")
     
-    async def invalidate_by_tags(self, tags: Set[str], trigger: InvalidationTrigger = InvalidationTrigger.PATTERN_BASED):
+    async def invalidate_by_tags(self, tags: Set[str], trigger: InvalidationTrigger = InvalidationTrigger.PATTERN_BASED) -> None:
         """Invalidate keys with specific tags"""
         try:
             invalidated_keys = await self.cache_manager._invalidate_tags(tags)
@@ -352,11 +352,11 @@ class CacheInvalidator:
         except Exception as e:
             print(f"Tag invalidation failed for {tags}: {e}")
     
-    def register_invalidation_pattern(self, pattern: str, related_keys: Set[str]):
+    def register_invalidation_pattern(self, pattern: str, related_keys: Set[str]) -> None:
         """Register keys that should be invalidated together"""
         self.invalidation_patterns[pattern].update(related_keys)
     
-    def _record_invalidation(self, key: str, trigger: InvalidationTrigger):
+    def _record_invalidation(self, key: str, trigger: InvalidationTrigger) -> None:
         """Record invalidation event"""
         self.invalidation_history.append({
             "key": key,
@@ -373,7 +373,7 @@ class CacheInvalidator:
 class FallbackCache:
     """Simple fallback cache when aiocache is not available"""
     
-    def __init__(self, max_size: int = 1000):
+    def __init__(self, max_size: int = 1000) -> None:
         self.cache: Dict[str, CacheEntry] = {}
         self.max_size = max_size
     
@@ -428,7 +428,7 @@ class CacheManager:
     cache warming, performance monitoring, and circuit breaker integration.
     """
     
-    def __init__(self, config: Optional[CacheConfig] = None):
+    def __init__(self, config: Optional[CacheConfig] = None) -> None:
         self.config = config or CacheConfig()
         self.metrics = CacheMetrics()
         
@@ -447,7 +447,7 @@ class CacheManager:
         self.entry_metadata: Dict[str, CacheEntry] = {}
         
         # Performance tracking
-        self.operation_times: Dict[str, deque] = {
+        self.operation_times: Dict[str, deque[float]] = {
             "get": deque(maxlen=100),
             "set": deque(maxlen=100),
             "delete": deque(maxlen=100)
@@ -457,7 +457,7 @@ class CacheManager:
         self._metadata_lock = asyncio.Lock()
         self._metrics_lock = asyncio.Lock()
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize cache backend instances"""
         try:
             if AIOCACHE_AVAILABLE and self.config.enable_l1_memory:
@@ -748,13 +748,13 @@ class CacheManager:
         
         return invalidated
     
-    async def _update_access_metadata(self, key: str):
+    async def _update_access_metadata(self, key: str) -> None:
         """Update access metadata for cache entry"""
         async with self._metadata_lock:
             if key in self.entry_metadata:
                 self.entry_metadata[key].touch()
     
-    async def _update_set_metadata(self, key: str, ttl: int, tags: Optional[Set[str]] = None):
+    async def _update_set_metadata(self, key: str, ttl: int, tags: Optional[Set[str]] = None) -> None:
         """Update set metadata for cache entry"""
         async with self._metadata_lock:
             entry = CacheEntry(
@@ -767,7 +767,7 @@ class CacheManager:
             )
             self.entry_metadata[key] = entry
     
-    async def _record_cache_error(self, error: Exception):
+    async def _record_cache_error(self, error: Exception) -> None:
         """Record cache error for monitoring"""
         async with self._metrics_lock:
             self.metrics.cache_errors += 1
@@ -818,7 +818,7 @@ class CacheManager:
             }
         }
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown cache manager and cleanup resources"""
         try:
             # Stop cache warming
@@ -856,7 +856,7 @@ async def initialize_cache_manager(config: Optional[CacheConfig] = None) -> Cach
     return _cache_manager
 
 
-async def shutdown_cache_manager():
+async def shutdown_cache_manager() -> None:
     """Shutdown global cache manager instance"""
     global _cache_manager
     if _cache_manager:

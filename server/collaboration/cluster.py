@@ -112,7 +112,7 @@ class ClusterCoordinator:
         server_id: str,
         redis_manager: RedisChannelManager,
         max_sessions_per_server: int = 1000
-    ):
+    ) -> None:
         self.server_id = server_id
         self.redis_manager = redis_manager
         self.max_sessions_per_server = max_sessions_per_server

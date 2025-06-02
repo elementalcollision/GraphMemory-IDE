@@ -24,7 +24,7 @@ from .permission_manager import (
 )
 
 # Import function that will be created
-def get_collaboration_manager():
+def get_collaboration_manager() -> None:
     """Placeholder for collaboration manager getter."""
     return None
 
@@ -64,7 +64,7 @@ class TeamCreateRequest(BaseModel):
 # Permission Management Routes
 
 @router.post("/roles")
-async def create_role(request: RoleCreateRequest, created_by: str = "system"):
+async def create_role(request: RoleCreateRequest, created_by: str = "system") -> None:
     """Create a new role with specified permissions."""
     try:
         permission_manager = get_permission_manager()
@@ -117,7 +117,7 @@ async def assign_role(
     assigned_by: str,
     team_id: Optional[str] = None,
     expires_in_days: Optional[int] = None
-):
+) -> None:
     """Assign a role to a user."""
     try:
         permission_manager = get_permission_manager()
@@ -144,7 +144,7 @@ async def assign_role(
 
 
 @router.post("/permissions/grant")
-async def grant_permission(request: PermissionGrantRequest, granted_by: str):
+async def grant_permission(request: PermissionGrantRequest, granted_by: str) -> None:
     """Grant specific permission to a user."""
     try:
         permission_manager = get_permission_manager()
@@ -185,7 +185,7 @@ async def revoke_permission(
     resource_id: str,
     action: str,
     revoked_by: str
-):
+) -> None:
     """Revoke specific permission from a user."""
     try:
         permission_manager = get_permission_manager()
@@ -226,7 +226,7 @@ async def check_permission(
     resource_id: str,
     action: str,
     team_id: Optional[str] = None
-):
+) -> None:
     """Check if a user has permission for a specific action."""
     try:
         permission_manager = get_permission_manager()
@@ -258,7 +258,7 @@ async def check_permission(
 
 
 @router.get("/users/{user_id}/permissions")
-async def get_user_permissions(user_id: str, team_id: Optional[str] = None):
+async def get_user_permissions(user_id: str, team_id: Optional[str] = None) -> None:
     """Get all permissions for a user."""
     try:
         permission_manager = get_permission_manager()
@@ -285,7 +285,7 @@ async def get_permission_audit_log(
     user_id: Optional[str] = None,
     resource_type: Optional[str] = None,
     limit: int = 100
-):
+) -> None:
     """Get permission audit log entries."""
     try:
         permission_manager = get_permission_manager()
@@ -322,7 +322,7 @@ async def websocket_collaboration(
     resource_id: str,
     user_id: str,
     display_name: str
-):
+) -> None:
     """WebSocket endpoint for real-time collaboration."""
     collaboration_manager = get_collaboration_manager()
     if not collaboration_manager:
@@ -407,7 +407,7 @@ async def add_comment(
     display_name: str,
     resource_type: str,
     resource_id: str
-):
+) -> None:
     """Add a comment to a resource."""
     try:
         collaboration_manager = get_collaboration_manager()
@@ -441,7 +441,7 @@ async def get_comments(
     resource_type: str,
     resource_id: str,
     element_id: Optional[str] = None
-):
+) -> None:
     """Get comments for a resource."""
     try:
         collaboration_manager = get_collaboration_manager()
@@ -466,7 +466,7 @@ async def get_comments(
 # Team Management Routes
 
 @router.post("/teams")
-async def create_team(request: TeamCreateRequest, created_by: str):
+async def create_team(request: TeamCreateRequest, created_by: str) -> None:
     """Create a new team."""
     try:
         # This would integrate with a team management system
@@ -489,7 +489,7 @@ async def create_team(request: TeamCreateRequest, created_by: str):
 
 
 @router.get("/teams/{team_id}/members")
-async def get_team_members(team_id: str):
+async def get_team_members(team_id: str) -> None:
     """Get team members and their roles."""
     try:
         permission_manager = get_permission_manager()
@@ -530,7 +530,7 @@ async def create_secure_share_link(
     expires_in_days: int = 7,
     access_level: str = "view",
     password_protected: bool = False
-):
+) -> None:
     """Create a secure sharing link for a resource."""
     try:
         import secrets
@@ -563,7 +563,7 @@ async def create_secure_share_link(
 
 
 @router.get("/share/{token}")
-async def access_shared_resource(token: str, password: Optional[str] = None):
+async def access_shared_resource(token: str, password: Optional[str] = None) -> None:
     """Access a shared resource via secure token."""
     try:
         # This would validate the token and check permissions
@@ -583,7 +583,7 @@ async def access_shared_resource(token: str, password: Optional[str] = None):
 
 
 @router.get("/workflows/{workflow_id}/status")
-async def get_workflow_status(workflow_id: str):
+async def get_workflow_status(workflow_id: str) -> None:
     """Get workflow approval status."""
     try:
         # This would integrate with workflow management system
@@ -622,7 +622,7 @@ async def get_workflow_status(workflow_id: str):
 
 
 @router.get("/health")
-async def get_collaboration_health():
+async def get_collaboration_health() -> None:
     """Get collaboration system health status."""
     try:
         permission_manager = get_permission_manager()

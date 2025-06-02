@@ -44,7 +44,7 @@ class BackupCode(Base):
     # Audit fields
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
-    def __repr__(self):
+    def __repr__(self) -> None:
         return f"<BackupCode(id='{self.id}', user_id='{self.user_id}', used={self.is_used})>"
     
     def to_dict(self) -> Dict[str, Any]:
@@ -57,7 +57,7 @@ class BackupCode(Base):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
     
-    def mark_as_used(self, ip_address: Optional[str] = None):
+    def mark_as_used(self, ip_address: Optional[str] = None) -> None:
         """Mark backup code as used."""
         self.is_used = True
         self.used_at = datetime.utcnow()

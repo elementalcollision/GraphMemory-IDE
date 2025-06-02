@@ -74,7 +74,7 @@ class SyncConfiguration:
     enable_monitoring: bool = True
     tables_to_sync: Set[str] = None
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.tables_to_sync is None:
             self.tables_to_sync = {
                 'users', 'user_sessions', 'telemetry_events',
@@ -85,7 +85,7 @@ class SyncConfiguration:
 class DataTransformer:
     """Transforms data between PostgreSQL and Kuzu formats"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._transformers = {
             'users': self._transform_user,
             'user_sessions': self._transform_user_session,
@@ -247,7 +247,7 @@ class DataTransformer:
 class ConflictResolver:
     """Handles conflicts during synchronization"""
     
-    def __init__(self, strategy: str = "latest_wins"):
+    def __init__(self, strategy: str = "latest_wins") -> None:
         self.strategy = strategy
         self._resolvers = {
             'latest_wins': self._latest_wins_resolver,
@@ -301,7 +301,7 @@ class ConflictResolver:
 class SyncEventProcessor:
     """Processes synchronization events"""
     
-    def __init__(self, config: SyncConfiguration):
+    def __init__(self, config: SyncConfiguration) -> None:
         self.config = config
         self.transformer = DataTransformer()
         self.conflict_resolver = ConflictResolver(config.conflict_resolution)
@@ -309,12 +309,12 @@ class SyncEventProcessor:
         self._event_queue: asyncio.Queue = asyncio.Queue()
         self._processing = False
     
-    async def queue_event(self, event: SyncEvent):
+    async def queue_event(self, event: SyncEvent) -> None:
         """Queue a synchronization event"""
         await self._event_queue.put(event)
         logger.debug(f"Queued sync event: {event.table_name}.{event.record_id}")
     
-    async def process_events(self):
+    async def process_events(self) -> None:
         """Process queued synchronization events"""
         if self._processing:
             return
@@ -354,7 +354,7 @@ class SyncEventProcessor:
         finally:
             self._processing = False
     
-    async def _process_event_batch(self, events: List[SyncEvent]):
+    async def _process_event_batch(self, events: List[SyncEvent]) -> None:
         """Process a batch of synchronization events"""
         logger.info(f"Processing sync event batch of {len(events)} events")
         start_time = time.time()
@@ -527,14 +527,14 @@ class SyncEventProcessor:
 class DatabaseSynchronizer:
     """Main database synchronization manager"""
     
-    def __init__(self, config: Optional[SyncConfiguration] = None):
+    def __init__(self, config: Optional[SyncConfiguration] = None) -> None:
         self.config = config or SyncConfiguration()
         self.event_processor = SyncEventProcessor(self.config)
         self._metrics = MetricsCollector()
         self._running = False
         self._sync_tasks: List[asyncio.Task] = []
     
-    async def start(self):
+    async def start(self) -> None:
         """Start database synchronization"""
         if self._running:
             logger.warning("Database synchronization already running")
@@ -558,7 +558,7 @@ class DatabaseSynchronizer:
         
         logger.info(f"Started {len(self._sync_tasks)} synchronization tasks")
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop database synchronization"""
         if not self._running:
             return
@@ -577,7 +577,7 @@ class DatabaseSynchronizer:
         self._sync_tasks.clear()
         logger.info("Database synchronization stopped")
     
-    async def sync_table(self, table_name: str, incremental: bool = True):
+    async def sync_table(self, table_name: str, incremental: bool = True) -> None:
         """Manually sync a specific table"""
         logger.info(f"Starting manual sync for table: {table_name}")
         
@@ -629,7 +629,7 @@ class DatabaseSynchronizer:
             logger.error(f"Error syncing table {table_name}: {e}")
             raise
     
-    async def _periodic_sync_table(self, table_name: str):
+    async def _periodic_sync_table(self, table_name: str) -> None:
         """Periodically sync a table"""
         while self._running:
             try:
@@ -663,12 +663,12 @@ async def get_database_synchronizer() -> DatabaseSynchronizer:
     
     return _db_synchronizer
 
-async def start_database_sync():
+async def start_database_sync() -> None:
     """Start database synchronization"""
     synchronizer = await get_database_synchronizer()
     await synchronizer.start()
 
-async def stop_database_sync():
+async def stop_database_sync() -> None:
     """Stop database synchronization"""
     synchronizer = await get_database_synchronizer()
     await synchronizer.stop() 

@@ -1,0 +1,263 @@
+# Enhanced Bandit Configuration for GraphMemory-IDE Enterprise Security Audit
+# Integrates with existing CI/CD pipeline and security_validation_suite.py
+# Configuration optimized for enterprise-grade security standards
+
+[bandit]
+# Exclude paths that contain test data, migrations, and development-only code
+exclude_dirs = [
+    '*/tests/*',
+    '*/test_*',
+    '*/.venv/*',
+    '*/migrations/*', 
+    '*/node_modules/*',
+    '*/.git/*',
+    '*/__pycache__/*',
+    '*/build/*',
+    '*/dist/*',
+    '*/coverage/*',
+    '*/htmlcov/*'
+]
+
+# Scan these paths - aligned with existing CI/CD configuration
+paths = [
+    'server/',
+    'dashboard/',
+    'scripts/',
+    'monitoring/',
+    'docker/security/'
+]
+
+# Report format - JSON for integration with security_validation_suite.py
+format = 'json'
+output = 'enhanced_bandit_report.json'
+
+# Severity level - aligned with existing medium threshold but enhanced
+severity = 'low'
+
+# Confidence level for enhanced detection
+confidence = 'low'
+
+# Enable verbose output for detailed analysis
+verbose = true
+
+# Enhanced test configuration with GraphMemory-IDE specific security patterns
+tests = [
+    # Core security tests
+    'B101',  # assert_used
+    'B102',  # exec_used  
+    'B103',  # set_bad_file_permissions
+    'B104',  # hardcoded_bind_all_interfaces
+    'B105',  # hardcoded_password_string
+    'B106',  # hardcoded_password_funcarg
+    'B107',  # hardcoded_password_default
+    'B108',  # hardcoded_tmp_directory
+    'B110',  # try_except_pass
+    'B112',  # try_except_continue
+    
+    # Injection vulnerabilities
+    'B201',  # flask_debug_true
+    'B301',  # pickle
+    'B302',  # cmdi_os_system
+    'B303',  # md5
+    'B304',  # des
+    'B305',  # cipher
+    'B306',  # mkstemp_q
+    'B307',  # eval
+    'B308',  # mark_safe
+    'B309',  # httpsconnection
+    'B310',  # urllib_urlopen
+    'B311',  # random
+    'B312',  # telnetlib
+    'B313',  # xml_bad_cElementTree
+    'B314',  # xml_bad_ElementTree
+    'B315',  # xml_bad_expatreader
+    'B316',  # xml_bad_expatbuilder
+    'B317',  # xml_bad_sax
+    'B318',  # xml_bad_minidom
+    'B319',  # xml_bad_pulldom
+    'B320',  # xml_bad_etree
+    'B321',  # ftplib
+    'B322',  # input
+    'B323',  # unverified_context
+    
+    # Web framework specific tests
+    'B401',  # import_telnetlib
+    'B402',  # import_ftplib
+    'B403',  # import_pickle
+    'B404',  # import_subprocess
+    'B405',  # import_xml_sax
+    'B406',  # import_xml_expatreader
+    'B407',  # import_xml_expatbuilder
+    'B408',  # import_xml_minidom
+    'B409',  # import_xml_pulldom
+    'B410',  # import_lxml
+    'B411',  # import_xmlrpclib
+    'B412',  # import_httpoxy
+    'B413',  # import_pycrypto
+    
+    # Framework-specific security issues
+    'B501',  # request_with_no_cert_validation
+    'B502',  # ssl_with_bad_version
+    'B503',  # ssl_with_bad_defaults
+    'B504',  # ssl_with_no_version
+    'B505',  # weak_cryptographic_key
+    'B506',  # yaml_load
+    'B507',  # ssh_no_host_key_verification
+    'B601',  # paramiko_calls
+    'B602',  # subprocess_popen_with_shell_equals_true
+    'B603',  # subprocess_without_shell_equals_true
+    'B604',  # any_other_function_with_shell_equals_true
+    'B605',  # start_process_with_a_shell
+    'B606',  # start_process_with_no_shell
+    'B607',  # start_process_with_partial_path
+    'B608',  # hardcoded_sql_expressions
+    'B609',  # linux_commands_wildcard_injection
+    'B610',  # django_extra_used
+    'B611',  # django_rawsql_used
+    'B701',  # jinja2_autoescape_false
+    'B702',  # use_of_mako_templates
+    'B703'   # django_mark_safe
+]
+
+# Skip these tests if they conflict with framework requirements
+skips = [
+    # Skip B113 for RequestsConnectionTimeout false positives
+    'B113'
+]
+
+# Enhanced severity mapping for GraphMemory-IDE security requirements
+[bandit.severity_mapping]
+# Critical vulnerabilities - immediate action required
+B105 = 'HIGH'   # hardcoded_password_string
+B106 = 'HIGH'   # hardcoded_password_funcarg  
+B107 = 'HIGH'   # hardcoded_password_default
+B201 = 'HIGH'   # flask_debug_true
+B307 = 'HIGH'   # eval
+B501 = 'HIGH'   # request_with_no_cert_validation
+B502 = 'HIGH'   # ssl_with_bad_version
+B503 = 'HIGH'   # ssl_with_bad_defaults
+B506 = 'HIGH'   # yaml_load
+B602 = 'HIGH'   # subprocess_popen_with_shell_equals_true
+B608 = 'HIGH'   # hardcoded_sql_expressions
+
+# Medium severity - should be addressed
+B104 = 'MEDIUM' # hardcoded_bind_all_interfaces
+B108 = 'MEDIUM' # hardcoded_tmp_directory
+B301 = 'MEDIUM' # pickle
+B302 = 'MEDIUM' # cmdi_os_system
+B303 = 'MEDIUM' # md5
+B311 = 'MEDIUM' # random
+B323 = 'MEDIUM' # unverified_context
+B505 = 'MEDIUM' # weak_cryptographic_key
+B603 = 'MEDIUM' # subprocess_without_shell_equals_true
+B609 = 'MEDIUM' # linux_commands_wildcard_injection
+
+# GraphMemory-IDE specific test patterns
+[bandit.graphmemory_patterns]
+# Custom patterns for FastAPI security
+fastapi_security_bypass = [
+    'Depends(get_current_user_optional)',  # Optional auth bypasses
+    'security=None',                       # Disabled security
+    'allow_anonymous=True'                 # Anonymous access
+]
+
+# Authentication and authorization patterns  
+auth_security_patterns = [
+    'jwt.decode.*verify=False',           # JWT verification disabled
+    'authenticate.*check_password=False', # Password check bypassed
+    'authorize.*skip_check=True',         # Authorization skipped
+    'rbac.*bypass=True'                   # RBAC bypassed
+]
+
+# Database security patterns
+database_security_patterns = [
+    'raw_sql.*',                          # Raw SQL execution
+    'execute.*format.*',                  # SQL injection via format
+    'query.*%.*',                         # SQL injection via % formatting
+    'connection.*autocommit=False'        # Transaction safety
+]
+
+# API security patterns
+api_security_patterns = [
+    'rate_limit.*disabled=True',          # Rate limiting disabled
+    'cors.*allow_origins=.*\*',           # Overly permissive CORS
+    'ssl_required=False',                 # SSL disabled
+    'csrf_protection=False'               # CSRF protection disabled
+]
+
+# Logging security patterns
+logging_security_patterns = [
+    'log.*password.*',                    # Password logging
+    'logger.*secret.*',                   # Secret logging
+    'print.*token.*',                     # Token printing
+    'debug.*sensitive.*'                  # Sensitive debug output
+]
+
+# File security patterns
+file_security_patterns = [
+    'open.*mode.*w.*',                    # Unsafe file writing
+    'chmod.*777',                         # Overly permissive permissions
+    'os.system.*',                        # Command injection
+    'subprocess.*shell=True'              # Shell injection
+]
+
+# Integration with existing security_validation_suite.py
+[bandit.integration]
+security_suite_integration = true
+output_format = 'json'
+findings_threshold = 'medium'
+cvss_scoring = true
+compliance_mapping = true
+
+# OWASP Top 10 mapping for compliance reporting
+[bandit.owasp_mapping]
+A01_broken_access_control = ['B105', 'B106', 'B107', 'B104']
+A02_cryptographic_failures = ['B303', 'B304', 'B305', 'B502', 'B503', 'B505']
+A03_injection = ['B307', 'B608', 'B609', 'B602', 'B603']
+A04_insecure_design = ['B201', 'B110', 'B112']
+A05_security_misconfiguration = ['B501', 'B323', 'B104']
+A06_vulnerable_components = ['B413', 'B401', 'B402']
+A07_identification_failures = ['B311', 'B322']
+A08_software_integrity_failures = ['B301', 'B506']
+A09_logging_failures = ['B108']
+A10_server_side_request_forgery = ['B310', 'B501']
+
+# CWE (Common Weakness Enumeration) mapping
+[bandit.cwe_mapping]
+CWE_89 = ['B608']   # SQL Injection
+CWE_78 = ['B602', 'B603', 'B604', 'B605', 'B606', 'B607'] # OS Command Injection
+CWE_79 = ['B308']   # Cross-site Scripting
+CWE_94 = ['B307']   # Code Injection
+CWE_798 = ['B105', 'B106', 'B107'] # Use of Hard-coded Credentials
+CWE_327 = ['B303', 'B304', 'B305', 'B502', 'B503'] # Use of Broken Cryptographic Algorithm
+CWE_311 = ['B501', 'B323'] # Missing Encryption of Sensitive Data
+CWE_330 = ['B311']  # Use of Insufficiently Random Values
+CWE_502 = ['B301', 'B506'] # Deserialization of Untrusted Data
+CWE_611 = ['B313', 'B314', 'B315', 'B316', 'B317', 'B318', 'B319', 'B320'] # XML External Entity
+
+# Performance optimization for enterprise scanning
+[bandit.performance]
+parallel_execution = true
+max_workers = 4
+timeout_seconds = 300
+memory_limit_mb = 1024
+cache_results = true
+incremental_scan = true
+
+# Enterprise reporting configuration
+[bandit.reporting]
+generate_summary = true
+include_confidence_score = true
+include_cvss_score = true
+include_remediation_advice = true
+output_formats = ['json', 'html', 'xml']
+compliance_frameworks = ['OWASP', 'CWE', 'NIST', 'ISO27001']
+
+# Integration with existing CI/CD pipeline
+[bandit.cicd_integration]
+fail_on_high_severity = true
+fail_on_medium_severity = false
+max_findings_threshold = 20
+generate_junit_xml = true
+upload_artifacts = true
+notify_security_team = true 

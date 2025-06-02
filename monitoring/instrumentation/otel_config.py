@@ -56,7 +56,7 @@ class GraphMemoryOTelConfig:
         otlp_headers: Optional[Dict[str, str]] = None,
         enable_console_export: bool = False,
         custom_resource_attributes: Optional[Dict[str, str]] = None
-    ):
+    ) -> None:
         self.service_name = service_name
         self.service_version = service_version or os.getenv("SERVICE_VERSION", "1.0.0")
         self.environment = environment
@@ -224,7 +224,7 @@ class GraphMemoryOTelConfig:
         logger.info("OpenTelemetry logging configured successfully")
         return self.logger_provider
     
-    def setup_propagation(self):
+    def setup_propagation(self) -> None:
         """Configure trace context propagation."""
         # Composite propagator supporting multiple formats
         propagator = CompositeHTTPPropagator([
@@ -235,7 +235,7 @@ class GraphMemoryOTelConfig:
         set_global_textmap(propagator)
         logger.info("OpenTelemetry propagation configured")
     
-    def instrument_fastapi(self, app):
+    def instrument_fastapi(self, app) -> None:
         """Instrument FastAPI application with OpenTelemetry."""
         if not self.instrumentation_enabled or app in self.instrumented_apps:
             return
@@ -268,7 +268,7 @@ class GraphMemoryOTelConfig:
         except Exception as e:
             logger.error(f"Failed to instrument FastAPI: {e}")
     
-    def setup_database_instrumentation(self):
+    def setup_database_instrumentation(self) -> None:
         """Configure database instrumentation."""
         if not self.instrumentation_enabled:
             return
@@ -293,7 +293,7 @@ class GraphMemoryOTelConfig:
         except Exception as e:
             logger.error(f"Failed to setup database instrumentation: {e}")
     
-    def setup_redis_instrumentation(self):
+    def setup_redis_instrumentation(self) -> None:
         """Configure Redis instrumentation."""
         if not self.instrumentation_enabled:
             return
@@ -308,7 +308,7 @@ class GraphMemoryOTelConfig:
         except Exception as e:
             logger.error(f"Failed to setup Redis instrumentation: {e}")
     
-    def setup_http_instrumentation(self):
+    def setup_http_instrumentation(self) -> None:
         """Configure HTTP client instrumentation."""
         if not self.instrumentation_enabled:
             return
@@ -329,7 +329,7 @@ class GraphMemoryOTelConfig:
         except Exception as e:
             logger.error(f"Failed to setup HTTP instrumentation: {e}")
     
-    def setup_asyncio_instrumentation(self):
+    def setup_asyncio_instrumentation(self) -> None:
         """Configure asyncio instrumentation."""
         if not self.instrumentation_enabled:
             return
@@ -372,7 +372,7 @@ class GraphMemoryOTelConfig:
             raise
     
     @contextmanager
-    def custom_span(self, name: str, attributes: Optional[Dict[str, Any]] = None):
+    def custom_span(self, name: str, attributes: Optional[Dict[str, Any]] = None) -> None:
         """Create a custom span with optional attributes."""
         tracer = trace.get_tracer(__name__)
         
@@ -383,15 +383,15 @@ class GraphMemoryOTelConfig:
             
             yield span
     
-    def get_tracer(self, name: str):
+    def get_tracer(self, name: str) -> None:
         """Get a tracer instance."""
         return trace.get_tracer(name)
     
-    def get_meter(self, name: str):
+    def get_meter(self, name: str) -> None:
         """Get a meter instance."""
         return metrics.get_meter(name)
     
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Gracefully shutdown OpenTelemetry components."""
         logger.info("Shutting down OpenTelemetry")
         
@@ -432,7 +432,7 @@ def initialize_otel(app=None, **kwargs) -> GraphMemoryOTelConfig:
     
     return otel_config
 
-def shutdown_otel():
+def shutdown_otel() -> None:
     """Shutdown OpenTelemetry gracefully."""
     global otel_config
     

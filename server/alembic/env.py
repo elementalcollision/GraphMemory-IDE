@@ -27,7 +27,7 @@ except ImportError:
     Base = declarative_base()
     HAS_MODELS = False
     
-    def get_settings():
+    def get_settings() -> None:
         class MockDatabase:
             DATABASE_URL = "postgresql+asyncpg://graphmemory:graphmemory@localhost:5432/graphmemory_dev"
         

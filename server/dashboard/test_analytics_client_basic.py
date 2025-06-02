@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class MockAnalyticsEngineClient:
     """Mock client for testing fallback functionality"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.initialized = False
         self._connection_healthy = False
         self._last_metrics_cache = {}
@@ -31,7 +31,7 @@ class MockAnalyticsEngineClient:
         """Mock health check that always returns False"""
         return False
     
-    def _get_fallback_system_metrics(self):
+    def _get_fallback_system_metrics(self) -> None:
         """Return fallback system metrics"""
         from datetime import datetime, timezone
         import time
@@ -55,7 +55,7 @@ class MockAnalyticsEngineClient:
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     
-    def _get_fallback_memory_insights(self):
+    def _get_fallback_memory_insights(self) -> None:
         """Return fallback memory insights"""
         from datetime import datetime, timezone
         
@@ -72,7 +72,7 @@ class MockAnalyticsEngineClient:
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     
-    def _get_fallback_graph_metrics(self):
+    def _get_fallback_graph_metrics(self) -> None:
         """Return fallback graph metrics"""
         from datetime import datetime, timezone
         
@@ -89,26 +89,26 @@ class MockAnalyticsEngineClient:
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     
-    async def get_system_metrics(self):
+    async def get_system_metrics(self) -> None:
         """Get system metrics with fallback"""
         if not await self.health_check():
             return self._get_fallback_system_metrics()
         return self._get_fallback_system_metrics()  # Always fallback for testing
     
-    async def get_memory_insights(self):
+    async def get_memory_insights(self) -> None:
         """Get memory insights with fallback"""
         if not await self.health_check():
             return self._get_fallback_memory_insights()
         return self._get_fallback_memory_insights()  # Always fallback for testing
     
-    async def get_graph_metrics(self):
+    async def get_graph_metrics(self) -> None:
         """Get graph metrics with fallback"""
         if not await self.health_check():
             return self._get_fallback_graph_metrics()
         return self._get_fallback_graph_metrics()  # Always fallback for testing
 
 
-async def test_fallback_functionality():
+async def test_fallback_functionality() -> None:
     """Test all fallback functionality"""
     logger.info("Starting Basic Analytics Client Tests...")
     

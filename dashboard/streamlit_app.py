@@ -33,7 +33,7 @@ except ImportError as e:
     st.stop()
 
 
-def main():
+def main() -> None:
     """Main application function"""
     try:
         # Setup page configuration
@@ -65,7 +65,7 @@ def main():
         logger.error(f"Main application error: {e}")
 
 
-def render_main_content():
+def render_main_content() -> None:
     """Render the main content area"""
     # Get current page from session state
     current_page = st.session_state.get('current_page', '📊 Analytics')
@@ -82,7 +82,7 @@ def render_main_content():
         render_analytics_page()
 
 
-def render_analytics_page():
+def render_analytics_page() -> None:
     """Render the analytics dashboard page"""
     render_main_header(
         "📊 Real-time Analytics Dashboard",
@@ -113,7 +113,7 @@ def render_analytics_page():
         render_fallback_analytics()
 
 
-def render_memory_page():
+def render_memory_page() -> None:
     """Render the memory insights page"""
     render_main_header(
         "🧠 Memory System Insights",
@@ -137,7 +137,7 @@ def render_memory_page():
         render_fallback_memory()
 
 
-def render_graph_page():
+def render_graph_page() -> None:
     """Render the graph metrics page"""
     render_main_header(
         "🔗 Graph Analytics",
@@ -155,7 +155,7 @@ def render_graph_page():
         render_fallback_graph()
 
 
-def render_fallback_analytics():
+def render_fallback_analytics() -> None:
     """Render fallback analytics content when components fail to load"""
     st.info("📊 Analytics components are being loaded...")
     
@@ -174,7 +174,7 @@ def render_fallback_analytics():
     st.info("💡 Please ensure all dependencies are installed and the server is running.")
 
 
-def render_fallback_memory():
+def render_fallback_memory() -> None:
     """Render fallback memory content when components fail to load"""
     st.info("🧠 Memory components are being loaded...")
     
@@ -188,7 +188,7 @@ def render_fallback_memory():
         st.metric("Efficiency", "Loading...")
 
 
-def render_fallback_graph():
+def render_fallback_graph() -> None:
     """Render fallback graph content when components fail to load"""
     st.info("🔗 Graph components are being loaded...")
     st.metric("Graph Metrics", "Loading...")

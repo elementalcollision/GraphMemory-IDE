@@ -38,7 +38,7 @@ class PerformanceMetrics:
     user_type: str = "anonymous"
     error_message: str = None
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.timestamp is None:
             self.timestamp = datetime.utcnow()
 
@@ -64,12 +64,12 @@ class LoadTestResult:
 class PerformanceMonitor:
     """Real-time performance monitoring during load tests"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.monitoring = False
         self.metrics_queue = queue.Queue()
         self.resource_metrics = []
         
-    def start_monitoring(self):
+    def start_monitoring(self) -> None:
         """Start resource monitoring"""
         self.monitoring = True
         monitor_thread = threading.Thread(target=self._monitor_resources)
@@ -77,12 +77,12 @@ class PerformanceMonitor:
         monitor_thread.start()
         logger.info("Performance monitoring started")
         
-    def stop_monitoring(self):
+    def stop_monitoring(self) -> None:
         """Stop resource monitoring"""
         self.monitoring = False
         logger.info("Performance monitoring stopped")
         
-    def _monitor_resources(self):
+    def _monitor_resources(self) -> None:
         """Monitor system resources"""
         while self.monitoring:
             try:
@@ -124,7 +124,7 @@ class PerformanceMonitor:
 class UserJourneySimulator:
     """Simulate realistic user journeys"""
     
-    def __init__(self, base_url: str, session: aiohttp.ClientSession):
+    def __init__(self, base_url: str, session: aiohttp.ClientSession) -> None:
         self.base_url = base_url
         self.session = session
         self.user_data = {}
@@ -231,7 +231,7 @@ class UserJourneySimulator:
 class AdvancedLoadTestSuite:
     """Advanced load testing suite for Day 2 performance validation"""
     
-    def __init__(self, config_path: str = None):
+    def __init__(self, config_path: str = None) -> None:
         self.config = self._load_config(config_path)
         self.performance_monitor = PerformanceMonitor()
         self.test_results: List[LoadTestResult] = []
@@ -466,7 +466,7 @@ class AdvancedLoadTestSuite:
             success_rate=success_rate
         )
     
-    async def _run_websocket_stability_test(self):
+    async def _run_websocket_stability_test(self) -> None:
         """Test WebSocket connection stability under load"""
         logger.info("🔗 Running WebSocket stability test")
         
@@ -498,7 +498,7 @@ class AdvancedLoadTestSuite:
         self.test_results.append(result)
         logger.info("✅ WebSocket stability test completed")
     
-    async def _run_database_performance_test(self):
+    async def _run_database_performance_test(self) -> None:
         """Test database performance under load"""
         logger.info("🗄️ Running database performance test")
         
@@ -529,7 +529,7 @@ class AdvancedLoadTestSuite:
         self.test_results.append(result)
         logger.info("✅ Database performance test completed")
     
-    async def _run_cache_performance_test(self):
+    async def _run_cache_performance_test(self) -> None:
         """Test cache performance and hit rates"""
         logger.info("💾 Running cache performance test")
         
@@ -561,7 +561,7 @@ class AdvancedLoadTestSuite:
         self.test_results.append(result)
         logger.info("✅ Cache performance test completed")
     
-    async def _run_cdn_performance_test(self):
+    async def _run_cdn_performance_test(self) -> None:
         """Test CDN performance and static asset delivery"""
         logger.info("🌐 Running CDN performance test")
         
@@ -700,7 +700,7 @@ class AdvancedLoadTestSuite:
         return recommendations
 
 # CLI Interface
-async def main():
+async def main() -> None:
     """Main CLI interface for advanced performance testing"""
     import argparse
     

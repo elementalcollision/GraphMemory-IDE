@@ -52,13 +52,13 @@ class AnalyticsBenchmarkSuite:
     Tests GPU acceleration, concurrent processing, and overall performance.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.graph_algorithms = GraphAlgorithms()
         self.ml_analytics = MLAnalytics()
         self.results: List[BenchmarkResult] = []
         self.comparisons: List[ComparisonResult] = []
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize benchmarking components"""
         await concurrent_manager.initialize()
         logger.info("Benchmark suite initialized")
@@ -152,7 +152,7 @@ class AnalyticsBenchmarkSuite:
             for algorithm in algorithms:
                 test_name = f"centrality_{algorithm}_nodes_{size}"
                 
-                async def run_centrality():
+                async def run_centrality() -> Dict[str, float]:
                     return await self.graph_algorithms.calculate_centrality(
                         test_graph, centrality_type=algorithm
                     )
@@ -177,7 +177,7 @@ class AnalyticsBenchmarkSuite:
             for algorithm in algorithms:
                 test_name = f"community_{algorithm}_nodes_{size}"
                 
-                async def run_community():
+                async def run_community() -> None:
                     return await self.graph_algorithms.detect_communities(
                         test_graph, algorithm=algorithm
                     )
@@ -202,7 +202,7 @@ class AnalyticsBenchmarkSuite:
             for algorithm in algorithms:
                 test_name = f"clustering_{algorithm}_nodes_{size}"
                 
-                async def run_clustering():
+                async def run_clustering() -> None:
                     return await self.ml_analytics.cluster_nodes(
                         test_graph, algorithm=algorithm, n_clusters=5
                     )
@@ -318,7 +318,7 @@ class AnalyticsBenchmarkSuite:
         
         return comparisons
     
-    def _generate_test_graph(self, num_nodes: int):
+    def _generate_test_graph(self, num_nodes: int) -> None:
         """Generate a test graph with specified number of nodes"""
         import networkx as nx
         
@@ -339,7 +339,7 @@ class AnalyticsBenchmarkSuite:
         """Run all benchmark tests and return comprehensive results"""
         logger.info("Starting comprehensive benchmark suite")
         
-        all_results = {}
+        all_results: Dict[str, Any] = {}
         
         # Centrality benchmarks
         logger.info("Running centrality benchmarks")
@@ -427,7 +427,7 @@ benchmark_suite = AnalyticsBenchmarkSuite()
 
 # Pytest integration functions
 @pytest.mark.asyncio
-async def test_centrality_performance(benchmark):
+async def test_centrality_performance(benchmark) -> None:
     """Pytest benchmark for centrality algorithms"""
     await benchmark_suite.initialize()
     test_graph = benchmark_suite._generate_test_graph(500)
@@ -441,7 +441,7 @@ async def test_centrality_performance(benchmark):
 
 
 @pytest.mark.asyncio
-async def test_community_performance(benchmark):
+async def test_community_performance(benchmark) -> None:
     """Pytest benchmark for community detection"""
     await benchmark_suite.initialize()
     test_graph = benchmark_suite._generate_test_graph(500)
@@ -455,7 +455,7 @@ async def test_community_performance(benchmark):
 
 
 @pytest.mark.asyncio
-async def test_clustering_performance(benchmark):
+async def test_clustering_performance(benchmark) -> None:
     """Pytest benchmark for ML clustering"""
     await benchmark_suite.initialize()
     test_graph = benchmark_suite._generate_test_graph(500)

@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class MetricEvaluator:
     """Evaluates metrics against defined thresholds"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.evaluation_cache = {}
         self.last_cleanup = datetime.utcnow()
     
@@ -86,7 +86,7 @@ class MetricEvaluator:
         
         return all_conditions_met, relevant_metrics
     
-    def cleanup_cache(self):
+    def cleanup_cache(self) -> None:
         """Clean up old evaluation cache entries"""
         now = datetime.utcnow()
         if (now - self.last_cleanup).total_seconds() > 300:  # Cleanup every 5 minutes
@@ -102,7 +102,7 @@ class MetricEvaluator:
 class AlertGenerator:
     """Generates alerts with deduplication logic"""
     
-    def __init__(self, config: AlertSystemConfig):
+    def __init__(self, config: AlertSystemConfig) -> None:
         self.config = config
         self.active_alerts: Dict[UUID, Alert] = {}
         self.alert_history: deque = deque(maxlen=1000)
@@ -221,7 +221,7 @@ class AlertGenerator:
         
         return base_description
     
-    def resolve_alert(self, alert_id: UUID, user: str = "system", note: Optional[str] = None):
+    def resolve_alert(self, alert_id: UUID, user: str = "system", note: Optional[str] = None) -> None:
         """Resolve an active alert"""
         if alert_id in self.active_alerts:
             alert = self.active_alerts[alert_id]
@@ -237,7 +237,7 @@ class AlertGenerator:
             del self.active_alerts[alert_id]
             logger.info(f"Resolved alert: {alert.title} (ID: {alert_id})")
     
-    def cleanup_expired_alerts(self):
+    def cleanup_expired_alerts(self) -> None:
         """Clean up old alerts and tracking data"""
         now = datetime.utcnow()
         
@@ -252,7 +252,7 @@ class AlertGenerator:
 class AlertEngine:
     """Main alerting engine with threshold monitoring"""
     
-    def __init__(self, config: Optional[AlertSystemConfig] = None):
+    def __init__(self, config: Optional[AlertSystemConfig] = None) -> None:
         self.config = config or AlertSystemConfig()
         self.is_running = False
         self.evaluation_task: Optional[asyncio.Task] = None
@@ -279,7 +279,7 @@ class AlertEngine:
         
         logger.info("AlertEngine initialized")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the alert engine with dependencies"""
         try:
             # Get external dependencies
@@ -297,7 +297,7 @@ class AlertEngine:
             logger.error(f"Failed to initialize AlertEngine: {e}")
             raise
     
-    async def start(self):
+    async def start(self) -> None:
         """Start the alert engine evaluation loop"""
         if self.is_running:
             return
@@ -306,7 +306,7 @@ class AlertEngine:
         self.evaluation_task = asyncio.create_task(self._evaluation_loop())
         logger.info("AlertEngine started")
     
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the alert engine"""
         self.is_running = False
         
@@ -319,7 +319,7 @@ class AlertEngine:
         
         logger.info("AlertEngine stopped")
     
-    async def _evaluation_loop(self):
+    async def _evaluation_loop(self) -> None:
         """Main evaluation loop that checks metrics and generates alerts"""
         logger.info("Starting alert evaluation loop")
         
@@ -389,7 +389,7 @@ class AlertEngine:
             logger.error(f"Error getting current metrics: {e}")
             return {}
     
-    async def _evaluate_rules(self, metrics: Dict[str, float]):
+    async def _evaluate_rules(self, metrics: Dict[str, float]) -> None:
         """Evaluate all alert rules against current metrics"""
         alerts_generated = 0
         
@@ -421,7 +421,7 @@ class AlertEngine:
         if alerts_generated > 0:
             logger.info(f"Generated {alerts_generated} new alerts")
     
-    async def _handle_new_alert(self, alert: Alert):
+    async def _handle_new_alert(self, alert: Alert) -> None:
         """Handle a newly generated alert"""
         try:
             # Cache the alert
@@ -454,7 +454,7 @@ class AlertEngine:
         except Exception as e:
             logger.error(f"Error handling new alert: {e}")
     
-    async def _update_system_metrics(self):
+    async def _update_system_metrics(self) -> None:
         """Update alert system metrics"""
         try:
             now = datetime.utcnow()
@@ -490,7 +490,7 @@ class AlertEngine:
         except Exception as e:
             logger.error(f"Error updating system metrics: {e}")
     
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         """Cleanup old data and maintain system health"""
         try:
             self.evaluator.cleanup_cache()
@@ -498,7 +498,7 @@ class AlertEngine:
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
     
-    async def _load_default_rules(self):
+    async def _load_default_rules(self) -> None:
         """Load default alert rules"""
         try:
             # High CPU usage alert
@@ -570,11 +570,11 @@ class AlertEngine:
     
     # Public API methods
     
-    def add_alert_callback(self, callback: Callable):
+    def add_alert_callback(self, callback: Callable) -> None:
         """Add callback for alert events"""
         self.alert_callbacks.append(callback)
     
-    def remove_alert_callback(self, callback: Callable):
+    def remove_alert_callback(self, callback: Callable) -> None:
         """Remove alert callback"""
         if callback in self.alert_callbacks:
             self.alert_callbacks.remove(callback)
@@ -737,7 +737,7 @@ async def initialize_alert_engine(config: Optional[AlertSystemConfig] = None) ->
     return _alert_engine
 
 
-async def shutdown_alert_engine():
+async def shutdown_alert_engine() -> None:
     """Shutdown the global alert engine"""
     global _alert_engine
     

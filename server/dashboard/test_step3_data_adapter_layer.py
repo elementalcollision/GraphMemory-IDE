@@ -15,7 +15,7 @@ from datetime import datetime
 # Add the current directory to Python path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-def test_data_adapter_imports():
+def test_data_adapter_imports() -> None:
     """Test that DataAdapter can be imported successfully"""
     print("🔍 Testing DataAdapter Imports...")
     
@@ -34,7 +34,7 @@ def test_data_adapter_imports():
         traceback.print_exc()
         return False
 
-def test_cache_entry():
+def test_cache_entry() -> None:
     """Test CacheEntry functionality"""
     print("🔍 Testing CacheEntry...")
     
@@ -59,7 +59,7 @@ def test_cache_entry():
         print(f"  ❌ CacheEntry error: {e}")
         return False
 
-def test_performance_monitor():
+def test_performance_monitor() -> None:
     """Test PerformanceMonitor functionality"""
     print("🔍 Testing PerformanceMonitor...")
     
@@ -89,7 +89,7 @@ def test_performance_monitor():
         print(f"  ❌ PerformanceMonitor error: {e}")
         return False
 
-async def test_data_adapter_basic():
+async def test_data_adapter_basic() -> None:
     """Test basic DataAdapter functionality"""
     print("🔍 Testing DataAdapter Basic Functionality...")
     
@@ -116,7 +116,7 @@ async def test_data_adapter_basic():
         traceback.print_exc()
         return False
 
-async def test_data_transformation():
+async def test_data_transformation() -> None:
     """Test data transformation methods"""
     print("🔍 Testing Data Transformation...")
     
@@ -186,7 +186,7 @@ async def test_data_transformation():
         traceback.print_exc()
         return False
 
-async def test_sse_event_creation():
+async def test_sse_event_creation() -> None:
     """Test SSE event creation"""
     print("🔍 Testing SSE Event Creation...")
     
@@ -232,7 +232,7 @@ async def test_sse_event_creation():
         traceback.print_exc()
         return False
 
-async def test_error_handling():
+async def test_error_handling() -> None:
     """Test error handling and fallback mechanisms"""
     print("🔍 Testing Error Handling...")
     
@@ -269,7 +269,7 @@ async def test_error_handling():
         traceback.print_exc()
         return False
 
-async def test_caching():
+async def test_caching() -> None:
     """Test caching functionality"""
     print("🔍 Testing Caching...")
     
@@ -302,7 +302,7 @@ async def test_caching():
         print(f"  ❌ Caching test error: {e}")
         return False
 
-async def test_integration():
+async def test_integration() -> None:
     """Test integration with analytics client (fallback mode)"""
     print("🔍 Testing Integration (Fallback Mode)...")
     
@@ -334,7 +334,7 @@ async def test_integration():
         traceback.print_exc()
         return False
 
-async def main():
+async def main() -> None:
     """Run all data adapter tests"""
     print("🚀 Step 3 Test: Data Adapter Layer")
     print("=" * 60)

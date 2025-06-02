@@ -68,7 +68,7 @@ class MFADevice(Base):
     # Relationship
     # user = relationship("User", back_populates="mfa_devices")
     
-    def __repr__(self):
+    def __repr__(self) -> None:
         return f"<MFADevice(id='{self.id}', user_id='{self.user_id}', type='{self.device_type}', verified={self.is_verified})>"
     
     def to_dict(self) -> Dict[str, Any]:

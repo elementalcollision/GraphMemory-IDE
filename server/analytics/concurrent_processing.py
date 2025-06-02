@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
-from typing import List, Dict, Any, Callable, Optional, Union
+from typing import List, Dict, Any, Callable, Optional, Union, AsyncGenerator
 import multiprocessing as mp
 from contextlib import asynccontextmanager
 
@@ -12,7 +12,7 @@ class ConcurrentProcessingManager:
     
     def __init__(self, 
                  max_thread_workers: Optional[int] = None,
-                 max_process_workers: Optional[int] = None):
+                 max_process_workers: Optional[int] = None) -> None:
         
         # Default to optimal worker counts
         self.max_thread_workers = max_thread_workers or min(32, (mp.cpu_count() or 1) + 4)
@@ -23,7 +23,7 @@ class ConcurrentProcessingManager:
         self._initialized = False
         self._shutdown = False
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize executor pools"""
         if self._initialized or self._shutdown:
             return
@@ -44,7 +44,7 @@ class ConcurrentProcessingManager:
             f"{self.max_thread_workers} threads, {self.max_process_workers} processes"
         )
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown executor pools"""
         if not self._initialized or self._shutdown:
             return
@@ -62,7 +62,7 @@ class ConcurrentProcessingManager:
         logger.info("Concurrent processing shutdown complete")
     
     @asynccontextmanager
-    async def thread_pool_context(self):
+    async def thread_pool_context(self) -> AsyncGenerator[ThreadPoolExecutor, None]:
         """Context manager for thread pool operations"""
         if not self._initialized:
             await self.initialize()
@@ -77,7 +77,7 @@ class ConcurrentProcessingManager:
             raise
     
     @asynccontextmanager
-    async def process_pool_context(self):
+    async def process_pool_context(self) -> AsyncGenerator[ProcessPoolExecutor, None]:
         """Context manager for process pool operations"""
         if not self._initialized:
             await self.initialize()
@@ -204,12 +204,16 @@ class ConcurrentProcessingManager:
             "process_executor": False
         }
         
+        # Test function for executors
+        def test_function() -> str:
+            return "test"
+        
         # Test thread executor
         try:
             if self.thread_executor:
                 async with self.thread_pool_context() as executor:
                     loop = asyncio.get_event_loop()
-                    test_result = await loop.run_in_executor(executor, lambda: "test")
+                    test_result = await loop.run_in_executor(executor, test_function)
                     health_status["thread_executor"] = test_result == "test"
         except Exception as e:
             logger.error(f"Thread executor health check failed: {e}")
@@ -220,7 +224,7 @@ class ConcurrentProcessingManager:
             if self.process_executor:
                 async with self.process_pool_context() as executor:
                     loop = asyncio.get_event_loop()
-                    test_result = await loop.run_in_executor(executor, lambda: "test")
+                    test_result = await loop.run_in_executor(executor, test_function)
                     health_status["process_executor"] = test_result == "test"
         except Exception as e:
             logger.error(f"Process executor health check failed: {e}")

@@ -27,7 +27,7 @@ except ImportError as e:
     print("This is expected when running tests independently")
 
 
-def test_1_background_collector_imports():
+def test_1_background_collector_imports() -> None:
     """Test 1: Verify all background collector imports work correctly"""
     print("\n=== Test 1: Background Collector Imports ===")
     
@@ -51,7 +51,7 @@ def test_1_background_collector_imports():
         return False
 
 
-def test_2_data_buffer_functionality():
+def test_2_data_buffer_functionality() -> None:
     """Test 2: Verify DataBuffer functionality"""
     print("\n=== Test 2: DataBuffer Functionality ===")
     
@@ -100,7 +100,7 @@ def test_2_data_buffer_functionality():
         return False
 
 
-def test_3_health_monitor_functionality():
+def test_3_health_monitor_functionality() -> None:
     """Test 3: Verify HealthMonitor functionality"""
     print("\n=== Test 3: HealthMonitor Functionality ===")
     
@@ -137,7 +137,7 @@ def test_3_health_monitor_functionality():
         return False
 
 
-def test_4_background_collector_basic():
+def test_4_background_collector_basic() -> None:
     """Test 4: Verify BackgroundDataCollector basic functionality"""
     print("\n=== Test 4: BackgroundDataCollector Basic ===")
     
@@ -178,7 +178,7 @@ def test_4_background_collector_basic():
         return False
 
 
-def test_5_data_aggregation():
+def test_5_data_aggregation() -> None:
     """Test 5: Verify data aggregation functionality"""
     print("\n=== Test 5: Data Aggregation ===")
     
@@ -224,7 +224,7 @@ def test_5_data_aggregation():
         return False
 
 
-def test_6_async_collection_simulation():
+def test_6_async_collection_simulation() -> None:
     """Test 6: Simulate async collection without actually running background tasks"""
     print("\n=== Test 6: Async Collection Simulation ===")
     
@@ -233,7 +233,7 @@ def test_6_async_collection_simulation():
         mock_adapter = MagicMock()
         
         # Mock the async methods
-        async def mock_get_system_metrics():
+        async def mock_get_system_metrics() -> None:
             return SystemMetricsData(
                 active_nodes=100, active_edges=200, query_rate=50.0,
                 cache_hit_rate=0.85, memory_usage=75.5, cpu_usage=45.2,
@@ -241,7 +241,7 @@ def test_6_async_collection_simulation():
                 timestamp=datetime.now().isoformat(), status=AnalyticsStatus.HEALTHY
             )
         
-        async def mock_get_memory_insights():
+        async def mock_get_memory_insights() -> None:
             return MemoryInsightsData(
                 total_memories=1000, procedural_memories=300, semantic_memories=400,
                 episodic_memories=300, memory_efficiency=0.85, memory_growth_rate=0.05,
@@ -249,7 +249,7 @@ def test_6_async_collection_simulation():
                 timestamp=datetime.now().isoformat(), status=AnalyticsStatus.HEALTHY
             )
         
-        async def mock_get_graph_metrics():
+        async def mock_get_graph_metrics() -> None:
             return GraphMetricsData(
                 node_count=500, edge_count=1000, connected_components=5,
                 largest_component_size=450, diameter=8, density=0.004,
@@ -266,7 +266,7 @@ def test_6_async_collection_simulation():
         collector = BackgroundDataCollector(mock_adapter)
         
         # Simulate single collection cycles
-        async def simulate_collection():
+        async def simulate_collection() -> None:
             # Simulate analytics collection
             start_time = time.time()
             analytics_data = await mock_adapter._get_validated_system_metrics()
@@ -306,7 +306,7 @@ def test_6_async_collection_simulation():
         return False
 
 
-def test_7_error_handling():
+def test_7_error_handling() -> None:
     """Test 7: Verify error handling and fallback mechanisms"""
     print("\n=== Test 7: Error Handling ===")
     
@@ -314,7 +314,7 @@ def test_7_error_handling():
         # Create mock adapter that raises errors
         mock_adapter = MagicMock()
         
-        async def failing_method():
+        async def failing_method() -> None:
             raise Exception("Simulated collection failure")
         
         mock_adapter._get_validated_system_metrics = failing_method
@@ -350,7 +350,7 @@ def test_7_error_handling():
         return False
 
 
-def test_8_global_instance_management():
+def test_8_global_instance_management() -> None:
     """Test 8: Verify global instance management"""
     print("\n=== Test 8: Global Instance Management ===")
     
@@ -381,7 +381,7 @@ def test_8_global_instance_management():
         return False
 
 
-def test_9_comprehensive_integration():
+def test_9_comprehensive_integration() -> None:
     """Test 9: Comprehensive integration test"""
     print("\n=== Test 9: Comprehensive Integration ===")
     
@@ -412,9 +412,9 @@ def test_9_comprehensive_integration():
         )
         
         # Mock async methods
-        async def mock_system(): return system_data
-        async def mock_memory(): return memory_data
-        async def mock_graph(): return graph_data
+        async def mock_system() -> None: return system_data
+        async def mock_memory() -> None: return memory_data
+        async def mock_graph() -> None: return graph_data
         
         mock_adapter._get_validated_system_metrics = mock_system
         mock_adapter._get_validated_memory_insights = mock_memory
@@ -429,7 +429,7 @@ def test_9_comprehensive_integration():
         collector = initialize_background_collector(mock_adapter)
         
         # Simulate multiple collection cycles
-        async def run_collection_cycles():
+        async def run_collection_cycles() -> None:
             for i in range(5):
                 # Collect all data types
                 analytics_data = await mock_adapter._get_validated_system_metrics()
@@ -492,7 +492,7 @@ def test_9_comprehensive_integration():
         return False
 
 
-def run_all_tests():
+def run_all_tests() -> None:
     """Run all background collector tests"""
     print("🚀 Starting Background Data Collection System Tests")
     print("=" * 60)

@@ -18,7 +18,7 @@ def setup_page_config(
     page_title: str = "GraphMemory-IDE Analytics",
     page_icon: str = "📊",
     layout: str = "wide"
-):
+) -> None:
     """Setup page configuration with custom styling"""
     st.set_page_config(
         page_title=page_title,
@@ -36,7 +36,7 @@ def setup_page_config(
     load_custom_css()
 
 
-def load_custom_css():
+def load_custom_css() -> None:
     """Load custom CSS styling"""
     try:
         with open('assets/styles.css') as f:
@@ -45,7 +45,7 @@ def load_custom_css():
         logger.warning("Custom CSS file not found, using default styling")
 
 
-def render_sidebar():
+def render_sidebar() -> None:
     """Render enhanced sidebar with navigation and controls"""
     with st.sidebar:
         # Header
@@ -66,7 +66,7 @@ def render_sidebar():
         render_logout_button()
 
 
-def render_navigation():
+def render_navigation() -> None:
     """Render navigation menu"""
     st.header("📍 Navigation")
     
@@ -93,7 +93,7 @@ def render_navigation():
             st.rerun()
 
 
-def render_streaming_controls():
+def render_streaming_controls() -> None:
     """Render streaming control buttons"""
     st.markdown("---")
     st.header("🔄 Streaming Controls")
@@ -142,7 +142,7 @@ def render_streaming_controls():
     st.session_state.refresh_rate = refresh_rate
 
 
-def render_system_status():
+def render_system_status() -> None:
     """Render system status information"""
     st.markdown("---")
     st.header("🔧 System Status")
@@ -179,7 +179,7 @@ def render_system_status():
         logger.error(f"System status error: {e}")
 
 
-def render_main_header(title: str, subtitle: str = None):
+def render_main_header(title: str, subtitle: str = None) -> None:
     """Render main page header"""
     st.title(title)
     if subtitle:
@@ -187,7 +187,7 @@ def render_main_header(title: str, subtitle: str = None):
     st.markdown("---")
 
 
-def render_metrics_grid(metrics: Dict[str, Any], columns: int = 4):
+def render_metrics_grid(metrics: Dict[str, Any], columns: int = 4) -> None:
     """Render metrics in a responsive grid"""
     if not metrics:
         st.warning("📊 No metrics data available")
@@ -215,7 +215,7 @@ def render_metrics_grid(metrics: Dict[str, Any], columns: int = 4):
                 st.metric(label, str(value))
 
 
-def render_chart_container(title: str, chart_component, height: str = "400px"):
+def render_chart_container(title: str, chart_component, height: str = "400px") -> None:
     """Render a chart in a styled container"""
     with st.container():
         st.markdown(f"""
@@ -227,7 +227,7 @@ def render_chart_container(title: str, chart_component, height: str = "400px"):
         chart_component
 
 
-def render_loading_placeholder(message: str = "Loading data..."):
+def render_loading_placeholder(message: str = "Loading data...") -> None:
     """Render loading placeholder"""
     with st.container():
         col1, col2, col3 = st.columns([1, 2, 1])
@@ -235,14 +235,14 @@ def render_loading_placeholder(message: str = "Loading data..."):
             st.info(f"⏳ {message}")
 
 
-def render_error_message(error: str, suggestion: str = None):
+def render_error_message(error: str, suggestion: str = None) -> None:
     """Render error message with optional suggestion"""
     st.error(f"❌ {error}")
     if suggestion:
         st.info(f"💡 {suggestion}")
 
 
-def render_footer():
+def render_footer() -> None:
     """Render dashboard footer"""
     st.markdown("---")
     st.markdown("""

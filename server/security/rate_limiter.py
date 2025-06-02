@@ -65,7 +65,7 @@ class TokenBucket:
     an average rate limit over time.
     """
     
-    def __init__(self, capacity: int, refill_rate: float, burst_allowance: int = 0):
+    def __init__(self, capacity: int, refill_rate: float, burst_allowance: int = 0) -> None:
         """
         Initialize token bucket.
         
@@ -123,7 +123,7 @@ class AdvancedRateLimiter:
     - Per-user and global rate limiting
     """
     
-    def __init__(self, redis_url: str):
+    def __init__(self, redis_url: str) -> None:
         """Initialize rate limiter with Redis connection."""
         self.redis_url = redis_url
         self.redis: Optional[aioredis.Redis] = None
@@ -138,7 +138,7 @@ class AdvancedRateLimiter:
             RateLimitRule("*", RateLimitType.PER_MINUTE, 120, 20, "Global rate limit"),
         ]
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize Redis connection."""
         try:
             self.redis = aioredis.from_url(
@@ -158,7 +158,7 @@ class AdvancedRateLimiter:
             logger.error(f"Failed to connect to Redis for rate limiting: {e}")
             logger.warning("Rate limiter will use local in-memory storage")
     
-    async def close(self):
+    async def close(self) -> None:
         """Close Redis connection."""
         if self.redis:
             await self.redis.aclose()
@@ -327,12 +327,12 @@ class AdvancedRateLimiter:
             # On error, allow request but log the issue
             return True, {}
     
-    def add_rule(self, rule: RateLimitRule):
+    def add_rule(self, rule: RateLimitRule) -> None:
         """Add a new rate limit rule."""
         self.rules.append(rule)
         logger.info(f"Added rate limit rule: {rule.endpoint} - {rule.max_requests}/{rule.rate_type.name}")
     
-    def remove_rule(self, endpoint: str, rate_type: RateLimitType):
+    def remove_rule(self, endpoint: str, rate_type: RateLimitType) -> None:
         """Remove a rate limit rule."""
         self.rules = [
             rule for rule in self.rules 
@@ -372,11 +372,11 @@ class AdvancedRateLimiter:
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """FastAPI middleware for rate limiting."""
     
-    def __init__(self, app: ASGIApp, rate_limiter: AdvancedRateLimiter):
+    def __init__(self, app: ASGIApp, rate_limiter: AdvancedRateLimiter) -> None:
         super().__init__(app)
         self.rate_limiter = rate_limiter
     
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next) -> None:
         """Process request through rate limiter."""
         # Skip rate limiting for health checks and static files
         if request.url.path in ["/health", "/metrics"] or request.url.path.startswith("/static"):
@@ -416,12 +416,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 rate_limiter = AdvancedRateLimiter(settings.RATE_LIMIT_REDIS_URL)
 
 
-async def initialize_rate_limiter():
+async def initialize_rate_limiter() -> None:
     """Initialize the global rate limiter."""
     await rate_limiter.initialize()
 
 
-async def close_rate_limiter():
+async def close_rate_limiter() -> None:
     """Close the global rate limiter."""
     await rate_limiter.close()
 

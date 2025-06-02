@@ -60,7 +60,7 @@ class DragonflyConnectionManager:
     connection pooling, and performance metrics.
     """
     
-    def __init__(self, config: DragonflyConfig):
+    def __init__(self, config: DragonflyConfig) -> None:
         self.config = config
         self.pool: Optional[redis.ConnectionPool] = None
         self.redis_client: Optional[redis.Redis] = None
@@ -75,7 +75,7 @@ class DragonflyConnectionManager:
         }
         self._is_healthy = False
         
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize DragonflyDB connection pool"""
         try:
             logger.info(f"Initializing DragonflyDB connection to {self.config.host}:{self.config.port}")
@@ -109,7 +109,7 @@ class DragonflyConnectionManager:
             logger.error(f"Failed to initialize DragonflyDB connection: {e}")
             raise
     
-    async def _test_connection(self):
+    async def _test_connection(self) -> None:
         """Test the DragonflyDB connection"""
         if not self.redis_client:
             raise ConnectionError("Redis client not initialized")
@@ -133,7 +133,7 @@ class DragonflyConnectionManager:
             logger.error(f"DragonflyDB connection test failed: {e}")
             raise
     
-    async def _health_monitor(self):
+    async def _health_monitor(self) -> None:
         """Background task to monitor DragonflyDB health"""
         while True:
             try:
@@ -155,7 +155,7 @@ class DragonflyConnectionManager:
                 logger.warning(f"Health check failed: {e}")
                 self._is_healthy = False
     
-    def _update_performance_stats(self, command_success: bool = True, latency_ms: float = 0.0):
+    def _update_performance_stats(self, command_success: bool = True, latency_ms: float = 0.0) -> None:
         """Update performance statistics"""
         total_commands = self._performance_stats["total_commands"]
         if isinstance(total_commands, (int, float)):
@@ -175,7 +175,7 @@ class DragonflyConnectionManager:
                 )
     
     @asynccontextmanager
-    async def get_client(self):
+    async def get_client(self) -> None:
         """Get Redis client with performance tracking"""
         if not self.redis_client:
             raise ConnectionError("DragonflyDB client not initialized")
@@ -259,7 +259,7 @@ class DragonflyConnectionManager:
         logger.info(f"Benchmark completed: {benchmark_results}")
         return benchmark_results
     
-    async def close(self):
+    async def close(self) -> None:
         """Close DragonflyDB connections"""
         try:
             if self._health_check_task:
@@ -294,7 +294,7 @@ async def get_dragonfly_client() -> redis.Redis:
     
     return _connection_manager.redis_client
 
-async def initialize_dragonfly(config: Optional[DragonflyConfig] = None):
+async def initialize_dragonfly(config: Optional[DragonflyConfig] = None) -> None:
     """Initialize global DragonflyDB connection"""
     global _connection_manager
     
@@ -304,7 +304,7 @@ async def initialize_dragonfly(config: Optional[DragonflyConfig] = None):
     _connection_manager = DragonflyConnectionManager(config)
     await _connection_manager.initialize()
 
-async def close_dragonfly():
+async def close_dragonfly() -> None:
     """Close global DragonflyDB connection"""
     global _connection_manager
     if _connection_manager:

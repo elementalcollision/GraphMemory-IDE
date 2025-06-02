@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class TestDatabaseIntegration:
     """Integration tests for multi-database system"""
     
-    async def test_postgresql_connectivity(self, async_session: AsyncSession):
+    async def test_postgresql_connectivity(self, async_session: AsyncSession) -> None:
         """Test PostgreSQL database connectivity"""
         # Test basic connection
         result = await async_session.execute(text("SELECT 1 as test"))
@@ -48,7 +48,7 @@ class TestDatabaseIntegration:
         
         logger.info(f"PostgreSQL connected: {version}")
     
-    async def test_postgresql_schema_creation(self, async_session: AsyncSession):
+    async def test_postgresql_schema_creation(self, async_session: AsyncSession) -> None:
         """Test PostgreSQL schema creation and validation"""
         # Check if all required tables exist
         expected_tables = [
@@ -69,7 +69,7 @@ class TestDatabaseIntegration:
         
         logger.info("All PostgreSQL tables exist")
     
-    async def test_postgresql_indexes(self, async_session: AsyncSession):
+    async def test_postgresql_indexes(self, async_session: AsyncSession) -> None:
         """Test PostgreSQL index creation and validation"""
         # Check for important indexes
         result = await async_session.execute(text("""
@@ -92,7 +92,7 @@ class TestDatabaseIntegration:
         logger.info(f"Found {index_count} indexes in PostgreSQL")
     
     @pytest.mark.skipif(not pytest.kuzu_available, reason="Kuzu not available")
-    async def test_kuzu_connectivity(self):
+    async def test_kuzu_connectivity(self) -> None:
         """Test Kuzu graph database connectivity"""
         try:
             from server.graph_database import get_graph_database
@@ -111,7 +111,7 @@ class TestDatabaseIntegration:
             pytest.skip("Kuzu dependencies not available")
     
     @pytest.mark.skipif(not pytest.kuzu_available, reason="Kuzu not available")
-    async def test_kuzu_schema_creation(self):
+    async def test_kuzu_schema_creation(self) -> None:
         """Test Kuzu graph database schema creation"""
         try:
             from server.graph_database import get_graph_database
@@ -137,7 +137,7 @@ class TestDatabaseIntegration:
         except ImportError:
             pytest.skip("Kuzu dependencies not available")
     
-    async def test_data_insertion_postgresql(self, async_session: AsyncSession, sample_users: List[Dict]):
+    async def test_data_insertion_postgresql(self, async_session: AsyncSession, sample_users: List[Dict]) -> None:
         """Test data insertion into PostgreSQL"""
         from server.database_models import User
         
@@ -157,7 +157,7 @@ class TestDatabaseIntegration:
         logger.info(f"Inserted {len(sample_users)} users into PostgreSQL")
     
     @pytest.mark.skipif(not pytest.kuzu_available, reason="Kuzu not available")
-    async def test_data_insertion_kuzu(self):
+    async def test_data_insertion_kuzu(self) -> None:
         """Test data insertion into Kuzu graph database"""
         try:
             from server.graph_database import get_graph_database
@@ -196,7 +196,7 @@ class TestDatabaseIntegration:
             pytest.skip("Kuzu dependencies not available")
     
     @pytest.mark.skipif(not pytest.kuzu_available, reason="Kuzu not available")
-    async def test_database_synchronization(self, async_session: AsyncSession):
+    async def test_database_synchronization(self, async_session: AsyncSession) -> None:
         """Test data synchronization between PostgreSQL and Kuzu"""
         try:
             from server.database_sync import get_database_synchronizer
@@ -242,7 +242,7 @@ class TestDatabaseIntegration:
         except ImportError:
             pytest.skip("Synchronization dependencies not available")
     
-    async def test_transaction_handling(self, async_session: AsyncSession):
+    async def test_transaction_handling(self, async_session: AsyncSession) -> None:
         """Test transaction handling and rollback"""
         from server.database_models import User
         
@@ -291,7 +291,7 @@ class TestDatabaseIntegration:
         
         logger.info("Transaction handling test passed")
     
-    async def test_performance_benchmarks(self, async_session: AsyncSession):
+    async def test_performance_benchmarks(self, async_session: AsyncSession) -> None:
         """Test performance benchmarks for database operations"""
         from server.database_models import TelemetryEvent
         
@@ -336,11 +336,11 @@ class TestDatabaseIntegration:
         
         logger.info(f"Performance: Insert {len(events)} events in {insert_time:.3f}s, Query in {query_time:.3f}s")
     
-    async def test_concurrent_operations(self, async_session: AsyncSession):
+    async def test_concurrent_operations(self, async_session: AsyncSession) -> None:
         """Test concurrent database operations"""
         from server.database_models import User
         
-        async def create_users(session: AsyncSession, start_idx: int, count: int):
+        async def create_users(session: AsyncSession, start_idx: int, count: int) -> None:
             """Helper function to create users concurrently"""
             users = []
             for i in range(count):
@@ -379,7 +379,7 @@ class TestDatabaseIntegration:
         
         logger.info(f"Concurrent operations test passed: {total_users_created} users created")
     
-    async def test_error_handling_and_recovery(self, async_session: AsyncSession):
+    async def test_error_handling_and_recovery(self, async_session: AsyncSession) -> None:
         """Test error handling and recovery mechanisms"""
         from server.database_models import User
         
@@ -437,7 +437,7 @@ class TestDatabaseIntegration:
         
         logger.info("Error handling and recovery test passed")
     
-    async def test_data_consistency(self, async_session: AsyncSession):
+    async def test_data_consistency(self, async_session: AsyncSession) -> None:
         """Test data consistency across operations"""
         from server.database_models import User, TelemetryEvent
         
@@ -489,7 +489,7 @@ class TestDatabaseIntegration:
 class TestDatabaseHealth:
     """Health check tests for database systems"""
     
-    async def test_postgresql_health_check(self, async_session: AsyncSession):
+    async def test_postgresql_health_check(self, async_session: AsyncSession) -> None:
         """Test PostgreSQL health check functionality"""
         # Basic connectivity
         result = await async_session.execute(text("SELECT 1"))
@@ -519,7 +519,7 @@ class TestDatabaseHealth:
         logger.info(f"PostgreSQL health check passed: {table_count} tables, {connection_count} connections")
     
     @pytest.mark.skipif(not pytest.kuzu_available, reason="Kuzu not available")
-    async def test_kuzu_health_check(self):
+    async def test_kuzu_health_check(self) -> None:
         """Test Kuzu graph database health check"""
         try:
             from server.graph_database import get_graph_database
@@ -542,7 +542,7 @@ class TestDatabaseHealth:
         except ImportError:
             pytest.skip("Kuzu dependencies not available")
     
-    async def test_system_resource_monitoring(self):
+    async def test_system_resource_monitoring(self) -> None:
         """Test system resource monitoring capabilities"""
         import psutil
         
@@ -570,7 +570,7 @@ class TestDatabaseHealth:
             logger.warning(f"High disk usage: {disk.percent}%")
 
 # Pytest configuration and fixtures
-def pytest_configure(config):
+def pytest_configure(config) -> None:
     """Configure pytest for database integration tests"""
     # Check if Kuzu is available
     try:
@@ -586,7 +586,7 @@ def pytest_configure(config):
     )
 
 @pytest.fixture(scope="session")
-def event_loop():
+def event_loop() -> None:
     """Create an instance of the default event loop for the test session."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop

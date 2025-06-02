@@ -59,7 +59,7 @@ class JWTRotationManager:
     High-level JWT key rotation manager with monitoring and automation.
     """
     
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None) -> None:
         # Load configuration
         self.config = self._load_config(config_path)
         
@@ -254,7 +254,7 @@ class JWTRotationManager:
         logger.info(f"Logged rotation event: {old_key_id} -> {new_key_id}")
 
 
-async def main():
+async def main() -> None:
     """Main entry point for the rotation script"""
     parser = argparse.ArgumentParser(description="JWT Key Rotation Management")
     parser.add_argument('--rotate-now', action='store_true', help='Perform immediate key rotation')

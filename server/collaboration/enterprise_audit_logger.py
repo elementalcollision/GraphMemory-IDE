@@ -57,13 +57,13 @@ except ImportError:
     
     class asyncpg:
         class Pool:
-            async def acquire(self):
+            async def acquire(self) -> None:
                 raise ImportError("asyncpg not available")
-            async def close(self):
+            async def close(self) -> None:
                 pass
         
         @staticmethod
-        async def create_pool(*args, **kwargs):
+        async def create_pool(*args, **kwargs) -> None:
             raise ImportError("asyncpg not available")
 
 try:
@@ -157,7 +157,7 @@ class AuditEvent:
     response_time_ms: Optional[float] = None
     integrity_hash: Optional[str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Calculate integrity hash for tamper-proof logging"""
         if not self.integrity_hash:
             self.integrity_hash = self._calculate_integrity_hash()
@@ -227,7 +227,7 @@ class EnterpriseAuditLogger:
         batch_timeout_seconds: int = 5,
         enable_integrity_verification: bool = True,
         performance_monitoring: bool = True
-    ):
+    ) -> None:
         """
         Initialize Enterprise Audit Logger
         
@@ -263,7 +263,7 @@ class EnterpriseAuditLogger:
         
         self.logger = logging.getLogger(__name__)
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize database connection pool and background processing"""
         try:
             # Create database connection pool only if asyncpg is available
@@ -339,7 +339,7 @@ class EnterpriseAuditLogger:
         tenant_context: Optional[TenantContext] = None,
         processing_time_ms: Optional[float] = None,
         error_message: Optional[str] = None
-    ):
+    ) -> None:
         """Log audit event for HTTP request with comprehensive context"""
         
         # Determine event type based on request
@@ -385,7 +385,7 @@ class EnterpriseAuditLogger:
         
         await self.log_audit_event(event)
 
-    async def _background_processor(self):
+    async def _background_processor(self) -> None:
         """Background processor for batch audit log storage"""
         batch = []
         last_batch_time = time.time()
@@ -422,7 +422,7 @@ class EnterpriseAuditLogger:
                 self.logger.error(f"Error in background audit processor: {e}")
                 await asyncio.sleep(1)  # Brief pause before retry
 
-    async def _process_batch(self, batch: List[AuditEvent]):
+    async def _process_batch(self, batch: List[AuditEvent]) -> None:
         """Process batch of audit events for database storage"""
         if not batch:
             return
@@ -492,7 +492,7 @@ class EnterpriseAuditLogger:
         except Exception as e:
             self.logger.error(f"Unexpected error processing audit batch: {e}")
 
-    async def _create_audit_tables(self):
+    async def _create_audit_tables(self) -> None:
         """Create audit tables with time-series optimization"""
         if not HAS_ASYNCPG or not self._db_pool:
             return
@@ -651,7 +651,7 @@ class EnterpriseAuditLogger:
             'integrity_failures': self.integrity_failures
         }
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup resources and shutdown background processing"""
         # Signal shutdown
         self._shutdown_event.set()
@@ -684,11 +684,11 @@ class EnterpriseAuditLogger:
 class AuditMiddleware(BaseHTTPMiddleware):
     """FastAPI middleware for automatic audit logging"""
     
-    def __init__(self, app: ASGIApp, audit_logger: EnterpriseAuditLogger):
+    def __init__(self, app: ASGIApp, audit_logger: EnterpriseAuditLogger) -> None:
         super().__init__(app)
         self.audit_logger = audit_logger
     
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next) -> None:
         start_time = time.time()
         
         # Get tenant context if available

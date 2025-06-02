@@ -70,7 +70,7 @@ class SSOProvider(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     created_by = Column(UUID(as_uuid=True))
     
-    def __repr__(self):
+    def __repr__(self) -> None:
         return f"<SSOProvider(name='{self.name}', type='{self.type}', enabled={self.enabled})>"
     
     def to_dict(self) -> Dict[str, Any]:

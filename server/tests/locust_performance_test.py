@@ -8,7 +8,7 @@ Run with: locust -f server/tests/locust_performance_test.py --host=http://localh
 import json
 import random
 import time
-from locust import HttpUser, task, between  # type: ignore
+from locust import HttpUser, task, between
 from typing import Dict, Any, List
 
 
@@ -21,7 +21,7 @@ class AnalyticsUser(HttpUser):
     entity_ids: List[str]
     analytics_types: List[str]
     
-    def on_start(self):
+    def on_start(self) -> None:
         """Setup for each user session"""
         self.entity_ids = [f"entity_{i}" for i in range(1, 101)]
         self.analytics_types = [
@@ -33,42 +33,42 @@ class AnalyticsUser(HttpUser):
         ]
     
     @task
-    def test_centrality_analysis_high_weight(self):
+    def test_centrality_analysis_high_weight(self) -> None:
         """Test centrality analysis endpoint - high frequency"""
         # Execute 3 times to simulate higher weight
         for _ in range(3):
             self._test_centrality_analysis()
     
     @task
-    def test_community_detection_medium_weight(self):
+    def test_community_detection_medium_weight(self) -> None:
         """Test community detection endpoint - medium frequency"""
         # Execute 2 times to simulate medium weight
         for _ in range(2):
             self._test_community_detection()
     
     @task
-    def test_path_analysis_medium_weight(self):
+    def test_path_analysis_medium_weight(self) -> None:
         """Test path analysis endpoint - medium frequency"""
         # Execute 2 times to simulate medium weight
         for _ in range(2):
             self._test_path_analysis()
     
     @task
-    def test_similarity_analysis(self):
+    def test_similarity_analysis(self) -> None:
         """Test similarity analysis endpoint"""
         self._test_similarity_analysis()
     
     @task
-    def test_graph_metrics(self):
+    def test_graph_metrics(self) -> None:
         """Test graph metrics endpoint"""
         self._test_graph_metrics()
     
     @task
-    def test_batch_analytics(self):
+    def test_batch_analytics(self) -> None:
         """Test batch analytics endpoint"""
         self._test_batch_analytics()
     
-    def _test_centrality_analysis(self):
+    def _test_centrality_analysis(self) -> None:
         """Test centrality analysis endpoint"""
         payload = {
             "analytics_type": "centrality",
@@ -89,15 +89,15 @@ class AnalyticsUser(HttpUser):
                 try:
                     result = response.json()
                     if "execution_time_ms" in result:
-                        response.success()  # type: ignore
+                        response.success()
                     else:
-                        response.failure("Missing execution_time_ms in response")  # type: ignore
+                        response.failure("Missing execution_time_ms in response")
                 except json.JSONDecodeError:
-                    response.failure("Invalid JSON response")  # type: ignore
+                    response.failure("Invalid JSON response")
             else:
-                response.failure(f"HTTP {response.status_code}")  # type: ignore
+                response.failure(f"HTTP {response.status_code}")
     
-    def _test_community_detection(self):
+    def _test_community_detection(self) -> None:
         """Test community detection endpoint"""
         payload = {
             "analytics_type": "community_detection",
@@ -126,7 +126,7 @@ class AnalyticsUser(HttpUser):
             else:
                 response.failure(f"HTTP {response.status_code}")
     
-    def _test_path_analysis(self):
+    def _test_path_analysis(self) -> None:
         """Test path analysis endpoint"""
         source_entity = random.choice(self.entity_ids)
         target_entity = random.choice(self.entity_ids)
@@ -158,7 +158,7 @@ class AnalyticsUser(HttpUser):
             else:
                 response.failure(f"HTTP {response.status_code}")
     
-    def _test_similarity_analysis(self):
+    def _test_similarity_analysis(self) -> None:
         """Test similarity analysis endpoint"""
         entity_id = random.choice(self.entity_ids)
         
@@ -189,7 +189,7 @@ class AnalyticsUser(HttpUser):
             else:
                 response.failure(f"HTTP {response.status_code}")
     
-    def _test_graph_metrics(self):
+    def _test_graph_metrics(self) -> None:
         """Test graph metrics endpoint"""
         with self.client.get(
             "/analytics/graph-metrics",
@@ -207,7 +207,7 @@ class AnalyticsUser(HttpUser):
             else:
                 response.failure(f"HTTP {response.status_code}")
     
-    def _test_batch_analytics(self):
+    def _test_batch_analytics(self) -> None:
         """Test batch analytics endpoint"""
         batch_requests = []
         
@@ -257,7 +257,7 @@ class HighVolumeUser(HttpUser):
     # Initialize attributes with proper typing
     cached_requests: List[Dict[str, Any]]
     
-    def on_start(self):
+    def on_start(self) -> None:
         """Setup for high-volume testing"""
         self.cached_requests = [
             {
@@ -271,7 +271,7 @@ class HighVolumeUser(HttpUser):
         ] * 10  # Same request to test caching
     
     @task
-    def test_high_volume_centrality(self):
+    def test_high_volume_centrality(self) -> None:
         """High-volume centrality requests for stress testing"""
         payload = random.choice(self.cached_requests)
         
@@ -303,26 +303,26 @@ class RealtimeAnalyticsUser(HttpUser):
     session_id: str
     entity_sequence: List[str]
     
-    def on_start(self):
+    def on_start(self) -> None:
         """Setup for real-time testing"""
         self.session_id = f"session_{random.randint(1000, 9999)}"
         self.entity_sequence = []
     
     @task
-    def test_realtime_pattern_detection_high_priority(self):
+    def test_realtime_pattern_detection_high_priority(self) -> None:
         """Test real-time pattern detection - high priority"""
         # Execute 4 times to simulate higher priority
         for _ in range(4):
             self._test_realtime_pattern_detection()
     
     @task
-    def test_realtime_recommendations_medium_priority(self):
+    def test_realtime_recommendations_medium_priority(self) -> None:
         """Test real-time recommendation generation - medium priority"""
         # Execute 2 times to simulate medium priority
         for _ in range(2):
             self._test_realtime_recommendations()
     
-    def _test_realtime_pattern_detection(self):
+    def _test_realtime_pattern_detection(self) -> None:
         """Test real-time pattern detection"""
         # Simulate user behavior pattern
         entity_id = f"user_action_{len(self.entity_sequence)}"
@@ -356,7 +356,7 @@ class RealtimeAnalyticsUser(HttpUser):
             else:
                 response.failure(f"HTTP {response.status_code}")
     
-    def _test_realtime_recommendations(self):
+    def _test_realtime_recommendations(self) -> None:
         """Test real-time recommendation generation"""
         if not self.entity_sequence:
             return
@@ -396,25 +396,25 @@ class AdminUser(HttpUser):
     wait_time = between(5, 15)  # Admin checks are less frequent
     
     @task
-    def test_gateway_stats_medium_priority(self):
+    def test_gateway_stats_medium_priority(self) -> None:
         """Check gateway statistics - medium priority"""
         # Execute 2 times for medium priority
         for _ in range(2):
             self._test_gateway_stats()
     
     @task
-    def test_service_registry_status_medium_priority(self):
+    def test_service_registry_status_medium_priority(self) -> None:
         """Check service registry status - medium priority"""
         # Execute 2 times for medium priority
         for _ in range(2):
             self._test_service_registry_status()
     
     @task
-    def test_analytics_engine_health(self):
+    def test_analytics_engine_health(self) -> None:
         """Check analytics engine health"""
         self._test_analytics_engine_health()
     
-    def _test_gateway_stats(self):
+    def _test_gateway_stats(self) -> None:
         """Check gateway statistics"""
         with self.client.get(
             "/analytics/gateway/stats",
@@ -432,7 +432,7 @@ class AdminUser(HttpUser):
             else:
                 response.failure(f"HTTP {response.status_code}")
     
-    def _test_service_registry_status(self):
+    def _test_service_registry_status(self) -> None:
         """Check service registry status"""
         with self.client.get(
             "/analytics/services/status",
@@ -450,7 +450,7 @@ class AdminUser(HttpUser):
             else:
                 response.failure(f"HTTP {response.status_code}")
     
-    def _test_analytics_engine_health(self):
+    def _test_analytics_engine_health(self) -> None:
         """Check analytics engine health"""
         with self.client.get(
             "/analytics/health",

@@ -61,15 +61,15 @@ class LoadTestResult:
 class APILoadTester:
     """Load testing for API endpoints."""
     
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8000") -> None:
         self.base_url = base_url
         self.session: Optional[aiohttp.ClientSession] = None
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the load tester."""
         self.session = aiohttp.ClientSession()
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the load tester."""
         if self.session:
             await self.session.close()
@@ -204,7 +204,7 @@ class APILoadTester:
 class DatabaseLoadTester:
     """Load testing for database operations."""
     
-    def __init__(self, db_pool: asyncpg.Pool):
+    def __init__(self, db_pool: asyncpg.Pool) -> None:
         self.db_pool = db_pool
     
     async def _execute_query(self, query: str, params: List[Any] = None) -> Tuple[float, bool, str]:
@@ -297,7 +297,7 @@ class DatabaseLoadTester:
 class WebSocketLoadTester:
     """Load testing for WebSocket connections."""
     
-    def __init__(self, ws_url: str = "ws://localhost:8000/ws"):
+    def __init__(self, ws_url: str = "ws://localhost:8000/ws") -> None:
         self.ws_url = ws_url
     
     async def _websocket_client(self, client_id: int, config: LoadTestConfig) -> List[Tuple[float, bool, str]]:
@@ -409,17 +409,17 @@ class WebSocketLoadTester:
 class LoadTestSuite:
     """Comprehensive load testing suite."""
     
-    def __init__(self, db_pool: asyncpg.Pool, base_url: str = "http://localhost:8000"):
+    def __init__(self, db_pool: asyncpg.Pool, base_url: str = "http://localhost:8000") -> None:
         self.db_pool = db_pool
         self.api_tester = APILoadTester(base_url)
         self.db_tester = DatabaseLoadTester(db_pool)
         self.ws_tester = WebSocketLoadTester(base_url.replace("http", "ws") + "/ws")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize all testers."""
         await self.api_tester.initialize()
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown all testers."""
         await self.api_tester.shutdown()
     
@@ -500,7 +500,7 @@ class LoadTestSuite:
 _load_test_suite: Optional[LoadTestSuite] = None
 
 
-async def initialize_load_test_suite(db_pool: asyncpg.Pool, base_url: str = "http://localhost:8000"):
+async def initialize_load_test_suite(db_pool: asyncpg.Pool, base_url: str = "http://localhost:8000") -> None:
     """Initialize load test suite."""
     global _load_test_suite
     _load_test_suite = LoadTestSuite(db_pool, base_url)
@@ -512,7 +512,7 @@ def get_load_test_suite() -> Optional[LoadTestSuite]:
     return _load_test_suite
 
 
-async def shutdown_load_test_suite():
+async def shutdown_load_test_suite() -> None:
     """Shutdown load test suite."""
     global _load_test_suite
     if _load_test_suite:

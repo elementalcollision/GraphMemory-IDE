@@ -49,7 +49,7 @@ class StreamingAnalyticsPipeline:
     Main orchestrator for the streaming analytics pipeline
     """
     
-    def __init__(self, dragonfly_config: Optional[DragonflyConfig] = None):
+    def __init__(self, dragonfly_config: Optional[DragonflyConfig] = None) -> None:
         self.dragonfly_config = dragonfly_config or DragonflyConfig.from_env()
         self._initialized = False
         self._components_status = {
@@ -59,7 +59,7 @@ class StreamingAnalyticsPipeline:
             "websocket_service": False
         }
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the complete streaming analytics pipeline"""
         if self._initialized:
             logger.warning("Streaming analytics pipeline already initialized")
@@ -109,7 +109,7 @@ class StreamingAnalyticsPipeline:
             await self.shutdown()  # Clean up partial initialization
             raise
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the streaming analytics pipeline"""
         if not self._initialized:
             return
@@ -310,7 +310,7 @@ class StreamingAnalyticsPipeline:
             logger.error(f"Benchmark failed: {e}")
             return {"error": str(e)}
     
-    async def _log_initialization_summary(self):
+    async def _log_initialization_summary(self) -> None:
         """Log initialization summary"""
         try:
             system_status = await self.get_system_status()
@@ -332,7 +332,7 @@ class StreamingAnalyticsPipeline:
 # Global pipeline instance
 _streaming_pipeline: Optional[StreamingAnalyticsPipeline] = None
 
-async def initialize_streaming_analytics(dragonfly_config: Optional[DragonflyConfig] = None):
+async def initialize_streaming_analytics(dragonfly_config: Optional[DragonflyConfig] = None) -> None:
     """Initialize the global streaming analytics pipeline"""
     global _streaming_pipeline
     
@@ -344,7 +344,7 @@ async def initialize_streaming_analytics(dragonfly_config: Optional[DragonflyCon
     await _streaming_pipeline.initialize()
     return _streaming_pipeline
 
-async def shutdown_streaming_analytics():
+async def shutdown_streaming_analytics() -> None:
     """Shutdown the global streaming analytics pipeline"""
     global _streaming_pipeline
     
@@ -370,7 +370,7 @@ async def produce_memory_operation_event(
     relation_count: int = 0,
     processing_time_ms: float = 0.0,
     additional_data: Optional[Dict[str, Any]] = None
-):
+) -> None:
     """Convenience function to produce memory operation events"""
     try:
         producer = await get_stream_producer()
@@ -393,7 +393,7 @@ async def produce_user_interaction_event(
     session_id: Optional[str] = None,
     duration_ms: float = 0.0,
     additional_data: Optional[Dict[str, Any]] = None
-):
+) -> None:
     """Convenience function to produce user interaction events"""
     try:
         producer = await get_stream_producer()
@@ -413,7 +413,7 @@ async def produce_system_metric_event(
     metric_value: float,
     metric_unit: str = "count",
     additional_data: Optional[Dict[str, Any]] = None
-):
+) -> None:
     """Convenience function to produce system metric events"""
     try:
         producer = await get_stream_producer()

@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass
 from enum import Enum
+from types import TracebackType
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class KuzuAnalyticsEngine:
     and specialized analytics operations for memory graphs.
     """
 
-    def __init__(self, kuzu_connection):
+    def __init__(self, kuzu_connection: Any) -> None:
         self.connection = kuzu_connection
         self.query_cache: Dict[str, Tuple[Dict[str, Any], float]] = {}
         self.cache_ttl = 600  # 10 minutes for graph analytics

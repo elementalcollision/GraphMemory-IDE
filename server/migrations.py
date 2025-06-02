@@ -21,13 +21,13 @@ logger = logging.getLogger(__name__)
 class MigrationManager:
     """Manual migration management for development and testing"""
     
-    def __init__(self, database_url: str):
+    def __init__(self, database_url: str) -> None:
         """Initialize with database connection"""
         self.database_url = database_url
         self.engine = create_async_engine(database_url, echo=True)
         self.async_session = async_sessionmaker(self.engine, class_=AsyncSession)
 
-    async def close(self):
+    async def close(self) -> None:
         """Close database connections"""
         await self.engine.dispose()
 
@@ -43,7 +43,7 @@ class MigrationManager:
             logger.error(f"❌ Database connection failed: {e}")
             return False
 
-    async def create_database_if_not_exists(self, database_name: str = "graphmemory_dev"):
+    async def create_database_if_not_exists(self, database_name: str = "graphmemory_dev") -> None:
         """Create database if it doesn't exist"""
         # Extract connection params without database name
         if "postgresql" in self.database_url:
@@ -330,7 +330,7 @@ class MigrationManager:
             return False
 
 
-async def main():
+async def main() -> None:
     """Main migration function"""
     # Default development database URL
     database_url = "postgresql+asyncpg://graphmemory:graphmemory@localhost:5432/graphmemory_dev"

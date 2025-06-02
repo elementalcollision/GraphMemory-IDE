@@ -4,7 +4,7 @@ Provides secure, environment-specific settings with validation and secrets manag
 """
 
 import secrets
-from typing import List, Optional
+from typing import List, Optional, Union, Any, Tuple
 from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 
@@ -80,14 +80,14 @@ class ServerSettings(BaseModel):
     
     @field_validator('WORKERS')
     @classmethod
-    def validate_workers(cls, v, info):
+    def validate_workers(cls, v: int, info: Any) -> int:
         if info.data.get('ENVIRONMENT') == Environment.PRODUCTION and v < 2:
             return 4  # Minimum workers for production
         return v
     
     @field_validator('DEBUG')
     @classmethod
-    def validate_debug(cls, v, info):
+    def validate_debug(cls, v: bool, info: Any) -> bool:
         if info.data.get('ENVIRONMENT') == Environment.PRODUCTION:
             return False  # Never debug in production
         return v
@@ -142,14 +142,14 @@ class SecurityHeadersSettings(BaseModel):
     
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod
-    def parse_cors_origins(cls, v):
+    def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
             return [i.strip() for i in v.split(',')]
         return v
     
     @field_validator('ALLOWED_HOSTS', mode='before')
     @classmethod
-    def parse_allowed_hosts(cls, v):
+    def parse_allowed_hosts(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
             return [i.strip() for i in v.split(',')]
         return v
@@ -204,12 +204,12 @@ class Settings(BaseModel):
     
     @field_validator('ENVIRONMENT', mode='before')
     @classmethod
-    def validate_environment(cls, v):
+    def validate_environment(cls, v: Union[str, Environment]) -> Environment:
         """Ensure environment is valid"""
         if isinstance(v, str):
-            v = v.lower()
+            v_lower = v.lower()
             try:
-                return Environment(v)
+                return Environment(v_lower)
             except ValueError:
                 return Environment.DEVELOPMENT
         return v
@@ -272,10 +272,10 @@ class Settings(BaseModel):
         @classmethod
         def customise_sources(
             cls,
-            init_settings,
-            env_settings,
-            file_secret_settings,
-        ):
+            init_settings: Any,
+            env_settings: Any,
+            file_secret_settings: Any,
+        ) -> Tuple[Any, Any, Any]:
             """Customize settings sources priority"""
             return (
                 init_settings,

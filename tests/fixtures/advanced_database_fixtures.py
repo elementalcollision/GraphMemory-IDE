@@ -53,7 +53,7 @@ class DatabasePerformanceMetrics:
 class DatabaseConnectionPoolManager:
     """Advanced connection pool management for multi-database testing."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.pools: Dict[str, Dict[str, Any]] = {}
         self.pool_metrics: Dict[str, ConnectionPoolMetrics] = {}
         self.performance_monitor = DatabasePerformanceMonitor()
@@ -272,7 +272,7 @@ class DatabaseConnectionPoolManager:
         
         return connection
     
-    async def return_connection(self, pool_id: str, connection_id: str):
+    async def return_connection(self, pool_id: str, connection_id: str) -> None:
         """Return connection to pool."""
         if connection_id in self.active_connections:
             del self.active_connections[connection_id]
@@ -290,7 +290,7 @@ class DatabaseConnectionPoolManager:
         for pool_id, pool in self.pools.items():
             pool_type = pool["pool_type"]
             
-            async def test_pool_connection(conn_num: int):
+            async def test_pool_connection(conn_num: int) -> None:
                 """Test individual pool connection."""
                 start_time = time.time()
                 
@@ -343,7 +343,7 @@ class DatabaseConnectionPoolManager:
         
         return results
     
-    async def _initialize_kuzu_test_schema(self, conn: kuzu.Connection):
+    async def _initialize_kuzu_test_schema(self, conn: kuzu.Connection) -> None:
         """Initialize Kuzu test schema."""
         schema_queries = [
             "CREATE NODE TABLE IF NOT EXISTS TestUser(id INT64, name STRING, email STRING, PRIMARY KEY(id))",
@@ -359,7 +359,7 @@ class DatabaseConnectionPoolManager:
                 if "already exists" not in str(e).lower():
                     print(f"Warning: Failed to execute Kuzu schema query: {e}")
     
-    async def _configure_sqlite_connection(self, db: Database, config: Dict[str, Any]):
+    async def _configure_sqlite_connection(self, db: Database, config: Dict[str, Any]) -> None:
         """Configure SQLite connection with optimal settings."""
         config_queries = [
             f"PRAGMA journal_mode = {config['journal_mode']}",
@@ -375,7 +375,7 @@ class DatabaseConnectionPoolManager:
             except Exception as e:
                 print(f"Warning: Failed to configure SQLite: {e}")
     
-    async def _initialize_sqlite_test_schema(self, db: Database):
+    async def _initialize_sqlite_test_schema(self, db: Database) -> None:
         """Initialize SQLite test schema."""
         schema_sql = """
         CREATE TABLE IF NOT EXISTS test_users (
@@ -459,7 +459,7 @@ class DatabaseConnectionPoolManager:
         except Exception as e:
             return {"success": False, "error": str(e)}
     
-    async def _cleanup_kuzu_pool(self, db_path: Path):
+    async def _cleanup_kuzu_pool(self, db_path: Path) -> None:
         """Cleanup Kuzu pool resources."""
         try:
             if db_path.exists():
@@ -468,7 +468,7 @@ class DatabaseConnectionPoolManager:
         except Exception:
             pass
     
-    async def _cleanup_redis_pool(self, connections: List[Dict[str, Any]]):
+    async def _cleanup_redis_pool(self, connections: List[Dict[str, Any]]) -> None:
         """Cleanup Redis pool connections."""
         for conn in connections:
             try:
@@ -478,7 +478,7 @@ class DatabaseConnectionPoolManager:
             except Exception:
                 pass
     
-    async def _cleanup_sqlite_pool(self, connections: List[Dict[str, Any]], db_path: str):
+    async def _cleanup_sqlite_pool(self, connections: List[Dict[str, Any]], db_path: str) -> None:
         """Cleanup SQLite pool connections."""
         for conn in connections:
             try:
@@ -492,7 +492,7 @@ class DatabaseConnectionPoolManager:
         except Exception:
             pass
     
-    async def cleanup_all_pools(self):
+    async def cleanup_all_pools(self) -> None:
         """Cleanup all connection pools."""
         for pool_id, pool in self.pools.items():
             cleanup_tasks = pool.get("cleanup_tasks", [])
@@ -513,7 +513,7 @@ class DatabaseConnectionPoolManager:
 class TransactionCoordinator:
     """Cross-database transaction management with ACID guarantees."""
     
-    def __init__(self, pool_manager: DatabaseConnectionPoolManager):
+    def __init__(self, pool_manager: DatabaseConnectionPoolManager) -> None:
         self.pool_manager = pool_manager
         self.active_transactions: Dict[str, Dict[str, Any]] = {}
         self.transaction_timeout = 30.0  # 30 seconds
@@ -567,7 +567,7 @@ class TransactionCoordinator:
             if transaction_id in self.active_transactions:
                 del self.active_transactions[transaction_id]
     
-    async def _start_database_transaction(self, db_type: str, conn: Dict[str, Any], isolation_level: str):
+    async def _start_database_transaction(self, db_type: str, conn: Dict[str, Any], isolation_level: str) -> None:
         """Start transaction for specific database type."""
         if db_type == "sqlite":
             # SQLite transaction using databases library
@@ -585,7 +585,7 @@ class TransactionCoordinator:
             # Kuzu doesn't have explicit transactions, use connection-level consistency
             pass
     
-    async def _commit_all_transactions(self, transaction_context: Dict[str, Any]):
+    async def _commit_all_transactions(self, transaction_context: Dict[str, Any]) -> None:
         """Commit all transactions in the context."""
         commit_results = {}
         connections_dict = transaction_context["connections"]
@@ -605,7 +605,7 @@ class TransactionCoordinator:
                 commit_results[pool_id] = {"success": False, "error": str(e)}
                 raise  # Fail fast on commit errors
     
-    async def _rollback_all_transactions(self, transaction_context: Dict[str, Any]):
+    async def _rollback_all_transactions(self, transaction_context: Dict[str, Any]) -> None:
         """Rollback all transactions in the context."""
         connections_dict = transaction_context["connections"]
         
@@ -637,7 +637,7 @@ class TransactionCoordinator:
 class DatabasePerformanceMonitor:
     """Real-time performance tracking for database operations."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics: List[DatabasePerformanceMetrics] = []
         self.profiler = MemoryProfiler()
         self.timer = ExecutionTimer()
@@ -820,7 +820,7 @@ class DatabasePerformanceMonitor:
 # Pytest fixtures for advanced database testing
 
 @pytest.fixture(scope="function")
-async def database_pool_manager():
+async def database_pool_manager() -> None:
     """Fixture for database connection pool manager."""
     manager = DatabaseConnectionPoolManager()
     
@@ -831,7 +831,7 @@ async def database_pool_manager():
 
 
 @pytest.fixture(scope="function")
-async def transaction_coordinator(database_pool_manager):
+async def transaction_coordinator(database_pool_manager) -> None:
     """Fixture for cross-database transaction coordinator."""
     coordinator = TransactionCoordinator(database_pool_manager)
     
@@ -845,7 +845,7 @@ async def transaction_coordinator(database_pool_manager):
 
 
 @pytest.fixture(scope="function")
-async def performance_monitor():
+async def performance_monitor() -> None:
     """Fixture for database performance monitoring."""
     monitor = DatabasePerformanceMonitor()
     
@@ -858,7 +858,7 @@ async def performance_monitor():
 
 
 @pytest.fixture(scope="function")
-async def multi_database_setup(database_pool_manager):
+async def multi_database_setup(database_pool_manager) -> None:
     """Fixture that sets up all database pools for testing."""
     
     # Setup all database pools

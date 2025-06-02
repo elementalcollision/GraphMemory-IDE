@@ -189,7 +189,7 @@ class Alert:
 class DataVisualization:
     """Data visualization generator."""
     
-    def __init__(self, analytics_engine: AnalyticsEngine):
+    def __init__(self, analytics_engine: AnalyticsEngine) -> None:
         self.analytics_engine = analytics_engine
     
     async def generate_chart(
@@ -463,7 +463,7 @@ class DataVisualization:
 class QueryEngine:
     """Analytics query engine for dashboard data."""
     
-    def __init__(self, db_pool: asyncpg.Pool):
+    def __init__(self, db_pool: asyncpg.Pool) -> None:
         self.db_pool = db_pool
     
     async def execute_widget_query(self, widget: DashboardWidget) -> pd.DataFrame:
@@ -607,7 +607,7 @@ class QueryEngine:
 class BIDashboard:
     """Business Intelligence Dashboard manager."""
     
-    def __init__(self, analytics_engine: AnalyticsEngine, db_pool: asyncpg.Pool):
+    def __init__(self, analytics_engine: AnalyticsEngine, db_pool: asyncpg.Pool) -> None:
         self.analytics_engine = analytics_engine
         self.db_pool = db_pool
         self.query_engine = QueryEngine(db_pool)
@@ -615,7 +615,7 @@ class BIDashboard:
         self.dashboards: Dict[str, Dashboard] = {}
         self.alerts: Dict[str, Alert] = {}
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize BI dashboard system."""
         try:
             # Create tables if they don't exist
@@ -631,7 +631,7 @@ class BIDashboard:
             print(f"Failed to initialize BI Dashboard system: {e}")
             raise
     
-    async def _create_tables(self):
+    async def _create_tables(self) -> None:
         """Create necessary database tables."""
         async with self.db_pool.acquire() as conn:
             # Dashboards table
@@ -673,7 +673,7 @@ class BIDashboard:
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_alerts_owner ON alerts(owner_id)")
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_alerts_enabled ON alerts(enabled)")
     
-    async def _load_dashboards(self):
+    async def _load_dashboards(self) -> None:
         """Load existing dashboards from database."""
         async with self.db_pool.acquire() as conn:
             rows = await conn.fetch("SELECT * FROM dashboards")
@@ -700,7 +700,7 @@ class BIDashboard:
                 
                 self.dashboards[dashboard.dashboard_id] = dashboard
     
-    async def _load_alerts(self):
+    async def _load_alerts(self) -> None:
         """Load existing alerts from database."""
         async with self.db_pool.acquire() as conn:
             rows = await conn.fetch("SELECT * FROM alerts")
@@ -861,7 +861,7 @@ class BIDashboard:
 _bi_dashboard: Optional[BIDashboard] = None
 
 
-async def initialize_bi_dashboard(analytics_engine: AnalyticsEngine, db_pool: asyncpg.Pool):
+async def initialize_bi_dashboard(analytics_engine: AnalyticsEngine, db_pool: asyncpg.Pool) -> None:
     """Initialize BI dashboard system."""
     global _bi_dashboard
     _bi_dashboard = BIDashboard(analytics_engine, db_pool)

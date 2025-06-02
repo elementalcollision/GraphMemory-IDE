@@ -50,7 +50,7 @@ class MetricDefinition:
 class GraphMemoryMetricsCollector:
     """Comprehensive metrics collector for GraphMemory-IDE"""
     
-    def __init__(self, registry: Optional[CollectorRegistry] = None):
+    def __init__(self, registry: Optional[CollectorRegistry] = None) -> None:
         self.registry = registry or CollectorRegistry()
         self.metrics: Dict[str, Any] = {}
         self.start_time = time.time()
@@ -70,7 +70,7 @@ class GraphMemoryMetricsCollector:
         
         logger.info("GraphMemoryMetricsCollector initialized")
     
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize external dependencies"""
         try:
             self.cache_manager = await get_cache_manager()
@@ -80,7 +80,7 @@ class GraphMemoryMetricsCollector:
         except Exception as e:
             logger.error(f"Failed to initialize MetricsCollector dependencies: {e}")
     
-    def _initialize_metrics(self):
+    def _initialize_metrics(self) -> None:
         """Initialize all Prometheus metrics"""
         
         # API Performance Metrics
@@ -309,7 +309,7 @@ class GraphMemoryMetricsCollector:
     # API Metrics Methods
     def record_http_request(self, method: str, endpoint: str, status_code: int, 
                            duration: float, request_size: int = 0, response_size: int = 0,
-                           user_type: str = 'unknown'):
+                           user_type: str = 'unknown') -> None:
         """Record HTTP request metrics"""
         status = str(status_code)
         
@@ -335,12 +335,12 @@ class GraphMemoryMetricsCollector:
         self.request_times.append((time.time(), duration))
     
     # Database Metrics Methods
-    def update_db_connection_pool(self, database: str, active: int, max_connections: int):
+    def update_db_connection_pool(self, database: str, active: int, max_connections: int) -> None:
         """Update database connection pool metrics"""
         self.metrics['db_connection_pool_active_connections'].labels(database=database).set(active)
         self.metrics['db_connection_pool_max_connections'].labels(database=database).set(max_connections)
     
-    def record_db_query(self, database: str, operation: str, duration: float, status: str = 'success'):
+    def record_db_query(self, database: str, operation: str, duration: float, status: str = 'success') -> None:
         """Record database query metrics"""
         self.metrics['db_queries_total'].labels(
             database=database, operation=operation, status=status
@@ -351,83 +351,83 @@ class GraphMemoryMetricsCollector:
         ).observe(duration)
     
     # Cache Metrics Methods
-    def record_cache_operation(self, operation: str, result: str, cache_type: str = 'redis'):
+    def record_cache_operation(self, operation: str, result: str, cache_type: str = 'redis') -> None:
         """Record cache operation metrics"""
         self.metrics['cache_operations_total'].labels(operation=operation, result=result).inc()
     
-    def update_cache_metrics(self, cache_type: str, hit_rate: float, memory_usage: int):
+    def update_cache_metrics(self, cache_type: str, hit_rate: float, memory_usage: int) -> None:
         """Update cache performance metrics"""
         self.metrics['cache_hit_rate'].labels(cache_type=cache_type).set(hit_rate)
         self.metrics['cache_memory_usage_bytes'].labels(cache_type=cache_type).set(memory_usage)
     
     # Business Metrics Methods
-    def record_user_authentication(self, status: str, method: str = 'password'):
+    def record_user_authentication(self, status: str, method: str = 'password') -> None:
         """Record user authentication event"""
         self.metrics['user_authentication_total'].labels(status=status, method=method).inc()
     
-    def record_user_onboarding(self, status: str, step: str):
+    def record_user_onboarding(self, status: str, step: str) -> None:
         """Record user onboarding event"""
         self.metrics['user_onboarding_total'].labels(status=status, step=step).inc()
     
-    def record_collaboration_session(self, session_type: str, status: str):
+    def record_collaboration_session(self, session_type: str, status: str) -> None:
         """Record collaboration session event"""
         self.metrics['collaboration_sessions_total'].labels(type=session_type, status=status).inc()
     
-    def record_memory_operation(self, operation_type: str, status: str = 'success'):
+    def record_memory_operation(self, operation_type: str, status: str = 'success') -> None:
         """Record memory operation event"""
         self.metrics['memory_operations_total'].labels(
             operation_type=operation_type, status=status
         ).inc()
     
-    def update_active_users(self, user_type: str, count: int):
+    def update_active_users(self, user_type: str, count: int) -> None:
         """Update active user count"""
         self.metrics['active_users'].labels(user_type=user_type).set(count)
     
     # Queue Metrics Methods
-    def update_queue_size(self, queue_name: str, size: int):
+    def update_queue_size(self, queue_name: str, size: int) -> None:
         """Update queue size metric"""
         self.metrics['queue_size_current'].labels(queue_name=queue_name).set(size)
     
-    def record_queue_processing(self, queue_name: str, duration: float, status: str = 'success'):
+    def record_queue_processing(self, queue_name: str, duration: float, status: str = 'success') -> None:
         """Record queue processing metrics"""
         self.metrics['queue_processed_total'].labels(queue_name=queue_name, status=status).inc()
         self.metrics['queue_processing_duration_seconds'].labels(queue_name=queue_name).observe(duration)
     
     # Alert Metrics Methods
-    def record_alert_generation(self, severity: str, category: str):
+    def record_alert_generation(self, severity: str, category: str) -> None:
         """Record alert generation"""
         self.metrics['alerts_generated_total'].labels(severity=severity, category=category).inc()
     
-    def record_alert_correlation(self, strategy: str, confidence_level: str):
+    def record_alert_correlation(self, strategy: str, confidence_level: str) -> None:
         """Record alert correlation"""
         self.metrics['alerts_correlated_total'].labels(
             correlation_strategy=strategy, confidence_level=confidence_level
         ).inc()
     
-    def record_alert_escalation(self, escalation_level: str, policy: str):
+    def record_alert_escalation(self, escalation_level: str, policy: str) -> None:
         """Record alert escalation"""
         self.metrics['alerts_escalated_total'].labels(
             escalation_level=escalation_level, policy=policy
         ).inc()
     
-    def update_active_alert_groups(self, count: int):
+    def update_active_alert_groups(self, count: int) -> None:
         """Update active alert groups count"""
         self.metrics['alert_groups_active_current'].set(count)
     
-    def record_notification_sent(self, channel: str, priority: str, status: str):
+    def record_notification_sent(self, channel: str, priority: str, status: str) -> None:
         """Record notification sent"""
         self.metrics['notifications_sent_total'].labels(
             channel=channel, priority=priority, status=status
         ).inc()
     
     # Security Metrics Methods
-    def record_failed_login_attempt(self, source_ip: str, username: str = 'unknown'):
+    def record_failed_login_attempt(self, source_ip: str, username: str = 'unknown') -> None:
         """Record failed login attempt"""
         self.metrics['failed_login_attempts_total'].labels(
             source_ip=source_ip, username=username
         ).inc()
     
-    def record_rate_limit_exceeded(self, endpoint: str, user_type: str):
+    def record_rate_limit_exceeded(self, endpoint: str, user_type: str) -> None:
         """Record API rate limit exceeded"""
         self.metrics['api_rate_limit_exceeded_total'].labels(
             endpoint=endpoint, user_type=user_type
@@ -435,7 +435,7 @@ class GraphMemoryMetricsCollector:
     
     # Context Managers for Automatic Metric Recording
     @asynccontextmanager
-    async def time_database_query(self, database: str, operation: str):
+    async def time_database_query(self, database: str, operation: str) -> None:
         """Context manager for timing database queries"""
         start_time = time.time()
         status = 'success'
@@ -450,7 +450,7 @@ class GraphMemoryMetricsCollector:
             self.record_db_query(database, operation, duration, status)
     
     @asynccontextmanager
-    async def time_queue_processing(self, queue_name: str):
+    async def time_queue_processing(self, queue_name: str) -> None:
         """Context manager for timing queue processing"""
         start_time = time.time()
         status = 'success'
@@ -465,7 +465,7 @@ class GraphMemoryMetricsCollector:
             self.record_queue_processing(queue_name, duration, status)
     
     # Health Check and Status Methods
-    async def collect_system_metrics(self):
+    async def collect_system_metrics(self) -> None:
         """Collect system-level metrics"""
         try:
             # Get correlation engine stats

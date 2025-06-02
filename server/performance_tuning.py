@@ -53,7 +53,7 @@ class OptimizationSettings:
 class DatabaseOptimizer:
     """Database performance optimizer and analyzer"""
     
-    def __init__(self, database_url: str):
+    def __init__(self, database_url: str) -> None:
         """Initialize optimizer with database connection"""
         self.database_url = database_url
         self.engine = create_async_engine(
@@ -69,7 +69,7 @@ class DatabaseOptimizer:
             expire_on_commit=False
         )
 
-    async def close(self):
+    async def close(self) -> None:
         """Close database connections"""
         await self.engine.dispose()
 
@@ -295,7 +295,7 @@ class DatabaseOptimizer:
                 GROUP BY mode
                 ORDER BY count DESC
             """))
-            lock_stats = {row[0]: row[1] for row in result.fetchall()}
+            lock_stats = [{"mode": row[0], "count": row[1]} for row in result.fetchall()]
             analysis['lock_statistics'] = lock_stats
             
         return analysis
@@ -543,7 +543,7 @@ track_functions = all
         return filename
 
 
-async def main():
+async def main() -> None:
     """Main optimization function"""
     # Default database URL - should be from environment
     database_url = os.getenv(

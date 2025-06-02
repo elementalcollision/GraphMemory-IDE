@@ -50,7 +50,7 @@ class CacheConfig:
 class CacheManager:
     """Centralized cache management for analytics system."""
     
-    def __init__(self, redis_client, settings):
+    def __init__(self, redis_client, settings) -> None:
         self.redis_client = redis_client
         self.settings = settings
         
@@ -224,12 +224,12 @@ class CacheManager:
         result = await self.set(CacheType.REAL_TIME_METRICS, metric_type, metrics)
         return result
     
-    async def invalidate_dashboard(self, dashboard_id: str):
+    async def invalidate_dashboard(self, dashboard_id: str) -> None:
         """Invalidate all cache entries for a dashboard."""
         await self.delete(CacheType.DASHBOARD_CONFIG, dashboard_id)
         await self.invalidate_pattern(f"dashboard_data:{dashboard_id}:*")
     
-    async def invalidate_user_data(self, user_id: str):
+    async def invalidate_user_data(self, user_id: str) -> None:
         """Invalidate all cache entries for a user."""
         await self.invalidate_pattern(f"*:{user_id}:*")
     
@@ -265,7 +265,7 @@ class CacheManager:
 class QueryCache:
     """Specialized caching for database queries."""
     
-    def __init__(self, cache_manager: CacheManager):
+    def __init__(self, cache_manager: CacheManager) -> None:
         self.cache_manager = cache_manager
     
     def _hash_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> str:
@@ -291,7 +291,7 @@ class QueryCache:
         result = await self.cache_manager.get_query_result(query_hash, params or {})
         return result
     
-    async def cache_query_result(self, query: str, result: List[Dict[str, Any]], params: Optional[Dict[str, Any]] = None):
+    async def cache_query_result(self, query: str, result: List[Dict[str, Any]], params: Optional[Dict[str, Any]] = None) -> None:
         """Cache query result."""
         query_hash = self._hash_query(query, params)
         await self.cache_manager.set_query_result(query_hash, result, params or {})
@@ -326,7 +326,7 @@ class QueryCache:
 class APIResponseCache:
     """Caching for API responses."""
     
-    def __init__(self, cache_manager: CacheManager):
+    def __init__(self, cache_manager: CacheManager) -> None:
         self.cache_manager = cache_manager
     
     def _generate_request_key(self, request: Request) -> str:
@@ -358,7 +358,7 @@ _query_cache: Optional[QueryCache] = None
 _api_cache: Optional[APIResponseCache] = None
 
 
-async def initialize_cache_manager(redis_client, settings):
+async def initialize_cache_manager(redis_client, settings) -> None:
     """Initialize the cache manager."""
     global _cache_manager, _query_cache, _api_cache
     
@@ -384,7 +384,7 @@ def get_api_cache() -> Optional[APIResponseCache]:
     return _api_cache
 
 
-async def shutdown_cache_manager():
+async def shutdown_cache_manager() -> None:
     """Shutdown the cache manager."""
     global _cache_manager, _query_cache, _api_cache
     

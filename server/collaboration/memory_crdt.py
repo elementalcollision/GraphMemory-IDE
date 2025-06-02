@@ -162,7 +162,7 @@ class MemoryDocument:
     fields with automatic conflict resolution and delta synchronization.
     """
     
-    def __init__(self, memory_id: str, redis_client: Redis, initial_state: Optional[MemoryDocumentState] = None):
+    def __init__(self, memory_id: str, redis_client: Redis, initial_state: Optional[MemoryDocumentState] = None) -> None:
         self.memory_id = memory_id
         self.redis_client = redis_client
         self._doc = SimpleCRDTDocument(memory_id)
@@ -180,19 +180,19 @@ class MemoryDocument:
         if initial_state:
             self._initialize_from_state(initial_state)
     
-    def _setup_observers(self):
+    def _setup_observers(self) -> None:
         """Setup Ypy observers for change tracking"""
         
-        def title_observer(event):
+        def title_observer(event) -> None:
             self._on_field_change(MemoryFieldType.TITLE, event)
         
-        def content_observer(event):
+        def content_observer(event) -> None:
             self._on_field_change(MemoryFieldType.CONTENT, event)
         
-        def tags_observer(event):
+        def tags_observer(event) -> None:
             self._on_field_change(MemoryFieldType.TAGS, event)
         
-        def metadata_observer(event):
+        def metadata_observer(event) -> None:
             self._on_field_change(MemoryFieldType.METADATA, event)
         
         # Attach observers to Ypy shared types
@@ -201,7 +201,7 @@ class MemoryDocument:
         self._doc.get_array("tags").observe(tags_observer)
         self._doc.get_map("metadata").observe(metadata_observer)
     
-    def _on_field_change(self, field_type: MemoryFieldType, event):
+    def _on_field_change(self, field_type: MemoryFieldType, event) -> None:
         """Handle field change events from Ypy"""
         try:
             change_id = str(uuid.uuid4())
@@ -238,7 +238,7 @@ class MemoryDocument:
         except Exception as e:
             logger.error(f"Error handling field change for {field_type}: {e}")
     
-    async def _add_pending_change(self, change: MemoryChange):
+    async def _add_pending_change(self, change: MemoryChange) -> None:
         """Add change to pending changes list"""
         async with self._change_lock:
             self._pending_changes.append(change)
@@ -277,7 +277,7 @@ class MemoryDocument:
         
         return MemoryChangeType.FIELD_UPDATE
     
-    def _initialize_from_state(self, state: MemoryDocumentState):
+    def _initialize_from_state(self, state: MemoryDocumentState) -> None:
         """Initialize document from existing state"""
         # Clear existing content
         self._doc.get_text("title").clear()
@@ -301,11 +301,11 @@ class MemoryDocument:
     
     # Public API Methods
     
-    def add_change_observer(self, observer: Callable[[MemoryChange], None]):
+    def add_change_observer(self, observer: Callable[[MemoryChange], None]) -> None:
         """Add observer for memory changes"""
         self._change_observers.append(observer)
     
-    def remove_change_observer(self, observer: Callable[[MemoryChange], None]):
+    def remove_change_observer(self, observer: Callable[[MemoryChange], None]) -> None:
         """Remove change observer"""
         if observer in self._change_observers:
             self._change_observers.remove(observer)
@@ -360,7 +360,7 @@ class MemoryDocument:
             logger.error(f"Error removing tag: {e}")
             return False
     
-    async def _update_metadata(self, key: str, value: Any):
+    async def _update_metadata(self, key: str, value: Any) -> None:
         """Update metadata field"""
         self._doc.get_map("metadata")[key] = value
         if key == "last_modified_by":
@@ -417,7 +417,7 @@ class MemoryDocument:
         """Get Ypy document update for synchronization"""
         return self._doc.encode_state_as_update()
     
-    def apply_document_update(self, update: bytes):
+    def apply_document_update(self, update: bytes) -> None:
         """Apply Ypy document update from another client"""
         try:
             self._doc.apply_update(update)
@@ -433,7 +433,7 @@ class MemoryCRDTManager:
     and provides high-level operations for collaborative memory editing.
     """
     
-    def __init__(self, redis_client: Redis):
+    def __init__(self, redis_client: Redis) -> None:
         self.redis_client = redis_client
         self._documents: Dict[str, MemoryDocument] = {}
         self._document_locks: Dict[str, asyncio.Lock] = {}
@@ -507,7 +507,7 @@ class MemoryCRDTManager:
         
         return None
     
-    async def _save_to_cache(self, memory_id: str, state: MemoryDocumentState):
+    async def _save_to_cache(self, memory_id: str, state: MemoryDocumentState) -> None:
         """Save memory state to Redis cache"""
         try:
             cache_key = self.MEMORY_STATE_KEY.format(memory_id=memory_id)
@@ -517,13 +517,13 @@ class MemoryCRDTManager:
         except Exception as e:
             logger.error(f"Error saving memory {memory_id} to cache: {e}")
     
-    def _on_document_change(self, change: MemoryChange):
+    def _on_document_change(self, change: MemoryChange) -> None:
         """Handle document change events"""
         # This could trigger immediate sync for critical changes
         # or be used for real-time notifications
         logger.debug(f"Memory {change.memory_id} changed: {change.change_type}")
     
-    async def _sync_document_periodically(self, memory_id: str):
+    async def _sync_document_periodically(self, memory_id: str) -> None:
         """Periodically sync document state to Redis"""
         while memory_id in self._documents:
             try:
@@ -544,7 +544,7 @@ class MemoryCRDTManager:
                 logger.error(f"Error syncing memory {memory_id}: {e}")
                 await asyncio.sleep(self.SYNC_INTERVAL)
     
-    async def _store_changes(self, memory_id: str, changes: List[MemoryChange]):
+    async def _store_changes(self, memory_id: str, changes: List[MemoryChange]) -> None:
         """Store changes in Redis for cross-server synchronization"""
         try:
             changes_key = self.MEMORY_CHANGES_KEY.format(memory_id=memory_id)
@@ -558,7 +558,7 @@ class MemoryCRDTManager:
         except Exception as e:
             logger.error(f"Error storing changes for memory {memory_id}: {e}")
     
-    async def close_memory_document(self, memory_id: str):
+    async def close_memory_document(self, memory_id: str) -> None:
         """Close and cleanup memory document"""
         if memory_id in self._documents:
             # Cancel sync task
@@ -576,7 +576,7 @@ class MemoryCRDTManager:
             if memory_id in self._document_locks:
                 del self._document_locks[memory_id]
     
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown manager and cleanup all documents"""
         memory_ids = list(self._documents.keys())
         for memory_id in memory_ids:
@@ -648,13 +648,13 @@ async def get_memory_document(memory_id: str, user_id: str,
     return await manager.get_memory_document(memory_id, user_id, role)
 
 
-async def close_memory_document(memory_id: str):
+async def close_memory_document(memory_id: str) -> None:
     """Close and cleanup memory document"""
     manager = await get_memory_crdt_manager()
     await manager.close_memory_document(memory_id)
 
 
-async def shutdown_memory_crdt():
+async def shutdown_memory_crdt() -> None:
     """Shutdown memory CRDT system"""
     global _memory_crdt_manager
     if _memory_crdt_manager:
@@ -666,24 +666,24 @@ async def shutdown_memory_crdt():
 class MemoryCRDTMetrics:
     """Metrics collector for memory CRDT operations"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.operation_count = 0
         self.sync_count = 0
         self.error_count = 0
         self.last_sync_time = 0.0
         self.average_sync_time = 0.0
     
-    def record_operation(self):
+    def record_operation(self) -> None:
         """Record a memory operation"""
         self.operation_count += 1
     
-    def record_sync(self, duration: float):
+    def record_sync(self, duration: float) -> None:
         """Record a sync operation"""
         self.sync_count += 1
         self.last_sync_time = duration
         self.average_sync_time = (self.average_sync_time * (self.sync_count - 1) + duration) / self.sync_count
     
-    def record_error(self):
+    def record_error(self) -> None:
         """Record an error"""
         self.error_count += 1
     
@@ -843,13 +843,13 @@ class SimpleCRDTArray:
         if field not in self.doc._data:
             self.doc._data[field] = []
     
-    def __iter__(self):
+    def __iter__(self) -> None:
         return iter(self.doc._data.get(self.field, []))
     
     def __len__(self) -> int:
         return len(self.doc._data.get(self.field, []))
     
-    def __getitem__(self, index: int):
+    def __getitem__(self, index: int) -> None:
         return self.doc._data.get(self.field, [])[index]
     
     def append(self, items: List[str]) -> None:
@@ -889,7 +889,7 @@ class SimpleCRDTMap:
         if field not in self.doc._data:
             self.doc._data[field] = {}
     
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> None:
         return self.doc._data[self.field].get(key)
     
     def __setitem__(self, key: str, value: Any) -> None:
@@ -900,7 +900,7 @@ class SimpleCRDTMap:
         for observer in self._observers:
             observer({"action": "set", "key": key, "value": value, "old_value": old_value, "new_value": new_value})
     
-    def get(self, key: str, default: Any = None):
+    def get(self, key: str, default: Any = None) -> None:
         return self.doc._data[self.field].get(key, default)
     
     def clear(self) -> None:

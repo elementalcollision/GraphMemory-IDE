@@ -35,19 +35,19 @@ except ImportError as e:
         """Stub MFA Manager when dependencies are missing."""
         pass
     
-    def get_sso_manager():
+    def get_sso_manager() -> None:
         """Stub function returning None when SSO is not available."""
         return None
     
-    def get_mfa_manager():
+    def get_mfa_manager() -> None:
         """Stub function returning None when MFA is not available."""
         return None
     
-    async def initialize_sso_manager(settings, db_session):
+    async def initialize_sso_manager(settings, db_session) -> None:
         """Stub initialization function."""
         print("SSO Manager not available - missing dependencies")
     
-    async def initialize_mfa_manager(settings, db_session):
+    async def initialize_mfa_manager(settings, db_session) -> None:
         """Stub initialization function."""
         print("MFA Manager not available - missing dependencies")
     
@@ -75,7 +75,7 @@ except ImportError as e:
     auth_router = APIRouter(prefix="/auth", tags=["Authentication - Unavailable"])
     
     @auth_router.get("/status")
-    async def auth_status():
+    async def auth_status() -> None:
         return {
             "status": "unavailable",
             "message": "Authentication features require additional dependencies",

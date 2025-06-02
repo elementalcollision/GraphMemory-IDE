@@ -118,7 +118,7 @@ class WebSocketConnectionMetrics:
 class WebSocketCommunicationTester:
     """Core WebSocket bidirectional communication testing"""
     
-    def __init__(self, ws_url: str = "ws://localhost:8000/ws"):
+    def __init__(self, ws_url: str = "ws://localhost:8000/ws") -> None:
         self.ws_url = ws_url
         self.active_connections: Dict[str, Any] = {}
         self.connection_metrics: Dict[str, WebSocketConnectionMetrics] = {}
@@ -277,7 +277,7 @@ class WebSocketCommunicationTester:
 class WebSocketLoadTester:
     """WebSocket load testing with concurrent connections"""
     
-    def __init__(self, ws_url: str = "ws://localhost:8000/ws"):
+    def __init__(self, ws_url: str = "ws://localhost:8000/ws") -> None:
         self.ws_url = ws_url
         self.load_test_results: Dict[str, Any] = {}
         
@@ -387,7 +387,7 @@ class WebSocketLoadTester:
 class WebSocketAlertTester:
     """Real alert system integration testing with WebSocket"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.alert_metrics: Dict[str, Any] = {}
         self.db_coordinator = TransactionCoordinator()
         
@@ -548,7 +548,7 @@ class WebSocketAlertTester:
 class WebSocketMessageOrderTester:
     """Message ordering and delivery guarantee testing"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.ordering_test_results: Dict[str, Any] = {}
         
     async def test_message_ordering_guarantees(self) -> Dict[str, Any]:
@@ -652,7 +652,7 @@ class WebSocketMessageOrderTester:
 
 # Test cases for WebSocket real-time communication
 @pytest_asyncio.async_test
-async def test_websocket_bidirectional_communication():
+async def test_websocket_bidirectional_communication() -> None:
     """Test bidirectional WebSocket communication"""
     tester = WebSocketCommunicationTester()
     metrics = await tester.test_bidirectional_messaging()
@@ -663,7 +663,7 @@ async def test_websocket_bidirectional_communication():
     assert metrics.error_count == 0
 
 @pytest_asyncio.async_test
-async def test_websocket_concurrent_load():
+async def test_websocket_concurrent_load() -> None:
     """Test WebSocket performance under concurrent load"""
     load_tester = WebSocketLoadTester()
     results = await load_tester.test_concurrent_connections(num_connections=50)
@@ -674,7 +674,7 @@ async def test_websocket_concurrent_load():
     assert results["messages_per_second"] > 100
 
 @pytest_asyncio.async_test
-async def test_websocket_alert_integration():
+async def test_websocket_alert_integration() -> None:
     """Test WebSocket integration with real alert system"""
     alert_tester = WebSocketAlertTester()
     results = await alert_tester.test_real_alert_system_integration()
@@ -685,7 +685,7 @@ async def test_websocket_alert_integration():
     assert results["failed_deliveries"] == 0
 
 @pytest_asyncio.async_test
-async def test_websocket_message_ordering():
+async def test_websocket_message_ordering() -> None:
     """Test WebSocket message ordering guarantees"""
     ordering_tester = WebSocketMessageOrderTester()
     results = await ordering_tester.test_message_ordering_guarantees()

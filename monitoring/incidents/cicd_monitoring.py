@@ -84,7 +84,7 @@ class GitHubActionsMonitor:
     comprehensive observability for development workflows.
     """
     
-    def __init__(self, github_token: str, repo_owner: str, repo_name: str):
+    def __init__(self, github_token: str, repo_owner: str, repo_name: str) -> None:
         self.github_token = github_token
         self.repo_owner = repo_owner
         self.repo_name = repo_name
@@ -352,7 +352,7 @@ class CICDObservabilityEngine:
     unified observability for the entire development lifecycle.
     """
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any]) -> None:
         self.config = config
         self.github_monitor = None
         

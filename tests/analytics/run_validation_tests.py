@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class ValidationTestRunner:
     """Comprehensive test runner for Analytics Engine validation"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.test_results: Dict[str, Any] = {}
         self.start_time = time.time()
         self.test_categories = [
@@ -460,7 +460,7 @@ class ValidationTestRunner:
         
         return "\n".join(report)
 
-async def main():
+async def main() -> None:
     """Main function to run validation tests"""
     runner = ValidationTestRunner()
     

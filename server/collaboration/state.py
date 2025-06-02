@@ -115,7 +115,7 @@ class CollaborationMetrics:
     operations_per_minute: float = 0.0
     conflict_rate: float = 0.0
 
-    def update_operation_metrics(self):
+    def update_operation_metrics(self) -> None:
         """Update operation-based metrics"""
         now = datetime.now(timezone.utc)
         if self.last_operation_time:
@@ -137,7 +137,7 @@ class CollaborationState:
     and real-time synchronization state.
     """
 
-    def __init__(self, session_id: str, resource_type: str, resource_id: str):
+    def __init__(self, session_id: str, resource_type: str, resource_id: str) -> None:
         self.session_id = session_id
         self.resource_type = resource_type  # 'memory', 'graph', 'workspace'
         self.resource_id = resource_id

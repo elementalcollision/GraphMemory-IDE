@@ -64,7 +64,7 @@ class UserRegistrationRequest(BaseModel):
     preferred_features: List[str] = Field(default_factory=list)
     
     @validator('password')
-    def validate_password_strength(cls, v):
+    def validate_password_strength(cls, v) -> None:
         """Validate password strength"""
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
@@ -85,7 +85,7 @@ class UserRegistrationRequest(BaseModel):
         return v
     
     @validator('accept_terms')
-    def validate_terms_acceptance(cls, v):
+    def validate_terms_acceptance(cls, v) -> None:
         """Ensure terms are accepted"""
         if not v:
             raise ValueError('You must accept the terms and conditions')
@@ -558,7 +558,7 @@ async def update_user_preferences(
 # Helper Functions
 # ================================
 
-async def _initialize_onboarding_steps(db_session: AsyncSession, user_id: str):
+async def _initialize_onboarding_steps(db_session: AsyncSession, user_id: str) -> None:
     """Initialize onboarding steps for new user"""
     steps = [
         ("email_verification", 1, "Verify your email address"),
@@ -586,7 +586,7 @@ async def _complete_onboarding_step(
     db_session: AsyncSession, 
     user_id: str, 
     step_name: str
-):
+) -> None:
     """Mark an onboarding step as completed"""
     stmt = update(UserOnboardingProgress).where(
         UserOnboardingProgress.user_id == user_id,
@@ -617,7 +617,7 @@ async def _get_next_onboarding_step(
     return next_step.step_name if next_step else None
 
 
-async def _complete_user_onboarding(db_session: AsyncSession, user_id: str):
+async def _complete_user_onboarding(db_session: AsyncSession, user_id: str) -> None:
     """Mark user onboarding as complete"""
     stmt = update(User).where(
         User.id == user_id

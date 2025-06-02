@@ -71,7 +71,7 @@ class SecretsAutomationManager:
     Comprehensive secrets automation manager integrating all secret types.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         # Initialize storage and managers
         self.storage = SecureKeyStorage(FilesystemKeyStorage("./secrets"))
         self.secrets_manager = SecretsManager(self.storage)
@@ -455,7 +455,7 @@ class SecretsAutomationManager:
             raise
 
 
-async def main():
+async def main() -> None:
     """Main entry point for the secrets automation script"""
     parser = argparse.ArgumentParser(description="Comprehensive Secrets Automation")
     parser.add_argument('--rotate-all', action='store_true', help='Rotate all secrets due for rotation')

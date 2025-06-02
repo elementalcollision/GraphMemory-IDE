@@ -316,7 +316,7 @@ def _initialize_sqlite_test_schema(connection: sqlite3.Connection) -> None:
 
 # Database configuration override fixtures
 @pytest.fixture(scope="function")
-def mock_database_config(kuzu_test_db_path: Path, redis_test_config: dict, sqlite_test_db_path: Path):
+def mock_database_config(kuzu_test_db_path: Path, redis_test_config: dict, sqlite_test_db_path: Path) -> None:
     """Override database configuration for testing."""
     test_config = {
         "KUZU_DB_PATH": str(kuzu_test_db_path),
@@ -336,7 +336,7 @@ async def isolated_databases(
     redis_test_client: redis.Redis,
     sqlite_test_connection: sqlite3.Connection,
     mock_database_config: dict
-):
+) -> None:
     """Provide all isolated databases for comprehensive integration testing."""
     databases = {
         "kuzu": kuzu_test_connection,
@@ -384,20 +384,20 @@ async def check_database_health(isolated_databases) -> Dict[str, Union[bool, str
 
 # Performance monitoring for database operations
 @pytest.fixture(scope="function")
-def database_performance_monitor():
+def database_performance_monitor() -> None:
     """Monitor database operation performance during tests."""
     import time
     
     class DatabasePerformanceMonitor:
-        def __init__(self):
+        def __init__(self) -> None:
             self.operations = []
         
-        def time_operation(self, operation_name: str):
+        def time_operation(self, operation_name: str) -> None:
             """Context manager to time database operations."""
             from contextlib import contextmanager
             
             @contextmanager
-            def timer():
+            def timer() -> None:
                 start_time = time.time()
                 yield
                 end_time = time.time()
@@ -414,7 +414,7 @@ def database_performance_monitor():
             
             return timer()
         
-        def get_summary(self):
+        def get_summary(self) -> None:
             """Get performance summary."""
             if not self.operations:
                 return {"total_operations": 0}

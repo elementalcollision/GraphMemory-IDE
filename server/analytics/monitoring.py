@@ -19,30 +19,30 @@ except ImportError:
     PROMETHEUS_AVAILABLE = False
     # Create mock classes for when prometheus_client is not available
     class Counter:
-        def __init__(self, *args, **kwargs): pass
-        def inc(self, *args, **kwargs): pass
-        def labels(self, *args, **kwargs): return self
+        def __init__(self, *args, **kwargs) -> None: pass
+        def inc(self, *args, **kwargs) -> None: pass
+        def labels(self, *args, **kwargs) -> None: return self
     
     class Histogram:
-        def __init__(self, *args, **kwargs): pass
-        def observe(self, *args, **kwargs): pass
-        def labels(self, *args, **kwargs): return self
-        def time(self): return MockTimer()
+        def __init__(self, *args, **kwargs) -> None: pass
+        def observe(self, *args, **kwargs) -> None: pass
+        def labels(self, *args, **kwargs) -> None: return self
+        def time(self) -> None: return MockTimer()
     
     class Gauge:
-        def __init__(self, *args, **kwargs): pass
-        def set(self, *args, **kwargs): pass
-        def labels(self, *args, **kwargs): return self
+        def __init__(self, *args, **kwargs) -> None: pass
+        def set(self, *args, **kwargs) -> None: pass
+        def labels(self, *args, **kwargs) -> None: return self
     
     class Info:
-        def __init__(self, *args, **kwargs): pass
-        def info(self, *args, **kwargs): pass
+        def __init__(self, *args, **kwargs) -> None: pass
+        def info(self, *args, **kwargs) -> None: pass
     
     class MockTimer:
-        def __enter__(self): return self
-        def __exit__(self, *args): pass
+        def __enter__(self) -> None: return self
+        def __exit__(self, *args) -> None: pass
     
-    def generate_latest(): return b""
+    def generate_latest() -> None: return b""
     CONTENT_TYPE_LATEST = "text/plain"
 
 from .gpu_acceleration import gpu_manager
@@ -58,11 +58,11 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
     Tracks request metrics, response times, and system health.
     """
     
-    def __init__(self, app: FastAPI):
+    def __init__(self, app: FastAPI) -> None:
         super().__init__(app)
         self.setup_metrics()
     
-    def setup_metrics(self):
+    def setup_metrics(self) -> None:
         """Initialize Prometheus metrics"""
         if not PROMETHEUS_AVAILABLE:
             logger.warning("Prometheus client not available, monitoring will be limited")
@@ -216,7 +216,7 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
         algorithm: str,
         duration: float,
         success: bool
-    ):
+    ) -> None:
         """Record analytics operation metrics"""
         if not PROMETHEUS_AVAILABLE:
             return
@@ -235,7 +235,7 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
                 algorithm=algorithm
             ).observe(duration)
     
-    def record_cache_operation(self, cache_type: str, hit: bool):
+    def record_cache_operation(self, cache_type: str, hit: bool) -> None:
         """Record cache operation metrics"""
         if not PROMETHEUS_AVAILABLE:
             return
@@ -245,7 +245,7 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
         else:
             self.cache_misses.labels(cache_type=cache_type).inc()
     
-    def update_graph_metrics(self, node_count: int, edge_count: int):
+    def update_graph_metrics(self, node_count: int, edge_count: int) -> None:
         """Update graph size metrics"""
         if not PROMETHEUS_AVAILABLE:
             return
@@ -253,7 +253,7 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
         self.graph_size_nodes.set(node_count)
         self.graph_size_edges.set(edge_count)
     
-    def update_system_metrics(self):
+    def update_system_metrics(self) -> None:
         """Update system resource metrics"""
         if not PROMETHEUS_AVAILABLE:
             return
@@ -268,7 +268,7 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
             gpu_memory = gpu_status.get('memory_usage', 0)
             self.gpu_memory_usage.set(gpu_memory)
     
-    def update_component_health(self, component: str, healthy: bool):
+    def update_component_health(self, component: str, healthy: bool) -> None:
         """Update component health status"""
         if not PROMETHEUS_AVAILABLE:
             return
@@ -282,7 +282,7 @@ class AnalyticsHealthChecker:
     Provides comprehensive health status and diagnostics.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.health_checks = {}
         self.last_check_time = {}
         self.check_interval = 30  # seconds
@@ -507,7 +507,7 @@ async def get_health_endpoint() -> Dict[str, Any]:
 
 
 # Background task for periodic metric updates
-async def periodic_metric_updates():
+async def periodic_metric_updates() -> None:
     """Background task to update metrics periodically"""
     while True:
         try:
@@ -529,7 +529,7 @@ async def periodic_metric_updates():
 
 
 @asynccontextmanager
-async def monitoring_lifespan(app: FastAPI):
+async def monitoring_lifespan(app: FastAPI) -> None:
     """Lifespan context manager for monitoring setup"""
     # Startup
     setup_monitoring(app)

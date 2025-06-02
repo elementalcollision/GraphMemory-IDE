@@ -35,7 +35,7 @@ class TestRedisTenantManager:
         await manager.initialize()
         return manager
 
-    async def test_tenant_registration(self):
+    async def test_tenant_registration(self) -> None:
         """Test tenant registration and validation"""
         manager = await self.setup_redis_manager()
         
@@ -55,7 +55,7 @@ class TestRedisTenantManager:
         finally:
             await manager.shutdown()
 
-    async def test_tenant_isolation(self):
+    async def test_tenant_isolation(self) -> None:
         """Test Redis namespace isolation between tenants"""
         manager = await self.setup_redis_manager()
         
@@ -82,7 +82,7 @@ class TestRedisTenantManager:
         finally:
             await manager.shutdown()
 
-    async def test_performance_monitoring(self):
+    async def test_performance_monitoring(self) -> None:
         """Test performance monitoring and metrics collection"""
         manager = await self.setup_redis_manager()
         
@@ -104,7 +104,7 @@ class TestRedisTenantManager:
         finally:
             await manager.shutdown()
 
-    async def test_audit_logging(self):
+    async def test_audit_logging(self) -> None:
         """Test audit logging functionality"""
         manager = await self.setup_redis_manager()
         
@@ -144,7 +144,7 @@ class TestKuzuTenantManager:
         await manager.initialize()
         return manager
 
-    async def test_tenant_schema_creation(self):
+    async def test_tenant_schema_creation(self) -> None:
         """Test tenant schema creation and management"""
         manager = await self.setup_kuzu_manager()
         
@@ -164,7 +164,7 @@ class TestKuzuTenantManager:
         finally:
             await manager.shutdown()
 
-    async def test_tenant_query_isolation(self):
+    async def test_tenant_query_isolation(self) -> None:
         """Test query isolation between tenant schemas"""
         manager = await self.setup_kuzu_manager()
         
@@ -201,7 +201,7 @@ class TestKuzuTenantManager:
         finally:
             await manager.shutdown()
 
-    async def test_kuzu_performance_monitoring(self):
+    async def test_kuzu_performance_monitoring(self) -> None:
         """Test Kuzu performance monitoring"""
         manager = await self.setup_kuzu_manager()
         
@@ -233,7 +233,7 @@ class TestKuzuTenantManager:
 class TestTenantIntegration:
     """Test integration between Redis and Kuzu tenant managers"""
 
-    async def test_coordinated_tenant_management(self):
+    async def test_coordinated_tenant_management(self) -> None:
         """Test coordinated tenant operations across Redis and Kuzu"""
         redis_manager = RedisTenantManager()
         kuzu_manager = KuzuTenantManager(database_path="./test_integration_db")
@@ -295,7 +295,7 @@ class TestTenantIntegration:
             await redis_manager.shutdown()
             await kuzu_manager.shutdown()
 
-    async def test_performance_compliance(self):
+    async def test_performance_compliance(self) -> None:
         """Test that both systems meet performance targets"""
         redis_manager = RedisTenantManager()
         kuzu_manager = KuzuTenantManager(database_path="./test_performance_db")
@@ -340,7 +340,7 @@ class TestTenantIntegration:
 
 
 # Test runner for manual execution
-async def run_all_tests():
+async def run_all_tests() -> None:
     """Run all tests manually"""
     print("Running Week 3 Day 1 Tenant Isolation Tests...")
     print("=" * 50)

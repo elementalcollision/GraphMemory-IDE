@@ -36,7 +36,7 @@ class WebSocketAuthenticationMiddleware:
     - Error handling and logging
     """
     
-    def __init__(self, authenticator: CollaborationAuthenticator):
+    def __init__(self, authenticator: CollaborationAuthenticator) -> None:
         self.authenticator = authenticator
         self.connection_registry: Dict[str, Dict[str, Any]] = {}
         
@@ -222,7 +222,7 @@ class CollaborationRateLimitMiddleware(BaseHTTPMiddleware):
     HTTP rate limiting middleware for collaboration API endpoints.
     """
     
-    def __init__(self, app, max_requests: int = 100, window_seconds: int = 60):
+    def __init__(self, app, max_requests: int = 100, window_seconds: int = 60) -> None:
         super().__init__(app)
         self.max_requests = max_requests
         self.window_seconds = window_seconds
@@ -286,7 +286,7 @@ class CollaborationRateLimitMiddleware(BaseHTTPMiddleware):
         return True
 
 
-def require_collaboration_permission(permission: str):
+def require_collaboration_permission(permission: str) -> None:
     """
     Decorator to require specific collaboration permission for WebSocket handlers.
     
@@ -296,9 +296,9 @@ def require_collaboration_permission(permission: str):
     Returns:
         Decorator function
     """
-    def decorator(handler_func: Callable):
+    def decorator(handler_func: Callable) -> None:
         @wraps(handler_func)
-        async def wrapper(websocket: WebSocket, user: CollaborationUser, *args, **kwargs):
+        async def wrapper(websocket: WebSocket, user: CollaborationUser, *args, **kwargs) -> None:
             # Check permission
             if permission not in user.permissions:
                 await websocket.close(
@@ -313,7 +313,7 @@ def require_collaboration_permission(permission: str):
     return decorator
 
 
-def collaboration_session_access(resource_type: str, action: str = "read"):
+def collaboration_session_access(resource_type: str, action: str = "read") -> None:
     """
     Decorator to check collaboration session access.
     
@@ -324,9 +324,9 @@ def collaboration_session_access(resource_type: str, action: str = "read"):
     Returns:
         Decorator function
     """
-    def decorator(handler_func: Callable):
+    def decorator(handler_func: Callable) -> None:
         @wraps(handler_func)
-        async def wrapper(websocket: WebSocket, user: CollaborationUser, resource_id: str, *args, **kwargs):
+        async def wrapper(websocket: WebSocket, user: CollaborationUser, resource_id: str, *args, **kwargs) -> None:
             # Note: This would integrate with a proper resource access control system
             # For now, we'll use basic permission checking
             
