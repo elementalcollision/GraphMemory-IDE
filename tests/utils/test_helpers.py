@@ -636,19 +636,19 @@ class MemoryProfiler:
         }
 
 # Convenience functions for common testing patterns
-async def wait_for_condition(condition_func: Callable, timeout: float = 30.0, error_message: str = "Condition not met") -> None:
+async def wait_for_condition(condition_func: Callable, timeout: float = 30.0, error_message: str = "Condition not met") -> Any:
     """Convenience function for waiting on conditions."""
     waiter = AsyncConditionWaiter(timeout)
     return await waiter.wait_for_condition(condition_func, error_message, timeout)
 
 def measure_execution_time(func: Callable) -> Callable:
     """Decorator to measure function execution time."""
-    def wrapper(*args, **kwargs) -> None:
+    def wrapper(*args, **kwargs) -> Any:
         timer = ExecutionTimer()
         func_name = func.__name__
         
         if inspect.iscoroutinefunction(func):
-            async def async_wrapper() -> None:
+            async def async_wrapper() -> Any:
                 async with timer.measure_async(func_name):
                     result = await func(*args, **kwargs)
                 return result, timer.get_measurements()[func_name]

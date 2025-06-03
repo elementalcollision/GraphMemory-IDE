@@ -208,7 +208,8 @@ class TestDatabaseIntegration:
 class TestPerformanceValidation:
     """Test performance characteristics and optimization."""
     
-    @pytest_asyncio.async def test_response_time_benchmarks(
+    @pytest.mark.asyncio
+    async def test_response_time_benchmarks(
         self, 
         async_client: AsyncClient,
         performance_tracker
@@ -245,7 +246,8 @@ class TestPerformanceValidation:
             else:
                 print(f"✅ Endpoint {endpoint} performance: {avg_time:.1f}ms (target: {max_time}ms)")
     
-    @pytest_asyncio.async def test_memory_efficiency(
+    @pytest.mark.asyncio
+    async def test_memory_efficiency(
         self, 
         kuzu_connection,
         project_data_factory
@@ -279,7 +281,8 @@ class TestPerformanceValidation:
         # Reasonable memory usage (adjusted for test environment)
         assert memory_growth < 50, f"Memory growth too high: {memory_growth:.1f}MB"
     
-    @pytest_asyncio.async def test_concurrent_database_operations(
+    @pytest.mark.asyncio
+    async def test_concurrent_database_operations(
         self,
         kuzu_connection,
         performance_tracker
@@ -332,7 +335,8 @@ class TestPerformanceValidation:
 class TestCloudPreparation:
     """Test cloud deployment preparation and validation."""
     
-    @pytest_asyncio.async def test_cloud_environment_simulation(self, async_client: AsyncClient) -> None:
+    @pytest.mark.asyncio
+    async def test_cloud_environment_simulation(self, async_client: AsyncClient) -> None:
         """Test application behavior in cloud-like environment."""
         
         # Simulate cloud environment conditions
@@ -375,7 +379,8 @@ class TestCloudPreparation:
             else:
                 print(f"   {name}: ❌ {result.get('error', 'Unknown error')}")
     
-    @pytest_asyncio.async def test_digitalocean_compatibility(self, async_client: AsyncClient) -> None:
+    @pytest.mark.asyncio
+    async def test_digitalocean_compatibility(self, async_client: AsyncClient) -> None:
         """Test DigitalOcean App Platform compatibility."""
         
         # Test DigitalOcean-specific requirements
@@ -441,7 +446,8 @@ class TestCloudPreparation:
 class TestRealWorldScenarios:
     """Test real-world usage scenarios and data validation."""
     
-    @pytest_asyncio.async def test_cursor_workflow_simulation(
+    @pytest.mark.asyncio
+    async def test_cursor_workflow_simulation(
         self, 
         async_client: AsyncClient,
         sample_memory_data
@@ -508,7 +514,8 @@ class TestRealWorldScenarios:
             else:
                 print(f"   ❌ {name}: {result.get('error', 'Unknown error')}")
     
-    @pytest_asyncio.async def test_production_data_validation(
+    @pytest.mark.asyncio
+    async def test_production_data_validation(
         self,
         kuzu_connection,
         project_data_factory

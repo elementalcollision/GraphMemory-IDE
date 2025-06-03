@@ -380,7 +380,7 @@ class KuzuBackupManager:
                 archive_path = backup_dir / f"{backup_id}.tar.gz"
                 if archive_path.exists():
                     # Verify archive integrity
-                    def check_archive() -> None:
+                    def check_archive() -> bool:
                         try:
                             with tarfile.open(archive_path, "r:gz") as tar:
                                 # Test archive integrity

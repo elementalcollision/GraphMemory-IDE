@@ -48,7 +48,7 @@ class CollaborationSession:
     def users(self) -> Dict[str, Any]:
         return self.state.users
 
-    async def add_user(self, user_id: str, username: str, role: UserRole = UserRole.COLLABORATOR) -> None:
+    async def add_user(self, user_id: str, username: str, role: UserRole = UserRole.COLLABORATOR) -> Any:
         """Add a user to the session"""
         presence = await self.state.add_user(user_id, username, role)
         self._mark_dirty()
@@ -63,14 +63,14 @@ class CollaborationSession:
             await self._persist_if_needed()
         return success
 
-    async def update_user_activity(self, user_id: str, activity_type, cursor_position=None, selection=None) -> None:
+    async def update_user_activity(self, user_id: str, activity_type, cursor_position=None, selection=None) -> bool:
         """Update user activity"""
         success = await self.state.update_user_activity(user_id, activity_type, cursor_position, selection)
         if success:
             self._mark_dirty()
         return success
 
-    async def get_active_users(self) -> None:
+    async def get_active_users(self) -> Any:
         """Get active users in the session"""
         return await self.state.get_active_users()
 

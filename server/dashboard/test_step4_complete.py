@@ -27,7 +27,7 @@ except ImportError as e:
     print("This is expected when running tests independently")
 
 
-def test_1_background_collector_imports() -> None:
+def test_1_background_collector_imports() -> bool:
     """Test 1: Verify all background collector imports work correctly"""
     print("\n=== Test 1: Background Collector Imports ===")
     
@@ -51,7 +51,7 @@ def test_1_background_collector_imports() -> None:
         return False
 
 
-def test_2_data_buffer_functionality() -> None:
+def test_2_data_buffer_functionality() -> bool:
     """Test 2: Verify DataBuffer functionality"""
     print("\n=== Test 2: DataBuffer Functionality ===")
     
@@ -100,7 +100,7 @@ def test_2_data_buffer_functionality() -> None:
         return False
 
 
-def test_3_health_monitor_functionality() -> None:
+def test_3_health_monitor_functionality() -> bool:
     """Test 3: Verify HealthMonitor functionality"""
     print("\n=== Test 3: HealthMonitor Functionality ===")
     
@@ -137,7 +137,7 @@ def test_3_health_monitor_functionality() -> None:
         return False
 
 
-def test_4_background_collector_basic() -> None:
+def test_4_background_collector_basic() -> bool:
     """Test 4: Verify BackgroundDataCollector basic functionality"""
     print("\n=== Test 4: BackgroundDataCollector Basic ===")
     
@@ -178,7 +178,7 @@ def test_4_background_collector_basic() -> None:
         return False
 
 
-def test_5_data_aggregation() -> None:
+def test_5_data_aggregation() -> bool:
     """Test 5: Verify data aggregation functionality"""
     print("\n=== Test 5: Data Aggregation ===")
     
@@ -224,7 +224,7 @@ def test_5_data_aggregation() -> None:
         return False
 
 
-def test_6_async_collection_simulation() -> None:
+def test_6_async_collection_simulation() -> bool:
     """Test 6: Simulate async collection without actually running background tasks"""
     print("\n=== Test 6: Async Collection Simulation ===")
     
@@ -306,7 +306,7 @@ def test_6_async_collection_simulation() -> None:
         return False
 
 
-def test_7_error_handling() -> None:
+def test_7_error_handling() -> bool:
     """Test 7: Verify error handling and fallback mechanisms"""
     print("\n=== Test 7: Error Handling ===")
     
@@ -350,7 +350,7 @@ def test_7_error_handling() -> None:
         return False
 
 
-def test_8_global_instance_management() -> None:
+def test_8_global_instance_management() -> bool:
     """Test 8: Verify global instance management"""
     print("\n=== Test 8: Global Instance Management ===")
     
@@ -381,7 +381,7 @@ def test_8_global_instance_management() -> None:
         return False
 
 
-def test_9_comprehensive_integration() -> None:
+def test_9_comprehensive_integration() -> bool:
     """Test 9: Comprehensive integration test"""
     print("\n=== Test 9: Comprehensive Integration ===")
     
@@ -492,7 +492,7 @@ def test_9_comprehensive_integration() -> None:
         return False
 
 
-def run_all_tests() -> None:
+def run_all_tests() -> bool:
     """Run all background collector tests"""
     print("🚀 Starting Background Data Collection System Tests")
     print("=" * 60)
