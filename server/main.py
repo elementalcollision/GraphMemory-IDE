@@ -7,7 +7,7 @@ import os
 import ast
 import time
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 from datetime import timedelta
 
 import kuzu
@@ -17,9 +17,9 @@ from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 
 # Import configuration and middleware
-from core.config import get_settings, Settings
-from middleware.security import setup_security_middleware
-from monitoring.metrics import (
+from server.core.config import get_settings, Settings  # type: ignore
+from server.middleware.security import setup_security_middleware  # type: ignore
+from server.monitoring.metrics import (  # type: ignore
     setup_metrics_endpoint,
     setup_health_endpoint,
     setup_monitoring_middleware,
@@ -27,20 +27,20 @@ from monitoring.metrics import (
 )
 
 # Import models and auth
-from models import TelemetryEvent, Token, User
-from auth import (
+from server.models import TelemetryEvent, Token, User  # type: ignore
+from server.auth import (  # type: ignore
     authenticate_user, 
-    create_access_token, 
-    ACCESS_TOKEN_EXPIRE_MINUTES, 
-    get_optional_current_user
+    create_access_token,  # type: ignore
+    ACCESS_TOKEN_EXPIRE_MINUTES,  # type: ignore  
+    get_optional_current_user  # type: ignore
 )
 
 # Import routers
-from analytics_routes import router as analytics_router, initialize_analytics_engine, shutdown_analytics_engine
+from server.analytics_routes import router as analytics_router, initialize_analytics_engine, shutdown_analytics_engine  # type: ignore
 
 # Import streaming analytics
 try:
-    from streaming import (
+    from server.streaming import (  # type: ignore
         initialize_streaming_analytics, 
         shutdown_streaming_analytics,
         create_analytics_router,
@@ -110,8 +110,8 @@ def setup_database(app: FastAPI, settings: Settings) -> None:
     kuzu_db_path = settings.database.KUZU_DB_PATH
     
     try:
-        app.state.kuzu_db = kuzu.Database(kuzu_db_path)
-        app.state.kuzu_conn = kuzu.Connection(app.state.kuzu_db)
+        app.state.kuzu_db = kuzu.Database(kuzu_db_path)  # type: ignore
+        app.state.kuzu_conn = kuzu.Connection(app.state.kuzu_db)  # type: ignore
         logger.info(f"Kuzu database initialized at: {kuzu_db_path}")
     except Exception as e:
         logger.error(f"Failed to initialize Kuzu database: {e}")
@@ -136,7 +136,7 @@ def setup_routers(app: FastAPI, settings: Settings) -> None:
     # Include dashboard router if available and enabled
     if settings.ENABLE_DASHBOARD:
         try:
-            from dashboard.routes import dashboard_router
+            from server.dashboard.routes import dashboard_router  # type: ignore
             app.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
             logger.info("Dashboard router included")
         except ImportError:
@@ -155,7 +155,7 @@ def setup_lifecycle_events(app: FastAPI, settings: Settings) -> None:
         try:
             # Initialize analytics engine
             await initialize_analytics_engine(
-                conn=app.state.kuzu_conn, 
+                kuzu_conn=app.state.kuzu_conn, 
                 redis_url=settings.database.REDIS_URL
             )
             logger.info("Analytics engine initialized")
@@ -234,7 +234,7 @@ class TopKQueryRequest(BaseModel):
     table: str
     embedding_field: str
     index_name: str
-    filters: Optional[dict] = None
+    filters: Optional[Dict[str, Any]] = None
 
 
 def enforce_read_only() -> None:
@@ -281,12 +281,12 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return Token(access_token=access_token, token_type="bearer")
 
 
-@app.post("/telemetry/ingest", summary="Ingest IDE telemetry event", response_model=dict)
+@app.post("/telemetry/ingest", summary="Ingest IDE telemetry event", response_model=Dict[str, Any])
 async def ingest_telemetry(
     event: TelemetryEvent, 
     current_user: Optional[User] = Depends(get_optional_current_user),
     _: Any = Depends(enforce_read_only)
-) -> Any:
+) -> Dict[str, Any]:
     """
     Ingest a telemetry event from an IDE plugin.
     Validates and stores the event in the Kuzu database.
@@ -364,12 +364,12 @@ async def ingest_telemetry(
         )
 
 
-@app.get("/telemetry/list", summary="List all telemetry events", response_model=List[dict])
+@app.get("/telemetry/list", summary="List all telemetry events", response_model=List[Dict[str, Any]])
 async def list_telemetry_events(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     current_user: Optional[User] = Depends(get_optional_current_user)
-) -> Any:
+) -> List[Dict[str, Any]]:
     """
     List all telemetry events with pagination.
     
@@ -414,14 +414,14 @@ async def list_telemetry_events(
         )
 
 
-@app.get("/telemetry/query", summary="Query telemetry events", response_model=List[dict])
+@app.get("/telemetry/query", summary="Query telemetry events", response_model=List[Dict[str, Any]])
 async def query_telemetry_events(
     event_type: Optional[str] = Query(None),
     user_id: Optional[str] = Query(None),
     session_id: Optional[str] = Query(None),
     limit: int = Query(100, ge=1, le=1000),
     current_user: Optional[User] = Depends(get_optional_current_user)
-) -> Any:
+) -> List[Dict[str, Any]]:
     """
     Query telemetry events with filters.
     
@@ -485,12 +485,12 @@ async def query_telemetry_events(
         )
 
 
-@app.post("/tools/topk", summary="Top-K relevant node/snippet query", response_model=list)
+@app.post("/tools/topk", summary="Top-K relevant node/snippet query", response_model=List[Dict[str, Any]])
 async def topk_query(
     req: TopKQueryRequest = Body(...),
     current_user: Optional[User] = Depends(get_optional_current_user),
     _: Any = Depends(enforce_read_only)
-):
+) -> List[Dict[str, Any]]:
     """
     Top-K query for finding relevant nodes/snippets using vector similarity.
     
@@ -551,8 +551,8 @@ async def topk_query(
 
 
 # Additional utility endpoints for production monitoring
-@app.get("/api/v1/status", summary="Application status", response_model=dict)
-async def get_application_status() -> None:
+@app.get("/api/v1/status", summary="Application status", response_model=Dict[str, Any])
+async def get_application_status() -> Dict[str, Any]:
     """Get comprehensive application status"""
     settings = get_settings()
     metrics_collector = get_metrics_collector()

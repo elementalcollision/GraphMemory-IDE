@@ -6,11 +6,22 @@ Provides Prometheus metrics, health checks, and performance monitoring.
 import time
 import asyncio
 import logging
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional, Callable, AsyncGenerator, Union
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Response
-from fastapi.middleware.base import BaseHTTPMiddleware
 import psutil
+
+# FastAPI imports with fallbacks
+try:
+    from fastapi import FastAPI, Request, Response
+    from starlette.middleware.base import BaseHTTPMiddleware
+    FASTAPI_AVAILABLE = True
+except ImportError:
+    FASTAPI_AVAILABLE = False
+    # Create minimal mock classes when FastAPI is not available
+    FastAPI = Any
+    Request = Any
+    Response = Any
+    BaseHTTPMiddleware = object
 
 try:
     from prometheus_client import Counter, Histogram, Gauge, Info, generate_latest, CONTENT_TYPE_LATEST
@@ -21,45 +32,72 @@ except ImportError:
     class Counter:
         def __init__(self, *args, **kwargs) -> None: pass
         def inc(self, *args, **kwargs) -> None: pass
-        def labels(self, *args, **kwargs) -> None: return self
+        def labels(self, *args, **kwargs) -> "Counter": return self
     
     class Histogram:
         def __init__(self, *args, **kwargs) -> None: pass
         def observe(self, *args, **kwargs) -> None: pass
-        def labels(self, *args, **kwargs) -> None: return self
-        def time(self) -> None: return MockTimer()
+        def labels(self, *args, **kwargs) -> "Histogram": return self
+        def time(self) -> "MockTimer": return MockTimer()
     
     class Gauge:
         def __init__(self, *args, **kwargs) -> None: pass
         def set(self, *args, **kwargs) -> None: pass
-        def labels(self, *args, **kwargs) -> None: return self
+        def labels(self, *args, **kwargs) -> "Gauge": return self
     
     class Info:
         def __init__(self, *args, **kwargs) -> None: pass
         def info(self, *args, **kwargs) -> None: pass
     
     class MockTimer:
-        def __enter__(self) -> None: return self
+        def __enter__(self) -> "MockTimer": return self
         def __exit__(self, *args) -> None: pass
     
-    def generate_latest() -> None: return b""
+    def generate_latest() -> bytes: return b""
     CONTENT_TYPE_LATEST = "text/plain"
 
-from .gpu_acceleration import gpu_manager
-from .performance_monitor import performance_monitor
-from .concurrent_processing import concurrent_manager
+try:
+    from .gpu_acceleration import gpu_manager
+except ImportError:
+    gpu_manager = None
+
+try:
+    from .performance_monitor import performance_monitor
+except ImportError:
+    performance_monitor = None
+
+try:
+    from .concurrent_processing import concurrent_manager
+except ImportError:
+    concurrent_manager = None
 
 logger = logging.getLogger(__name__)
 
 
-class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
+class AnalyticsMonitoringMiddleware:
     """
-    FastAPI middleware for monitoring analytics engine performance.
+    Analytics monitoring middleware that works with or without FastAPI.
     Tracks request metrics, response times, and system health.
     """
     
-    def __init__(self, app: FastAPI) -> None:
-        super().__init__(app)
+    def __init__(self, app: Any = None) -> None:
+        self.app = app
+        
+        # Initialize metric attributes
+        self.request_count: Optional[Counter] = None
+        self.request_duration: Optional[Histogram] = None
+        self.analytics_operations: Optional[Counter] = None
+        self.analytics_duration: Optional[Histogram] = None
+        self.system_cpu_usage: Optional[Gauge] = None
+        self.system_memory_usage: Optional[Gauge] = None
+        self.gpu_memory_usage: Optional[Gauge] = None
+        self.cache_hits: Optional[Counter] = None
+        self.cache_misses: Optional[Counter] = None
+        self.graph_size_nodes: Optional[Gauge] = None
+        self.graph_size_edges: Optional[Gauge] = None
+        self.component_health: Optional[Gauge] = None
+        self.system_info: Optional[Info] = None
+        
         self.setup_metrics()
     
     def setup_metrics(self) -> None:
@@ -148,29 +186,31 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
         )
         
         # Initialize system info
-        self.system_info.info({
-            'gpu_available': str(hasattr(gpu_manager, 'is_gpu_available') and gpu_manager.is_gpu_available()),
-            'gpu_enabled': str(hasattr(gpu_manager, 'is_gpu_enabled') and gpu_manager.is_gpu_enabled()),
-            'concurrent_workers': str(getattr(concurrent_manager, 'max_workers', 'unknown')),
-            'python_version': f"{psutil.sys.version_info.major}.{psutil.sys.version_info.minor}",
-        })
+        if self.system_info:
+            self.system_info.info({
+                'gpu_available': str(gpu_manager and hasattr(gpu_manager, 'is_gpu_available') and gpu_manager.is_gpu_available()),
+                'gpu_enabled': str(gpu_manager and hasattr(gpu_manager, 'is_gpu_enabled') and gpu_manager.is_gpu_enabled()),
+                'concurrent_workers': str(getattr(concurrent_manager, 'max_workers', 'unknown')),
+                'python_version': f"{psutil.sys.version_info.major}.{psutil.sys.version_info.minor}",
+            })
     
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def process_request(self, request: Any, call_next: Callable) -> Any:
         """Process request and collect metrics"""
         start_time = time.time()
         
-        # Extract request info
-        method = request.method
-        path = request.url.path
+        # Extract request info safely
+        method = getattr(request, 'method', 'GET')
+        url_obj = getattr(request, 'url', None)
+        path = getattr(url_obj, 'path', '/') if url_obj else '/'
         endpoint = self._normalize_endpoint(path)
         
         try:
             # Process request
             response = await call_next(request)
-            status_code = response.status_code
+            status_code = getattr(response, 'status_code', 200)
             
             # Record metrics
-            if PROMETHEUS_AVAILABLE:
+            if PROMETHEUS_AVAILABLE and self.request_count and self.request_duration:
                 self.request_count.labels(
                     method=method,
                     endpoint=endpoint,
@@ -186,7 +226,7 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
             
         except Exception as e:
             # Record error metrics
-            if PROMETHEUS_AVAILABLE:
+            if PROMETHEUS_AVAILABLE and self.request_count:
                 self.request_count.labels(
                     method=method,
                     endpoint=endpoint,
@@ -218,7 +258,7 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
         success: bool
     ) -> None:
         """Record analytics operation metrics"""
-        if not PROMETHEUS_AVAILABLE:
+        if not PROMETHEUS_AVAILABLE or not self.analytics_operations:
             return
         
         status = "success" if success else "error"
@@ -229,7 +269,7 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
             status=status
         ).inc()
         
-        if success:
+        if success and self.analytics_duration:
             self.analytics_duration.labels(
                 operation_type=operation_type,
                 algorithm=algorithm
@@ -240,9 +280,9 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
         if not PROMETHEUS_AVAILABLE:
             return
         
-        if hit:
+        if hit and self.cache_hits:
             self.cache_hits.labels(cache_type=cache_type).inc()
-        else:
+        elif not hit and self.cache_misses:
             self.cache_misses.labels(cache_type=cache_type).inc()
     
     def update_graph_metrics(self, node_count: int, edge_count: int) -> None:
@@ -250,8 +290,10 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
         if not PROMETHEUS_AVAILABLE:
             return
         
-        self.graph_size_nodes.set(node_count)
-        self.graph_size_edges.set(edge_count)
+        if self.graph_size_nodes:
+            self.graph_size_nodes.set(node_count)
+        if self.graph_size_edges:
+            self.graph_size_edges.set(edge_count)
     
     def update_system_metrics(self) -> None:
         """Update system resource metrics"""
@@ -259,21 +301,44 @@ class AnalyticsMonitoringMiddleware(BaseHTTPMiddleware):
             return
         
         # CPU and memory
-        self.system_cpu_usage.set(psutil.cpu_percent())
-        self.system_memory_usage.set(psutil.virtual_memory().percent)
+        cpu_percent = psutil.cpu_percent()
+        if self.system_cpu_usage and isinstance(cpu_percent, (int, float)):
+            self.system_cpu_usage.set(float(cpu_percent))
+        
+        if self.system_memory_usage:
+            self.system_memory_usage.set(psutil.virtual_memory().percent)
         
         # GPU metrics
-        if hasattr(gpu_manager, 'get_acceleration_status'):
+        if gpu_manager and hasattr(gpu_manager, 'get_acceleration_status') and self.gpu_memory_usage:
             gpu_status = gpu_manager.get_acceleration_status()
             gpu_memory = gpu_status.get('memory_usage', 0)
             self.gpu_memory_usage.set(gpu_memory)
     
     def update_component_health(self, component: str, healthy: bool) -> None:
         """Update component health status"""
-        if not PROMETHEUS_AVAILABLE:
+        if not PROMETHEUS_AVAILABLE or not self.component_health:
             return
         
         self.component_health.labels(component=component).set(1 if healthy else 0)
+
+
+# FastAPI-specific middleware wrapper
+if FASTAPI_AVAILABLE:
+    class FastAPIMonitoringMiddleware(BaseHTTPMiddleware):  # type: ignore
+        """FastAPI-specific middleware wrapper"""
+        
+        def __init__(self, app: Any) -> None:
+            super().__init__(app)  # type: ignore
+            self.monitor = AnalyticsMonitoringMiddleware(app)
+        
+        async def dispatch(self, request: Any, call_next: Callable) -> Any:
+            """Dispatch request through monitoring"""
+            return await self.monitor.process_request(request, call_next)
+else:
+    # Placeholder class when FastAPI is not available
+    class FastAPIMonitoringMiddleware:
+        def __init__(self, app: Any) -> None:
+            self.monitor = AnalyticsMonitoringMiddleware(app)
 
 
 class AnalyticsHealthChecker:
@@ -283,13 +348,13 @@ class AnalyticsHealthChecker:
     """
     
     def __init__(self) -> None:
-        self.health_checks = {}
-        self.last_check_time = {}
+        self.health_checks: Dict[str, Any] = {}
+        self.last_check_time: Dict[str, float] = {}
         self.check_interval = 30  # seconds
     
     async def check_all_components(self) -> Dict[str, Any]:
         """Check health of all analytics components"""
-        health_status = {
+        health_status: Dict[str, Any] = {
             "overall_status": "healthy",
             "timestamp": time.time(),
             "components": {},
@@ -340,7 +405,7 @@ class AnalyticsHealthChecker:
     async def _check_gpu_acceleration(self) -> Dict[str, Any]:
         """Check GPU acceleration component health"""
         try:
-            if hasattr(gpu_manager, 'get_acceleration_status'):
+            if gpu_manager and hasattr(gpu_manager, 'get_acceleration_status'):
                 status = gpu_manager.get_acceleration_status()
                 return {
                     "healthy": True,
@@ -366,7 +431,7 @@ class AnalyticsHealthChecker:
     async def _check_performance_monitor(self) -> Dict[str, Any]:
         """Check performance monitor component health"""
         try:
-            if hasattr(performance_monitor, 'get_performance_summary'):
+            if performance_monitor and hasattr(performance_monitor, 'get_performance_summary'):
                 summary = performance_monitor.get_performance_summary()
                 return {
                     "healthy": True,
@@ -389,7 +454,7 @@ class AnalyticsHealthChecker:
     async def _check_concurrent_processing(self) -> Dict[str, Any]:
         """Check concurrent processing component health"""
         try:
-            if hasattr(concurrent_manager, 'get_executor_status'):
+            if concurrent_manager and hasattr(concurrent_manager, 'get_executor_status'):
                 status = concurrent_manager.get_executor_status()
                 return {
                     "healthy": True,
@@ -454,7 +519,7 @@ class AnalyticsHealthChecker:
     
     def _get_performance_metrics(self) -> Dict[str, Any]:
         """Get current performance metrics"""
-        if hasattr(performance_monitor, 'get_performance_summary'):
+        if performance_monitor and hasattr(performance_monitor, 'get_performance_summary'):
             return performance_monitor.get_performance_summary()
         else:
             return {
@@ -464,15 +529,23 @@ class AnalyticsHealthChecker:
 
 
 # Global instances
-monitoring_middleware = None
+monitoring_middleware: Optional[AnalyticsMonitoringMiddleware] = None
 health_checker = AnalyticsHealthChecker()
 
 
-def setup_monitoring(app: FastAPI) -> AnalyticsMonitoringMiddleware:
-    """Setup monitoring middleware for FastAPI app"""
+def setup_monitoring(app: Any) -> AnalyticsMonitoringMiddleware:
+    """Setup monitoring middleware for app"""
     global monitoring_middleware
-    monitoring_middleware = AnalyticsMonitoringMiddleware(app)
-    app.add_middleware(AnalyticsMonitoringMiddleware)
+    
+    if FASTAPI_AVAILABLE and hasattr(app, 'add_middleware'):
+        # Use FastAPI-specific wrapper
+        wrapper = FastAPIMonitoringMiddleware(app)
+        app.add_middleware(FastAPIMonitoringMiddleware)
+        monitoring_middleware = wrapper.monitor
+    else:
+        # Use standalone monitoring
+        monitoring_middleware = AnalyticsMonitoringMiddleware(app)
+    
     return monitoring_middleware
 
 
@@ -481,24 +554,27 @@ def get_monitoring_middleware() -> Optional[AnalyticsMonitoringMiddleware]:
     return monitoring_middleware
 
 
-async def get_metrics_endpoint() -> Response:
+async def get_metrics_endpoint() -> Union[str, Any]:
     """Endpoint to serve Prometheus metrics"""
     if not PROMETHEUS_AVAILABLE:
-        return Response(
-            content="Prometheus client not available",
-            media_type="text/plain",
-            status_code=503
-        )
+        content = "Prometheus client not available"
+        if FASTAPI_AVAILABLE:
+            from fastapi import Response  # Re-import to ensure it's available
+            return Response(content=content, media_type="text/plain", status_code=503)
+        else:
+            return content
     
     # Update system metrics before serving
     if monitoring_middleware:
         monitoring_middleware.update_system_metrics()
     
     metrics_data = generate_latest()
-    return Response(
-        content=metrics_data,
-        media_type=CONTENT_TYPE_LATEST
-    )
+    
+    if FASTAPI_AVAILABLE:
+        from fastapi import Response  # Re-import to ensure it's available  
+        return Response(content=metrics_data.decode('utf-8'), media_type=CONTENT_TYPE_LATEST)
+    else:
+        return metrics_data.decode('utf-8')
 
 
 async def get_health_endpoint() -> Dict[str, Any]:
@@ -529,7 +605,7 @@ async def periodic_metric_updates() -> None:
 
 
 @asynccontextmanager
-async def monitoring_lifespan(app: FastAPI) -> None:
+async def monitoring_lifespan(app: Any) -> AsyncGenerator[None, None]:
     """Lifespan context manager for monitoring setup"""
     # Startup
     setup_monitoring(app)

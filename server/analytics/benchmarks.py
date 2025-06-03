@@ -17,7 +17,7 @@ from .gpu_acceleration import gpu_manager
 from .performance_monitor import performance_monitor
 from .concurrent_processing import concurrent_manager
 from .algorithms import GraphAlgorithms, MLAnalytics
-from .models import CentralityRequest, CommunityRequest, ClusteringRequest
+from .models import CentralityRequest, CommunityRequest, ClusteringRequest, CentralityType, ClusteringType
 
 logger = logging.getLogger(__name__)
 
@@ -65,13 +65,21 @@ class AnalyticsBenchmarkSuite:
     
     def _monitor_system_resources(self) -> Dict[str, Union[float, int]]:
         """Monitor current system resource usage"""
-        disk_io = psutil.disk_io_counters()
+        disk_io = psutil.disk_io_counters()  # type: ignore
+        
+        # Handle disk I/O stats safely
+        disk_read = 0
+        disk_write = 0
+        if disk_io is not None:
+            disk_read = disk_io.read_bytes  # type: ignore
+            disk_write = disk_io.write_bytes  # type: ignore
+        
         return {
-            "cpu_percent": psutil.cpu_percent(interval=0.1),
+            "cpu_percent": psutil.cpu_percent(interval=0.1, percpu=False),  # type: ignore
             "memory_percent": psutil.virtual_memory().percent,
             "memory_used_gb": psutil.virtual_memory().used / (1024**3),
-            "disk_io_read": disk_io.read_bytes if disk_io else 0,
-            "disk_io_write": disk_io.write_bytes if disk_io else 0
+            "disk_io_read": disk_read,
+            "disk_io_write": disk_write
         }
     
     async def _run_benchmark(
@@ -143,14 +151,14 @@ class AnalyticsBenchmarkSuite:
             graph_sizes = [100, 500, 1000, 2000]
         
         results = []
-        algorithms = ["pagerank", "betweenness", "closeness", "eigenvector"]
+        algorithms = [CentralityType.PAGERANK, CentralityType.BETWEENNESS, CentralityType.CLOSENESS, CentralityType.EIGENVECTOR]
         
         for size in graph_sizes:
             # Generate test graph
             test_graph = self._generate_test_graph(size)
             
             for algorithm in algorithms:
-                test_name = f"centrality_{algorithm}_nodes_{size}"
+                test_name = f"centrality_{algorithm.value}_nodes_{size}"
                 
                 async def run_centrality() -> Dict[str, float]:
                     return await self.graph_algorithms.calculate_centrality(
@@ -177,7 +185,7 @@ class AnalyticsBenchmarkSuite:
             for algorithm in algorithms:
                 test_name = f"community_{algorithm}_nodes_{size}"
                 
-                async def run_community() -> None:
+                async def run_community() -> Any:
                     return await self.graph_algorithms.detect_communities(
                         test_graph, algorithm=algorithm
                     )
@@ -194,17 +202,19 @@ class AnalyticsBenchmarkSuite:
             data_sizes = [100, 500, 1000, 2000]
         
         results = []
-        algorithms = ["spectral", "kmeans", "hierarchical"]
+        algorithms = [ClusteringType.SPECTRAL, ClusteringType.KMEANS, ClusteringType.HIERARCHICAL]
         
         for size in data_sizes:
             test_graph = self._generate_test_graph(size)
+            # Extract features for clustering
+            features, _, node_ids = await self.ml_analytics.extract_node_features(test_graph)
             
             for algorithm in algorithms:
-                test_name = f"clustering_{algorithm}_nodes_{size}"
+                test_name = f"clustering_{algorithm.value}_nodes_{size}"
                 
-                async def run_clustering() -> None:
+                async def run_clustering() -> Any:
                     return await self.ml_analytics.cluster_nodes(
-                        test_graph, algorithm=algorithm, n_clusters=5
+                        features, clustering_type=algorithm, n_clusters=5
                     )
                 
                 result = await self._run_benchmark(test_name, run_clustering)
@@ -233,7 +243,7 @@ class AnalyticsBenchmarkSuite:
                 f"pagerank_cpu_nodes_{size}",
                 self.graph_algorithms.calculate_centrality,
                 test_graph,
-                centrality_type="pagerank"
+                centrality_type=CentralityType.PAGERANK
             )
             
             # GPU version
@@ -243,7 +253,7 @@ class AnalyticsBenchmarkSuite:
                 f"pagerank_gpu_nodes_{size}",
                 self.graph_algorithms.calculate_centrality,
                 test_graph,
-                centrality_type="pagerank"
+                centrality_type=CentralityType.PAGERANK
             )
             
             if cpu_result.success and gpu_result.success:
@@ -273,7 +283,7 @@ class AnalyticsBenchmarkSuite:
             start_time = time.time()
             sequential_results = []
             for graph in test_graphs:
-                result = await self.graph_algorithms.calculate_centrality(graph, centrality_type="pagerank")
+                result = await self.graph_algorithms.calculate_centrality(graph, centrality_type=CentralityType.PAGERANK)
                 sequential_results.append(result)
             sequential_time = time.time() - start_time
             
@@ -290,7 +300,7 @@ class AnalyticsBenchmarkSuite:
             # Concurrent processing
             start_time = time.time()
             tasks = [
-                self.graph_algorithms.calculate_centrality(graph, centrality_type="pagerank")
+                self.graph_algorithms.calculate_centrality(graph, centrality_type=CentralityType.PAGERANK)
                 for graph in test_graphs
             ]
             concurrent_results = await asyncio.gather(*tasks)
@@ -318,7 +328,7 @@ class AnalyticsBenchmarkSuite:
         
         return comparisons
     
-    def _generate_test_graph(self, num_nodes: int) -> None:
+    def _generate_test_graph(self, num_nodes: int) -> Any:
         """Generate a test graph with specified number of nodes"""
         import networkx as nx
         
@@ -434,7 +444,7 @@ async def test_centrality_performance(benchmark) -> None:
     
     result = benchmark(
         lambda: asyncio.run(
-            benchmark_suite.graph_algorithms.calculate_centrality(test_graph, centrality_type="pagerank")
+            benchmark_suite.graph_algorithms.calculate_centrality(test_graph, centrality_type=CentralityType.PAGERANK)
         )
     )
     assert result is not None
@@ -460,9 +470,12 @@ async def test_clustering_performance(benchmark) -> None:
     await benchmark_suite.initialize()
     test_graph = benchmark_suite._generate_test_graph(500)
     
+    # Extract features first
+    features, _, node_ids = await benchmark_suite.ml_analytics.extract_node_features(test_graph)
+    
     result = benchmark(
         lambda: asyncio.run(
-            benchmark_suite.ml_analytics.cluster_nodes(test_graph, algorithm="spectral", n_clusters=5)
+            benchmark_suite.ml_analytics.cluster_nodes(features, clustering_type=ClusteringType.SPECTRAL, n_clusters=5)
         )
     )
     assert result is not None 

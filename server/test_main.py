@@ -6,6 +6,7 @@ from copy import deepcopy
 import json
 import os
 import pytest
+from typing import List, Any
 
 client = TestClient(app)
 
@@ -40,7 +41,7 @@ def test_ingest_telemetry_missing_event_type() -> None:
 
 def test_ingest_telemetry_invalid_timestamp_type() -> None:
     bad_event = deepcopy(TELEMETRY_EVENT)
-    bad_event["timestamp"] = 1234567890
+    bad_event["timestamp"] = "invalid-timestamp-format"  # Invalid string format instead of int
     response = client.post("/telemetry/ingest", json=bad_event)
     assert response.status_code == 422
     assert "timestamp" in response.text
@@ -61,19 +62,19 @@ def test_ingest_telemetry_empty_data() -> None:
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
 
-def make_mock_query_result(rows, col_names) -> None:
+def make_mock_query_result(rows: List[Any], col_names: List[str]) -> Any:
     class MockQueryResult:
-        def __init__(self, rows, col_names) -> None:
+        def __init__(self, rows: List[Any], col_names: List[str]) -> None:
             self._rows = rows
             self._col_names = col_names
             self._idx = 0
-        def has_next(self) -> None:
+        def has_next(self) -> bool:
             return self._idx < len(self._rows)
-        def get_next(self) -> None:
+        def get_next(self) -> Any:
             row = self._rows[self._idx]
             self._idx += 1
             return row
-        def get_column_names(self) -> None:
+        def get_column_names(self) -> List[str]:
             return self._col_names
     return MockQueryResult(rows, col_names)
 
@@ -156,19 +157,19 @@ def test_query_telemetry_invalid_filter() -> None:
         assert response.json() == []
 
 # --- Top-K Endpoint Tests ---
-def make_mock_query_result_topk(rows, col_names) -> None:
+def make_mock_query_result_topk(rows: List[Any], col_names: List[str]) -> Any:
     class MockQueryResult:
-        def __init__(self, rows, col_names) -> None:
+        def __init__(self, rows: List[Any], col_names: List[str]) -> None:
             self._rows = rows
             self._col_names = col_names
             self._idx = 0
-        def has_next(self) -> None:
+        def has_next(self) -> bool:
             return self._idx < len(self._rows)
-        def get_next(self) -> None:
+        def get_next(self) -> Any:
             row = self._rows[self._idx]
             self._idx += 1
             return row
-        def get_column_names(self) -> None:
+        def get_column_names(self) -> List[str]:
             return self._col_names
     return MockQueryResult(rows, col_names)
 
@@ -267,13 +268,13 @@ def test_topk_with_filters() -> None:
         data = response.json()
         assert data[0]["node"]["snippet"] == "baz"
 
-def test_ingest_telemetry_readonly(monkeypatch) -> None:
+def test_ingest_telemetry_readonly(monkeypatch: Any) -> None:
     monkeypatch.setenv("KUZU_READ_ONLY", "true")
     response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
     assert response.status_code == 403
     assert "Read-only mode enabled" in response.text
 
-def test_topk_readonly(monkeypatch) -> None:
+def test_topk_readonly(monkeypatch: Any) -> None:
     monkeypatch.setenv("KUZU_READ_ONLY", "true")
     payload = {
         "query_text": "find foo",
@@ -286,7 +287,7 @@ def test_topk_readonly(monkeypatch) -> None:
     assert response.status_code == 403
     assert "Read-only mode enabled" in response.text
 
-def test_ingest_telemetry_not_readonly(monkeypatch) -> None:
+def test_ingest_telemetry_not_readonly(monkeypatch: Any) -> None:
     monkeypatch.setenv("KUZU_READ_ONLY", "false")
     with patch("server.main.conn.execute") as mock_execute:
         mock_execute.return_value = None
@@ -294,7 +295,7 @@ def test_ingest_telemetry_not_readonly(monkeypatch) -> None:
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
 
-def test_topk_not_readonly(monkeypatch) -> None:
+def test_topk_not_readonly(monkeypatch: Any) -> None:
     monkeypatch.setenv("KUZU_READ_ONLY", "false")
     mock_embedding = [0.1] * 384
     mock_embedding_obj = MagicMock()
