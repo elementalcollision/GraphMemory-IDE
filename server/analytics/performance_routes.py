@@ -27,7 +27,7 @@ router = APIRouter(prefix="/api/v1/performance", tags=["performance"])
 
 
 @router.get("/status")
-async def get_performance_status() -> None:
+async def get_performance_status() -> Dict[str, Any]:
     """Get current performance status and metrics."""
     try:
         performance_optimizer = get_performance_optimizer()
@@ -64,7 +64,7 @@ async def get_performance_status() -> None:
 
 
 @router.post("/optimize")
-async def run_performance_optimization(background_tasks: BackgroundTasks) -> None:
+async def run_performance_optimization(background_tasks: BackgroundTasks) -> Dict[str, Any]:
     """Run comprehensive performance optimization."""
     try:
         performance_optimizer = get_performance_optimizer()
@@ -86,7 +86,7 @@ async def run_performance_optimization(background_tasks: BackgroundTasks) -> Non
 
 
 @router.get("/optimization/results")
-async def get_optimization_results() -> None:
+async def get_optimization_results() -> Dict[str, Any]:
     """Get results from the last performance optimization run."""
     try:
         performance_optimizer = get_performance_optimizer()
@@ -108,7 +108,7 @@ async def get_optimization_results() -> None:
 
 
 @router.get("/cache/stats")
-async def get_cache_statistics() -> None:
+async def get_cache_statistics() -> Dict[str, Any]:
     """Get detailed cache performance statistics."""
     try:
         cache_manager = get_cache_manager()
@@ -129,7 +129,7 @@ async def get_cache_statistics() -> None:
 
 
 @router.post("/cache/clear")
-async def clear_cache(cache_type: Optional[str] = None, pattern: Optional[str] = None) -> None:
+async def clear_cache(cache_type: Optional[str] = None, pattern: Optional[str] = None) -> Dict[str, Any]:
     """Clear cache entries by type or pattern."""
     try:
         cache_manager = get_cache_manager()
@@ -164,7 +164,7 @@ async def clear_cache(cache_type: Optional[str] = None, pattern: Optional[str] =
 
 
 @router.get("/database/analysis")
-async def get_database_analysis() -> None:
+async def get_database_analysis() -> Dict[str, Any]:
     """Get database performance analysis."""
     try:
         performance_optimizer = get_performance_optimizer()
@@ -188,7 +188,7 @@ async def get_database_analysis() -> None:
 
 
 @router.post("/database/maintenance")
-async def run_database_maintenance(background_tasks: BackgroundTasks) -> None:
+async def run_database_maintenance(background_tasks: BackgroundTasks) -> Dict[str, Any]:
     """Run database maintenance (VACUUM and ANALYZE)."""
     try:
         performance_optimizer = get_performance_optimizer()
@@ -197,7 +197,7 @@ async def run_database_maintenance(background_tasks: BackgroundTasks) -> None:
             raise HTTPException(status_code=503, detail="Performance optimizer not available")
         
         # Run maintenance in background
-        async def maintenance_task() -> None:
+        async def maintenance_task() -> Any:
             return await performance_optimizer.db_optimizer.vacuum_and_analyze()
         
         background_tasks.add_task(maintenance_task)
@@ -213,7 +213,7 @@ async def run_database_maintenance(background_tasks: BackgroundTasks) -> None:
 
 
 @router.get("/memory/usage")
-async def get_memory_usage() -> None:
+async def get_memory_usage() -> Dict[str, Any]:
     """Get current memory usage statistics."""
     try:
         performance_optimizer = get_performance_optimizer()
@@ -236,7 +236,7 @@ async def get_memory_usage() -> None:
 
 
 @router.post("/memory/gc")
-async def force_garbage_collection() -> None:
+async def force_garbage_collection() -> Dict[str, Any]:
     """Force garbage collection to free memory."""
     try:
         performance_optimizer = get_performance_optimizer()
@@ -257,7 +257,7 @@ async def force_garbage_collection() -> None:
 
 
 @router.get("/response-times")
-async def get_response_time_analysis() -> None:
+async def get_response_time_analysis() -> Dict[str, Any]:
     """Get response time analysis for all endpoints."""
     try:
         performance_optimizer = get_performance_optimizer()
@@ -281,10 +281,10 @@ async def get_response_time_analysis() -> None:
 async def run_load_test(
     concurrent_users: int = 10,
     test_duration_seconds: int = 60,
-    endpoints: List[str] = None,
+    endpoints: Optional[List[str]] = None,
     include_websocket: bool = True,
     include_database: bool = True
-) -> None:
+) -> Dict[str, Any]:
     """Run comprehensive load test."""
     try:
         load_test_suite = get_load_test_suite()
@@ -327,7 +327,7 @@ async def run_load_test(
 
 
 @router.get("/load-test/config")
-async def get_load_test_config() -> None:
+async def get_load_test_config() -> Dict[str, Any]:
     """Get default load test configuration options."""
     return {
         "status": "success",
@@ -353,7 +353,7 @@ async def get_load_test_config() -> None:
 
 
 @router.get("/benchmarks")
-async def get_performance_benchmarks() -> None:
+async def get_performance_benchmarks() -> Dict[str, Any]:
     """Get performance benchmarks and targets."""
     return {
         "status": "success",
@@ -396,7 +396,7 @@ async def get_performance_benchmarks() -> None:
 
 
 @router.get("/health")
-async def get_performance_health() -> None:
+async def get_performance_health() -> Dict[str, Any]:
     """Get overall performance health status."""
     try:
         performance_optimizer = get_performance_optimizer()

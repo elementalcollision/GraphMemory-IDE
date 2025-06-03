@@ -85,16 +85,10 @@ class RequestValidator:
     def validate_json_payload(payload: str, max_depth: int = 10) -> bool:
         """
         Validate JSON payload for security issues.
-        
-        Args:
-            payload: JSON string to validate
-            max_depth: Maximum nesting depth allowed
-            
-        Returns:
-            True if valid, False otherwise
+        Checks for excessive nesting depth to prevent DoS attacks.
         """
         try:
-            def check_depth(obj, current_depth=0) -> None:
+            def check_depth(obj, current_depth=0) -> bool:
                 if current_depth > max_depth:
                     return False
                 
@@ -281,7 +275,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             headers={"Content-Type": "application/json"}
         )
     
-    async def dispatch(self, request: Request, call_next) -> None:
+    async def dispatch(self, request: Request, call_next) -> Response:
         """Process request through security middleware."""
         try:
             # Skip security checks for health endpoints

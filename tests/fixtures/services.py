@@ -10,7 +10,7 @@ from unittest.mock import Mock, AsyncMock, patch
 import pytest
 
 @pytest.fixture(scope="function")
-def mock_email_service() -> None:
+def mock_email_service() -> Any:
     """Mock email service for testing notifications."""
     
     class MockEmailService:
@@ -35,7 +35,7 @@ def mock_email_service() -> None:
             self.sent_emails.append(email)
             return {"status": "sent", "message_id": f"mock-{len(self.sent_emails)}"}
         
-        def get_sent_emails(self) -> None:
+        def get_sent_emails(self) -> List[Dict[str, Any]]:
             """Get all sent emails."""
             return self.sent_emails.copy()
         
@@ -46,7 +46,7 @@ def mock_email_service() -> None:
     return MockEmailService()
 
 @pytest.fixture(scope="function")
-def mock_webhook_service() -> None:
+def mock_webhook_service() -> Any:
     """Mock webhook service for testing external integrations."""
     
     class MockWebhookService:
@@ -62,7 +62,7 @@ def mock_webhook_service() -> None:
                 "active": True
             }
         
-        async def send_webhook(self, endpoint_name: str, payload: Dict[str, Any]) -> None:
+        async def send_webhook(self, endpoint_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             """Mock sending a webhook."""
             if endpoint_name not in self.endpoints:
                 raise ValueError(f"Endpoint {endpoint_name} not registered")
@@ -77,7 +77,7 @@ def mock_webhook_service() -> None:
             self.webhook_calls.append(webhook_call)
             return {"status": "success", "response_code": 200}
         
-        def get_webhook_calls(self) -> None:
+        def get_webhook_calls(self) -> List[Dict[str, Any]]:
             """Get all webhook calls."""
             return self.webhook_calls.copy()
         
@@ -88,7 +88,7 @@ def mock_webhook_service() -> None:
     return MockWebhookService()
 
 @pytest.fixture(scope="function")
-def mock_slack_service() -> None:
+def mock_slack_service() -> Any:
     """Mock Slack service for testing Slack notifications."""
     
     class MockSlackService:
@@ -97,7 +97,7 @@ def mock_slack_service() -> None:
             self.channels = ["#alerts", "#general", "#monitoring"]
             self.bot_token = "xoxb-mock-token"
         
-        async def send_message(self, channel: str, message: str, blocks: List[Dict] = None) -> None:
+        async def send_message(self, channel: str, message: str, blocks: List[Dict] = None) -> Dict[str, Any]:
             """Mock sending a Slack message."""
             slack_message = {
                 "channel": channel,
@@ -109,7 +109,7 @@ def mock_slack_service() -> None:
             self.messages.append(slack_message)
             return {"ok": True, "ts": slack_message["message_ts"]}
         
-        async def send_alert(self, alert_data: Dict[str, Any]) -> None:
+        async def send_alert(self, alert_data: Dict[str, Any]) -> Dict[str, Any]:
             """Mock sending an alert to Slack."""
             message = f"🚨 Alert: {alert_data.get('message', 'Unknown alert')}"
             blocks = [
@@ -123,7 +123,7 @@ def mock_slack_service() -> None:
             ]
             return await self.send_message("#alerts", message, blocks)
         
-        def get_messages(self) -> None:
+        def get_messages(self) -> List[Dict[str, Any]]:
             """Get all sent messages."""
             return self.messages.copy()
         
@@ -134,7 +134,7 @@ def mock_slack_service() -> None:
     return MockSlackService()
 
 @pytest.fixture(scope="function")
-def service_toggle_manager() -> None:
+def service_toggle_manager() -> Any:
     """Manage toggling between real and mock services."""
     
     class ServiceToggleManager:
@@ -169,7 +169,7 @@ def service_toggle_manager() -> None:
     return ServiceToggleManager()
 
 @pytest.fixture(scope="function")
-def external_service_health_checker() -> None:
+def external_service_health_checker() -> Any:
     """Check health of external services."""
     
     class ExternalServiceHealthChecker:
@@ -216,7 +216,7 @@ def external_service_health_checker() -> None:
     return ExternalServiceHealthChecker()
 
 @pytest.fixture(scope="function")
-def circuit_breaker_mock() -> None:
+def circuit_breaker_mock() -> Any:
     """Mock circuit breaker for testing failure scenarios."""
     
     class MockCircuitBreaker:
@@ -227,7 +227,7 @@ def circuit_breaker_mock() -> None:
             self.success_count = 0
             self.reset_timeout = 60
         
-        def call(self, func, *args, **kwargs) -> None:
+        def call(self, func, *args, **kwargs) -> Any:
             """Mock circuit breaker call."""
             if self.state == "OPEN":
                 raise Exception("Circuit breaker is OPEN")
@@ -259,7 +259,7 @@ def circuit_breaker_mock() -> None:
             self.failure_count = 0
             self.success_count = 0
         
-        def get_state(self) -> None:
+        def get_state(self) -> Dict[str, Any]:
             """Get current state."""
             return {
                 "state": self.state,
@@ -270,7 +270,7 @@ def circuit_breaker_mock() -> None:
     return MockCircuitBreaker()
 
 @pytest.fixture(scope="function")
-def performance_service_mock() -> None:
+def performance_service_mock() -> Any:
     """Mock performance monitoring service."""
     
     class MockPerformanceService:
@@ -304,11 +304,11 @@ def performance_service_mock() -> None:
                 {"query_type": query_type}
             )
         
-        def get_metrics(self) -> None:
+        def get_metrics(self) -> List[Dict[str, Any]]:
             """Get all recorded metrics."""
             return self.metrics.copy()
         
-        def get_metric_summary(self) -> None:
+        def get_metric_summary(self) -> Dict[str, Any]:
             """Get metrics summary."""
             if not self.metrics:
                 return {"total_metrics": 0}
@@ -324,7 +324,7 @@ def performance_service_mock() -> None:
 
 # Environment setup for service testing
 @pytest.fixture(scope="function")
-def service_test_environment() -> None:
+def service_test_environment() -> Any:
     """Setup test environment for service testing."""
     test_env = {
         "EMAIL_ENABLED": "true",

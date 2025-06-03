@@ -77,7 +77,7 @@ def base_app(mock_environment_variables) -> FastAPI:
     
     # Add basic health check endpoint
     @app.get("/health")
-    async def health_check() -> None:
+    async def health_check() -> Dict[str, Any]:
         return {"status": "healthy", "environment": "test"}
     
     return app
@@ -89,7 +89,7 @@ def mcp_server_app(base_app: FastAPI, isolated_databases) -> FastAPI:
     # For now, creating mock endpoints for testing
     
     @base_app.post("/mcp/memory/create")
-    async def create_memory(memory_data: dict) -> None:
+    async def create_memory(memory_data: dict) -> Dict[str, Any]:
         """Mock MCP memory creation endpoint."""
         return {
             "id": "test-memory-001",
@@ -98,7 +98,7 @@ def mcp_server_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.get("/mcp/memory/{memory_id}")
-    async def get_memory(memory_id: str) -> None:
+    async def get_memory(memory_id: str) -> Dict[str, Any]:
         """Mock MCP memory retrieval endpoint."""
         return {
             "id": memory_id,
@@ -108,7 +108,7 @@ def mcp_server_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.get("/mcp/search")
-    async def search_memories(query: str) -> None:
+    async def search_memories(query: str) -> Dict[str, Any]:
         """Mock MCP memory search endpoint."""
         return {
             "query": query,
@@ -122,13 +122,13 @@ def mcp_server_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     # Override database dependencies with test databases
-    def get_test_kuzu_connection() -> None:
+    def get_test_kuzu_connection() -> Any:
         return isolated_databases["kuzu"]
     
-    def get_test_redis_client() -> None:
+    def get_test_redis_client() -> Any:
         return isolated_databases["redis"]
     
-    def get_test_sqlite_connection() -> None:
+    def get_test_sqlite_connection() -> Any:
         return isolated_databases["sqlite"]
     
     # Add dependency overrides
@@ -146,7 +146,7 @@ def analytics_engine_app(base_app: FastAPI, isolated_databases) -> FastAPI:
     """Create analytics engine application with test dependencies."""
     
     @base_app.post("/analytics/process")
-    async def process_analytics(data: dict) -> None:
+    async def process_analytics(data: dict) -> Dict[str, Any]:
         """Mock analytics processing endpoint."""
         return {
             "job_id": "test-analytics-001",
@@ -156,7 +156,7 @@ def analytics_engine_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.get("/analytics/results/{job_id}")
-    async def get_analytics_results(job_id: str) -> None:
+    async def get_analytics_results(job_id: str) -> Dict[str, Any]:
         """Mock analytics results endpoint."""
         return {
             "job_id": job_id,
@@ -168,7 +168,7 @@ def analytics_engine_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.get("/analytics/health")
-    async def analytics_health() -> None:
+    async def analytics_health() -> Dict[str, Any]:
         """Mock analytics health check."""
         return {
             "status": "healthy",
@@ -187,9 +187,9 @@ def dashboard_sse_app(base_app: FastAPI) -> FastAPI:
     import asyncio
     
     @base_app.get("/dashboard/sse")
-    async def dashboard_sse() -> None:
+    async def dashboard_sse() -> StreamingResponse:
         """Mock SSE endpoint for dashboard updates."""
-        async def event_stream() -> None:
+        async def event_stream() -> AsyncGenerator[str, None]:
             for i in range(5):  # Send 5 test events
                 event_data = {
                     "event": "dashboard_update",
@@ -213,7 +213,7 @@ def dashboard_sse_app(base_app: FastAPI) -> FastAPI:
         )
     
     @base_app.get("/dashboard/metrics")
-    async def get_dashboard_metrics() -> None:
+    async def get_dashboard_metrics() -> Dict[str, Any]:
         """Mock dashboard metrics endpoint."""
         return {
             "cpu_usage": 45.2,
@@ -230,7 +230,7 @@ def alert_system_app(base_app: FastAPI, isolated_databases) -> FastAPI:
     """Create alert system application with test dependencies."""
     
     @base_app.post("/alerts/create")
-    async def create_alert(alert_data: dict) -> None:
+    async def create_alert(alert_data: dict) -> Dict[str, Any]:
         """Mock alert creation endpoint."""
         return {
             "id": "test-alert-001",
@@ -241,7 +241,7 @@ def alert_system_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.get("/alerts")
-    async def get_alerts(status: str = "all") -> None:
+    async def get_alerts(status: str = "all") -> Dict[str, Any]:
         """Mock alerts listing endpoint."""
         return {
             "alerts": [
@@ -258,7 +258,7 @@ def alert_system_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     @base_app.post("/alerts/{alert_id}/acknowledge")
-    async def acknowledge_alert(alert_id: str) -> None:
+    async def acknowledge_alert(alert_id: str) -> Dict[str, Any]:
         """Mock alert acknowledgment endpoint."""
         return {
             "id": alert_id,

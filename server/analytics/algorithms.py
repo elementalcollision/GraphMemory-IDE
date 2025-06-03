@@ -61,7 +61,7 @@ class GraphAlgorithms:
     ) -> Dict[str, float]:
         """Calculate centrality measures for graph nodes"""
         
-        def _calculate() -> None:
+        def _calculate() -> Dict[str, float]:
             if centrality_type == CentralityType.BETWEENNESS:
                 return nx.betweenness_centrality(graph, normalized=normalized)
             elif centrality_type == CentralityType.CLOSENESS:
@@ -101,7 +101,7 @@ class GraphAlgorithms:
     ) -> Tuple[Dict[str, str], float, List[CommunityMetrics]]:
         """Detect communities in the graph"""
         
-        def _detect() -> None:
+        def _detect() -> Tuple[Dict[str, str], float]:
             if algorithm == "louvain":
                 try:
                     import community as community_louvain
@@ -159,7 +159,7 @@ class GraphAlgorithms:
     ) -> List[CommunityMetrics]:
         """Calculate metrics for each community"""
         
-        def _calculate() -> None:
+        def _calculate() -> List[CommunityMetrics]:
             communities = {}
             for node, comm_id in partition.items():
                 if comm_id not in communities:
@@ -217,7 +217,7 @@ class GraphAlgorithms:
     ) -> Dict[str, Any]:
         """Analyze paths between nodes"""
         
-        def _analyze() -> None:
+        def _analyze() -> Dict[str, Any]:
             results = {
                 "paths": [],
                 "statistics": {},
@@ -283,7 +283,7 @@ class GraphAlgorithms:
     async def calculate_graph_metrics(self, graph: nx.Graph) -> GraphMetrics:
         """Calculate overall graph metrics"""
         
-        def _calculate() -> None:
+        def _calculate() -> GraphMetrics:
             # Basic metrics
             node_count = graph.number_of_nodes()
             edge_count = graph.number_of_edges()

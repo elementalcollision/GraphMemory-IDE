@@ -6,7 +6,7 @@ Provides WebSocket and Server-Sent Events for live analytics updates.
 import asyncio
 import json
 import logging
-from typing import Dict, List, Set, Any, Optional, Callable
+from typing import Dict, List, Set, Any, Optional, Callable, AsyncGenerator
 from datetime import datetime
 from fastapi import WebSocket, WebSocketDisconnect
 import weakref
@@ -95,7 +95,7 @@ class ConnectionManager:
         for connection_id in disconnected:
             self.disconnect(connection_id)
     
-    async def send_to_connection(self, connection_id: str, message: Dict[str, Any]) -> None:
+    async def send_to_connection(self, connection_id: str, message: Dict[str, Any]) -> bool:
         """Send a message to a specific connection"""
         if connection_id in self.active_connections:
             try:
@@ -277,7 +277,7 @@ class RealtimeAnalytics:
                 "timestamp": datetime.utcnow().isoformat()
             })
     
-    async def generate_sse_stream(self, analytics_type: str) -> None:
+    async def generate_sse_stream(self, analytics_type: str) -> AsyncGenerator[str, None]:
         """Generate Server-Sent Events stream for analytics"""
         # This would be used with FastAPI's StreamingResponse
         queue = asyncio.Queue()

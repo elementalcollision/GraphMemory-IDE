@@ -854,13 +854,13 @@ async def get_health_monitor() -> HealthMonitor:
 health_router = APIRouter(prefix="/health", tags=["health"])
 
 @health_router.get("/")
-async def get_health() -> None:
+async def get_health() -> Dict[str, Any]:
     """Get overall system health"""
     monitor = await get_health_monitor()
     return monitor.get_overall_health()
 
 @health_router.get("/checks/{check_name}")
-async def get_health_check(check_name: str) -> None:
+async def get_health_check(check_name: str) -> Dict[str, Any]:
     """Get specific health check result"""
     monitor = await get_health_monitor()
     result = monitor.registry.get_last_result(check_name)
@@ -879,7 +879,7 @@ async def get_health_check(check_name: str) -> None:
     }
 
 @health_router.get("/metrics/system")
-async def get_system_metrics(limit: int = 100) -> None:
+async def get_system_metrics(limit: int = 100) -> Dict[str, Any]:
     """Get recent system metrics"""
     monitor = await get_health_monitor()
     metrics = monitor.metrics_collector.get_recent_system_metrics(limit)
@@ -897,7 +897,7 @@ async def get_system_metrics(limit: int = 100) -> None:
     }
 
 @health_router.get("/metrics/database/{database_type}")
-async def get_database_metrics(database_type: str, limit: int = 100) -> None:
+async def get_database_metrics(database_type: str, limit: int = 100) -> Dict[str, Any]:
     """Get recent database metrics"""
     monitor = await get_health_monitor()
     metrics = monitor.metrics_collector.get_recent_database_metrics(database_type, limit)
@@ -917,7 +917,7 @@ async def get_database_metrics(database_type: str, limit: int = 100) -> None:
     }
 
 @health_router.get("/alerts")
-async def get_alerts(severity: Optional[str] = None, resolved: Optional[bool] = None) -> None:
+async def get_alerts(severity: Optional[str] = None, resolved: Optional[bool] = None) -> Dict[str, Any]:
     """Get alerts with optional filtering"""
     monitor = await get_health_monitor()
     
@@ -947,7 +947,7 @@ async def get_alerts(severity: Optional[str] = None, resolved: Optional[bool] = 
     }
 
 @health_router.post("/alerts/{alert_id}/acknowledge")
-async def acknowledge_alert(alert_id: str) -> None:
+async def acknowledge_alert(alert_id: str) -> Dict[str, str]:
     """Acknowledge an alert"""
     monitor = await get_health_monitor()
     success = monitor.alert_manager.acknowledge_alert(alert_id)
@@ -958,7 +958,7 @@ async def acknowledge_alert(alert_id: str) -> None:
     return {"message": "Alert acknowledged successfully"}
 
 @health_router.post("/alerts/{alert_id}/resolve")
-async def resolve_alert(alert_id: str) -> None:
+async def resolve_alert(alert_id: str) -> Dict[str, str]:
     """Resolve an alert"""
     monitor = await get_health_monitor()
     success = monitor.alert_manager.resolve_alert(alert_id)

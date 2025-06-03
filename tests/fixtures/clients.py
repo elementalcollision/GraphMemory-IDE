@@ -90,7 +90,7 @@ async def websocket_client() -> None:
             self.connected = False
             print("Mock WebSocket connection closed")
         
-        def get_sent_messages(self) -> None:
+        def get_sent_messages(self) -> List[str]:
             """Get all sent messages."""
             return [msg["data"] for msg in self.messages if msg["type"] == "sent"]
     
@@ -102,7 +102,7 @@ async def websocket_client() -> None:
         await client.close()
 
 @pytest_asyncio.fixture(scope="function")
-async def sse_client() -> None:
+async def sse_client() -> AsyncGenerator[Any, None]:
     """Create an SSE (Server-Sent Events) client for testing real-time updates."""
     
     class MockSSEClient:
@@ -117,7 +117,7 @@ async def sse_client() -> None:
             self.url = url
             print(f"Mock SSE client connected to {url}")
         
-        async def listen(self, timeout: float = 10.0) -> None:
+        async def listen(self, timeout: float = 10.0) -> List[Dict[str, Any]]:
             """Mock listening for SSE events."""
             if not self.connected:
                 raise ConnectionError("SSE client not connected")
@@ -145,7 +145,7 @@ async def sse_client() -> None:
             self.connected = False
             print("Mock SSE client connection closed")
         
-        def get_received_events(self) -> None:
+        def get_received_events(self) -> List[Dict[str, Any]]:
             """Get all received events."""
             return self.events.copy()
     
@@ -157,7 +157,7 @@ async def sse_client() -> None:
         await client.close()
 
 @pytest_asyncio.fixture(scope="function")
-async def analytics_client(http_client: AsyncClient) -> None:
+async def analytics_client(http_client: AsyncClient) -> AsyncGenerator[Any, None]:
     """Create a specialized client for analytics engine testing."""
     
     class AnalyticsTestClient:
@@ -194,7 +194,7 @@ async def analytics_client(http_client: AsyncClient) -> None:
     yield AnalyticsTestClient(http_client)
 
 @pytest_asyncio.fixture(scope="function")
-async def mcp_client(authenticated_client: AsyncClient) -> None:
+async def mcp_client(authenticated_client: AsyncClient) -> AsyncGenerator[Any, None]:
     """Create a specialized client for MCP server testing."""
     
     class MCPTestClient:
@@ -236,7 +236,7 @@ async def mcp_client(authenticated_client: AsyncClient) -> None:
     yield MCPTestClient(authenticated_client)
 
 @pytest_asyncio.fixture(scope="function")
-async def alert_client(authenticated_client: AsyncClient) -> None:
+async def alert_client(authenticated_client: AsyncClient) -> AsyncGenerator[Any, None]:
     """Create a specialized client for alert system testing."""
     
     class AlertTestClient:
@@ -284,7 +284,7 @@ async def alert_client(authenticated_client: AsyncClient) -> None:
     yield AlertTestClient(authenticated_client)
 
 @pytest_asyncio.fixture(scope="function")
-async def dashboard_client(http_client: AsyncClient, sse_client) -> None:
+async def dashboard_client(http_client: AsyncClient, sse_client) -> AsyncGenerator[Any, None]:
     """Create a specialized client for dashboard testing."""
     
     class DashboardTestClient:
