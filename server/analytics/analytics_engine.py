@@ -170,7 +170,7 @@ class AnalyticsMetrics:
 class EventCollector:
     """Collects and validates analytics events."""
     
-    def __init__(self, settings) -> None:
+    def __init__(self, settings: Any) -> None:
         self.settings = settings
         self.metrics = AnalyticsMetrics()
     
@@ -198,7 +198,7 @@ class EventCollector:
         self, 
         request: Request, 
         page_title: str = "", 
-        additional_properties: Dict[str, Any] = None
+        additional_properties: Optional[Dict[str, Any]] = None
     ) -> AnalyticsEvent:
         """Create a page view event."""
         properties = {
@@ -225,8 +225,8 @@ class EventCollector:
         action_name: str,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
-        properties: Dict[str, Any] = None,
-        context: Dict[str, Any] = None
+        properties: Optional[Dict[str, Any]] = None,
+        context: Optional[Dict[str, Any]] = None
     ) -> AnalyticsEvent:
         """Create a user action event."""
         return AnalyticsEvent(
@@ -271,7 +271,7 @@ class EventCollector:
         error_message: str,
         stack_trace: Optional[str] = None,
         user_id: Optional[str] = None,
-        context: Dict[str, Any] = None
+        context: Optional[Dict[str, Any]] = None
     ) -> AnalyticsEvent:
         """Create an error event."""
         properties = {
@@ -321,13 +321,13 @@ class EventCollector:
 class EventProcessor:
     """Processes analytics events in batches."""
     
-    def __init__(self, settings, db_pool, redis_client) -> None:
+    def __init__(self, settings: Any, db_pool: Any, redis_client: Any) -> None:
         self.settings = settings
         self.db_pool = db_pool
         self.redis = redis_client
         self.metrics = AnalyticsMetrics()
-        self.event_queue = asyncio.Queue()
-        self.batch_processor_task = None
+        self.event_queue: asyncio.Queue[AnalyticsEvent] = asyncio.Queue()
+        self.batch_processor_task: Optional[asyncio.Task[None]] = None
         self.running = False
     
     async def start(self) -> None:
@@ -514,12 +514,12 @@ class EventProcessor:
 class AnalyticsEngine:
     """Main analytics engine coordinating all components."""
     
-    def __init__(self, settings, db_pool) -> None:
+    def __init__(self, settings: Any, db_pool: Any) -> None:
         self.settings = settings
         self.db_pool = db_pool
-        self.redis_client = None
+        self.redis_client: Optional[Any] = None
         self.collector = EventCollector(settings)
-        self.processor = None
+        self.processor: Optional[EventProcessor] = None
         self.initialized = False
     
     async def initialize(self) -> None:
@@ -576,7 +576,7 @@ class AnalyticsEngine:
         self, 
         request: Request, 
         page_title: str = "",
-        additional_properties: Dict[str, Any] = None
+        additional_properties: Optional[Dict[str, Any]] = None
     ) -> bool:
         """Track a page view event."""
         event = self.collector.create_page_view_event(request, page_title, additional_properties)
@@ -587,8 +587,8 @@ class AnalyticsEngine:
         action_name: str,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
-        properties: Dict[str, Any] = None,
-        context: Dict[str, Any] = None
+        properties: Optional[Dict[str, Any]] = None,
+        context: Optional[Dict[str, Any]] = None
     ) -> bool:
         """Track a user action event."""
         event = self.collector.create_user_action_event(
@@ -615,7 +615,7 @@ class AnalyticsEngine:
         error_message: str,
         stack_trace: Optional[str] = None,
         user_id: Optional[str] = None,
-        context: Dict[str, Any] = None
+        context: Optional[Dict[str, Any]] = None
     ) -> bool:
         """Track an error event."""
         event = self.collector.create_error_event(
@@ -631,7 +631,7 @@ class AnalyticsEngine:
         try:
             # Get current hour metrics
             metrics = {}
-            for event_type in EventType:
+            for event_type in list(EventType):
                 count = await self.redis_client.get(f"analytics:realtime:{event_type.value}")
                 metrics[event_type.value] = int(count) if count else 0
             
@@ -659,7 +659,7 @@ class AnalyticsEngine:
 analytics_engine = None
 
 
-async def initialize_analytics_engine(settings, db_pool) -> None:
+async def initialize_analytics_engine(settings: Any, db_pool: Any) -> None:
     """Initialize the global analytics engine."""
     global analytics_engine
     analytics_engine = AnalyticsEngine(settings, db_pool)
@@ -673,6 +673,6 @@ async def close_analytics_engine() -> None:
         await analytics_engine.close()
 
 
-def get_analytics_engine() -> Optional[AnalyticsEngine]:
+def get_analytics_engine() -> Optional['AnalyticsEngine']:
     """Get the global analytics engine instance."""
     return analytics_engine 

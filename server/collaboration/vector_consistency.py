@@ -121,13 +121,13 @@ class VectorOperation:
         
         # UltraEdit-inspired parameter shift calculation
         # Uses lightweight linear algebra for fast, consistent parameter modifications
-        shift = self.target_embedding - self.original_embedding
+        shift: np.ndarray = self.target_embedding - self.original_embedding
         
         # Apply normalization to prevent drift
-        shift_norm = np.linalg.norm(shift)
+        shift_norm: float = np.linalg.norm(shift)
         if shift_norm > 0:
             # Normalize shift to prevent excessive parameter changes
-            max_shift = 0.1  # Configurable threshold for stability
+            max_shift: float = 0.1  # Configurable threshold for stability
             if shift_norm > max_shift:
                 shift = shift * (max_shift / shift_norm)
         
@@ -145,11 +145,11 @@ class VectorOperation:
             raise ValueError("Target embedding required for lifelong normalization")
         
         # Extract session statistics for normalization
-        mean_embedding = session_statistics.get('mean_embedding', 0.0)
-        std_embedding = session_statistics.get('std_embedding', 1.0)
+        current_mean: float = session_statistics.get('mean_embedding', 0.0)
+        current_std: float = session_statistics.get('std_embedding', 1.0)
         
         # Apply adaptive normalization based on session context
-        normalized_embedding = (self.target_embedding - mean_embedding) / std_embedding
+        normalized_embedding = (self.target_embedding - current_mean) / current_std
         
         # Ensure embedding stability
         normalized_embedding = np.clip(normalized_embedding, -3.0, 3.0)
@@ -219,16 +219,16 @@ class VectorState:
     def update_session_statistics(self, new_embedding: np.ndarray, user_id: str) -> None:
         """Update session statistics for lifelong normalization"""
         # Update running statistics for collaborative session
-        current_mean = self.session_statistics.get('mean_embedding', 0.0)
-        current_std = self.session_statistics.get('std_embedding', 1.0)
-        sample_count = self.session_statistics.get('sample_count', 0)
+        current_mean: float = self.session_statistics.get('mean_embedding', 0.0)
+        current_std: float = self.session_statistics.get('std_embedding', 1.0)
+        sample_count: int = self.session_statistics.get('sample_count', 0)
         
         # Incremental statistics update
         sample_count += 1
-        embedding_mean = float(new_embedding.mean())  # Convert to float
-        new_mean = current_mean + (embedding_mean - current_mean) / sample_count
-        new_var = current_std**2 + (embedding_mean - new_mean) * (embedding_mean - current_mean)
-        new_std = float(np.sqrt(new_var))  # Convert to float
+        embedding_mean: float = float(new_embedding.mean())  # Convert to float
+        new_mean: float = current_mean + (embedding_mean - current_mean) / sample_count
+        new_var: float = current_std**2 + (embedding_mean - new_mean) * (embedding_mean - current_mean)
+        new_std: float = float(np.sqrt(new_var))  # Convert to float
         
         self.session_statistics.update({
             'mean_embedding': new_mean,
@@ -258,10 +258,10 @@ class EmbeddingAlignmentEngine:
 
     def __init__(self, embedding_dim: int = 384) -> None:
         self.embedding_dim = embedding_dim
-        self.hierarchical_clusterer = HierarchicalEmbeddingClusterer(embedding_dim)
-        self.contrastive_learner = ContrastiveLearningEngine(embedding_dim)
-        self.alignment_cache = {}
-        self.domain_hierarchies = {}
+        self.hierarchical_clusterer: HierarchicalEmbeddingClusterer = HierarchicalEmbeddingClusterer(embedding_dim)
+        self.contrastive_learner: ContrastiveLearningEngine = ContrastiveLearningEngine(embedding_dim)
+        self.alignment_cache: Dict[str, Any] = {}
+        self.domain_hierarchies: Dict[str, Any] = {}
         
         # HEAL-specific parameters
         self.max_hierarchy_levels = 5
@@ -318,25 +318,24 @@ class EmbeddingAlignmentEngine:
                                                   contrastive_loss: float) -> np.ndarray:
         """Apply matrix factorization within contrastive learning framework"""
         try:
-            # HEAL-inspired matrix factorization for embedding alignment
-            # Decompose embedding into hierarchical components
-            level = hierarchy_assignment.get('level', 0)
-            cluster_id = hierarchy_assignment.get('cluster_id', 0)
+            level: int = hierarchy_assignment.get('primary_level', 0)
+            cluster_id: int = hierarchy_assignment.get('cluster_id', 0)
             
-            # Create factorization matrix based on hierarchical position
-            factorization_matrix = self._generate_factorization_matrix(level, cluster_id)
+            # Generate factorization matrix based on hierarchical position
+            factorization_matrix: np.ndarray = self._generate_factorization_matrix(level, cluster_id)
             
-            # Apply matrix factorization with contrastive loss guidance
-            factorized_embedding = np.dot(factorization_matrix, embedding)
+            # Apply matrix factorization with contrastive loss weighting
+            factorized_embedding: np.ndarray = np.dot(embedding, factorization_matrix)
             
-            # Normalize to maintain embedding properties
-            factorized_embedding = factorized_embedding / np.linalg.norm(factorized_embedding)
+            # Weight by contrastive loss for alignment optimization
+            loss_weight: float = 1.0 - min(contrastive_loss, 1.0)
+            aligned_embedding: np.ndarray = embedding + loss_weight * (factorized_embedding - embedding)
             
-            return factorized_embedding
+            return self._apply_basic_normalization(aligned_embedding)
             
         except Exception as e:
-            logger.warning(f"Matrix factorization alignment failed: {e}")
-            return embedding
+            logger.error(f"Matrix factorization alignment failed: {e}")
+            return self._apply_basic_normalization(embedding)
 
     def _apply_hierarchical_penalties(self, embedding: np.ndarray, 
                                     hierarchy_assignment: Dict[str, Any],

@@ -133,7 +133,8 @@ class MFADeviceManager:
     async def get_user_devices(self, user: User) -> List[MFADevice]:
         """Get all MFA devices for user."""
         # Implementation depends on your database setup
-        pass
+        # For now return empty list as placeholder
+        return []
     
     async def delete_device(self, device: MFADevice) -> bool:
         """Delete MFA device."""
@@ -257,7 +258,7 @@ class BackupCodeManager:
         """Verify and mark backup code as used."""
         hashed_code = self._hash_code(code)
         
-        # Find matching unused backup code
+        # Find the backup code
         backup_code = await self._get_backup_code(user, hashed_code)
         
         if backup_code and not backup_code.is_used:
@@ -274,7 +275,8 @@ class BackupCodeManager:
     async def get_remaining_backup_codes_count(self, user: User) -> int:
         """Get count of remaining unused backup codes."""
         # Implementation depends on your database setup
-        pass
+        # Return 0 as placeholder
+        return 0
     
     def _generate_code(self) -> str:
         """Generate a random backup code."""
@@ -293,12 +295,14 @@ class BackupCodeManager:
     async def _delete_existing_backup_codes(self, user: User) -> None:
         """Delete all existing backup codes for user."""
         # Implementation depends on your database setup
+        # Placeholder implementation
         pass
     
     async def _get_backup_code(self, user: User, hashed_code: str) -> Optional[BackupCode]:
         """Get backup code by hash."""
         # Implementation depends on your database setup
-        pass
+        # Return None as placeholder
+        return None
 
 
 class TOTPValidator:
@@ -356,17 +360,20 @@ class TOTPValidator:
     async def _get_device_by_id(self, device_id: str) -> Optional[MFADevice]:
         """Get device by ID."""
         # Implementation depends on your database setup
-        pass
+        # Return None as placeholder
+        return None
     
     async def _get_user_totp_devices(self, user: User) -> List[MFADevice]:
         """Get all verified TOTP devices for user."""
         # Implementation depends on your database setup
-        pass
+        # Return empty list as placeholder
+        return []
     
     def _decrypt_secret(self, encrypted_secret: str) -> str:
         """Decrypt secret key (same as in MFADeviceManager)."""
         # Implementation should be shared or moved to a utility class
-        pass
+        # Return placeholder - in real implementation would decrypt
+        return "placeholder_secret"
 
 
 class RecoveryManager:
@@ -398,7 +405,8 @@ class RecoveryManager:
     async def verify_recovery_token(self, token: str) -> Optional[User]:
         """Verify recovery token and return user."""
         # Implementation depends on your database setup
-        pass
+        # Return None as placeholder
+        return None
     
     async def reset_mfa(self, user: User) -> bool:
         """Reset all MFA settings for user (emergency)."""
@@ -419,11 +427,13 @@ class RecoveryManager:
     async def _delete_all_user_devices(self, user: User) -> None:
         """Delete all MFA devices for user."""
         # Implementation depends on your database setup
+        # Placeholder implementation
         pass
     
     async def _delete_all_backup_codes(self, user: User) -> None:
         """Delete all backup codes for user."""
         # Implementation depends on your database setup
+        # Placeholder implementation
         pass
 
 
@@ -594,7 +604,8 @@ class MFAManager:
     async def _get_device_by_id(self, device_id: str) -> Optional[MFADevice]:
         """Get device by ID."""
         # Implementation depends on your database setup
-        pass
+        # Return None as placeholder
+        return None
 
 
 # Global MFA manager instance

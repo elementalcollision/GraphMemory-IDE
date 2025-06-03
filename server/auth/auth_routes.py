@@ -117,7 +117,8 @@ async def get_current_user(
 async def get_user_by_id(db: Any, user_id: str) -> Optional[User]:
     """Get user by ID from database."""
     # Implementation depends on your database setup
-    pass
+    # Return None as placeholder
+    return None
 
 
 # SSO Authentication Routes
@@ -126,7 +127,7 @@ async def get_user_by_id(db: Any, user_id: str) -> Optional[User]:
 @rate_limit(requests=5, window=60)  # 5 requests per minute
 async def sso_login(
     request: LoginRequest,
-    db=Depends(get_db),
+    db: Any = Depends(get_db),
     settings: AdvancedSettings = Depends()
 ) -> AuthResponse:
     """Initiate SSO login flow."""
@@ -159,7 +160,7 @@ async def sso_login(
 @rate_limit(requests=10, window=60)  # 10 requests per minute
 async def sso_callback(
     callback_data: SSOCallbackRequest,
-    db=Depends(get_db),
+    db: Any = Depends(get_db),
     settings: AdvancedSettings = Depends()
 ) -> AuthResponse:
     """Handle SSO callback and complete authentication."""
@@ -258,7 +259,7 @@ async def get_sso_metadata(provider: str) -> Response:
 async def setup_mfa(
     setup_request: MFASetupRequest,
     current_user: User = Depends(get_current_user),
-    db=Depends(get_db)
+    db: Any = Depends(get_db)
 ) -> AuthResponse:
     """Set up MFA for current user."""
     try:
@@ -297,7 +298,7 @@ async def setup_mfa(
 async def verify_mfa_setup(
     verification_request: MFAVerificationRequest,
     current_user: User = Depends(get_current_user),
-    db=Depends(get_db)
+    db: Any = Depends(get_db)
 ) -> AuthResponse:
     """Verify MFA setup with verification code."""
     try:
@@ -336,7 +337,7 @@ async def verify_mfa_setup(
 async def verify_mfa(
     mfa_request: MFALoginRequest,
     temp_token: str = Form(...),
-    db=Depends(get_db),
+    db: Any = Depends(get_db),
     settings: AdvancedSettings = Depends()
 ) -> AuthResponse:
     """Verify MFA code during login."""
@@ -391,7 +392,7 @@ async def verify_mfa(
 @router.get("/mfa/status", response_model=AuthResponse)
 async def get_mfa_status(
     current_user: User = Depends(get_current_user),
-    db=Depends(get_db)
+    db: Any = Depends(get_db)
 ) -> AuthResponse:
     """Get MFA status for current user."""
     try:
@@ -420,7 +421,7 @@ async def get_mfa_status(
 @rate_limit(requests=2, window=3600)  # 2 requests per hour
 async def regenerate_backup_codes(
     current_user: User = Depends(get_current_user),
-    db=Depends(get_db)
+    db: Any = Depends(get_db)
 ) -> AuthResponse:
     """Regenerate backup codes for current user."""
     try:
@@ -448,7 +449,7 @@ async def regenerate_backup_codes(
 @rate_limit(requests=2, window=3600)  # 2 requests per hour
 async def disable_mfa(
     current_user: User = Depends(get_current_user),
-    db=Depends(get_db)
+    db: Any = Depends(get_db)
 ) -> AuthResponse:
     """Disable MFA for current user."""
     try:
@@ -480,7 +481,7 @@ async def disable_mfa(
 @rate_limit(requests=3, window=3600)  # 3 requests per hour
 async def initiate_recovery(
     recovery_request: RecoveryRequest,
-    db=Depends(get_db)
+    db: Any = Depends(get_db)
 ) -> AuthResponse:
     """Initiate account recovery process."""
     try:
@@ -519,7 +520,7 @@ async def initiate_recovery(
 @rate_limit(requests=5, window=3600)  # 5 requests per hour
 async def complete_recovery(
     recovery_complete: RecoveryCompleteRequest,
-    db=Depends(get_db),
+    db: Any = Depends(get_db),
     settings: AdvancedSettings = Depends()
 ) -> AuthResponse:
     """Complete account recovery process."""
@@ -562,7 +563,7 @@ async def complete_recovery(
 async def logout(
     current_user: User = Depends(get_current_user),
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db=Depends(get_db)
+    db: Any = Depends(get_db)
 ) -> AuthResponse:
     """Logout current user."""
     try:
@@ -646,9 +647,10 @@ def create_session_token(user: User, settings: AdvancedSettings) -> str:
 
 
 async def get_user_by_email(db: Any, email: str) -> Optional[User]:
-    """Get user by email address."""
+    """Get user by email from database."""
     # Implementation depends on your database setup
-    pass
+    # Return None as placeholder
+    return None
 
 
 # Health check route
