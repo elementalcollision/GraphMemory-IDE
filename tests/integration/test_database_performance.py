@@ -53,7 +53,7 @@ class DatabasePerformanceTester:
     def __init__(self, pool_manager: DatabaseConnectionPoolManager, performance_monitor: DatabasePerformanceMonitor) -> None:
         self.pool_manager = pool_manager
         self.performance_monitor = performance_monitor
-        self.test_results = {}
+        self.test_results: Dict[str, Any] = {}
         
     async def run_connection_pool_stress_test(self, concurrent_connections: int = 100) -> Dict[str, Any]:
         """Execute comprehensive connection pool stress testing."""
@@ -67,11 +67,11 @@ class DatabasePerformanceTester:
             
             print(f"\n📊 Testing {pool_type.upper()} pool (ID: {pool_id})")
             
-            async def stress_test_single_pool() -> None:
+            async def stress_test_single_pool() -> Dict[str, Any]:
                 """Stress test individual pool with connection lifecycle validation."""
                 start_time = time.time()
                 
-                async def single_connection_test(connection_num: int) -> None:
+                async def single_connection_test(connection_num: int) -> Dict[str, Any]:
                     """Test individual connection with performance monitoring."""
                     connection_start = time.time()
                     
@@ -178,7 +178,7 @@ class DatabasePerformanceTester:
             for pattern_name, pattern_config in query_patterns.items():
                 print(f"  📋 Testing {pattern_name}...")
                 
-                async def benchmark_query_pattern() -> None:
+                async def benchmark_query_pattern() -> Dict[str, Any]:
                     """Benchmark specific query pattern."""
                     conn = await self.pool_manager.get_connection(pool_id)
                     if not conn:
@@ -256,8 +256,8 @@ class DatabasePerformanceTester:
             
             print(f"\n♻️  Testing {pool_type.upper()} connection lifecycle")
             
-            async def test_connection_lifecycle() -> None:
-                """Test complete connection lifecycle."""
+            async def test_connection_lifecycle() -> Dict[str, Any]:
+                """Test connection lifecycle for a specific pool."""
                 lifecycle_metrics = {
                     "connection_creation_times": [],
                     "connection_reuse_times": [],
@@ -266,7 +266,7 @@ class DatabasePerformanceTester:
                 }
                 
                 # Test 1: Connection creation performance
-                print(f"  🆕 Testing connection creation...")
+                print(f"  🔗 Testing connection creation...")
                 for i in range(10):
                     start_time = time.time()
                     conn = await self.pool_manager.get_connection(pool_id)
@@ -300,13 +300,16 @@ class DatabasePerformanceTester:
                 if len(self.pool_manager.pools) == 0:
                     lifecycle_metrics["connection_cleanup_success"] = 1
                 
+                creation_times = lifecycle_metrics["connection_creation_times"]
+                reuse_times = lifecycle_metrics["connection_reuse_times"]
+                
                 return {
-                    "avg_creation_time": sum(lifecycle_metrics["connection_creation_times"]) / len(lifecycle_metrics["connection_creation_times"]) if lifecycle_metrics["connection_creation_times"] else 0,
-                    "avg_reuse_time": sum(lifecycle_metrics["connection_reuse_times"]) / len(lifecycle_metrics["connection_reuse_times"]) if lifecycle_metrics["connection_reuse_times"] else 0,
+                    "avg_creation_time": sum(creation_times) / len(creation_times) if creation_times else 0,
+                    "avg_reuse_time": sum(reuse_times) / len(reuse_times) if reuse_times else 0,
                     "cleanup_success": lifecycle_metrics["connection_cleanup_success"],
                     "total_connections_tested": lifecycle_metrics["total_connections_tested"],
-                    "creation_time_p95": sorted(lifecycle_metrics["connection_creation_times"])[int(len(lifecycle_metrics["connection_creation_times"]) * 0.95)] if lifecycle_metrics["connection_creation_times"] else 0,
-                    "reuse_time_p95": sorted(lifecycle_metrics["connection_reuse_times"])[int(len(lifecycle_metrics["connection_reuse_times"]) * 0.95)] if lifecycle_metrics["connection_reuse_times"] else 0
+                    "creation_time_p95": sorted(creation_times)[int(len(creation_times) * 0.95)] if creation_times else 0,
+                    "reuse_time_p95": sorted(reuse_times)[int(len(reuse_times) * 0.95)] if reuse_times else 0
                 }
             
             pool_lifecycle_results = await test_connection_lifecycle()

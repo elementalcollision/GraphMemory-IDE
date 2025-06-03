@@ -25,18 +25,22 @@ class CrossDatabaseIntegrationTester:
     def __init__(self, pool_manager: DatabaseConnectionPoolManager, transaction_coordinator: TransactionCoordinator) -> None:
         self.pool_manager = pool_manager
         self.transaction_coordinator = transaction_coordinator
-        self.test_data = {}
+        self.test_data: Dict[str, Any] = {}
         
     async def test_multi_database_transaction_coordination(self) -> Dict[str, Any]:
         """Test transaction coordination across all databases."""
         print(f"\n🔄 Testing Multi-Database Transaction Coordination...")
         
-        test_results = {
+        coordination_times: List[float] = []
+        rollback_tests: List[Dict[str, Any]] = []
+        data_consistency_checks: List[Dict[str, Any]] = []
+        
+        test_results: Dict[str, Any] = {
             "successful_transactions": 0,
             "failed_transactions": 0,
-            "coordination_times": [],
-            "rollback_tests": [],
-            "data_consistency_checks": []
+            "coordination_times": coordination_times,
+            "rollback_tests": rollback_tests,
+            "data_consistency_checks": data_consistency_checks
         }
         
         # Test 1: Successful coordinated transaction
@@ -50,12 +54,12 @@ class CrossDatabaseIntegrationTester:
                 user_data = await self._create_coordinated_user_data(tx_context)
                 
                 coordination_time = (time.time() - start_time) * 1000
-                test_results["coordination_times"].append(coordination_time)
+                coordination_times.append(coordination_time)
                 test_results["successful_transactions"] += 1
                 
                 # Verify data consistency immediately after transaction
                 consistency_check = await self._verify_cross_database_consistency(user_data["user_id"])
-                test_results["data_consistency_checks"].append(consistency_check)
+                data_consistency_checks.append(consistency_check)
                 
                 print(f"    ⏱️  Coordination time: {coordination_time:.1f}ms")
                 print(f"    🎯 Consistency check: {'✅' if consistency_check['consistent'] else '❌'}")
@@ -69,7 +73,7 @@ class CrossDatabaseIntegrationTester:
         
         for scenario in ["kuzu_failure", "redis_failure", "sqlite_failure"]:
             rollback_result = await self._test_transaction_rollback(scenario)
-            test_results["rollback_tests"].append(rollback_result)
+            rollback_tests.append(rollback_result)
             
             print(f"    🔄 {scenario}: {'✅' if rollback_result['rollback_successful'] else '❌'}")
         
@@ -79,9 +83,12 @@ class CrossDatabaseIntegrationTester:
         """Test cache synchronization with persistent databases."""
         print(f"\n🔄 Testing Cache-Database Synchronization...")
         
-        sync_results = {
-            "sync_delays": [],
-            "cache_hit_rates": [],
+        sync_delays: List[float] = []
+        cache_hit_rates: List[float] = []
+        
+        sync_results: Dict[str, Any] = {
+            "sync_delays": sync_delays,
+            "cache_hit_rates": cache_hit_rates,
             "consistency_violations": 0,
             "total_sync_tests": 0
         }
@@ -111,14 +118,15 @@ class CrossDatabaseIntegrationTester:
                 start_time = time.time()
                 
                 # Insert into SQLite
-                await sqlite_conn["database"].execute(
-                    "INSERT INTO test_users (id, name, email) VALUES (:id, :name, :email)",
-                    {
-                        "id": i + 1000,  # Unique ID
-                        "name": f"Sync Test User {test_user_id}",
-                        "email": f"{test_user_id}@example.com"
-                    }
-                )
+                if sqlite_conn and "database" in sqlite_conn:
+                    await sqlite_conn["database"].execute(
+                        "INSERT INTO test_users (id, name, email) VALUES (:id, :name, :email)",
+                        {
+                            "id": i + 1000,  # Unique ID
+                            "name": f"Sync Test User {test_user_id}",
+                            "email": f"{test_user_id}@example.com"
+                        }
+                    )
                 
                 # Update cache
                 cache_key = f"user:{i + 1000}"
@@ -129,42 +137,47 @@ class CrossDatabaseIntegrationTester:
                     "cached_at": time.time()
                 }
                 
-                await redis_conn["connection"].setex(
-                    cache_key, 
-                    300,  # 5 minute TTL
-                    json.dumps(user_data)
-                )
+                if redis_conn and "connection" in redis_conn:
+                    await redis_conn["connection"].setex(
+                        cache_key, 
+                        300,  # 5 minute TTL
+                        json.dumps(user_data)
+                    )
                 
                 sync_time = (time.time() - start_time) * 1000
-                sync_results["sync_delays"].append(sync_time)
+                sync_delays.append(sync_time)
                 
                 # 2. Verify cache consistency
-                cached_data = await redis_conn["connection"].get(cache_key)
-                if cached_data:
-                    parsed_cache_data = json.loads(cached_data)
-                    
-                    # Verify database matches cache
-                    db_data = await sqlite_conn["database"].fetch_one(
-                        "SELECT * FROM test_users WHERE id = :id",
-                        {"id": i + 1000}
-                    )
-                    
-                    if db_data and db_data["name"] == parsed_cache_data["name"]:
-                        # Consistency maintained
-                        pass
-                    else:
-                        sync_results["consistency_violations"] += 1
+                if redis_conn and "connection" in redis_conn:
+                    cached_data = await redis_conn["connection"].get(cache_key)
+                    if cached_data:
+                        parsed_cache_data = json.loads(cached_data)
+                        
+                        # Verify database matches cache
+                        if sqlite_conn and "database" in sqlite_conn:
+                            db_data = await sqlite_conn["database"].fetch_one(
+                                "SELECT * FROM test_users WHERE id = :id",
+                                {"id": i + 1000}
+                            )
+                            
+                            if db_data and db_data["name"] == parsed_cache_data["name"]:
+                                # Consistency maintained
+                                pass
+                            else:
+                                sync_results["consistency_violations"] += 1
                 
                 sync_results["total_sync_tests"] += 1
                 
             finally:
-                await self.pool_manager.return_connection(sqlite_pool_id, sqlite_conn["id"])
-                await self.pool_manager.return_connection(redis_pool_id, redis_conn["id"])
+                if sqlite_conn:
+                    await self.pool_manager.return_connection(sqlite_pool_id, sqlite_conn["id"])
+                if redis_conn:
+                    await self.pool_manager.return_connection(redis_pool_id, redis_conn["id"])
         
         # Calculate averages
-        if sync_results["sync_delays"]:
-            avg_sync_delay = sum(sync_results["sync_delays"]) / len(sync_results["sync_delays"])
-            max_sync_delay = max(sync_results["sync_delays"])
+        if sync_delays:
+            avg_sync_delay = sum(sync_delays) / len(sync_delays)
+            max_sync_delay = max(sync_delays)
             
             sync_results["avg_sync_delay"] = avg_sync_delay
             sync_results["max_sync_delay"] = max_sync_delay
@@ -180,11 +193,14 @@ class CrossDatabaseIntegrationTester:
         """Test complete multi-database workflows and user journeys."""
         print(f"\n🚀 Testing Multi-Database Workflow Validation...")
         
-        workflow_results = {
+        workflow_times: List[float] = []
+        data_integrity_checks: List[Dict[str, Any]] = []
+        
+        workflow_results: Dict[str, Any] = {
             "workflows_completed": 0,
             "workflows_failed": 0,
-            "workflow_times": [],
-            "data_integrity_checks": []
+            "workflow_times": workflow_times,
+            "data_integrity_checks": data_integrity_checks
         }
         
         # Test workflow: User registration with analytics tracking
@@ -196,34 +212,41 @@ class CrossDatabaseIntegrationTester:
                 
                 if workflow_result["success"]:
                     workflow_time = (time.time() - workflow_start) * 1000
-                    workflow_results["workflow_times"].append(workflow_time)
+                    workflow_times.append(workflow_time)
                     workflow_results["workflows_completed"] += 1
                     
                     # Verify data integrity across all databases
                     integrity_check = await self._verify_workflow_data_integrity(workflow_result["user_id"])
-                    workflow_results["data_integrity_checks"].append(integrity_check)
+                    data_integrity_checks.append(integrity_check)
                     
-                    print(f"  ✅ Workflow {i+1}: {workflow_time:.1f}ms - Integrity: {'✅' if integrity_check['valid'] else '❌'}")
+                    print(f"    ✅ Workflow {i+1}: {workflow_time:.1f}ms")
                 else:
                     workflow_results["workflows_failed"] += 1
-                    print(f"  ❌ Workflow {i+1} failed: {workflow_result.get('error')}")
+                    print(f"    ❌ Workflow {i+1}: Failed")
                     
             except Exception as e:
                 workflow_results["workflows_failed"] += 1
-                print(f"  ❌ Workflow {i+1} exception: {e}")
+                print(f"    💥 Workflow {i+1}: Exception - {e}")
         
-        # Calculate workflow statistics
-        if workflow_results["workflow_times"]:
-            workflow_results["avg_workflow_time"] = sum(workflow_results["workflow_times"]) / len(workflow_results["workflow_times"])
-            workflow_results["max_workflow_time"] = max(workflow_results["workflow_times"])
+        # Calculate workflow performance metrics
+        if workflow_times:
+            avg_workflow_time = sum(workflow_times) / len(workflow_times)
+            max_workflow_time = max(workflow_times)
+            
+            workflow_results["avg_workflow_time"] = avg_workflow_time
+            workflow_results["max_workflow_time"] = max_workflow_time
             workflow_results["success_rate"] = workflow_results["workflows_completed"] / (workflow_results["workflows_completed"] + workflow_results["workflows_failed"])
+            
+            print(f"  📊 Avg Workflow Time: {avg_workflow_time:.1f}ms")
+            print(f"  📈 Max Workflow Time: {max_workflow_time:.1f}ms")
+            print(f"  🎯 Success Rate: {workflow_results['success_rate']*100:.1f}%")
         
         return workflow_results
     
     async def _create_coordinated_user_data(self, tx_context: Dict[str, Any]) -> Dict[str, Any]:
         """Create coordinated user data across all databases within transaction."""
         user_id = uuid.uuid4().hex[:8]
-        user_data = {
+        user_data: Dict[str, Any] = {
             "user_id": user_id,
             "name": f"Test User {user_id}",
             "email": f"test_{user_id}@example.com",
@@ -256,7 +279,7 @@ class CrossDatabaseIntegrationTester:
                 kuzu_conn = conn["connection"]
                 kuzu_conn.execute(
                     "CREATE (u:TestUser {id: $id, name: $name, email: $email})",
-                    {"id": user_data["db_user_id"] or 999, "name": user_data["name"], "email": user_data["email"]}
+                    {"id": user_data.get("db_user_id", 999), "name": user_data["name"], "email": user_data["email"]}
                 )
                 
             elif pool_type == "redis":
@@ -273,7 +296,7 @@ class CrossDatabaseIntegrationTester:
     
     async def _verify_cross_database_consistency(self, user_id: str) -> Dict[str, Any]:
         """Verify data consistency across all databases."""
-        consistency_check = {
+        consistency_check: Dict[str, Any] = {
             "user_id": user_id,
             "consistent": True,
             "database_states": {},
@@ -286,7 +309,7 @@ class CrossDatabaseIntegrationTester:
             conn = await self.pool_manager.get_connection(pool_id)
             
             try:
-                if pool_type == "sqlite":
+                if pool_type == "sqlite" and conn and "database" in conn:
                     # Check SQLite for user
                     user_data = await conn["database"].fetch_one(
                         "SELECT * FROM test_users WHERE name LIKE :pattern",
@@ -294,7 +317,7 @@ class CrossDatabaseIntegrationTester:
                     )
                     consistency_check["database_states"]["sqlite"] = user_data is not None
                     
-                elif pool_type == "kuzu":
+                elif pool_type == "kuzu" and conn and "connection" in conn:
                     # Check Kuzu for user node
                     kuzu_conn = conn["connection"]
                     result = kuzu_conn.execute(
@@ -307,7 +330,7 @@ class CrossDatabaseIntegrationTester:
                             user_count = row[0]
                     consistency_check["database_states"]["kuzu"] = user_count > 0
                     
-                elif pool_type == "redis":
+                elif pool_type == "redis" and conn and "connection" in conn:
                     # Check Redis cache
                     redis_conn = conn["connection"]
                     cache_key = f"user:{user_id}"
@@ -315,7 +338,8 @@ class CrossDatabaseIntegrationTester:
                     consistency_check["database_states"]["redis"] = cached_data is not None
             
             finally:
-                await self.pool_manager.return_connection(pool_id, conn["id"])
+                if conn:
+                    await self.pool_manager.return_connection(pool_id, conn["id"])
         
         # Check for inconsistencies
         db_states = list(consistency_check["database_states"].values())
@@ -327,7 +351,7 @@ class CrossDatabaseIntegrationTester:
     
     async def _test_transaction_rollback(self, failure_scenario: str) -> Dict[str, Any]:
         """Test transaction rollback in various failure scenarios."""
-        rollback_result = {
+        rollback_result: Dict[str, Any] = {
             "scenario": failure_scenario,
             "rollback_successful": False,
             "error": None
@@ -392,27 +416,28 @@ class CrossDatabaseIntegrationTester:
             conn = await self.pool_manager.get_connection(pool_id)
             
             try:
-                if pool_type == "sqlite":
+                if pool_type == "sqlite" and conn and "database" in conn:
                     # Check for any test users created in the last minute
                     recent_users = await conn["database"].fetch_all(
                         "SELECT COUNT(*) as count FROM test_users WHERE created_at > datetime('now', '-1 minute')"
                     )
                     # If transaction was properly rolled back, should be 0
                     
-                elif pool_type == "redis":
+                elif pool_type == "redis" and conn and "connection" in conn:
                     # Check for any cached test data
                     redis_conn = conn["connection"]
                     test_keys = await redis_conn.keys("user:*")
                     # Rollback should have cleared these keys
             
             finally:
-                await self.pool_manager.return_connection(pool_id, conn["id"])
+                if conn:
+                    await self.pool_manager.return_connection(pool_id, conn["id"])
         
         return cleanup_successful
     
     async def _execute_user_registration_workflow(self, workflow_id: int) -> Dict[str, Any]:
         """Execute complete user registration workflow across databases."""
-        workflow_result = {
+        workflow_result: Dict[str, Any] = {
             "success": False,
             "user_id": None,
             "error": None,
@@ -439,26 +464,30 @@ class CrossDatabaseIntegrationTester:
             if sqlite_pool_id:
                 sqlite_conn = await self.pool_manager.get_connection(sqlite_pool_id)
                 try:
-                    await sqlite_conn["database"].execute(
-                        "INSERT INTO test_users (name, email) VALUES (:name, :email)",
-                        {"name": f"Workflow User {user_id}", "email": f"{user_id}@example.com"}
-                    )
-                    workflow_result["steps_completed"].append("sqlite_user_created")
+                    if sqlite_conn and "database" in sqlite_conn:
+                        await sqlite_conn["database"].execute(
+                            "INSERT INTO test_users (name, email) VALUES (:name, :email)",
+                            {"name": f"Workflow User {user_id}", "email": f"{user_id}@example.com"}
+                        )
+                        workflow_result["steps_completed"].append("sqlite_user_created")
                 finally:
-                    await self.pool_manager.return_connection(sqlite_pool_id, sqlite_conn["id"])
+                    if sqlite_conn:
+                        await self.pool_manager.return_connection(sqlite_pool_id, sqlite_conn["id"])
             
             # Kuzu: Create user node and relationships
             if kuzu_pool_id:
                 kuzu_conn = await self.pool_manager.get_connection(kuzu_pool_id)
                 try:
-                    kuzu_connection = kuzu_conn["connection"]
-                    kuzu_connection.execute(
-                        "CREATE (u:TestUser {id: $id, name: $name, email: $email})",
-                        {"id": workflow_id + 2000, "name": f"Workflow User {user_id}", "email": f"{user_id}@example.com"}
-                    )
-                    workflow_result["steps_completed"].append("kuzu_node_created")
+                    if kuzu_conn and "connection" in kuzu_conn:
+                        kuzu_connection = kuzu_conn["connection"]
+                        kuzu_connection.execute(
+                            "CREATE (u:TestUser {id: $id, name: $name, email: $email})",
+                            {"id": workflow_id + 2000, "name": f"Workflow User {user_id}", "email": f"{user_id}@example.com"}
+                        )
+                        workflow_result["steps_completed"].append("kuzu_node_created")
                 finally:
-                    await self.pool_manager.return_connection(kuzu_pool_id, kuzu_conn["id"])
+                    if kuzu_conn:
+                        await self.pool_manager.return_connection(kuzu_pool_id, kuzu_conn["id"])
             
             # Redis: Cache user data
             if redis_pool_id:
@@ -471,14 +500,16 @@ class CrossDatabaseIntegrationTester:
                         "registered_at": time.time()
                     }
                     
-                    await redis_conn["connection"].setex(
-                        f"workflow_user:{user_id}",
-                        1800,  # 30 minutes
-                        json.dumps(user_cache_data)
-                    )
-                    workflow_result["steps_completed"].append("redis_cached")
+                    if redis_conn and "connection" in redis_conn:
+                        await redis_conn["connection"].setex(
+                            f"workflow_user:{user_id}",
+                            1800,  # 30 minutes
+                            json.dumps(user_cache_data)
+                        )
+                        workflow_result["steps_completed"].append("redis_cached")
                 finally:
-                    await self.pool_manager.return_connection(redis_pool_id, redis_conn["id"])
+                    if redis_conn:
+                        await self.pool_manager.return_connection(redis_pool_id, redis_conn["id"])
             
             workflow_result["success"] = True
             workflow_result["user_id"] = user_id
@@ -490,7 +521,7 @@ class CrossDatabaseIntegrationTester:
     
     async def _verify_workflow_data_integrity(self, user_id: str) -> Dict[str, Any]:
         """Verify data integrity after workflow completion."""
-        integrity_check = {
+        integrity_check: Dict[str, Any] = {
             "user_id": user_id,
             "valid": True,
             "database_checks": {}
@@ -502,14 +533,14 @@ class CrossDatabaseIntegrationTester:
             conn = await self.pool_manager.get_connection(pool_id)
             
             try:
-                if pool_type == "sqlite":
+                if pool_type == "sqlite" and conn and "database" in conn:
                     user_exists = await conn["database"].fetch_one(
                         "SELECT COUNT(*) as count FROM test_users WHERE email LIKE :pattern",
                         {"pattern": f"%{user_id}%"}
                     )
                     integrity_check["database_checks"]["sqlite"] = user_exists["count"] > 0 if user_exists else False
                     
-                elif pool_type == "kuzu":
+                elif pool_type == "kuzu" and conn and "connection" in conn:
                     kuzu_conn = conn["connection"]
                     result = kuzu_conn.execute(
                         "MATCH (u:TestUser) WHERE u.email CONTAINS $user_id RETURN count(u) as count",
@@ -521,13 +552,14 @@ class CrossDatabaseIntegrationTester:
                             count = row[0]
                     integrity_check["database_checks"]["kuzu"] = count > 0
                     
-                elif pool_type == "redis":
+                elif pool_type == "redis" and conn and "connection" in conn:
                     redis_conn = conn["connection"]
                     cached_data = await redis_conn.get(f"workflow_user:{user_id}")
                     integrity_check["database_checks"]["redis"] = cached_data is not None
             
             finally:
-                await self.pool_manager.return_connection(pool_id, conn["id"])
+                if conn:
+                    await self.pool_manager.return_connection(pool_id, conn["id"])
         
         # Check if all databases have the expected data
         if not all(integrity_check["database_checks"].values()):

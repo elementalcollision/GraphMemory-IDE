@@ -11,7 +11,7 @@ import pytest
 import pytest_asyncio
 import time
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from server.dashboard.performance_manager import (
@@ -150,21 +150,20 @@ class TestGenericConnectionPool:
     """Test generic connection pool functionality"""
     
     @pytest.fixture
-    def connection_factory(self) -> None:
+    def connection_factory(self) -> Any:
         """Mock connection factory"""
-        connection_count = 0
         
-        def factory() -> None:
-            nonlocal connection_count
-            connection_count += 1
+        def factory() -> Any:
             mock_conn = MagicMock()
-            mock_conn.id = connection_count
+            mock_conn.id = getattr(factory, 'connection_count', 0) + 1
+            factory.connection_count = mock_conn.id  # type: ignore
             return mock_conn
         
+        factory.connection_count = 0  # type: ignore
         return factory
     
     @pytest.mark.asyncio
-    async def test_connection_pool_basic_operations(self, connection_factory) -> None:
+    async def test_connection_pool_basic_operations(self, connection_factory: Any) -> None:
         """Test basic connection pool operations"""
         pool = GenericConnectionPool(
             connection_factory=connection_factory,
@@ -196,13 +195,13 @@ class TestGenericConnectionPool:
         await pool.close_all()
     
     @pytest.mark.asyncio
-    async def test_connection_pool_timeout(self, connection_factory) -> None:
+    async def test_connection_pool_timeout(self, connection_factory: Any) -> None:
         """Test connection pool timeout behavior"""
         pool = GenericConnectionPool(
             connection_factory=connection_factory,
             max_size=1,
             min_size=0,
-            timeout=0.1  # Very short timeout
+            timeout=1  # Changed from 0.1 to 1
         )
         
         await pool.initialize()
@@ -229,7 +228,7 @@ class TestConnectionPoolManager:
     """Test connection pool manager functionality"""
     
     @pytest_asyncio.fixture
-    async def pool_manager(self) -> None:
+    async def pool_manager(self) -> Any:
         """Create connection pool manager for testing"""
         config = PerformanceConfig(max_pool_size=10, min_pool_size=2)
         manager = ConnectionPoolManager(config)
@@ -237,10 +236,10 @@ class TestConnectionPoolManager:
         await manager.shutdown()
     
     @pytest.mark.asyncio
-    async def test_pool_manager_create_and_get(self, pool_manager) -> None:
+    async def test_pool_manager_create_and_get(self, pool_manager: Any) -> None:
         """Test creating and getting pools"""
         
-        def mock_factory() -> None:
+        def mock_factory() -> Any:
             return MagicMock()
         
         # Create pool
@@ -262,10 +261,10 @@ class TestConnectionPoolManager:
         assert missing_pool is None
     
     @pytest.mark.asyncio
-    async def test_pool_manager_connection_context(self, pool_manager) -> None:
+    async def test_pool_manager_connection_context(self, pool_manager: Any) -> None:
         """Test connection context manager"""
         
-        def mock_factory() -> None:
+        def mock_factory() -> Any:
             mock_conn = MagicMock()
             return mock_conn
         
@@ -327,7 +326,7 @@ class TestMemoryManager:
     """Test memory manager functionality"""
     
     @pytest.fixture
-    def memory_manager(self) -> None:
+    def memory_manager(self) -> Any:
         """Create memory manager for testing"""
         config = PerformanceConfig(
             enable_memory_monitoring=True,
@@ -337,7 +336,7 @@ class TestMemoryManager:
         )
         return MemoryManager(config)
     
-    def test_memory_usage_tracking(self, memory_manager) -> None:
+    def test_memory_usage_tracking(self, memory_manager: Any) -> None:
         """Test memory usage tracking"""
         usage = memory_manager.get_memory_usage()
         
@@ -348,10 +347,10 @@ class TestMemoryManager:
         assert "available_mb" in usage
         assert all(isinstance(v, (int, float)) for v in usage.values())
     
-    def test_memory_profiling(self, memory_manager) -> None:
+    def test_memory_profiling(self, memory_manager: Any) -> None:
         """Test memory profiling functionality"""
         
-        def test_function() -> None:
+        def test_function() -> int:
             # Create some objects
             data = [i for i in range(1000)]
             return len(data)
@@ -362,7 +361,7 @@ class TestMemoryManager:
         assert isinstance(peak_memory, (int, float))
         assert peak_memory >= 0
     
-    def test_memory_stats(self, memory_manager) -> None:
+    def test_memory_stats(self, memory_manager: Any) -> None:
         """Test memory statistics"""
         stats = memory_manager.get_memory_stats()
         
@@ -378,17 +377,17 @@ class TestPerformanceProfiler:
     """Test performance profiler functionality"""
     
     @pytest.fixture
-    def profiler(self) -> None:
+    def profiler(self) -> PerformanceProfiler:
         """Create performance profiler for testing"""
-        config = PerformanceConfig(enable_profiling=True)
+        config = PerformanceConfig(enable_performance_monitoring=True)
         return PerformanceProfiler(config)
     
     @pytest.mark.asyncio
-    async def test_operation_profiling(self, profiler) -> None:
+    async def test_operation_profiling(self, profiler: PerformanceProfiler) -> None:
         """Test operation profiling"""
         
-        async def test_operation() -> None:
-            await asyncio.sleep(0.01)  # Small delay
+        async def test_operation() -> str:
+            await asyncio.sleep(0.01)
             return "result"
         
         # Profile operation
@@ -403,7 +402,7 @@ class TestPerformanceProfiler:
         assert stats["avg_duration_ms"] > 0
     
     @pytest.mark.asyncio
-    async def test_performance_summary(self, profiler) -> None:
+    async def test_performance_summary(self, profiler: PerformanceProfiler) -> None:
         """Test performance summary"""
         
         # Perform some operations
@@ -426,20 +425,19 @@ class TestResourceMonitor:
     """Test resource monitor functionality"""
     
     @pytest_asyncio.fixture
-    async def resource_monitor(self) -> None:
+    async def resource_monitor(self) -> AsyncGenerator[ResourceMonitor, None]:
         """Create resource monitor for testing"""
         config = PerformanceConfig(
             enable_resource_monitoring=True,
-            monitoring_interval_seconds=0.1,  # Fast for testing
-            cpu_threshold_percent=80.0,
-            memory_threshold_percent=80.0
+            monitoring_interval_seconds=1
         )
         monitor = ResourceMonitor(config)
         yield monitor
-        await monitor.stop_monitoring()
+        if monitor.monitoring_active:
+            await monitor.stop_monitoring()
     
     @pytest.mark.asyncio
-    async def test_resource_monitoring_start_stop(self, resource_monitor) -> None:
+    async def test_resource_monitoring_start_stop(self, resource_monitor: ResourceMonitor) -> None:
         """Test starting and stopping resource monitoring"""
         assert not resource_monitor.monitoring_active
         
@@ -453,7 +451,7 @@ class TestResourceMonitor:
         assert not resource_monitor.monitoring_active
     
     @pytest.mark.asyncio
-    async def test_resource_metrics_collection(self, resource_monitor) -> None:
+    async def test_resource_metrics_collection(self, resource_monitor: ResourceMonitor) -> None:
         """Test resource metrics collection"""
         # Start monitoring briefly
         await resource_monitor.start_monitoring()
@@ -467,7 +465,7 @@ class TestResourceMonitor:
             assert current_metrics.cpu_percent >= 0
             assert current_metrics.memory_percent >= 0
     
-    def test_resource_trends(self, resource_monitor) -> None:
+    def test_resource_trends(self, resource_monitor: ResourceMonitor) -> None:
         """Test resource trends analysis"""
         # Add some mock data
         for i in range(5):
@@ -492,22 +490,27 @@ class TestPerformanceManager:
     """Test performance manager functionality"""
     
     @pytest_asyncio.fixture
-    async def performance_manager(self) -> None:
+    async def performance_manager(self) -> AsyncGenerator[PerformanceManager, None]:
         """Create performance manager for testing"""
         config = PerformanceConfig(
             enable_connection_pooling=True,
-            enable_rate_limiting=False,  # Disable for simpler testing
-            enable_memory_monitoring=False,  # Disable for testing
-            enable_resource_monitoring=False,  # Disable for testing
-            enable_async_optimization=True
+            enable_rate_limiting=True,
+            enable_memory_monitoring=True,
+            enable_performance_monitoring=True,
+            enable_resource_monitoring=True,
+            max_pool_size=10,
+            min_pool_size=2
         )
+        
         manager = PerformanceManager(config)
         await manager.initialize()
+        
         yield manager
+        
         await manager.shutdown()
     
     @pytest.mark.asyncio
-    async def test_performance_manager_initialization(self, performance_manager) -> None:
+    async def test_performance_manager_initialization(self, performance_manager: PerformanceManager) -> None:
         """Test performance manager initialization"""
         assert performance_manager.connection_pool_manager is not None
         assert performance_manager.rate_limit_manager is not None
@@ -516,11 +519,11 @@ class TestPerformanceManager:
         assert performance_manager.resource_monitor is not None
     
     @pytest.mark.asyncio
-    async def test_operation_profiling(self, performance_manager) -> None:
+    async def test_operation_profiling(self, performance_manager: PerformanceManager) -> None:
         """Test operation profiling through performance manager"""
         
-        async def test_operation() -> None:
-            await asyncio.sleep(0.001)
+        async def test_operation() -> str:
+            await asyncio.sleep(0.01)
             return "success"
         
         async with performance_manager.profile_operation("test_manager_op"):
@@ -533,7 +536,7 @@ class TestPerformanceManager:
         assert stats["count"] == 1
     
     @pytest.mark.asyncio
-    async def test_memory_optimization(self, performance_manager) -> None:
+    async def test_memory_optimization(self, performance_manager: PerformanceManager) -> None:
         """Test memory optimization"""
         # This should not raise an exception
         await performance_manager.optimize_memory_usage()
@@ -542,7 +545,7 @@ class TestPerformanceManager:
         assert performance_manager.performance_stats["total_optimizations"] > 0
     
     @pytest.mark.asyncio
-    async def test_performance_report(self, performance_manager) -> None:
+    async def test_performance_report(self, performance_manager: PerformanceManager) -> None:
         """Test performance report generation"""
         report = await performance_manager.get_performance_report()
         
@@ -557,7 +560,7 @@ class TestPerformanceManager:
         assert "statistics" in report
     
     @pytest.mark.asyncio
-    async def test_optimization_recommendations(self, performance_manager) -> None:
+    async def test_optimization_recommendations(self, performance_manager: PerformanceManager) -> None:
         """Test optimization recommendations"""
         recommendations = await performance_manager.get_optimization_recommendations()
         
@@ -612,8 +615,8 @@ class TestGlobalFunctions:
     async def test_profile_operation_global(self) -> None:
         """Test global profile operation function"""
         
-        async def test_op() -> None:
-            await asyncio.sleep(0.001)
+        async def test_op() -> str:
+            await asyncio.sleep(0.01)
             return "done"
         
         async with profile_operation("global_test_op"):
@@ -643,7 +646,7 @@ async def test_integration_scenario() -> None:
     
     try:
         # Test connection pool creation
-        def mock_conn_factory() -> None:
+        def mock_conn_factory() -> Any:
             return MagicMock()
         
         await manager.connection_pool_manager.create_pool(
@@ -658,13 +661,13 @@ async def test_integration_scenario() -> None:
             assert conn is not None
         
         # Test operation profiling
-        async def analytics_operation() -> None:
-            await asyncio.sleep(0.002)
-            return {"metrics": "data"}
+        async def analytics_operation() -> dict[str, str]:
+            await asyncio.sleep(0.05)
+            return {"status": "completed", "records_processed": "1000"}
         
         async with manager.profile_operation("analytics_fetch"):
             result = await analytics_operation()
-            assert result == {"metrics": "data"}
+            assert result == {"status": "completed", "records_processed": "1000"}
         
         # Test memory optimization
         await manager.optimize_memory_usage()

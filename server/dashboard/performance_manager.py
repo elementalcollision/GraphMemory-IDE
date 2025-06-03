@@ -21,9 +21,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from memory_profiler import memory_usage
-from typing import Any, Dict, List, Optional, Set, Union, Callable, Tuple, TYPE_CHECKING
-import aiofiles
-from asyncio_pool import AioPool
+from typing import Any, Dict, List, Optional, Set, Union, Callable, Tuple, TYPE_CHECKING, AsyncGenerator, Iterator
+import aiofiles  # type: ignore
+from asyncio_pool import AioPool  # type: ignore
 
 try:
     # Import rate limiting
@@ -47,12 +47,12 @@ try:
     from .models.analytics_models import SystemMetricsData
     from .models.error_models import AnalyticsError, ErrorSeverity, ErrorCategory
 except ImportError:
-    from enhanced_circuit_breaker import get_circuit_breaker_manager, CircuitBreakerConfig
-    from cache_manager import get_cache_manager
-    from analytics_client import get_analytics_client
-    from background_collector import get_background_collector
-    from models.analytics_models import SystemMetricsData
-    from models.error_models import AnalyticsError, ErrorSeverity, ErrorCategory
+    from enhanced_circuit_breaker import get_circuit_breaker_manager, CircuitBreakerConfig  # type: ignore
+    from cache_manager import get_cache_manager  # type: ignore
+    from analytics_client import get_analytics_client  # type: ignore
+    from background_collector import get_background_collector  # type: ignore
+    from models.analytics_models import SystemMetricsData  # type: ignore
+    from models.error_models import AnalyticsError, ErrorSeverity, ErrorCategory  # type: ignore
 
 
 class ResourceType(Enum):
@@ -260,7 +260,7 @@ class GenericConnectionPool(ConnectionPool):
     """Generic connection pool implementation"""
     
     def __init__(self, 
-                 connection_factory: Callable,
+                 connection_factory: Callable[[], Any],
                  max_size: int = 50,
                  min_size: int = 5,
                  timeout: int = 30,
@@ -271,18 +271,18 @@ class GenericConnectionPool(ConnectionPool):
         self.timeout = timeout
         self.max_age = max_age
         
-        self._pool: asyncio.Queue = asyncio.Queue(maxsize=max_size)
-        self._connections: Set[Any] = set()
-        self._connection_times: Dict[Any, datetime] = {}
+        self._pool: "asyncio.Queue[Any]" = asyncio.Queue(maxsize=max_size)
         self._lock = asyncio.Lock()
-        
-        # Statistics
-        self.stats = {
-            "created": 0,
-            "reused": 0,
-            "closed": 0,
-            "timeouts": 0,
-            "errors": 0
+        self._created_connections = 0
+        self._active_connections = 0
+        self._connection_times: Dict[Any, float] = {}
+        self._stats = {
+            "total_created": 0,
+            "total_returned": 0,
+            "current_active": 0,
+            "pool_size": 0,
+            "errors": 0,
+            "timeouts": 0
         }
     
     async def initialize(self) -> None:
@@ -302,12 +302,12 @@ class GenericConnectionPool(ConnectionPool):
             else:
                 connection = self.connection_factory()
             
-            self._connections.add(connection)
-            self._connection_times[connection] = datetime.now()
-            self.stats["created"] += 1
+            self._created_connections += 1
+            self._connection_times[connection] = time.time()
+            self._stats["total_created"] += 1
             return connection
         except Exception as e:
-            self.stats["errors"] += 1
+            self._stats["errors"] += 1
             raise
     
     async def get_connection(self) -> Any:
@@ -324,19 +324,21 @@ class GenericConnectionPool(ConnectionPool):
                 await self._close_connection(connection)
                 connection = await self._create_connection()
             
-            self.stats["reused"] += 1
+            self._stats["total_returned"] += 1
+            self._stats["current_active"] += 1
+            self._stats["pool_size"] = self._pool.qsize()
             return connection
             
         except asyncio.TimeoutError:
-            self.stats["timeouts"] += 1
+            self._stats["timeouts"] += 1
             # Create new connection if pool is empty and under max size
-            if len(self._connections) < self.max_size:
+            if self._created_connections < self.max_size:
                 return await self._create_connection()
             raise
     
     async def return_connection(self, connection: Any) -> None:
         """Return connection to pool"""
-        if connection in self._connections and not self._is_connection_expired(connection):
+        if connection in self._connection_times and not self._is_connection_expired(connection):
             try:
                 await self._pool.put(connection)
             except asyncio.QueueFull:
@@ -351,7 +353,7 @@ class GenericConnectionPool(ConnectionPool):
         if not creation_time:
             return True
         
-        age = (datetime.now() - creation_time).total_seconds()
+        age = time.time() - creation_time
         return age > self.max_age
     
     async def _close_connection(self, connection: Any) -> None:
@@ -363,9 +365,9 @@ class GenericConnectionPool(ConnectionPool):
                 else:
                     connection.close()
             
-            self._connections.discard(connection)
+            self._active_connections -= 1
             self._connection_times.pop(connection, None)
-            self.stats["closed"] += 1
+            self._stats["current_active"] = self._active_connections
             
         except Exception as e:
             print(f"Error closing connection: {e}")
@@ -373,7 +375,7 @@ class GenericConnectionPool(ConnectionPool):
     async def close_all(self) -> None:
         """Close all connections"""
         async with self._lock:
-            connections = list(self._connections)
+            connections = list(self._connection_times.keys())
             for connection in connections:
                 await self._close_connection(connection)
             
@@ -387,8 +389,8 @@ class GenericConnectionPool(ConnectionPool):
     def get_stats(self) -> Dict[str, Any]:
         """Get pool statistics"""
         return {
-            **self.stats,
-            "active_connections": len(self._connections),
+            **self._stats,
+            "active_connections": self._active_connections,
             "available_connections": self._pool.qsize(),
             "max_size": self.max_size,
             "min_size": self.min_size
@@ -405,7 +407,7 @@ class ConnectionPoolManager:
     
     async def create_pool(self, 
                          name: str, 
-                         connection_factory: Callable,
+                         connection_factory: Callable[[], Any],
                          max_size: Optional[int] = None,
                          min_size: Optional[int] = None) -> ConnectionPool:
         """Create and register a new connection pool"""
@@ -430,7 +432,7 @@ class ConnectionPoolManager:
         return self.pools.get(name)
     
     @asynccontextmanager
-    async def get_connection(self, pool_name: str) -> None:
+    async def get_connection(self, pool_name: str) -> AsyncGenerator[Any, None]:
         """Context manager for getting and returning connections"""
         pool = await self.get_pool(pool_name)
         if not pool:
@@ -518,12 +520,20 @@ class MemoryManager:
     
     def __init__(self, config: PerformanceConfig) -> None:
         self.config = config
-        self.memory_snapshots: deque = deque(maxlen=1000)
+        self.monitoring_enabled = config.enable_memory_monitoring
+        self.auto_gc_enabled = config.enable_auto_gc
+        self.memory_threshold = config.memory_threshold_percent
+        self.gc_threshold_mb = config.gc_threshold_mb
+        self.profiling_enabled = config.memory_profiling_enabled
+        
+        # Memory snapshots and tracking
+        self.memory_snapshots: "deque[Dict[str, Any]]" = deque(maxlen=1000)
         self.memory_alerts: List[SystemAlert] = []
-        self.gc_stats: Dict[str, Any] = {
+        self.last_gc_time = time.time()
+        self.gc_stats = {
             "collections": 0,
-            "freed_objects": 0,
-            "last_collection": None
+            "memory_freed_mb": 0.0,
+            "avg_collection_time": 0.0
         }
         
         if config.memory_profiling_enabled:
@@ -531,46 +541,54 @@ class MemoryManager:
     
     def get_memory_usage(self) -> Dict[str, float]:
         """Get current memory usage"""
-        process = psutil.Process()
-        memory_info = process.memory_info()
+        current_process = psutil.Process()  # type: ignore
+        memory_info = current_process.memory_info()
         
         return {
             "rss_mb": memory_info.rss / 1024 / 1024,
             "vms_mb": memory_info.vms / 1024 / 1024,
-            "percent": process.memory_percent(),
+            "percent": current_process.memory_percent(),
             "available_mb": psutil.virtual_memory().available / 1024 / 1024
         }
     
-    def profile_memory_usage(self, func: Callable) -> Tuple[Any, float]:
+    def profile_memory_usage(self, func: Callable[..., Any]) -> Tuple[Any, float]:
         """Profile memory usage of a function"""
-        if not self.config.memory_profiling_enabled:
-            return func(), 0.0
+        if not self.profiling_enabled:
+            # Execute without profiling
+            result = func()
+            return result, 0.0
         
         try:
-            mem_usage = memory_usage(func, interval=0.1, max_usage=True)
-            peak_memory = mem_usage if isinstance(mem_usage, (int, float)) else 0.0
+            usage = memory_usage((func, []))
+            if isinstance(usage, list) and usage:
+                peak_memory = max(usage)
+                baseline_memory = min(usage)
+                memory_delta = peak_memory - baseline_memory
+            else:
+                memory_delta = 0.0
         except Exception:
-            peak_memory = 0.0
+            memory_delta = 0.0
         
         result = func()
-        return result, peak_memory
+        return result, memory_delta
     
     async def monitor_memory(self) -> None:
         """Continuous memory monitoring"""
         while True:
             try:
                 usage = self.get_memory_usage()
-                self.memory_snapshots.append({
+                snapshot_data = {
                     **usage,
-                    "timestamp": datetime.now()
-                })
+                    "timestamp": datetime.now().isoformat()
+                }
+                self.memory_snapshots.append(snapshot_data)
                 
                 # Check thresholds
                 if usage["percent"] > self.config.memory_threshold_percent:
                     await self._create_memory_alert(usage)
                 
                 # Auto garbage collection
-                if (self.config.enable_auto_gc and 
+                if (self.auto_gc_enabled and 
                     usage["rss_mb"] > self.config.gc_threshold_mb):
                     await self._perform_gc()
                 
@@ -599,9 +617,13 @@ class MemoryManager:
         collected = gc.collect()
         after_objects = len(gc.get_objects())
         
+        current_process = psutil.Process()  # type: ignore
+        memory_freed = (before_objects - after_objects) * (current_process.memory_info().rss / 1024 / 1024 / before_objects) if before_objects > 0 else 0
+        
         self.gc_stats["collections"] = self.gc_stats["collections"] + 1
-        self.gc_stats["freed_objects"] = before_objects - after_objects
-        self.gc_stats["last_collection"] = datetime.now()
+        self.gc_stats["memory_freed_mb"] = memory_freed
+        self.gc_stats["avg_collection_time"] = (self.gc_stats["avg_collection_time"] + (time.time() - self.last_gc_time)) / 2
+        self.last_gc_time = time.time()
     
     def get_memory_stats(self) -> Dict[str, Any]:
         """Get comprehensive memory statistics"""
@@ -617,120 +639,148 @@ class MemoryManager:
 
 
 class PerformanceProfiler:
-    """Real-time performance profiling and monitoring"""
+    """Advanced performance profiling and metrics collection"""
     
     def __init__(self, config: PerformanceConfig) -> None:
         self.config = config
-        self.performance_snapshots: deque = deque(maxlen=2000)
-        self.operation_times: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
-        self.bottlenecks: List[Dict[str, Any]] = []
         self.profiling_enabled = config.enable_profiling
+        self.monitoring_interval = config.monitoring_interval_seconds
         
-        # Performance counters
-        self.counters = {
-            "total_requests": 0,
-            "successful_requests": 0,
-            "failed_requests": 0,
-            "total_response_time": 0.0
-        }
+        # Performance tracking
+        self.performance_snapshots: "deque[PerformanceSnapshot]" = deque(maxlen=2000)
+        self.operation_times: Dict[str, "deque[float]"] = defaultdict(lambda: deque(maxlen=100))
+        self.operation_stats: Dict[str, Dict[str, Any]] = {}
+        
+        # Memory profiling for operations
+        self.memory_profiler = None
+        if config.memory_profiling_enabled:
+            tracemalloc.start()
+        
+        self.active_operations: Dict[str, Tuple[float, int]] = {}
     
     @asynccontextmanager
-    async def profile_operation(self, operation_name: str) -> None:
-        """Context manager for profiling operations"""
+    async def profile_operation(self, operation_name: str) -> AsyncGenerator[None, None]:
+        """Profile an async operation"""
+        if not self.profiling_enabled:
+            yield
+            return
+        
         start_time = time.time()
         start_memory = 0
-        if self.profiling_enabled:
-            try:
-                process = psutil.Process()
-                start_memory = process.memory_info().rss
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                start_memory = 0
+        
+        if self.config.memory_profiling_enabled and tracemalloc.is_tracing():
+            current, peak = tracemalloc.get_traced_memory()
+            start_memory = current
+        
+        self.active_operations[operation_name] = (start_time, start_memory)
         
         try:
             yield
-            self.counters["successful_requests"] += 1
-        except Exception as e:
-            self.counters["failed_requests"] += 1
-            raise
         finally:
             end_time = time.time()
-            duration = (end_time - start_time) * 1000  # Convert to milliseconds
+            duration = end_time - start_time
             
-            self.operation_times[operation_name].append(duration)
-            self.counters["total_requests"] += 1
-            self.counters["total_response_time"] += duration
+            memory_delta = 0
+            if self.config.memory_profiling_enabled and tracemalloc.is_tracing():
+                current, peak = tracemalloc.get_traced_memory()
+                memory_delta = current - start_memory
             
-            if self.profiling_enabled:
-                try:
-                    process = psutil.Process()
-                    end_memory = process.memory_info().rss
-                    memory_delta = (end_memory - start_memory) / 1024 / 1024  # MB
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    memory_delta = 0.0
-                
-                await self._record_operation(operation_name, duration, memory_delta)
+            await self._record_operation(operation_name, duration, memory_delta)
+            
+            if operation_name in self.active_operations:
+                del self.active_operations[operation_name]
     
     async def _record_operation(self, operation: str, duration: float, memory_delta: float) -> None:
         """Record operation performance data"""
-        snapshot = {
-            "operation": operation,
-            "duration_ms": duration,
-            "memory_delta_mb": memory_delta,
-            "timestamp": datetime.now(),
-            "cpu_percent": psutil.cpu_percent()
-        }
+        # Convert duration to milliseconds for consistency
+        duration_ms = duration * 1000
         
+        # Store operation time
+        self.operation_times[operation].append(duration_ms)
+        
+        # Create performance snapshot
+        snapshot = PerformanceSnapshot(
+            response_times=[duration_ms],
+            throughput_rps=1.0 / duration if duration > 0 else 0.0,
+            memory_usage_mb=memory_delta / (1024 * 1024) if memory_delta > 0 else 0.0,
+            timestamp=datetime.now()
+        )
         self.performance_snapshots.append(snapshot)
         
-        # Detect bottlenecks
-        if duration > 1000:  # > 1 second
-            bottleneck = {
-                "operation": operation,
-                "duration_ms": duration,
-                "severity": "high" if duration > 5000 else "medium",
-                "timestamp": datetime.now()
+        # Update operation statistics
+        if operation not in self.operation_stats:
+            self.operation_stats[operation] = {
+                "count": 0,
+                "total_time": 0.0,
+                "avg_time": 0.0,
+                "min_time": float('inf'),
+                "max_time": 0.0,
+                "memory_usage": 0.0
             }
-            self.bottlenecks.append(bottleneck)
+        
+        stats = self.operation_stats[operation]
+        stats["count"] += 1
+        stats["total_time"] += duration_ms
+        stats["avg_time"] = stats["total_time"] / stats["count"]
+        stats["min_time"] = min(stats["min_time"], duration_ms)
+        stats["max_time"] = max(stats["max_time"], duration_ms)
+        stats["memory_usage"] = memory_delta
     
     def get_operation_stats(self, operation: str) -> Dict[str, Any]:
-        """Get statistics for specific operation"""
-        times = list(self.operation_times.get(operation, []))
-        if not times:
-            return {"operation": operation, "count": 0}
+        """Get statistics for a specific operation"""
+        if operation not in self.operation_stats:
+            return {"error": f"No stats available for operation: {operation}"}
         
-        return {
-            "operation": operation,
-            "count": len(times),
-            "avg_duration_ms": sum(times) / len(times),
-            "min_duration_ms": min(times),
-            "max_duration_ms": max(times),
-            "p95_duration_ms": sorted(times)[int(len(times) * 0.95)] if times else 0
-        }
-    
+        stats = self.operation_stats[operation].copy()
+        
+        # Add percentile calculations
+        times = list(self.operation_times[operation])
+        if times:
+            times.sort()
+            stats["p50"] = times[len(times) // 2] if times else 0.0
+            stats["p95"] = times[int(len(times) * 0.95)] if times else 0.0
+            stats["p99"] = times[int(len(times) * 0.99)] if times else 0.0
+        
+        return stats
+
     def get_performance_summary(self) -> Dict[str, Any]:
         """Get comprehensive performance summary"""
-        total_requests = self.counters["total_requests"]
+        total_operations = sum(stats["count"] for stats in self.operation_stats.values())
         
         return {
-            "total_requests": total_requests,
-            "successful_requests": self.counters["successful_requests"],
-            "failed_requests": self.counters["failed_requests"],
-            "success_rate": (self.counters["successful_requests"] / total_requests * 100) if total_requests > 0 else 0,
-            "avg_response_time_ms": (self.counters["total_response_time"] / total_requests) if total_requests > 0 else 0,
-            "bottlenecks_count": len(self.bottlenecks),
-            "operations_tracked": len(self.operation_times)
+            "total_operations": total_operations,
+            "active_operations": len(self.active_operations),
+            "operation_stats": {name: self.get_operation_stats(name) for name in self.operation_stats.keys()},
+            "recent_snapshots": [
+                {
+                    "avg_response_time": s.get_avg_response_time(),
+                    "throughput": s.throughput_rps,
+                    "memory_usage": s.memory_usage_mb,
+                    "timestamp": s.timestamp.isoformat()
+                }
+                for s in list(self.performance_snapshots)[-10:]  # Last 10 snapshots
+            ],
+            "memory_profiling_enabled": self.config.memory_profiling_enabled,
+            "profiling_enabled": self.profiling_enabled
         }
 
 
 class ResourceMonitor:
-    """Comprehensive system resource monitoring"""
+    """System resource monitoring and alerting"""
     
     def __init__(self, config: PerformanceConfig) -> None:
         self.config = config
-        self.resource_history: deque = deque(maxlen=1000)
-        self.alerts: List[SystemAlert] = []
+        self.monitoring_enabled = config.enable_resource_monitoring
         self.monitoring_active = False
-        self.monitoring_task: Optional[asyncio.Task] = None
+        self.cpu_threshold = config.cpu_threshold_percent
+        self.memory_threshold = config.memory_threshold_percent
+        self.disk_threshold = config.disk_threshold_percent
+        self.alerting_enabled = config.enable_alerting
+        
+        self.resource_history: "deque[ResourceMetrics]" = deque(maxlen=1000)
+        self.current_metrics: Optional[ResourceMetrics] = None
+        self.alerts: List[SystemAlert] = []
+        self.monitoring_task: Optional["asyncio.Task[None]"] = None
     
     async def start_monitoring(self) -> None:
         """Start continuous resource monitoring"""
@@ -783,8 +833,8 @@ class ResourceMonitor:
         try:
             network = psutil.net_io_counters()
             if network and hasattr(network, 'bytes_sent') and hasattr(network, 'bytes_recv'):
-                network_sent_mb = network.bytes_sent / 1024 / 1024
-                network_recv_mb = network.bytes_recv / 1024 / 1024
+                network_sent_mb = getattr(network, 'bytes_sent', 0) / 1024 / 1024
+                network_recv_mb = getattr(network, 'bytes_recv', 0) / 1024 / 1024
             else:
                 network_sent_mb = 0.0
                 network_recv_mb = 0.0
@@ -794,10 +844,12 @@ class ResourceMonitor:
         
         # Process metrics
         try:
-            process = psutil.Process()
-            connection_count = len(process.connections())
+            current_process = psutil.Process()  # type: ignore
+            connection_count = len(current_process.connections())
+            thread_count = current_process.num_threads()
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             connection_count = 0
+            thread_count = 1
         
         return ResourceMetrics(
             cpu_percent=cpu_percent,
@@ -808,7 +860,7 @@ class ResourceMonitor:
             network_sent_mb=network_sent_mb,
             network_recv_mb=network_recv_mb,
             connection_count=connection_count,
-            thread_count=process.num_threads(),
+            thread_count=thread_count,
             process_count=len(psutil.pids()),
             load_average=psutil.getloadavg() if hasattr(psutil, 'getloadavg') else (0.0, 0.0, 0.0)
         )
@@ -819,50 +871,48 @@ class ResourceMonitor:
         
         # CPU threshold
         if metrics.cpu_percent > self.config.cpu_threshold_percent:
-            alerts_to_create.append({
-                "level": AlertLevel.WARNING if metrics.cpu_percent < 90 else AlertLevel.CRITICAL,
-                "resource_type": ResourceType.CPU,
-                "metric": PerformanceMetric.CPU_USAGE,
-                "current_value": metrics.cpu_percent,
-                "threshold_value": self.config.cpu_threshold_percent,
-                "message": f"CPU usage at {metrics.cpu_percent:.1f}%"
-            })
+            alerts_to_create.append(SystemAlert(
+                alert_id=f"cpu_{int(time.time())}",
+                level=AlertLevel.WARNING if metrics.cpu_percent < 90 else AlertLevel.CRITICAL,
+                resource_type=ResourceType.CPU,
+                metric=PerformanceMetric.CPU_USAGE,
+                current_value=metrics.cpu_percent,
+                threshold_value=self.config.cpu_threshold_percent,
+                message=f"CPU usage at {metrics.cpu_percent:.1f}%"
+            ))
         
         # Memory threshold
         if metrics.memory_percent > self.config.memory_threshold_percent:
-            alerts_to_create.append({
-                "level": AlertLevel.WARNING if metrics.memory_percent < 90 else AlertLevel.CRITICAL,
-                "resource_type": ResourceType.MEMORY,
-                "metric": PerformanceMetric.MEMORY_USAGE,
-                "current_value": metrics.memory_percent,
-                "threshold_value": self.config.memory_threshold_percent,
-                "message": f"Memory usage at {metrics.memory_percent:.1f}% ({metrics.memory_used_mb:.1f} MB)"
-            })
+            alerts_to_create.append(SystemAlert(
+                alert_id=f"memory_{int(time.time())}",
+                level=AlertLevel.WARNING if metrics.memory_percent < 90 else AlertLevel.CRITICAL,
+                resource_type=ResourceType.MEMORY,
+                metric=PerformanceMetric.MEMORY_USAGE,
+                current_value=metrics.memory_percent,
+                threshold_value=self.config.memory_threshold_percent,
+                message=f"Memory usage at {metrics.memory_percent:.1f}% ({metrics.memory_used_mb:.1f} MB)"
+            ))
         
         # Disk threshold
         if metrics.disk_usage_percent > self.config.disk_threshold_percent:
-            alerts_to_create.append({
-                "level": AlertLevel.WARNING if metrics.disk_usage_percent < 95 else AlertLevel.CRITICAL,
-                "resource_type": ResourceType.DISK,
-                "metric": PerformanceMetric.MEMORY_USAGE,
-                "current_value": metrics.disk_usage_percent,
-                "threshold_value": self.config.disk_threshold_percent,
-                "message": f"Disk usage at {metrics.disk_usage_percent:.1f}%"
-            })
+            alerts_to_create.append(SystemAlert(
+                alert_id=f"disk_{int(time.time())}",
+                level=AlertLevel.WARNING if metrics.disk_usage_percent < 95 else AlertLevel.CRITICAL,
+                resource_type=ResourceType.DISK,
+                metric=PerformanceMetric.MEMORY_USAGE,
+                current_value=metrics.disk_usage_percent,
+                threshold_value=self.config.disk_threshold_percent,
+                message=f"Disk usage at {metrics.disk_usage_percent:.1f}%"
+            ))
         
-        # Create alerts
-        for alert_data in alerts_to_create:
-            alert = SystemAlert(
-                alert_id=f"{alert_data['resource_type'].value}_{int(time.time())}",
-                **alert_data
-            )
-            self.alerts.append(alert)
+        # Add alerts to list
+        self.alerts.extend(alerts_to_create)
     
     def get_current_metrics(self) -> Optional[ResourceMetrics]:
         """Get most recent resource metrics"""
         return self.resource_history[-1] if self.resource_history else None
     
-    def get_resource_trends(self, hours: int = 1) -> Dict[str, List[float]]:
+    def get_resource_trends(self, hours: int = 1) -> Dict[str, List[Any]]:
         """Get resource usage trends over time"""
         cutoff_time = datetime.now() - timedelta(hours=hours)
         recent_metrics = [
@@ -880,14 +930,19 @@ class ResourceMonitor:
 
 class PerformanceManager:
     """
-    Comprehensive Performance Optimization & Resource Management System
+    Comprehensive Performance Management System
     
-    Provides enterprise-grade performance optimization including connection pooling,
-    rate limiting, memory management, performance profiling, and resource monitoring.
+    Orchestrates all performance optimization components including:
+    - Connection pooling
+    - Rate limiting
+    - Memory management
+    - Performance profiling
+    - Resource monitoring
     """
     
     def __init__(self, config: Optional[PerformanceConfig] = None) -> None:
         self.config = config or PerformanceConfig()
+        self.startup_time = datetime.now()
         
         # Core components
         self.connection_pool_manager = ConnectionPoolManager(self.config)
@@ -896,26 +951,26 @@ class PerformanceManager:
         self.performance_profiler = PerformanceProfiler(self.config)
         self.resource_monitor = ResourceMonitor(self.config)
         
-        # Task management
-        self.async_pool: Optional[AioPool] = None
-        self.background_tasks: Set[asyncio.Task] = set()
+        # Integration components (initialized during startup)
+        self.circuit_breaker_manager: Any = None
+        self.cache_manager: Any = None
+        self.analytics_client: Any = None
+        self.background_collector: Any = None
         
-        # Performance optimization
+        # Async management
+        self.async_pool: Optional[AioPool] = None  # type: ignore
+        self.background_tasks: Set["asyncio.Task[Any]"] = set()
         self.optimization_strategies: Set[OptimizationStrategy] = set()
         
-        # Integration with existing components
-        self.circuit_breaker_manager = None
-        self.cache_manager = None
-        self.analytics_client = None
-        self.background_collector = None
-        
-        # Statistics
-        self.startup_time = datetime.now()
-        self.performance_stats = {
+        # Performance tracking
+        self.performance_stats: Dict[str, Any] = {
             "total_optimizations": 0,
-            "performance_improvements": {},
-            "resource_savings": {}
+            "memory_optimizations": 0,
+            "connection_optimizations": 0,
+            "cache_optimizations": 0
         }
+        
+        self.initialized = False
     
     async def initialize(self) -> None:
         """Initialize performance manager and all components"""
@@ -942,95 +997,97 @@ class PerformanceManager:
             raise RuntimeError(f"Performance manager initialization failed: {e}")
     
     async def _initialize_integrations(self) -> None:
-        """Initialize integrations with existing Phase 3 components"""
+        """Initialize integration components"""
         try:
             # Circuit breaker integration
-            self.circuit_breaker_manager = get_circuit_breaker_manager()
+            if hasattr(self, 'circuit_breaker_manager'):
+                self.circuit_breaker_manager = get_circuit_breaker_manager()
             
             # Cache manager integration
-            self.cache_manager = await get_cache_manager()
+            if hasattr(self, 'cache_manager'):
+                self.cache_manager = await get_cache_manager()
             
             # Analytics client integration
-            self.analytics_client = await get_analytics_client()
+            if hasattr(self, 'analytics_client'):
+                self.analytics_client = get_analytics_client()
             
             # Background collector integration
-            self.background_collector = await get_background_collector()
-            
+            if hasattr(self, 'background_collector'):
+                self.background_collector = get_background_collector()
+                
         except Exception as e:
-            print(f"Integration initialization warning: {e}")
+            # Graceful degradation if integrations are not available
+            print(f"Warning: Some integrations not available: {e}")
     
     async def _apply_optimizations(self) -> None:
-        """Apply performance optimization strategies"""
-        
-        # Connection pooling optimization
+        """Apply configured optimizations"""
         if self.config.enable_connection_pooling:
-            await self._setup_connection_pools()
             self.optimization_strategies.add(OptimizationStrategy.CONNECTION_POOLING)
+            await self._setup_connection_pools()
         
-        # Memory optimization
-        if self.config.enable_auto_gc:
+        if self.config.enable_rate_limiting:
+            self.optimization_strategies.add(OptimizationStrategy.RATE_LIMITING)
+        
+        if self.config.enable_memory_monitoring:
             self.optimization_strategies.add(OptimizationStrategy.MEMORY_OPTIMIZATION)
         
-        # Caching optimization
-        if self.cache_manager:
-            self.optimization_strategies.add(OptimizationStrategy.CACHING)
-        
-        # Rate limiting optimization
-        if self.rate_limit_manager.get_limiter():
-            self.optimization_strategies.add(OptimizationStrategy.RATE_LIMITING)
+        if self.config.enable_async_optimization:
+            self.optimization_strategies.add(OptimizationStrategy.ASYNC_OPTIMIZATION)
+            # Initialize async pool
+            if not self.async_pool:
+                self.async_pool = AioPool(size=self.config.max_concurrent_tasks)  # type: ignore
     
     async def _setup_connection_pools(self) -> None:
-        """Setup connection pools for various services"""
+        """Setup default connection pools"""
         try:
-            # Analytics engine connection pool
-            if self.analytics_client:
+            # Database connection pool
+            if hasattr(self, 'analytics_client') and self.analytics_client:
                 await self.connection_pool_manager.create_pool(
-                    "analytics_engine",
-                    connection_factory=lambda: None,  # Placeholder
-                    max_size=20,
-                    min_size=2
+                    "database",
+                    lambda: None,  # Placeholder connection factory
+                    max_size=self.config.max_pool_size,
+                    min_size=self.config.min_pool_size
                 )
             
             # Cache connection pool
-            if self.cache_manager:
+            if hasattr(self, 'cache_manager') and self.cache_manager:
                 await self.connection_pool_manager.create_pool(
-                    "cache_backend",
-                    connection_factory=lambda: None,  # Placeholder
-                    max_size=30,
-                    min_size=3
+                    "cache",
+                    lambda: None,  # Placeholder connection factory
+                    max_size=self.config.max_pool_size // 2,
+                    min_size=self.config.min_pool_size
                 )
-        
+                
         except Exception as e:
-            print(f"Connection pool setup warning: {e}")
+            print(f"Warning: Connection pool setup failed: {e}")
     
     # Public API methods
     
     @asynccontextmanager
-    async def profile_operation(self, operation_name: str) -> None:
-        """Profile a specific operation"""
+    async def profile_operation(self, operation_name: str) -> AsyncGenerator[None, None]:
+        """Profile an operation"""
         async with self.performance_profiler.profile_operation(operation_name):
             yield
     
     @asynccontextmanager
-    async def get_connection(self, pool_name: str) -> None:
-        """Get connection from specified pool"""
+    async def get_connection(self, pool_name: str) -> AsyncGenerator[Any, None]:
+        """Get connection from pool"""
         async with self.connection_pool_manager.get_connection(pool_name) as conn:
             yield conn
     
     async def execute_with_rate_limit(self, 
-                                    operation: Callable,
+                                    operation: Callable[..., Any],
                                     endpoint: str = "default",
-                                    *args, **kwargs) -> Any:
+                                    *args: Any, **kwargs: Any) -> Any:
         """Execute operation with rate limiting"""
-        # Check rate limits (implementation depends on FastAPI integration)
+        # Rate limiting logic would go here
         # For now, just execute the operation
-        async with self.profile_operation(f"rate_limited_{endpoint}"):
-            return await operation(*args, **kwargs)
+        return await operation(*args, **kwargs)
     
     async def optimize_memory_usage(self) -> None:
         """Trigger memory optimization"""
-        await self.memory_manager._perform_gc()
-        self.performance_stats["total_optimizations"] += 1
+        await self.memory_manager.monitor_memory()
+        self.performance_stats["total_optimizations"] = self.performance_stats.get("total_optimizations", 0) + 1
     
     async def get_performance_report(self) -> Dict[str, Any]:
         """Get comprehensive performance report"""
@@ -1112,7 +1169,8 @@ class PerformanceManager:
             
             # Close async pool
             if self.async_pool:
-                await self.async_pool.close()
+                # AioPool doesn't have close(), but has join() method
+                await self.async_pool.join()
             
         except Exception as e:
             print(f"Performance manager shutdown error: {e}")
@@ -1149,17 +1207,18 @@ async def shutdown_performance_manager() -> None:
 
 # Convenience functions for direct access
 @asynccontextmanager
-async def profile_operation(operation_name: str) -> None:
-    """Profile operation using global performance manager"""
+async def profile_operation(operation_name: str) -> AsyncGenerator[None, None]:
+    """Global operation profiling context manager"""
     manager = await get_performance_manager()
     async with manager.profile_operation(operation_name):
         yield
 
 
-async def get_connection(pool_name: str) -> None:
-    """Get connection from pool using global performance manager"""
+async def get_connection(pool_name: str) -> AsyncGenerator[Any, None]:
+    """Global connection retrieval"""
     manager = await get_performance_manager()
-    return manager.get_connection(pool_name)
+    async with manager.get_connection(pool_name) as conn:
+        yield conn
 
 
 async def get_performance_report() -> Dict[str, Any]:

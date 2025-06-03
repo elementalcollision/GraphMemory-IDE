@@ -114,7 +114,7 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-async def get_user_by_id(db, user_id: str) -> Optional[User]:
+async def get_user_by_id(db: Any, user_id: str) -> Optional[User]:
     """Get user by ID from database."""
     # Implementation depends on your database setup
     pass
@@ -128,7 +128,7 @@ async def sso_login(
     request: LoginRequest,
     db=Depends(get_db),
     settings: AdvancedSettings = Depends()
-):
+) -> AuthResponse:
     """Initiate SSO login flow."""
     try:
         sso_manager = get_sso_manager()
@@ -161,7 +161,7 @@ async def sso_callback(
     callback_data: SSOCallbackRequest,
     db=Depends(get_db),
     settings: AdvancedSettings = Depends()
-):
+) -> AuthResponse:
     """Handle SSO callback and complete authentication."""
     try:
         sso_manager = get_sso_manager()
@@ -229,7 +229,7 @@ async def sso_callback(
 
 
 @router.get("/sso/metadata/{provider}")
-async def get_sso_metadata(provider: str) -> None:
+async def get_sso_metadata(provider: str) -> Response:
     """Get SSO metadata (SAML SP metadata)."""
     try:
         sso_manager = get_sso_manager()
@@ -259,7 +259,7 @@ async def setup_mfa(
     setup_request: MFASetupRequest,
     current_user: User = Depends(get_current_user),
     db=Depends(get_db)
-):
+) -> AuthResponse:
     """Set up MFA for current user."""
     try:
         mfa_manager = get_mfa_manager()
@@ -298,7 +298,7 @@ async def verify_mfa_setup(
     verification_request: MFAVerificationRequest,
     current_user: User = Depends(get_current_user),
     db=Depends(get_db)
-):
+) -> AuthResponse:
     """Verify MFA setup with verification code."""
     try:
         mfa_manager = get_mfa_manager()
@@ -338,7 +338,7 @@ async def verify_mfa(
     temp_token: str = Form(...),
     db=Depends(get_db),
     settings: AdvancedSettings = Depends()
-):
+) -> AuthResponse:
     """Verify MFA code during login."""
     try:
         # Validate temporary token
@@ -392,7 +392,7 @@ async def verify_mfa(
 async def get_mfa_status(
     current_user: User = Depends(get_current_user),
     db=Depends(get_db)
-):
+) -> AuthResponse:
     """Get MFA status for current user."""
     try:
         mfa_manager = get_mfa_manager()
@@ -421,7 +421,7 @@ async def get_mfa_status(
 async def regenerate_backup_codes(
     current_user: User = Depends(get_current_user),
     db=Depends(get_db)
-):
+) -> AuthResponse:
     """Regenerate backup codes for current user."""
     try:
         mfa_manager = get_mfa_manager()
@@ -449,7 +449,7 @@ async def regenerate_backup_codes(
 async def disable_mfa(
     current_user: User = Depends(get_current_user),
     db=Depends(get_db)
-):
+) -> AuthResponse:
     """Disable MFA for current user."""
     try:
         mfa_manager = get_mfa_manager()
@@ -481,7 +481,7 @@ async def disable_mfa(
 async def initiate_recovery(
     recovery_request: RecoveryRequest,
     db=Depends(get_db)
-):
+) -> AuthResponse:
     """Initiate account recovery process."""
     try:
         # Get user by email
@@ -521,7 +521,7 @@ async def complete_recovery(
     recovery_complete: RecoveryCompleteRequest,
     db=Depends(get_db),
     settings: AdvancedSettings = Depends()
-):
+) -> AuthResponse:
     """Complete account recovery process."""
     try:
         mfa_manager = get_mfa_manager()
@@ -563,7 +563,7 @@ async def logout(
     current_user: User = Depends(get_current_user),
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db=Depends(get_db)
-):
+) -> AuthResponse:
     """Logout current user."""
     try:
         token = credentials.credentials
@@ -645,7 +645,7 @@ def create_session_token(user: User, settings: AdvancedSettings) -> str:
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
-async def get_user_by_email(db, email: str) -> Optional[User]:
+async def get_user_by_email(db: Any, email: str) -> Optional[User]:
     """Get user by email address."""
     # Implementation depends on your database setup
     pass
@@ -653,7 +653,7 @@ async def get_user_by_email(db, email: str) -> Optional[User]:
 
 # Health check route
 @router.get("/health")
-async def auth_health_check() -> None:
+async def auth_health_check() -> Dict[str, Any]:
     """Health check for authentication service."""
     sso_available = get_sso_manager() is not None
     mfa_available = get_mfa_manager() is not None

@@ -61,10 +61,10 @@ class PermissionLevel(Enum):
 @dataclass
 class Permission:
     """Individual permission definition."""
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     resource_type: ResourceType
     resource_id: str
     action: PermissionAction
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     granted: bool = True
     granted_by: Optional[str] = None
     granted_at: datetime = field(default_factory=datetime.utcnow)
@@ -75,9 +75,9 @@ class Permission:
 @dataclass
 class Role:
     """Role definition with associated permissions."""
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     description: str
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     permissions: List[Permission] = field(default_factory=list)
     is_system_role: bool = False
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -87,10 +87,10 @@ class Role:
 @dataclass
 class UserRole:
     """User role assignment."""
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     role_id: str
     assigned_by: str
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     assigned_at: datetime = field(default_factory=datetime.utcnow)
     expires_at: Optional[datetime] = None
     team_id: Optional[str] = None  # For team-scoped roles
@@ -99,16 +99,16 @@ class UserRole:
 @dataclass
 class PermissionAuditLog:
     """Audit log entry for permission changes."""
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     action: str  # granted, revoked, modified
     user_id: str
-    target_user_id: Optional[str] = None
     resource_type: ResourceType
     resource_id: str
     permission_action: PermissionAction
+    performed_by: str
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    target_user_id: Optional[str] = None
     old_value: Optional[Dict[str, Any]] = None
     new_value: Optional[Dict[str, Any]] = None
-    performed_by: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
@@ -120,7 +120,7 @@ class PermissionManager:
     def __init__(self, db_pool: asyncpg.Pool) -> None:
         self.db_pool = db_pool
         self.system_roles: Dict[str, Role] = {}
-        self.permission_cache: Dict[str, Dict[str, Set[str]]] = {}
+        self.permission_cache: Dict[str, Set[str]] = {}
         self.cache_ttl = 300  # 5 minutes
         self.last_cache_update = datetime.utcnow()
         
@@ -145,72 +145,72 @@ class PermissionManager:
         ]
         
         self.system_roles["system_admin"] = Role(
-            id="system_admin",
             name="System Administrator",
             description="Full system access with all permissions",
+            id="system_admin",
             permissions=admin_permissions,
             is_system_role=True
         )
         
         # Analytics Manager
         analytics_permissions = [
-            Permission(ResourceType.DASHBOARD, "*", PermissionAction.READ),
-            Permission(ResourceType.DASHBOARD, "*", PermissionAction.WRITE),
-            Permission(ResourceType.DASHBOARD, "*", PermissionAction.SHARE),
-            Permission(ResourceType.QUERY, "*", PermissionAction.READ),
-            Permission(ResourceType.QUERY, "*", PermissionAction.WRITE),
-            Permission(ResourceType.QUERY, "*", PermissionAction.EXECUTE),
-            Permission(ResourceType.DATASET, "*", PermissionAction.READ),
-            Permission(ResourceType.REPORT, "*", PermissionAction.READ),
-            Permission(ResourceType.REPORT, "*", PermissionAction.WRITE),
-            Permission(ResourceType.REPORT, "*", PermissionAction.EXPORT),
-            Permission(ResourceType.ANALYTICS, "*", PermissionAction.READ),
-            Permission(ResourceType.ALERT, "*", PermissionAction.READ),
-            Permission(ResourceType.ALERT, "*", PermissionAction.WRITE),
+            Permission(resource_type=ResourceType.DASHBOARD, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.DASHBOARD, resource_id="*", action=PermissionAction.WRITE),
+            Permission(resource_type=ResourceType.DASHBOARD, resource_id="*", action=PermissionAction.SHARE),
+            Permission(resource_type=ResourceType.QUERY, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.QUERY, resource_id="*", action=PermissionAction.WRITE),
+            Permission(resource_type=ResourceType.QUERY, resource_id="*", action=PermissionAction.EXECUTE),
+            Permission(resource_type=ResourceType.DATASET, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.REPORT, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.REPORT, resource_id="*", action=PermissionAction.WRITE),
+            Permission(resource_type=ResourceType.REPORT, resource_id="*", action=PermissionAction.EXPORT),
+            Permission(resource_type=ResourceType.ANALYTICS, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.ALERT, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.ALERT, resource_id="*", action=PermissionAction.WRITE),
         ]
         
         self.system_roles["analytics_manager"] = Role(
-            id="analytics_manager",
             name="Analytics Manager",
             description="Manage analytics dashboards, queries, and reports",
+            id="analytics_manager",
             permissions=analytics_permissions,
             is_system_role=True
         )
         
         # Data Analyst
         analyst_permissions = [
-            Permission(ResourceType.DASHBOARD, "*", PermissionAction.READ),
-            Permission(ResourceType.DASHBOARD, "*", PermissionAction.WRITE),
-            Permission(ResourceType.QUERY, "*", PermissionAction.READ),
-            Permission(ResourceType.QUERY, "*", PermissionAction.WRITE),
-            Permission(ResourceType.QUERY, "*", PermissionAction.EXECUTE),
-            Permission(ResourceType.DATASET, "*", PermissionAction.READ),
-            Permission(ResourceType.REPORT, "*", PermissionAction.READ),
-            Permission(ResourceType.REPORT, "*", PermissionAction.EXPORT),
-            Permission(ResourceType.ANALYTICS, "*", PermissionAction.READ),
+            Permission(resource_type=ResourceType.DASHBOARD, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.DASHBOARD, resource_id="*", action=PermissionAction.WRITE),
+            Permission(resource_type=ResourceType.QUERY, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.QUERY, resource_id="*", action=PermissionAction.WRITE),
+            Permission(resource_type=ResourceType.QUERY, resource_id="*", action=PermissionAction.EXECUTE),
+            Permission(resource_type=ResourceType.DATASET, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.REPORT, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.REPORT, resource_id="*", action=PermissionAction.EXPORT),
+            Permission(resource_type=ResourceType.ANALYTICS, resource_id="*", action=PermissionAction.READ),
         ]
         
         self.system_roles["data_analyst"] = Role(
-            id="data_analyst",
             name="Data Analyst",
             description="Create and analyze dashboards and queries",
+            id="data_analyst",
             permissions=analyst_permissions,
             is_system_role=True
         )
         
         # Viewer
         viewer_permissions = [
-            Permission(ResourceType.DASHBOARD, "*", PermissionAction.READ),
-            Permission(ResourceType.QUERY, "*", PermissionAction.READ),
-            Permission(ResourceType.DATASET, "*", PermissionAction.READ),
-            Permission(ResourceType.REPORT, "*", PermissionAction.READ),
-            Permission(ResourceType.ANALYTICS, "*", PermissionAction.READ),
+            Permission(resource_type=ResourceType.DASHBOARD, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.QUERY, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.DATASET, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.REPORT, resource_id="*", action=PermissionAction.READ),
+            Permission(resource_type=ResourceType.ANALYTICS, resource_id="*", action=PermissionAction.READ),
         ]
         
         self.system_roles["viewer"] = Role(
-            id="viewer",
             name="Viewer",
             description="Read-only access to dashboards and reports",
+            id="viewer",
             permissions=viewer_permissions,
             is_system_role=True
         )
