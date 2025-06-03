@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.cluster import SpectralClustering, KMeans, AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import StandardScaler
-from typing import Dict, List, Tuple, Optional, Any, Union
+from typing import Dict, List, Tuple, Optional, Any, Union, Callable
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -81,7 +81,7 @@ class GraphAlgorithms:
         
         # Run in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
-        centrality_scores = await loop.run_in_executor(self.executor, _calculate)
+        centrality_scores = await loop.run_in_executor(self.executor, _calculate)  # type: ignore
         
         # Filter nodes if specified
         if node_filters:
@@ -104,7 +104,8 @@ class GraphAlgorithms:
         def _detect() -> Tuple[Dict[str, str], float]:
             if algorithm == "louvain":
                 try:
-                    import community as community_louvain
+                    # Try to import python-louvain community detection
+                    import community as community_louvain  # type: ignore
                     partition = community_louvain.best_partition(graph, resolution=resolution)
                     modularity = community_louvain.modularity(partition, graph)
                 except ImportError:
@@ -133,7 +134,7 @@ class GraphAlgorithms:
             return partition, modularity
         
         loop = asyncio.get_event_loop()
-        partition, modularity = await loop.run_in_executor(self.executor, _detect)
+        partition, modularity = await loop.run_in_executor(self.executor, _detect)  # type: ignore
         
         # Filter small communities
         community_sizes = {}
@@ -184,9 +185,11 @@ class GraphAlgorithms:
                 for node in nodes:
                     node_data = graph.nodes[node]
                     if 'tags' in node_data:
-                        keywords.extend(node_data['tags'])
+                        if isinstance(node_data['tags'], list):
+                            keywords.extend(node_data['tags'])
                     if 'keywords' in node_data:
-                        keywords.extend(node_data['keywords'])
+                        if isinstance(node_data['keywords'], list):
+                            keywords.extend(node_data['keywords'])
                 
                 # Get most common keywords
                 from collections import Counter
@@ -205,7 +208,7 @@ class GraphAlgorithms:
             return metrics
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _calculate)
+        return await loop.run_in_executor(self.executor, _calculate)  # type: ignore
     
     async def analyze_paths(
         self,
@@ -218,7 +221,7 @@ class GraphAlgorithms:
         """Analyze paths between nodes"""
         
         def _analyze() -> Dict[str, Any]:
-            results = {
+            results: Dict[str, Any] = {
                 "paths": [],
                 "statistics": {},
                 "paths_found": 0
@@ -243,42 +246,46 @@ class GraphAlgorithms:
                                 path = nx.shortest_path(graph, source, target)
                                 length = len(path) - 1
                                 if length <= max_depth:
-                                    results["paths"].append({
+                                    path_info = {
                                         "source": source,
                                         "target": target,
                                         "path": path,
                                         "length": length
-                                    })
-                                    results["paths_found"] += 1
+                                    }
+                                    results["paths"].append(path_info)
+                                    results["paths_found"] = results["paths_found"] + 1
                         elif path_type == "all_simple":
                             paths = list(nx.all_simple_paths(
                                 graph, source, target, cutoff=max_depth
                             ))
                             for path in paths:
-                                results["paths"].append({
+                                path_info = {
                                     "source": source,
                                     "target": target,
                                     "path": path,
                                     "length": len(path) - 1
-                                })
-                                results["paths_found"] += 1
+                                }
+                                results["paths"].append(path_info)
+                                results["paths_found"] = results["paths_found"] + 1
                     except (nx.NetworkXNoPath, nx.NodeNotFound):
                         continue
             
             # Calculate statistics
-            if results["paths"]:
-                lengths = [p["length"] for p in results["paths"]]
-                results["statistics"] = {
-                    "average_path_length": float(np.mean(lengths)),
-                    "min_path_length": int(min(lengths)),
-                    "max_path_length": int(max(lengths)),
-                    "total_paths": len(results["paths"])
-                }
+            paths_list = results["paths"]
+            if isinstance(paths_list, list) and len(paths_list) > 0:
+                lengths = [p["length"] for p in paths_list if isinstance(p, dict) and "length" in p]
+                if lengths:
+                    results["statistics"] = {
+                        "average_path_length": float(np.mean(lengths)),
+                        "min_path_length": min(lengths),
+                        "max_path_length": max(lengths),
+                        "total_paths": len(paths_list)
+                    }
             
             return results
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _analyze)
+        return await loop.run_in_executor(self.executor, _analyze)  # type: ignore
     
     async def calculate_graph_metrics(self, graph: nx.Graph) -> GraphMetrics:
         """Calculate overall graph metrics"""
@@ -341,7 +348,7 @@ class GraphAlgorithms:
             )
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _calculate)
+        return await loop.run_in_executor(self.executor, _calculate)  # type: ignore
 
 
 class MLAnalytics:
@@ -364,7 +371,7 @@ class MLAnalytics:
     ) -> Tuple[np.ndarray, float, Optional[np.ndarray]]:
         """Perform clustering on node features"""
         
-        def _cluster() -> None:
+        def _cluster() -> Tuple[np.ndarray, float, Optional[np.ndarray]]:
             # Scale features
             features_scaled = self.scaler.fit_transform(features)
             
@@ -396,15 +403,16 @@ class MLAnalytics:
             else:
                 silhouette = 0.0
             
-            # Get cluster centers if available
+            # Get cluster centers if available (only KMeans has cluster_centers_)
             centers = None
-            if hasattr(clusterer, 'cluster_centers_'):
-                centers = clusterer.cluster_centers_
+            if clustering_type == ClusteringType.KMEANS:
+                # Only KMeans has cluster_centers_ attribute
+                centers = getattr(clusterer, 'cluster_centers_', None)
             
             return labels, silhouette, centers
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _cluster)
+        return await loop.run_in_executor(self.executor, _cluster)  # type: ignore
     
     async def detect_anomalies(
         self,
@@ -413,7 +421,7 @@ class MLAnalytics:
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Detect anomalous nodes using isolation forest"""
         
-        def _detect() -> None:
+        def _detect() -> Tuple[np.ndarray, np.ndarray]:
             from sklearn.ensemble import IsolationForest
             
             # Scale features
@@ -431,7 +439,7 @@ class MLAnalytics:
             return anomaly_labels, anomaly_scores
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _detect)
+        return await loop.run_in_executor(self.executor, _detect)  # type: ignore
     
     async def extract_node_features(
         self,
@@ -441,26 +449,29 @@ class MLAnalytics:
     ) -> Tuple[np.ndarray, List[str], List[str]]:
         """Extract numerical features from graph nodes for ML analysis"""
         
-        def _extract() -> None:
+        def _extract() -> Tuple[np.ndarray, List[str], List[str]]:
             nodes = list(graph.nodes())
             features = []
             feature_names = []
             
             # Basic structural features
-            degrees = dict(graph.degree())
+            # Handle NetworkX degree method directly for each node
             clustering_coeffs = nx.clustering(graph)
             
             for node in nodes:
-                node_features = []
+                node_features: List[float] = []
                 
-                # Degree
-                node_features.append(degrees[node])
+                # Degree - get directly from graph
+                node_degree = graph.degree(node)
+                # Ensure we have an integer value for degree
+                degree_value = int(node_degree) if isinstance(node_degree, (int, float)) else 0
+                node_features.append(float(degree_value))
                 if not feature_names or len(feature_names) == len(node_features) - 1:
                     feature_names.append("degree")
                 
                 # Local clustering coefficient
                 if include_local_metrics:
-                    node_features.append(clustering_coeffs[node])
+                    node_features.append(float(clustering_coeffs[node]))
                     if len(feature_names) == len(node_features) - 1:
                         feature_names.append("clustering_coefficient")
                 
@@ -470,14 +481,14 @@ class MLAnalytics:
                         betweenness = nx.betweenness_centrality(graph)
                         closeness = nx.closeness_centrality(graph)
                         
-                        node_features.append(betweenness.get(node, 0))
-                        node_features.append(closeness.get(node, 0))
+                        node_features.append(float(betweenness.get(node, 0)))
+                        node_features.append(float(closeness.get(node, 0)))
                         
                         if len(feature_names) == len(node_features) - 2:
                             feature_names.extend(["betweenness_centrality", "closeness_centrality"])
                     except:
                         # Fallback if centrality calculation fails
-                        node_features.extend([0, 0])
+                        node_features.extend([0.0, 0.0])
                         if len(feature_names) == len(node_features) - 2:
                             feature_names.extend(["betweenness_centrality", "closeness_centrality"])
                 
@@ -485,7 +496,7 @@ class MLAnalytics:
                 node_data = graph.nodes[node]
                 for attr, value in node_data.items():
                     if isinstance(value, (int, float)):
-                        node_features.append(value)
+                        node_features.append(float(value))
                         if len(feature_names) == len(node_features) - 1:
                             feature_names.append(f"attr_{attr}")
                 
@@ -494,4 +505,4 @@ class MLAnalytics:
             return np.array(features), nodes, feature_names
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _extract) 
+        return await loop.run_in_executor(self.executor, _extract)  # type: ignore 
