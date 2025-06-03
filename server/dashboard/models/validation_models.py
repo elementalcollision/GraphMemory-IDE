@@ -134,14 +134,14 @@ def validate_timestamp_format(value: Any) -> str:
             # Try to parse the timestamp
             dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
             # Return normalized ISO format with timezone
-            return dt.isoformat()
+            return str(dt.isoformat())
         except ValueError:
             raise ValueError(f"Invalid timestamp format: {value}")
     elif isinstance(value, datetime):
         # Convert datetime to ISO string
         if value.tzinfo is None:
             value = value.replace(tzinfo=timezone.utc)
-        return value.isoformat()
+        return str(value.isoformat())
     else:
         raise ValueError(f"Timestamp must be string or datetime, got {type(value)}")
 

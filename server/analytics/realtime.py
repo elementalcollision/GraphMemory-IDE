@@ -108,21 +108,23 @@ class ConnectionManager:
     
     def get_connection_stats(self) -> Dict[str, Any]:
         """Get statistics about active connections"""
+        connections = []
+        for conn_id, metadata in self.connection_metadata.items():
+            connected_at = metadata.get("connected_at")
+            connections.append({
+                "connection_id": conn_id,
+                "user_id": metadata.get("user_id"),
+                "connected_at": connected_at.isoformat() if connected_at is not None else None,
+                "subscriptions": list(metadata.get("subscriptions", set()))
+            })
+        
         return {
             "total_connections": len(self.active_connections),
             "subscriptions_by_type": {
                 analytics_type: len(subscribers)
                 for analytics_type, subscribers in self.subscriptions.items()
             },
-            "connections": [
-                {
-                    "connection_id": conn_id,
-                    "user_id": metadata.get("user_id"),
-                    "connected_at": metadata.get("connected_at").isoformat() if metadata.get("connected_at") else None,
-                    "subscriptions": list(metadata.get("subscriptions", set()))
-                }
-                for conn_id, metadata in self.connection_metadata.items()
-            ]
+            "connections": connections
         }
 
 

@@ -17,9 +17,9 @@ from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 
 # Import configuration and middleware
-from server.core.config import get_settings, Settings  # type: ignore
-from server.middleware.security import setup_security_middleware  # type: ignore
-from server.monitoring.metrics import (  # type: ignore
+from server.core.config import get_settings, Settings
+from server.middleware.security import setup_security_middleware
+from server.monitoring.metrics import (
     setup_metrics_endpoint,
     setup_health_endpoint,
     setup_monitoring_middleware,
@@ -27,20 +27,20 @@ from server.monitoring.metrics import (  # type: ignore
 )
 
 # Import models and auth
-from server.models import TelemetryEvent, Token, User  # type: ignore
-from server.auth import (  # type: ignore
-    authenticate_user, 
+from server.models import TelemetryEvent, Token, User
+from server.auth import (
+    authenticate_user,  # type: ignore
     create_access_token,  # type: ignore
-    ACCESS_TOKEN_EXPIRE_MINUTES,  # type: ignore  
+    ACCESS_TOKEN_EXPIRE_MINUTES,  # type: ignore
     get_optional_current_user  # type: ignore
 )
 
 # Import routers
-from server.analytics_routes import router as analytics_router, initialize_analytics_engine, shutdown_analytics_engine  # type: ignore
+from server.analytics_routes import router as analytics_router, initialize_analytics_engine, shutdown_analytics_engine
 
 # Import streaming analytics
 try:
-    from server.streaming import (  # type: ignore
+    from server.streaming import (
         initialize_streaming_analytics, 
         shutdown_streaming_analytics,
         create_analytics_router,
@@ -136,7 +136,7 @@ def setup_routers(app: FastAPI, settings: Settings) -> None:
     # Include dashboard router if available and enabled
     if settings.ENABLE_DASHBOARD:
         try:
-            from server.dashboard.routes import dashboard_router  # type: ignore
+            from server.dashboard.routes import dashboard_router
             app.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
             logger.info("Dashboard router included")
         except ImportError:

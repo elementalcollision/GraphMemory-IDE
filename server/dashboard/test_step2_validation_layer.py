@@ -18,12 +18,12 @@ import json
 # Add the current directory to Python path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-def test_custom_field_types() -> None:
+def test_custom_field_types() -> bool:
     """Test custom Pydantic field types and validators"""
     print("🔍 Testing Custom Field Types & Validators...")
     
     try:
-        from models.validation_models import (
+        from server.dashboard.models.validation_models import (
             validate_timestamp_format,
             validate_memory_size_unit,
             validate_percentage_as_ratio,
@@ -53,12 +53,12 @@ def test_custom_field_types() -> None:
         print(f"  ❌ Custom field types error: {e}")
         return False
 
-def test_analytics_data_models() -> None:
+def test_analytics_data_models() -> bool:
     """Test analytics data models with real-world data"""
     print("🔍 Testing Analytics Data Models...")
     
     try:
-        from models.analytics_models import (
+        from server.dashboard.models.analytics_models import (
             SystemMetricsData, MemoryInsightsData, GraphMetricsData,
             AnalyticsStatus
         )
@@ -131,12 +131,12 @@ def test_analytics_data_models() -> None:
         traceback.print_exc()
         return False
 
-def test_error_handling() -> None:
+def test_error_handling() -> bool:
     """Test comprehensive error handling"""
     print("🔍 Testing Error Handling Models...")
     
     try:
-        from models.error_models import (
+        from server.dashboard.models.error_models import (
             AnalyticsError, ErrorSeverity, ErrorCategory,
             ValidationErrorDetail, ErrorReport, ErrorContext,
             generate_error_id
@@ -179,13 +179,13 @@ def test_error_handling() -> None:
         print(f"  ❌ Error handling error: {e}")
         return False
 
-def test_performance_features() -> None:
+def test_performance_features() -> bool:
     """Test performance optimization features"""
     print("🔍 Testing Performance Features...")
     
     try:
-        from models.analytics_models import SystemMetricsData, AnalyticsStatus
-        from models.validation_models import ValidationResult
+        from server.dashboard.models.analytics_models import SystemMetricsData, AnalyticsStatus
+        from server.dashboard.models.validation_models import ValidationResult
         import time
         
         # Test model creation performance
@@ -239,12 +239,12 @@ def test_performance_features() -> None:
         print(f"  ❌ Performance test error: {e}")
         return False
 
-def test_integration_with_analytics_client() -> None:
+def test_integration_with_analytics_client() -> bool:
     """Test integration with analytics client data format"""
     print("🔍 Testing Integration with Analytics Client...")
     
     try:
-        from models.analytics_models import (
+        from server.dashboard.models.analytics_models import (
             SystemMetricsData, MemoryInsightsData, GraphMetricsData,
             create_fallback_system_metrics, create_fallback_memory_insights,
             create_fallback_graph_metrics, AnalyticsStatus
@@ -303,12 +303,12 @@ def test_integration_with_analytics_client() -> None:
         traceback.print_exc()
         return False
 
-def test_sse_compatibility() -> None:
+def test_sse_compatibility() -> bool:
     """Test SSE streaming compatibility"""
     print("🔍 Testing SSE Streaming Compatibility...")
     
     try:
-        from models.analytics_models import SystemMetricsData, AnalyticsStatus
+        from server.dashboard.models.analytics_models import SystemMetricsData, AnalyticsStatus
         import json
         
         # Create test data
@@ -356,7 +356,7 @@ def test_sse_compatibility() -> None:
         print(f"  ❌ SSE compatibility error: {e}")
         return False
 
-def main() -> None:
+def main() -> bool:
     """Run comprehensive Step 2 tests"""
     print("🚀 Step 2 Complete Test: Data Models & Validation Layer")
     print("=" * 70)

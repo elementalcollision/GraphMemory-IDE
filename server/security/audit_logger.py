@@ -127,8 +127,8 @@ class AuditEvent:
         """Create from dictionary"""
         return cls(
             event_id=data['event_id'],
-            event_type=AuditEventType(data['event_type']),
-            level=AuditLevel(data['level']),
+            event_type=AuditEventType(str(data['event_type'])),  # type: ignore
+            level=AuditLevel(str(data['level'])),  # type: ignore
             timestamp=datetime.fromisoformat(data['timestamp']),
             source=data['source'],
             user_id=data.get('user_id'),
@@ -142,7 +142,7 @@ class AuditEvent:
             message=data.get('message', ''),
             details=data.get('details', {}),
             tags=data.get('tags', []),
-            compliance_frameworks=[ComplianceFramework(fw) for fw in data.get('compliance_frameworks', [])],
+            compliance_frameworks=[ComplianceFramework(str(fw)) for fw in data.get('compliance_frameworks', [])],  # type: ignore
             risk_score=data.get('risk_score'),
             request_id=data.get('request_id'),
             correlation_id=data.get('correlation_id'),
@@ -365,7 +365,7 @@ class SecurityAuditLogger:
     def __init__(self, config: Optional[AuditConfig] = None) -> None:
         self.config = config or AuditConfig()
         self.writer = AuditLogWriter(self.config)
-        self.event_buffer: Queue = Queue(maxsize=self.config.buffer_size)
+        self.event_buffer: Queue[AuditEvent] = Queue(maxsize=self.config.buffer_size)
         self.running = False
         self.worker_thread: Optional[threading.Thread] = None
         
@@ -395,7 +395,7 @@ class SecurityAuditLogger:
         """Background thread to process audit events"""
         while self.running:
             try:
-                events_to_write = []
+                events_to_write: List[AuditEvent] = []
                 
                 # Collect events for batch writing
                 timeout = self.config.flush_interval_seconds
@@ -505,7 +505,7 @@ class SecurityAuditLogger:
             logger.error(f"Failed to log audit event: {e}")
             return ""
     
-    def log_authentication(self, user_id: str, outcome: str, ip_address: Optional[str] = None, **kwargs) -> str:
+    def log_authentication(self, user_id: str, outcome: str, ip_address: Optional[str] = None, **kwargs: Any) -> str:
         """Log authentication event"""
         return self.log_event(
             event_type=AuditEventType.AUTHENTICATION,
@@ -519,7 +519,7 @@ class SecurityAuditLogger:
             **kwargs
         )
     
-    def log_secret_access(self, secret_id: str, user_id: Optional[str] = None, **kwargs) -> str:
+    def log_secret_access(self, secret_id: str, user_id: Optional[str] = None, **kwargs: Any) -> str:
         """Log secret access event"""
         return self.log_event(
             event_type=AuditEventType.SECRET_ACCESS,
@@ -534,7 +534,7 @@ class SecurityAuditLogger:
             **kwargs
         )
     
-    def log_api_key_creation(self, key_id: str, user_id: Optional[str] = None, **kwargs) -> str:
+    def log_api_key_creation(self, key_id: str, user_id: Optional[str] = None, **kwargs: Any) -> str:
         """Log API key creation event"""
         return self.log_event(
             event_type=AuditEventType.API_KEY_CREATION,
@@ -573,7 +573,7 @@ class SecurityAuditLogger:
             ]
             
             # Generate report based on framework requirements
-            report = {
+            report: Dict[str, Any] = {
                 'framework': framework.value,
                 'period': {
                     'start': start_date.isoformat(),
@@ -591,17 +591,18 @@ class SecurityAuditLogger:
             for event in relevant_events:
                 # Count by type
                 event_type = event.event_type.value
-                report['event_breakdown'][event_type] = report['event_breakdown'].get(event_type, 0) + 1
+                event_breakdown = report['event_breakdown']
+                event_breakdown[event_type] = event_breakdown.get(event_type, 0) + 1
                 
                 # Security-specific metrics
                 if event.level == AuditLevel.SECURITY:
-                    report['security_events'] += 1
+                    report['security_events'] = report['security_events'] + 1
                 
                 if event.event_type == AuditEventType.AUTHENTICATION and event.outcome == "failure":
-                    report['failed_authentications'] += 1
+                    report['failed_authentications'] = report['failed_authentications'] + 1
                 
                 if event.risk_score and event.risk_score >= 70:
-                    report['high_risk_events'] += 1
+                    report['high_risk_events'] = report['high_risk_events'] + 1
             
             return report
             
@@ -622,6 +623,6 @@ def get_audit_logger() -> SecurityAuditLogger:
     return _audit_logger
 
 
-def audit_event(event_type: AuditEventType, level: AuditLevel, message: str, **kwargs) -> str:
+def audit_event(event_type: AuditEventType, level: AuditLevel, message: str, **kwargs: Any) -> str:
     """Convenience function to log audit event"""
     return get_audit_logger().log_event(event_type, level, message, **kwargs) 

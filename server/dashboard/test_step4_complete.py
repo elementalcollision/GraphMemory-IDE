@@ -13,15 +13,15 @@ from unittest.mock import AsyncMock, MagicMock
 
 # Test imports with fallback
 try:
-    from background_collector import (
+    from server.dashboard.background_collector import (
         DataBuffer, HealthMonitor, BackgroundDataCollector,
         DataPoint, AggregatedData, HealthStatus, CollectionStatus,
         get_background_collector, initialize_background_collector
     )
-    from models.analytics_models import (
+    from server.dashboard.models.analytics_models import (
         SystemMetricsData, MemoryInsightsData, GraphMetricsData, AnalyticsStatus
     )
-    from data_adapter import DataAdapter
+    from server.dashboard.data_adapter import DataAdapter
 except ImportError as e:
     print(f"Import error: {e}")
     print("This is expected when running tests independently")
@@ -233,7 +233,7 @@ def test_6_async_collection_simulation() -> bool:
         mock_adapter = MagicMock()
         
         # Mock the async methods
-        async def mock_get_system_metrics() -> None:
+        async def mock_get_system_metrics() -> SystemMetricsData:
             return SystemMetricsData(
                 active_nodes=100, active_edges=200, query_rate=50.0,
                 cache_hit_rate=0.85, memory_usage=75.5, cpu_usage=45.2,
@@ -241,7 +241,7 @@ def test_6_async_collection_simulation() -> bool:
                 timestamp=datetime.now().isoformat(), status=AnalyticsStatus.HEALTHY
             )
         
-        async def mock_get_memory_insights() -> None:
+        async def mock_get_memory_insights() -> MemoryInsightsData:
             return MemoryInsightsData(
                 total_memories=1000, procedural_memories=300, semantic_memories=400,
                 episodic_memories=300, memory_efficiency=0.85, memory_growth_rate=0.05,
@@ -249,7 +249,7 @@ def test_6_async_collection_simulation() -> bool:
                 timestamp=datetime.now().isoformat(), status=AnalyticsStatus.HEALTHY
             )
         
-        async def mock_get_graph_metrics() -> None:
+        async def mock_get_graph_metrics() -> GraphMetricsData:
             return GraphMetricsData(
                 node_count=500, edge_count=1000, connected_components=5,
                 largest_component_size=450, diameter=8, density=0.004,
@@ -412,9 +412,9 @@ def test_9_comprehensive_integration() -> bool:
         )
         
         # Mock async methods
-        async def mock_system() -> None: return system_data
-        async def mock_memory() -> None: return memory_data
-        async def mock_graph() -> None: return graph_data
+        async def mock_system() -> SystemMetricsData: return system_data
+        async def mock_memory() -> MemoryInsightsData: return memory_data
+        async def mock_graph() -> GraphMetricsData: return graph_data
         
         mock_adapter._get_validated_system_metrics = mock_system
         mock_adapter._get_validated_memory_insights = mock_memory

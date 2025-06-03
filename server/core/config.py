@@ -4,7 +4,7 @@ Provides secure, environment-specific settings with validation and secrets manag
 """
 
 import secrets
-from typing import List, Optional, Union, Any, Tuple
+from typing import List, Optional, Union, Any, Tuple, cast
 from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 
@@ -206,13 +206,12 @@ class Settings(BaseModel):
     @classmethod
     def validate_environment(cls, v: Union[str, Environment]) -> Environment:
         """Ensure environment is valid"""
-        if isinstance(v, str):
-            v_lower = v.lower()
-            try:
-                return Environment(v_lower)
-            except ValueError:
-                return Environment.DEVELOPMENT
-        return v
+        # Convert to string for uniform handling
+        v_str = str(v).lower() if v else "development"
+        try:
+            return cast(Environment, Environment(v_str))
+        except ValueError:
+            return Environment.DEVELOPMENT
     
     def is_production(self) -> bool:
         """Check if running in production"""

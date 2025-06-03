@@ -198,7 +198,10 @@ async def run_database_maintenance(background_tasks: BackgroundTasks) -> Dict[st
         
         # Run maintenance in background
         async def maintenance_task() -> Any:
-            return await performance_optimizer.db_optimizer.vacuum_and_analyze()
+            optimizer = get_performance_optimizer()
+            if not optimizer:
+                raise Exception("Performance optimizer not available")
+            return await optimizer.db_optimizer.vacuum_and_analyze()
         
         background_tasks.add_task(maintenance_task)
         

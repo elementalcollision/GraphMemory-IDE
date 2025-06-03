@@ -127,7 +127,7 @@ class AlertRule(BaseModel):
     enabled: bool = True
     
     # Threshold configuration
-    conditions: List[ThresholdCondition] = Field(..., min_items=1)
+    conditions: List[ThresholdCondition] = Field(...)
     evaluation_window: timedelta = Field(default=timedelta(minutes=5))
     consecutive_breaches: int = Field(default=1)
     
@@ -142,7 +142,7 @@ class AlertRule(BaseModel):
     created_by: Optional[str] = None
     
     @validator('evaluation_window')
-    def validate_evaluation_window(cls, v) -> None:
+    def validate_evaluation_window(cls, v: timedelta) -> timedelta:
         if v.total_seconds() < 30:
             raise ValueError('Evaluation window must be at least 30 seconds')
         if v.total_seconds() > 3600:
@@ -150,7 +150,7 @@ class AlertRule(BaseModel):
         return v
     
     @validator('cooldown_period')
-    def validate_cooldown_period(cls, v) -> None:
+    def validate_cooldown_period(cls, v: timedelta) -> timedelta:
         if v.total_seconds() < 60:
             raise ValueError('Cooldown period must be at least 1 minute')
         return v
@@ -318,13 +318,13 @@ class NotificationConfig(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
     @validator('webhook_url')
-    def validate_webhook_url(cls, v, values) -> None:
+    def validate_webhook_url(cls, v: Optional[str], values: Dict[str, Any]) -> Optional[str]:
         if values.get('channel') == NotificationChannel.WEBHOOK and not v:
             raise ValueError('Webhook URL required for webhook notifications')
         return v
     
     @validator('email_addresses')
-    def validate_email_addresses(cls, v, values) -> None:
+    def validate_email_addresses(cls, v: List[str], values: Dict[str, Any]) -> List[str]:
         if values.get('channel') == NotificationChannel.EMAIL and not v:
             raise ValueError('Email addresses required for email notifications')
         return v
@@ -396,7 +396,7 @@ class EscalationPolicy(BaseModel):
     categories: List[AlertCategory] = Field(default_factory=list)
     
     # Escalation actions
-    actions: List[EscalationAction] = Field(..., min_items=1)
+    actions: List[EscalationAction] = Field(...)
     notification_configs: List[UUID] = Field(default_factory=list)
     
     # Advanced settings
