@@ -17,7 +17,7 @@ import tarfile
 import hashlib
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, asdict
 from enum import Enum
 import aiofiles
@@ -69,7 +69,7 @@ class KuzuBackupManager:
     def __init__(self, 
                  database_path: str,
                  backup_storage_path: str,
-                 metrics_collector=None) -> None:
+                 metrics_collector: Optional[Any] = None) -> None:
         self.database_path = Path(database_path)
         self.backup_storage_path = Path(backup_storage_path)
         self.metrics = metrics_collector
@@ -105,12 +105,19 @@ class KuzuBackupManager:
                 # Create compressed tar archive
                 archive_path = backup_dir / f"{backup_id}.tar.gz"
                 
-                def create_archive() -> None:
-                    with tarfile.open(archive_path, "w:gz") as tar:
-                        tar.add(self.database_path, arcname=self.database_path.name)
+                def create_archive() -> bool:
+                    try:
+                        with tarfile.open(archive_path, "w:gz") as tar:
+                            tar.add(self.database_path, arcname=self.database_path.name)
+                        return True
+                    except Exception:
+                        return False
                 
                 # Run compression in thread pool to avoid blocking
-                await asyncio.get_event_loop().run_in_executor(None, create_archive)
+                create_archive_func: Callable[[], bool] = create_archive
+                success = await asyncio.get_event_loop().run_in_executor(None, create_archive_func)  # type: ignore
+                if not success:
+                    raise RuntimeError("Failed to create archive")
                 
                 backup_size = archive_path.stat().st_size
                 
@@ -121,10 +128,17 @@ class KuzuBackupManager:
                 # Copy directory structure
                 backup_db_path = backup_dir / self.database_path.name
                 
-                def copy_directory() -> None:
-                    shutil.copytree(self.database_path, backup_db_path)
+                def copy_directory() -> bool:
+                    try:
+                        shutil.copytree(self.database_path, backup_db_path)
+                        return True
+                    except Exception:
+                        return False
                 
-                await asyncio.get_event_loop().run_in_executor(None, copy_directory)
+                copy_directory_func: Callable[[], bool] = copy_directory
+                success = await asyncio.get_event_loop().run_in_executor(None, copy_directory_func)  # type: ignore
+                if not success:
+                    raise RuntimeError("Failed to copy directory")
                 
                 # Calculate total size
                 backup_size = sum(f.stat().st_size for f in backup_db_path.rglob('*') if f.is_file())
@@ -309,11 +323,18 @@ class KuzuBackupManager:
             
             if archive_path.exists():
                 # Extract compressed archive
-                def extract_archive() -> None:
-                    with tarfile.open(archive_path, "r:gz") as tar:
-                        tar.extractall(path=target_db_path.parent)
+                def extract_archive() -> bool:
+                    try:
+                        with tarfile.open(archive_path, "r:gz") as tar:
+                            tar.extractall(path=target_db_path.parent)
+                        return True
+                    except Exception:
+                        return False
                 
-                await asyncio.get_event_loop().run_in_executor(None, extract_archive)
+                extract_archive_func: Callable[[], bool] = extract_archive
+                success = await asyncio.get_event_loop().run_in_executor(None, extract_archive_func)  # type: ignore
+                if not success:
+                    raise RuntimeError("Failed to extract archive")
                 
             else:
                 # Look for directory backup
@@ -324,10 +345,17 @@ class KuzuBackupManager:
                     if target_db_path.exists():
                         shutil.rmtree(target_db_path)
                     
-                    def copy_directory() -> None:
-                        shutil.copytree(backup_db_path, target_db_path)
+                    def copy_directory() -> bool:
+                        try:
+                            shutil.copytree(backup_db_path, target_db_path)
+                            return True
+                        except Exception:
+                            return False
                     
-                    await asyncio.get_event_loop().run_in_executor(None, copy_directory)
+                    copy_directory_func: Callable[[], bool] = copy_directory
+                    success = await asyncio.get_event_loop().run_in_executor(None, copy_directory_func)  # type: ignore
+                    if not success:
+                        raise RuntimeError("Failed to copy directory")
                 else:
                     raise FileNotFoundError("No valid backup data found in backup directory")
             
@@ -344,7 +372,7 @@ class KuzuBackupManager:
         """
         logger.info(f"Validating Kuzu backup: {backup_id}")
         
-        validation_results = {
+        validation_results: Dict[str, Any] = {
             "backup_id": backup_id,
             "is_valid": True,
             "checks": {},
@@ -386,10 +414,11 @@ class KuzuBackupManager:
                                 # Test archive integrity
                                 tar.getmembers()
                             return True
-                        except:
+                        except Exception:
                             return False
                     
-                    is_valid_archive = await asyncio.get_event_loop().run_in_executor(None, check_archive)
+                    check_archive_func: Callable[[], bool] = check_archive
+                    is_valid_archive = await asyncio.get_event_loop().run_in_executor(None, check_archive_func)  # type: ignore
                     
                     if is_valid_archive:
                         validation_results["checks"]["archive_integrity"] = "PASS"
