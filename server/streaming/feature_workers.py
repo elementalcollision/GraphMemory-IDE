@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from collections import defaultdict, deque
 import statistics
 import numpy as np
+import redis
 
 from .dragonfly_config import get_dragonfly_client
 
@@ -75,21 +76,24 @@ class MemoryOperationFeatureWorker:
     """Worker for computing memory operation features"""
     
     def __init__(self, consumer_group: str = "memory_features") -> None:
+        """Initialize memory operation feature worker"""
         self.consumer_group = consumer_group
         self.consumer_name = f"memory_worker_{int(time.time())}"
         self.stream_name = "analytics:memory_operations"
+        self.client: Optional[redis.Redis] = None
+        self.running = False
         
         # Time windows for different aggregations
         self.windows = {
-            "1min": TimeWindow(60),      # 1 minute tumbling window
-            "5min": TimeWindow(300),     # 5 minute tumbling window
-            "1hour": TimeWindow(3600),   # 1 hour tumbling window
-            "sliding_5min": TimeWindow(300, 60),  # 5 min window, slide every 1 min
+            "1min": TimeWindow(60, 30),
+            "5min": TimeWindow(300, 150),
+            "15min": TimeWindow(900, 450),
+            "1hour": TimeWindow(3600, 1800)
         }
         
         # Feature accumulators
         self.features: Dict[str, List[WindowedFeature]] = defaultdict(list)
-        self.operation_counts = defaultdict(int)
+        self.operation_counts: defaultdict[str, int] = defaultdict(int)
         self.processing_times = deque(maxlen=1000)
         
         self._running = False
@@ -210,18 +214,22 @@ class MemoryOperationFeatureWorker:
             
             # 1. Operation rate (operations per second)
             if events:
-                duration = max(1, events[-1][0] - events[0][0])  # Avoid division by zero
+                duration = max(1.0, events[-1][0] - events[0][0])  # Avoid division by zero
                 operation_rate = len(events) / duration
                 features.append(WindowedFeature(
                     feature_name=f"memory_operation_rate_{window_name}",
                     window_size_seconds=window.size_seconds,
                     timestamp=current_time,
                     value=operation_rate,
-                    metadata={"window_events": len(events)}
+                    metadata={"unit": "operations_per_second"}
                 ))
             
             # 2. Operation type distribution
-            op_types = [event[1].get("operation_type", "unknown") for _, event in events]
+            op_types = [
+                event_data.get("operation_type", "unknown") 
+                for _, event_data in events 
+                if isinstance(event_data, dict)
+            ]
             op_distribution = {}
             for op_type in set(op_types):
                 op_distribution[op_type] = op_types.count(op_type) / len(op_types)
@@ -231,14 +239,14 @@ class MemoryOperationFeatureWorker:
                 window_size_seconds=window.size_seconds,
                 timestamp=current_time,
                 value=op_distribution,
-                metadata={"total_operations": len(op_types)}
+                metadata={"unit": "percentage"}
             ))
             
             # 3. Processing time statistics
             processing_times = [
-                float(event[1].get("processing_time_ms", 0)) 
-                for _, event in events 
-                if event[1].get("processing_time_ms", 0) > 0
+                float(event_data.get("processing_time_ms", 0)) 
+                for _, event_data in events 
+                if isinstance(event_data, dict) and event_data.get("processing_time_ms", 0) > 0
             ]
             
             if processing_times:
@@ -258,12 +266,12 @@ class MemoryOperationFeatureWorker:
             
             # 4. Entity and relation counts
             entity_counts = [
-                int(event[1].get("entity_count", 0)) 
-                for _, event in events
+                int(event_data.get("entity_count", 0)) 
+                for _, event_data in events
             ]
             relation_counts = [
-                int(event[1].get("relation_count", 0)) 
-                for _, event in events
+                int(event_data.get("relation_count", 0)) 
+                for _, event_data in events
             ]
             
             if entity_counts:
@@ -511,7 +519,7 @@ class FeatureWorkerManager:
     
     def __init__(self) -> None:
         """Initialize feature worker manager"""
-        self.workers: Dict[str, FeatureWorker] = {}
+        self.workers: Dict[str, Union[MemoryOperationFeatureWorker, PatternDetectionWorker]] = {}
         self.running = False
         self.memory_worker = MemoryOperationFeatureWorker()
         self.pattern_worker = PatternDetectionWorker()

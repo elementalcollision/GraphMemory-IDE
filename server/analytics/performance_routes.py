@@ -18,8 +18,20 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import asyncio
 
+try:
+    from ..dashboard.performance_manager import get_performance_manager, PerformanceManager
+    from ..dashboard.enhanced_circuit_breaker import get_circuit_breaker_manager
+    from ..dashboard.cache_manager import get_cache_manager
+    DASHBOARD_AVAILABLE = True
+except ImportError:
+    # Graceful degradation when dashboard components are not available
+    DASHBOARD_AVAILABLE = False
+    get_performance_manager = None  # type: ignore
+    get_circuit_breaker_manager = None  # type: ignore  
+    get_cache_manager = None  # type: ignore
+    PerformanceManager = None  # type: ignore
+
 from .performance_optimizer import get_performance_optimizer, PerformanceMetrics
-from .cache_manager import get_cache_manager, CacheType
 from .load_tester import get_load_test_suite, LoadTestConfig
 
 

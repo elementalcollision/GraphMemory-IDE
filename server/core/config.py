@@ -5,7 +5,7 @@ Provides secure, environment-specific settings with validation and secrets manag
 
 import secrets
 from typing import List, Optional, Union, Any, Tuple, cast
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, validator
 from enum import Enum
 
 
@@ -202,16 +202,22 @@ class Settings(BaseModel):
     security_headers: SecurityHeadersSettings = SecurityHeadersSettings()
     monitoring: MonitoringSettings = MonitoringSettings()
     
-    @field_validator('ENVIRONMENT', mode='before')
-    @classmethod
-    def validate_environment(cls, v: Union[str, Environment]) -> Environment:
-        """Ensure environment is valid"""
-        # Convert to string for uniform handling
+    @validator("ENVIRONMENT", pre=True)
+    def validate_environment(cls, v: Any) -> Environment:
+        """Validate and convert environment string to Environment enum"""
+        if isinstance(v, Environment):
+            return v
         v_str = str(v).lower() if v else "development"
-        try:
-            return Environment(v_str)
-        except ValueError:
-            return Environment.DEVELOPMENT
+        
+        # Simple mapping to avoid enum iteration issues
+        env_mapping = {
+            "development": Environment.DEVELOPMENT,
+            "staging": Environment.STAGING,
+            "production": Environment.PRODUCTION,
+            "testing": Environment.TESTING
+        }
+        
+        return env_mapping.get(v_str, Environment.DEVELOPMENT)
     
     def is_production(self) -> bool:
         """Check if running in production"""

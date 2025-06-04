@@ -837,48 +837,50 @@ class SimpleCRDTArray:
     """Simplified array CRDT wrapper"""
     
     def __init__(self, doc: SimpleCRDTDocument, field: str) -> None:
-        self._doc = doc
-        self._field = field
-        self._observers: List[Callable[[Dict[str, Any]], None]] = []
-        if field not in self._doc._data:
-            self._doc._data[field] = []
+        """Initialize SimpleCRDTArray"""
+        self.doc = doc
+        self.field = field
+        self.observers: List[Callable[[Dict[str, Any]], None]] = []
+        if field not in self.doc._data:
+            self.doc._data[field] = []
     
     def __iter__(self) -> Iterator[Any]:
-        """Make array iterable"""
-        return iter(self._doc._data.get(self._field, []))
+        """Iterator over array items"""
+        items = self.doc._data.get(self.field, [])
+        return iter(items) if items is not None else iter([])
     
     def __len__(self) -> int:
-        return len(self._doc._data.get(self._field, []))
+        return len(self.doc._data.get(self.field, []))
     
     def __getitem__(self, index: int) -> Any:
-        data = self._doc._data.get(self._field, [])
+        data = self.doc._data.get(self.field, [])
         return data[index] if 0 <= index < len(data) else None
     
     def append(self, items: List[str]) -> None:
-        old_value = list(self._doc._data[self._field])
-        self._doc._data[self._field].extend(items)
-        new_value = list(self._doc._data[self._field])
-        self._doc._notify_change(self._field, old_value, new_value)
-        for observer in self._observers:
+        old_value = list(self.doc._data[self.field])
+        self.doc._data[self.field].extend(items)
+        new_value = list(self.doc._data[self.field])
+        self.doc._notify_change(self.field, old_value, new_value)
+        for observer in self.observers:
             observer({"action": "add", "items": items, "old_value": old_value, "new_value": new_value})
     
     def delete(self, index: int, count: int) -> None:
-        old_value = list(self._doc._data[self._field])
-        del self._doc._data[self._field][index:index+count]
-        new_value = list(self._doc._data[self._field])
-        self._doc._notify_change(self._field, old_value, new_value)
-        for observer in self._observers:
+        old_value = list(self.doc._data[self.field])
+        del self.doc._data[self.field][index:index+count]
+        new_value = list(self.doc._data[self.field])
+        self.doc._notify_change(self.field, old_value, new_value)
+        for observer in self.observers:
             observer({"action": "remove", "index": index, "count": count, "old_value": old_value, "new_value": new_value})
     
     def clear(self) -> None:
-        old_value = list(self._doc._data[self._field])
-        self._doc._data[self._field] = []
-        self._doc._notify_change(self._field, old_value, [])
-        for observer in self._observers:
+        old_value = list(self.doc._data[self.field])
+        self.doc._data[self.field] = []
+        self.doc._notify_change(self.field, old_value, [])
+        for observer in self.observers:
             observer({"action": "clear", "old_value": old_value, "new_value": []})
     
     def observe(self, callback: Callable[[Dict[str, Any]], None]) -> None:
-        self._observers.append(callback)
+        self.observers.append(callback)
 
 
 class SimpleCRDTMap:

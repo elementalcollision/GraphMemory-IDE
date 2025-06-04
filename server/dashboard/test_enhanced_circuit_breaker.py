@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 from typing import Dict
 
-from enhanced_circuit_breaker import (
+from server.dashboard.enhanced_circuit_breaker import (
     EnhancedCircuitBreaker, CircuitBreakerConfig, CircuitState, ErrorType,
     ErrorClassifier, ExponentialBackoffStrategy, AdaptiveRecoveryStrategy,
     CircuitBreakerOpenError, CircuitBreakerManager, RequestResult,
@@ -172,8 +172,8 @@ class TestEnhancedCircuitBreaker:
     """Test enhanced circuit breaker functionality"""
     
     @pytest.fixture
-    def circuit_breaker(self) -> None:
-        """Create a circuit breaker for testing"""
+    def circuit_breaker(self) -> EnhancedCircuitBreaker:
+        """Create circuit breaker for testing"""
         config = CircuitBreakerConfig(
             failure_threshold=3,
             success_threshold=2,

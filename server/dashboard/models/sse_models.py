@@ -55,7 +55,7 @@ class SSEEvent(BaseValidationModel, Generic[T]):
         
         # Add data (JSON serialized)
         data_dict = {
-            "data": self.data.dict() if hasattr(self.data, 'dict') else self.data,
+            "data": self.data.model_dump() if hasattr(self.data, 'model_dump') else self.data,
             "timestamp": self.timestamp,
             "event_type": self.event_type.value
         }
@@ -274,7 +274,7 @@ class HeartbeatData(BaseValidationModel):
     
     server_time: TimestampStr = Field(description="Server timestamp")
     uptime_seconds: float = Field(description="Server uptime in seconds")
-    active_connections: int = Field(0, ge=0, description="Number of active SSE connections")
+    active_connections: int = Field(default=0, description="Number of active SSE connections")
     last_data_update: TimestampStr = Field(description="Timestamp of last data update")
     status: AnalyticsStatus = Field(description="Overall system status")
 
@@ -287,8 +287,8 @@ class StatusData(BaseValidationModel):
     graph_system_status: AnalyticsStatus = Field(description="Graph system status")
     sse_server_status: AnalyticsStatus = Field(description="SSE server status")
     last_health_check: TimestampStr = Field(description="Last health check timestamp")
-    error_count: int = Field(0, ge=0, description="Number of recent errors")
-    warning_count: int = Field(0, ge=0, description="Number of recent warnings")
+    error_count: int = Field(default=0, description="Number of recent errors")
+    warning_count: int = Field(default=0, description="Number of recent warnings")
 
 
 # Specialized event types

@@ -19,6 +19,7 @@ import json
 from typing import Dict, Optional, Tuple, List
 from dataclasses import dataclass, asdict
 from enum import Enum
+from collections import defaultdict
 
 import aioredis
 from fastapi import Request, HTTPException
@@ -139,24 +140,25 @@ class AdvancedRateLimiter:
         ]
     
     async def initialize(self) -> None:
-        """Initialize Redis connection."""
+        """Initialize rate limiter with Redis connection"""
         try:
-            self.redis = aioredis.from_url(
-                self.redis_url,
-                encoding="utf-8",
-                decode_responses=True,
-                retry_on_timeout=True,
-                socket_keepalive=True,
-                socket_keepalive_options={},
-            )
-            
-            # Test connection
-            await self.redis.ping()
-            logger.info("Rate limiter Redis connection established")
-            
+            if self.redis_url:
+                self.redis_client = await aioredis.from_url(
+                    self.redis_url,
+                    encoding="utf-8",
+                    decode_responses=True,
+                    socket_timeout=5.0,
+                    socket_connect_timeout=5.0
+                )
+                # Test connection
+                await self.redis_client.ping()
+                self.storage_type = "redis"
+                logger.info("Rate limiter initialized with Redis storage")
         except Exception as e:
-            logger.error(f"Failed to connect to Redis for rate limiting: {e}")
-            logger.warning("Rate limiter will use local in-memory storage")
+            logger.warning(f"Failed to connect to Redis: {e}. Using in-memory storage.")
+            self.storage_type = "memory"
+            self.rate_limits = {}
+            self.request_counts = defaultdict(list)
     
     async def close(self) -> None:
         """Close Redis connection."""
@@ -207,7 +209,7 @@ class AdvancedRateLimiter:
     async def check_rate_limit_redis(self, key: str, rule: RateLimitRule) -> RateLimitResult:
         """Check rate limit using Redis sliding window."""
         try:
-            pipe = self.redis.pipeline()
+            pipe = self.redis_client.pipeline()
             
             # Current time window
             now = time.time()
@@ -304,7 +306,7 @@ class AdvancedRateLimiter:
             key = self.get_rate_limit_key(identifier, rule)
             
             # Check rate limit
-            if self.redis:
+            if self.redis_client:
                 result = await self.check_rate_limit_redis(key, rule)
             else:
                 result = await self.check_rate_limit_local(key, rule)
@@ -351,9 +353,9 @@ class AdvancedRateLimiter:
         
         key = self.get_rate_limit_key(identifier, rule)
         
-        if self.redis:
+        if self.redis_client:
             try:
-                count = await self.redis.zcard(key)
+                count = await self.redis_client.zcard(key)
                 return {
                     "status": "active",
                     "endpoint": endpoint,
@@ -367,6 +369,30 @@ class AdvancedRateLimiter:
                 logger.error(f"Failed to get rate limit status: {e}")
         
         return {"status": "local_mode", "endpoint": endpoint}
+
+    def normalize_timeframe(self, timeframe: str) -> float:
+        """Convert timeframe string to seconds"""
+        if timeframe.endswith('s'):
+            return float(timeframe[:-1])
+        elif timeframe.endswith('m'):
+            return float(timeframe[:-1]) * 60
+        elif timeframe.endswith('h'):
+            return float(timeframe[:-1]) * 3600
+        elif timeframe.endswith('d'):
+            return float(timeframe[:-1]) * 86400
+        else:
+            return float(timeframe)  # assume seconds
+
+    def calculate_reset_time(self, timeframe_seconds: float) -> float:
+        """Calculate time until rate limit resets"""
+        now = time.time()
+        window_start = now - timeframe_seconds
+        return min(timeframe_seconds, max(1.0, timeframe_seconds - (now - window_start)))
+
+    def calculate_retry_after(self, rule: RateLimitRule) -> float:
+        """Calculate retry-after time for rate limited requests"""
+        timeframe_seconds = self.normalize_timeframe(rule.timeframe)
+        return min(timeframe_seconds, max(1.0, timeframe_seconds * 0.1))  # 10% of timeframe or 1 second minimum
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):

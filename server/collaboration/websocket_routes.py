@@ -39,7 +39,7 @@ async def websocket_collaborate(
     memory_id: str,
     token: str = Query(...),
     manager: CollaborationWebSocketManager = Depends(get_websocket_manager)
-):
+) -> None:
     """
     WebSocket endpoint for real-time collaborative editing
     

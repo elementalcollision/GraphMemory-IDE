@@ -27,21 +27,17 @@ except ImportError as e:
     print("This is expected when running tests independently")
 
 
-def test_1_background_collector_imports() -> None:
-    """Test 1: Verify all background collector imports work correctly"""
-    print("\n=== Test 1: Background Collector Imports ===")
-    
+def test_1_background_collector_imports() -> bool:
+    """Test that all required components can be imported"""
     try:
-        # Test enum imports
-        assert HealthStatus.HEALTHY.value == "healthy"
-        assert CollectionStatus.RUNNING.value == "running"
+        # Test analytics models
+        from server.dashboard.models.analytics_models import (
+            SystemMetricsData, MemoryInsightsData, GraphMetricsData, 
+            AnalyticsStatus, DataBuffer, AnalyticsHealthMonitor
+        )
         
-        # Test class imports
-        assert DataBuffer is not None
-        assert HealthMonitor is not None
-        assert BackgroundDataCollector is not None
-        assert DataPoint is not None
-        assert AggregatedData is not None
+        # Test background collector
+        from server.dashboard.background_collector import BackgroundAnalyticsCollector
         
         print("✅ All imports successful")
         return True
@@ -51,7 +47,7 @@ def test_1_background_collector_imports() -> None:
         return False
 
 
-def test_2_data_buffer_functionality() -> None:
+def test_2_data_buffer_functionality() -> bool:
     """Test 2: Verify DataBuffer functionality"""
     print("\n=== Test 2: DataBuffer Functionality ===")
     

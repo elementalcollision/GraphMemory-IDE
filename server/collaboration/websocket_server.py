@@ -117,7 +117,7 @@ class CollaborationWebSocketManager:
         
         # Redis for cross-server communication
         self.redis_url = redis_url
-        self.redis_client: Optional[redis.Redis] = None
+        self.redis_client: Optional[redis.Redis[bytes]] = None
         
         # CRDT Bridge for real-time operations
         self.crdt_bridge: Optional[WebSocketCRDTBridge] = None

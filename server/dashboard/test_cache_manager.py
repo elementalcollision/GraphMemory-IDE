@@ -11,7 +11,7 @@ import pytest
 import pytest_asyncio
 import time
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock
 
 from server.dashboard.cache_manager import (
@@ -26,12 +26,14 @@ from server.dashboard.enhanced_circuit_breaker import get_circuit_breaker_manage
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def cleanup_circuit_breakers() -> None:
+async def cleanup_circuit_breakers() -> AsyncGenerator[None, None]:
     """Auto-cleanup circuit breakers before each test to prevent naming conflicts"""
     # Cleanup before test
     manager = get_circuit_breaker_manager()
     manager._breakers.clear()
+    
     yield
+    
     # Cleanup after test
     manager._breakers.clear()
 

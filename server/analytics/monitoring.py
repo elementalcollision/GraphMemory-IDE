@@ -81,13 +81,14 @@ class AnalyticsMonitoringMiddleware:
     """
     
     def __init__(self, app: Any = None) -> None:
+        """Initialize analytics monitoring middleware"""
         self.app = app
         
         # Initialize metric attributes
         self.request_count: Optional[Counter] = None
         self.request_duration: Optional[Histogram] = None
         self.analytics_operations: Optional[Counter] = None
-        self.analytics_duration: Optional[Histogram] = None
+        self.analytics_duration: Optional[Histogram] = None  
         self.system_cpu_usage: Optional[Gauge] = None
         self.system_memory_usage: Optional[Gauge] = None
         self.gpu_memory_usage: Optional[Gauge] = None
@@ -97,6 +98,11 @@ class AnalyticsMonitoringMiddleware:
         self.graph_size_edges: Optional[Gauge] = None
         self.component_health: Optional[Gauge] = None
         self.system_info: Optional[Info] = None
+        
+        # Initialize attribute storage
+        self._graph_metrics: Dict[str, Any] = {}
+        self._system_metrics: Dict[str, Any] = {}
+        self._component_health: Dict[str, Any] = {}
         
         self.setup_metrics()
     
@@ -264,22 +270,26 @@ class AnalyticsMonitoringMiddleware:
         
         # Record with algorithm and backend if provided
         if algorithm and backend:
-            self.analytics_operations.labels(
-                operation_type=operation,
-                algorithm=algorithm,
-                status=status
-            ).inc()
+            if self.analytics_operations is not None:
+                self.analytics_operations.labels(
+                    operation_type=operation,
+                    algorithm=algorithm,
+                    status=status
+                ).inc()
             
-            self.analytics_duration.labels(
-                operation_type=operation,
-                algorithm=algorithm
-            ).observe(duration)
+            if self.analytics_duration is not None:
+                self.analytics_duration.labels(
+                    operation_type=operation,
+                    algorithm=algorithm
+                ).observe(duration)
     
     def record_cache_operation(self, cache_type: str, hit: bool) -> None:
         """Record cache operation"""
         result = "hit" if hit else "miss"
-        self.cache_hits.labels(cache_type=cache_type).inc()
-        self.cache_misses.labels(cache_type=cache_type).inc()
+        if self.cache_hits is not None:
+            self.cache_hits.labels(cache_type=cache_type).inc()
+        if self.cache_misses is not None:
+            self.cache_misses.labels(cache_type=cache_type).inc()
     
     def update_graph_metrics(self, node_count: int, edge_count: int) -> None:
         """Update graph metrics"""

@@ -504,12 +504,11 @@ class RelationshipOTDocument:
         if self.state is None or operation.strength is None:
             return False
         
-        assert self.state is not None  # Type checker hint
         self.state.strength = operation.strength
-        self.state.last_modified_by = operation.user_id
-        self.state.last_modified_at = operation.timestamp
-        self.state.version = operation.version
-        self.state.collaborators.add(operation.user_id)
+        self.state.last_modified_by = operation.user_id  # type: ignore
+        self.state.last_modified_at = operation.timestamp  # type: ignore
+        self.state.version = operation.version  # type: ignore
+        self.state.collaborators.add(operation.user_id)  # type: ignore
         return True
 
     def _apply_modify_type(self, operation: RelationshipOperation) -> bool:
@@ -517,12 +516,11 @@ class RelationshipOTDocument:
         if self.state is None or not operation.relationship_type:
             return False
         
-        assert self.state is not None  # Type checker hint
         self.state.relationship_type = operation.relationship_type
-        self.state.last_modified_by = operation.user_id
-        self.state.last_modified_at = operation.timestamp
-        self.state.version = operation.version
-        self.state.collaborators.add(operation.user_id)
+        self.state.last_modified_by = operation.user_id  # type: ignore
+        self.state.last_modified_at = operation.timestamp  # type: ignore
+        self.state.version = operation.version  # type: ignore
+        self.state.collaborators.add(operation.user_id)  # type: ignore
         return True
 
     def _apply_modify_metadata(self, operation: RelationshipOperation) -> bool:
@@ -530,14 +528,13 @@ class RelationshipOTDocument:
         if self.state is None:
             return False
         
-        assert self.state is not None  # Type checker hint
         if operation.metadata:
             self.state.metadata.update(operation.metadata)
         
         self.state.last_modified_by = operation.user_id
-        self.state.last_modified_at = operation.timestamp
-        self.state.version = operation.version
-        self.state.collaborators.add(operation.user_id)
+        self.state.last_modified_at = operation.timestamp  # type: ignore
+        self.state.version = operation.version  # type: ignore
+        self.state.collaborators.add(operation.user_id)  # type: ignore
         return True
 
     async def _transform_against_pending(self, operation: RelationshipOperation) -> RelationshipOperation:
@@ -859,10 +856,11 @@ class RelationshipOTMetrics:
     def __init__(self) -> None:
         """Initialize relationship OT metrics"""
         self.operation_count = 0
+        self.transform_count = 0
         self.conflict_count = 0
-        self.resolution_count = 0
-        self.sync_count = 0
         self.error_count = 0
+        self.average_transform_time = 0.0
+        self.start_time = time.time()
     
     def record_operation(self) -> None:
         """Record a relationship operation"""
