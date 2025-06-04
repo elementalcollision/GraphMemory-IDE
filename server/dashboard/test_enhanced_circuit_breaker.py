@@ -11,6 +11,7 @@ import pytest
 import time
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
+from typing import Dict
 
 from enhanced_circuit_breaker import (
     EnhancedCircuitBreaker, CircuitBreakerConfig, CircuitState, ErrorType,
@@ -193,7 +194,7 @@ class TestEnhancedCircuitBreaker:
     async def test_successful_call(self, circuit_breaker) -> None:
         """Test successful function call through circuit breaker"""
         
-        async def success_func() -> None:
+        async def success_func() -> str:
             return "success"
         
         result = await circuit_breaker.call(success_func)
@@ -269,7 +270,7 @@ class TestEnhancedCircuitBreaker:
         await asyncio.sleep(1.1)
         
         # Next call should transition to half-open
-        async def success_func() -> None:
+        async def success_func() -> str:
             return "success"
         
         result = await circuit_breaker.call(success_func)
@@ -292,7 +293,7 @@ class TestEnhancedCircuitBreaker:
         await asyncio.sleep(1.1)
         
         # Make successful calls to close circuit
-        async def success_func() -> None:
+        async def success_func() -> str:
             return "success"
         
         # First success should transition to half-open
@@ -449,7 +450,7 @@ class TestEnhancedCircuitBreaker:
         assert circuit_breaker.is_closed is True
         
         # Should work normally after reset
-        async def success_func() -> None:
+        async def success_func() -> str:
             return "success"
         
         result = await circuit_breaker.call(success_func)
@@ -578,7 +579,7 @@ async def test_real_world_scenario() -> None:
     success_count = 0
     failure_count = 0
     
-    async def db_operation(should_fail=False) -> None:
+    async def db_operation(should_fail=False) -> Dict[str, str]:
         async with db_breaker.protect():
             if should_fail:
                 raise ConnectionError("Database connection failed")

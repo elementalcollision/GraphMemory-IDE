@@ -42,7 +42,8 @@ def get_sse_manager() -> DashboardSSEManager:
 
 @dashboard_router.on_event("startup")
 async def startup_dashboard() -> None:
-    """Initialize dashboard services on startup"""
+    """Initialize dashboard components on startup"""
+    global manager
     manager = get_sse_manager()
     await manager.start()
     logger.info("Dashboard services started")
@@ -50,9 +51,10 @@ async def startup_dashboard() -> None:
 
 @dashboard_router.on_event("shutdown")
 async def shutdown_dashboard() -> None:
-    """Cleanup dashboard services on shutdown"""
-    manager = get_sse_manager()
-    await manager.stop()
+    """Cleanup dashboard components on shutdown"""
+    global manager
+    if manager:
+        await manager.stop()
     logger.info("Dashboard services stopped")
 
 

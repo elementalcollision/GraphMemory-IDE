@@ -658,6 +658,15 @@ class PerformanceProfiler:
         
         self.active_operations: Dict[str, Tuple[float, int]] = {}
     
+    def _get_memory_usage(self) -> float:
+        """Get current memory usage in MB"""
+        try:
+            import psutil
+            process = psutil.Process()
+            return process.memory_info().rss / (1024 * 1024)  # Convert to MB
+        except (ImportError, psutil.NoSuchProcess):
+            return 0.0
+    
     @asynccontextmanager
     async def profile_operation(self, operation_name: str) -> AsyncGenerator[None, None]:
         """Context manager for profiling operations"""

@@ -27,7 +27,7 @@ except ImportError as e:
     print("This is expected when running tests independently")
 
 
-def test_1_background_collector_imports() -> bool:
+def test_1_background_collector_imports() -> None:
     """Test 1: Verify all background collector imports work correctly"""
     print("\n=== Test 1: Background Collector Imports ===")
     
@@ -51,7 +51,7 @@ def test_1_background_collector_imports() -> bool:
         return False
 
 
-def test_2_data_buffer_functionality() -> bool:
+def test_2_data_buffer_functionality() -> None:
     """Test 2: Verify DataBuffer functionality"""
     print("\n=== Test 2: DataBuffer Functionality ===")
     

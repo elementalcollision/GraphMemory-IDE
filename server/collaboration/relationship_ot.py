@@ -857,11 +857,12 @@ class RelationshipOTMetrics:
     """Metrics collector for relationship OT operations"""
     
     def __init__(self) -> None:
+        """Initialize relationship OT metrics"""
         self.operation_count = 0
-        self.transform_count = 0
         self.conflict_count = 0
+        self.resolution_count = 0
+        self.sync_count = 0
         self.error_count = 0
-        self.average_transform_time = 0.0
     
     def record_operation(self) -> None:
         """Record a relationship operation"""

@@ -133,13 +133,13 @@ class SSEResponse(BaseValidationModel, Generic[T]):
         if timestamp is None:
             timestamp = datetime.now().isoformat()
         
-        return cast("SSEResponse[T]", cls(
+        return cls(
             success=True,
             data=data,
             message=message,
             timestamp=timestamp,
             status=AnalyticsStatus.HEALTHY
-        ))
+        )
     
     @classmethod
     def error_response(
@@ -153,14 +153,14 @@ class SSEResponse(BaseValidationModel, Generic[T]):
         if timestamp is None:
             timestamp = datetime.now().isoformat()
         
-        return cast("SSEResponse[None]", cls(
+        return cls(
             success=False,
             data=None,
             message=message,
             error=error,
             timestamp=timestamp,
             status=status
-        ))
+        )
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""

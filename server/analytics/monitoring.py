@@ -260,68 +260,75 @@ class AnalyticsMonitoringMiddleware:
         graph_size: Optional[str] = None
     ) -> None:
         """Record analytics operation metrics"""
-        if not PROMETHEUS_AVAILABLE or not self.analytics_operations:
-            return
-        
         status = "success" if success else "error"
         
-        self.analytics_operations.labels(
-            operation_type=operation,
-            algorithm=algorithm,
-            status=status
-        ).inc()
-        
-        if success and self.analytics_duration:
+        # Record with algorithm and backend if provided
+        if algorithm and backend:
+            self.analytics_operations.labels(
+                operation_type=operation,
+                algorithm=algorithm,
+                status=status
+            ).inc()
+            
             self.analytics_duration.labels(
                 operation_type=operation,
                 algorithm=algorithm
             ).observe(duration)
     
     def record_cache_operation(self, cache_type: str, hit: bool) -> None:
-        """Record cache operation metrics"""
-        if not PROMETHEUS_AVAILABLE:
-            return
-        
-        if hit and self.cache_hits:
-            self.cache_hits.labels(cache_type=cache_type).inc()
-        elif not hit and self.cache_misses:
-            self.cache_misses.labels(cache_type=cache_type).inc()
+        """Record cache operation"""
+        result = "hit" if hit else "miss"
+        self.cache_hits.labels(cache_type=cache_type).inc()
+        self.cache_misses.labels(cache_type=cache_type).inc()
     
     def update_graph_metrics(self, node_count: int, edge_count: int) -> None:
-        """Update graph size metrics"""
-        if not PROMETHEUS_AVAILABLE:
-            return
+        """Update graph metrics"""
+        # Would typically update Prometheus gauges here
+        # For now, just track in memory
+        if not hasattr(self, '_graph_metrics'):
+            self._graph_metrics = {}
         
-        if self.graph_size_nodes:
-            self.graph_size_nodes.set(node_count)
-        if self.graph_size_edges:
-            self.graph_size_edges.set(edge_count)
+        self._graph_metrics.update({
+            'node_count': node_count,
+            'edge_count': edge_count,
+            'timestamp': time.time()
+        })
     
     def update_system_metrics(self) -> None:
         """Update system resource metrics"""
-        if not PROMETHEUS_AVAILABLE:
-            return
-        
-        # CPU and memory
-        cpu_percent = psutil.cpu_percent()
-        if self.system_cpu_usage and isinstance(cpu_percent, (int, float)):
-            self.system_cpu_usage.set(float(cpu_percent))
-        
-        if self.system_memory_usage:
-            self.system_memory_usage.set(psutil.virtual_memory().percent)
-        
-        # GPU metrics
-        if gpu_manager and hasattr(gpu_manager, 'get_acceleration_status') and self.gpu_memory_usage:
-            gpu_status = gpu_manager.get_acceleration_status()
-            gpu_memory = gpu_status.get('memory_usage', 0)
-            self.gpu_memory_usage.set(gpu_memory)
+        try:
+            import psutil
+            
+            # Get system metrics
+            cpu_percent = psutil.cpu_percent(interval=1)
+            memory = psutil.virtual_memory()
+            
+            # Update metrics
+            if not hasattr(self, '_system_metrics'):
+                self._system_metrics = {}
+            
+            self._system_metrics.update({
+                'cpu_percent': cpu_percent,
+                'memory_percent': memory.percent,
+                'timestamp': time.time()
+            })
+        except ImportError:
+            # psutil not available
+            pass
     
     def update_component_health(self, component: str, healthy: bool) -> None:
         """Update component health status"""
-        if not PROMETHEUS_AVAILABLE or not self.component_health:
-            return
+        status = 1 if healthy else 0
         
-        self.component_health.labels(component=component).set(1 if healthy else 0)
+        # Track component health
+        if not hasattr(self, '_component_health'):
+            self._component_health = {}
+        
+        self._component_health[component] = {
+            'healthy': healthy,
+            'status': status,
+            'timestamp': time.time()
+        }
 
 
 # FastAPI-specific middleware wrapper
@@ -350,6 +357,14 @@ class AnalyticsHealthChecker:
     """
     
     def __init__(self) -> None:
+        """Initialize health checker"""
+        self.component_checks = {
+            'gpu_acceleration': self._check_gpu_acceleration,
+            'performance_monitor': self._check_performance_monitor,
+            'concurrent_processing': self._check_concurrent_processing,
+            'cache_system': self._check_cache_system,
+            'database_connection': self._check_database_connection
+        }
         self.health_checks: Dict[str, Any] = {}
         self.last_check_time: Dict[str, float] = {}
         self.check_interval = 30  # seconds

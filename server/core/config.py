@@ -209,7 +209,7 @@ class Settings(BaseModel):
         # Convert to string for uniform handling
         v_str = str(v).lower() if v else "development"
         try:
-            return cast(Environment, Environment(v_str))
+            return Environment(v_str)
         except ValueError:
             return Environment.DEVELOPMENT
     

@@ -64,6 +64,11 @@ class AnalyticsEngine:
             return
         
         try:
+            logger.info("Initializing analytics engine...")
+            
+            # Initialize database connection
+            await self.kuzu_conn.connect()
+            
             # Initialize core components
             await self.cache.connect()
             

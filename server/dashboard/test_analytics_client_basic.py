@@ -109,8 +109,8 @@ class MockAnalyticsEngineClient:
 
 
 async def test_fallback_functionality() -> None:
-    """Test all fallback functionality"""
-    logger.info("Starting Basic Analytics Client Tests...")
+    """Test fallback functionality when client is not initialized"""
+    print("🔍 Testing fallback functionality...")
     
     client = MockAnalyticsEngineClient()
     

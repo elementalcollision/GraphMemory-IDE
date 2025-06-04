@@ -10,6 +10,7 @@ from typing import Dict, List, Set, Any, Optional, Callable, AsyncGenerator
 from datetime import datetime
 from fastapi import WebSocket, WebSocketDisconnect
 import weakref
+from collections import defaultdict
 
 from .models import RealtimeUpdate, AnalyticsType
 
@@ -135,8 +136,9 @@ class RealtimeAnalytics:
     """
     
     def __init__(self) -> None:
+        """Initialize realtime analytics"""
         self.connection_manager = ConnectionManager()
-        self.update_handlers: Dict[str, List[Callable]] = {}
+        self.update_handlers: Dict[str, List[Callable]] = defaultdict(list)
         self.analytics_streams: Dict[str, asyncio.Queue] = {}
         self.background_tasks: Set[asyncio.Task] = set()
     

@@ -510,14 +510,16 @@ class FeatureWorkerManager:
     """Manages all feature engineering workers"""
     
     def __init__(self) -> None:
+        """Initialize feature worker manager"""
+        self.workers: Dict[str, FeatureWorker] = {}
+        self.running = False
         self.memory_worker = MemoryOperationFeatureWorker()
         self.pattern_worker = PatternDetectionWorker()
         self._workers = [self.memory_worker, self.pattern_worker]
-        self._running = False
     
     async def start(self) -> None:
         """Start all workers"""
-        if self._running:
+        if self.running:
             return
         
         logger.info("Starting Feature Worker Manager")
@@ -525,12 +527,12 @@ class FeatureWorkerManager:
         for worker in self._workers:
             await worker.start()
         
-        self._running = True
+        self.running = True
         logger.info("All feature workers started")
     
     async def stop(self) -> None:
         """Stop all workers"""
-        if not self._running:
+        if not self.running:
             return
         
         logger.info("Stopping Feature Worker Manager")
@@ -538,13 +540,13 @@ class FeatureWorkerManager:
         for worker in self._workers:
             await worker.stop()
         
-        self._running = False
+        self.running = False
         logger.info("All feature workers stopped")
     
     async def get_system_status(self) -> Dict[str, Any]:
         """Get status of all workers"""
         return {
-            "running": self._running,
+            "running": self.running,
             "workers": {
                 "memory_feature_worker": {
                     "running": self.memory_worker._running,

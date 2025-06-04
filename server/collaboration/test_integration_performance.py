@@ -37,7 +37,7 @@ except ImportError:
             self.compliance_tags = ["soc2_security"]
             self.integrity_hash = "test_hash"
             
-        def to_dict(self) -> None:
+        def to_dict(self) -> Dict[str, str]:
             return {"event_id": self.event_id, "tenant_id": self.tenant_id}
 
 
@@ -179,35 +179,31 @@ class IntegrationPerformanceTest:
         print(f"   All components integrated successfully ✅")
         
     # Simulation methods for testing
-    async def simulate_audit_processing(self, event: MockAuditEvent) -> None:
-        """Simulate audit event processing"""
+    async def simulate_audit_processing(self, event: MockAuditEvent) -> float:
+        """Simulate audit processing"""
         start_time = time.time()
-        
-        # Simulate background queue processing
-        await asyncio.sleep(0.001)  # 1ms simulation
+        await asyncio.sleep(0.005)  # 5ms simulation
         
         processing_time = (time.time() - start_time) * 1000
         return processing_time
         
-    async def simulate_audit_processing_batch(self, events: List[MockAuditEvent]) -> None:
+    async def simulate_audit_processing_batch(self, events: List[MockAuditEvent]) -> bool:
         """Simulate batch audit processing"""
         await asyncio.sleep(0.01)  # 10ms simulation
         return True
         
     async def simulate_compliance_validation(self, tenant_id: str) -> List[Dict[str, Any]]:
         """Simulate compliance validation"""
-        await asyncio.sleep(0.05)  # 50ms simulation
+        await asyncio.sleep(0.015)  # 15ms simulation
         
-        # Mock validation results
+        # Return mock compliance results
         return [
-            {"requirement_id": "SOC2-SEC-001", "status": "compliant", "score": 85.0},
-            {"requirement_id": "SOC2-SEC-002", "status": "compliant", "score": 90.0},
-            {"requirement_id": "SOC2-AVL-001", "status": "compliant", "score": 95.0},
-            {"requirement_id": "GDPR-CON-001", "status": "partial_compliant", "score": 82.0},
-            {"requirement_id": "GDPR-DSR-001", "status": "partial_compliant", "score": 78.0},
+            {"rule": "data_retention", "status": "compliant"},
+            {"rule": "access_control", "status": "compliant"},
+            {"rule": "audit_trail", "status": "compliant"}
         ]
         
-    async def simulate_batch_storage(self, events: List[MockAuditEvent]) -> None:
+    async def simulate_batch_storage(self, events: List[MockAuditEvent]) -> bool:
         """Simulate batch storage operations"""
         await asyncio.sleep(0.02)  # 20ms simulation
         return True

@@ -28,12 +28,14 @@ def test_ingest_telemetry_success() -> None:
         assert "Event ingested" in response.json()["message"]
 
 def test_ingest_telemetry_db_error() -> None:
+    """Test telemetry ingestion with database error"""
     with patch("server.main.conn.execute", side_effect=Exception("Database error")):
         response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
         assert response.status_code == 500
         assert "Failed to store event" in response.json()["detail"]
 
 def test_ingest_telemetry_missing_event_type() -> None:
+    """Test telemetry ingestion with missing event type"""
     bad_event = deepcopy(TELEMETRY_EVENT)
     del bad_event["event_type"]
     response = client.post("/telemetry/ingest", json=bad_event)
@@ -41,12 +43,14 @@ def test_ingest_telemetry_missing_event_type() -> None:
     assert "event_type" in response.text
 
 def test_ingest_telemetry_invalid_timestamp_type() -> None:
+    """Test telemetry ingestion with invalid timestamp type"""
     bad_event = deepcopy(TELEMETRY_EVENT)
     bad_event["timestamp"] = "invalid-timestamp-format"  # Invalid string format instead of int
     response = client.post("/telemetry/ingest", json=bad_event)
     assert response.status_code == 422
 
 def test_ingest_telemetry_missing_data() -> None:
+    """Test telemetry ingestion with missing data"""
     bad_event = deepcopy(TELEMETRY_EVENT)
     del bad_event["data"]
     response = client.post("/telemetry/ingest", json=bad_event)
@@ -54,6 +58,7 @@ def test_ingest_telemetry_missing_data() -> None:
     assert "data" in response.text
 
 def test_ingest_telemetry_empty_data() -> None:
+    """Test telemetry ingestion with empty data"""
     with patch("server.main.conn.execute") as mock_execute:
         bad_event = deepcopy(TELEMETRY_EVENT)
         bad_event["data"] = {}
@@ -93,7 +98,9 @@ MOCK_COL_NAMES = ["e"]
 # /telemetry/list success
 
 def test_list_telemetry_success() -> None:
+    """Test successful telemetry listing"""
     mock_result = make_mock_query_result([[MOCK_EVENT_ROW[0]]], MOCK_COL_NAMES)
+    
     with patch("server.main.conn.execute", return_value=mock_result):
         response = client.get("/telemetry/list")
         assert response.status_code == 200
@@ -202,12 +209,12 @@ def test_topk_success() -> None:
         assert data[0]["distance"] <= data[1]["distance"]
 
 def test_topk_auto_create_index() -> None:
+    """Test topk query with auto index creation"""
+    col_names = ["index name", "index type"]
+    mock_show_idx = make_mock_query_result_topk([], col_names)
     mock_embedding = [0.1] * 384
     mock_embedding_obj = MagicMock()
     mock_embedding_obj.tolist.return_value = mock_embedding
-    col_names = ["index name", "table name"]
-    # SHOW_INDEXES returns no matching index
-    mock_show_idx = make_mock_query_result_topk([], col_names)
     with patch("server.main.SentenceTransformer") as MockModel, \
          patch("server.main.conn") as mock_conn:
         MockModel.return_value.encode.return_value = mock_embedding_obj

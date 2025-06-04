@@ -499,7 +499,7 @@ async def update_user_preferences(
     request: UserPreferencesRequest,
     current_user: User = Depends(get_current_user),
     db_session: AsyncSession = Depends(get_async_session)
-):
+) -> Dict[str, Any]:
     """Update user onboarding preferences"""
     try:
         stmt = select(UserOnboardingPreferences).where(

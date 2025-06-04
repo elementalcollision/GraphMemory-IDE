@@ -36,6 +36,16 @@ GRAPH_PROCESSING_TIME = Histogram(
     ['operation_type', 'graph_size_category']
 )
 
+GRAPH_NODES = Gauge(
+    'analytics_graph_nodes_total',
+    'Total number of nodes in the graph'
+)
+
+GRAPH_EDGES = Gauge(
+    'analytics_graph_edges_total',
+    'Total number of edges in the graph'
+)
+
 CACHE_HIT_RATE = Gauge(
     'analytics_cache_hit_rate',
     'Cache hit rate percentage'

@@ -24,7 +24,7 @@ import logging
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set, Tuple, Union, Callable
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, Callable, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
 import hashlib
@@ -402,7 +402,7 @@ class MemoryDocument:
             metadata=metadata_dict,
             version=self._version,
             last_modified=datetime.now(timezone.utc),
-            last_modified_by=self._doc.get_map("metadata").get("last_modified_by", "unknown"),
+            last_modified_by=self._doc.get_map("metadata").get("last_modified_by", "unknown") or "unknown",
             collaborators=set(str(c) for c in self._doc.get_array("collaborators"))
         )
     
@@ -837,41 +837,43 @@ class SimpleCRDTArray:
     """Simplified array CRDT wrapper"""
     
     def __init__(self, doc: SimpleCRDTDocument, field: str) -> None:
-        self.doc = doc
-        self.field = field
+        self._doc = doc
+        self._field = field
         self._observers: List[Callable[[Dict[str, Any]], None]] = []
-        if field not in self.doc._data:
-            self.doc._data[field] = []
+        if field not in self._doc._data:
+            self._doc._data[field] = []
     
-    def __iter__(self) -> None:
-        return iter(self.doc._data.get(self.field, []))
+    def __iter__(self) -> Iterator[Any]:
+        """Make array iterable"""
+        return iter(self._doc._data.get(self._field, []))
     
     def __len__(self) -> int:
-        return len(self.doc._data.get(self.field, []))
+        return len(self._doc._data.get(self._field, []))
     
-    def __getitem__(self, index: int) -> None:
-        return self.doc._data.get(self.field, [])[index]
+    def __getitem__(self, index: int) -> Any:
+        data = self._doc._data.get(self._field, [])
+        return data[index] if 0 <= index < len(data) else None
     
     def append(self, items: List[str]) -> None:
-        old_value = list(self.doc._data[self.field])
-        self.doc._data[self.field].extend(items)
-        new_value = list(self.doc._data[self.field])
-        self.doc._notify_change(self.field, old_value, new_value)
+        old_value = list(self._doc._data[self._field])
+        self._doc._data[self._field].extend(items)
+        new_value = list(self._doc._data[self._field])
+        self._doc._notify_change(self._field, old_value, new_value)
         for observer in self._observers:
             observer({"action": "add", "items": items, "old_value": old_value, "new_value": new_value})
     
     def delete(self, index: int, count: int) -> None:
-        old_value = list(self.doc._data[self.field])
-        del self.doc._data[self.field][index:index+count]
-        new_value = list(self.doc._data[self.field])
-        self.doc._notify_change(self.field, old_value, new_value)
+        old_value = list(self._doc._data[self._field])
+        del self._doc._data[self._field][index:index+count]
+        new_value = list(self._doc._data[self._field])
+        self._doc._notify_change(self._field, old_value, new_value)
         for observer in self._observers:
             observer({"action": "remove", "index": index, "count": count, "old_value": old_value, "new_value": new_value})
     
     def clear(self) -> None:
-        old_value = list(self.doc._data[self.field])
-        self.doc._data[self.field] = []
-        self.doc._notify_change(self.field, old_value, [])
+        old_value = list(self._doc._data[self._field])
+        self._doc._data[self._field] = []
+        self._doc._notify_change(self._field, old_value, [])
         for observer in self._observers:
             observer({"action": "clear", "old_value": old_value, "new_value": []})
     
@@ -889,18 +891,19 @@ class SimpleCRDTMap:
         if field not in self.doc._data:
             self.doc._data[field] = {}
     
-    def __getitem__(self, key: str) -> None:
+    def __getitem__(self, key: str) -> Any:
         return self.doc._data[self.field].get(key)
     
     def __setitem__(self, key: str, value: Any) -> None:
-        old_value = self.doc._data[self.field].copy()
+        if self.field not in self.doc._data:
+            self.doc._data[self.field] = {}
+        old_value = self.doc._data[self.field].get(key)
         self.doc._data[self.field][key] = value
-        new_value = self.doc._data[self.field].copy()
-        self.doc._notify_change(self.field, old_value, new_value)
+        self.doc._notify_change(self.field, {key: old_value}, {key: value})
         for observer in self._observers:
-            observer({"action": "set", "key": key, "value": value, "old_value": old_value, "new_value": new_value})
+            observer({"action": "set", "key": key, "old_value": old_value, "new_value": value})
     
-    def get(self, key: str, default: Any = None) -> None:
+    def get(self, key: str, default: Any = None) -> Any:
         return self.doc._data[self.field].get(key, default)
     
     def clear(self) -> None:

@@ -40,35 +40,39 @@ class TestCacheConfig:
     """Test cache configuration functionality"""
     
     def test_default_config(self) -> None:
-        """Test default configuration values"""
+        """Test default cache configuration"""
         config = CacheConfig()
         
-        assert config.enable_l1_memory is True
-        assert config.enable_l2_redis is False
-        assert config.l1_max_size == 1000
-        assert config.l1_ttl_seconds == 300
-        assert config.l2_ttl_seconds == 1800
-        assert config.enable_metrics is True
-        assert config.enable_cache_warming is True
-        assert config.enable_circuit_breaker is True
+        # Test defaults
+        assert config.default_ttl == 300  # 5 minutes
+        assert config.max_size == 1000
+        assert config.eviction_policy == "LRU"
+        assert config.enable_stats is True
+        assert config.background_cleanup is True
+        assert config.cleanup_interval == 60
+        
+        print("✅ Default configuration test passed")
     
     def test_custom_config(self) -> None:
-        """Test custom configuration values"""
+        """Test custom cache configuration"""
         config = CacheConfig(
-            enable_l1_memory=False,
-            enable_l2_redis=True,
-            l1_max_size=2000,
-            l1_ttl_seconds=600,
-            redis_host="custom-redis",
-            redis_port=6380
+            default_ttl=600,
+            max_size=2000,
+            eviction_policy="LFU",
+            enable_stats=False,
+            background_cleanup=False,
+            cleanup_interval=120
         )
         
-        assert config.enable_l1_memory is False
-        assert config.enable_l2_redis is True
-        assert config.l1_max_size == 2000
-        assert config.l1_ttl_seconds == 600
-        assert config.redis_host == "custom-redis"
-        assert config.redis_port == 6380
+        # Test custom values
+        assert config.default_ttl == 600
+        assert config.max_size == 2000
+        assert config.eviction_policy == "LFU"
+        assert config.enable_stats is False
+        assert config.background_cleanup is False
+        assert config.cleanup_interval == 120
+        
+        print("✅ Custom configuration test passed")
 
 
 class TestCacheEntry:

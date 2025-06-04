@@ -86,28 +86,24 @@ class DataTransformer:
     """Transforms data between PostgreSQL and Kuzu formats"""
     
     def __init__(self) -> None:
-        self._transformers = {
-            'users': self._transform_user,
-            'user_sessions': self._transform_user_session,
-            'telemetry_events': self._transform_telemetry_event,
-            'analytics_queries': self._transform_analytics_query,
-            'kuzu_queries': self._transform_kuzu_query,
-            'collaboration_sessions': self._transform_collaboration_session,
-            'collaboration_participants': self._transform_collaboration_participant,
-            'system_metrics': self._transform_system_metrics,
-            'api_request_logs': self._transform_api_request_log
+        """Initialize data transformer"""
+        self.transformation_rules: Dict[str, Callable] = {
+            'user': self._transform_user,
+            'memory': self._transform_memory,
+            'relationship': self._transform_relationship,
+            'analytics': self._transform_analytics
         }
     
     def transform_to_graph(self, table_name: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Transform PostgreSQL data to graph format"""
-        transformer = self._transformers.get(table_name)
+        transformer = self.transformation_rules.get(table_name)
         if transformer:
             return transformer(data, 'to_graph')
         return data
     
     def transform_from_graph(self, table_name: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Transform graph data to PostgreSQL format"""
-        transformer = self._transformers.get(table_name)
+        transformer = self.transformation_rules.get(table_name)
         if transformer:
             return transformer(data, 'from_graph')
         return data

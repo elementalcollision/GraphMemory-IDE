@@ -28,16 +28,20 @@ class TestAnalyticsEngineClient:
     """Test cases for AnalyticsEngineClient"""
     
     def __init__(self) -> None:
+        """Initialize test analytics client"""
         self.client: Optional[AnalyticsEngineClient] = None
     
     def setup_method(self) -> None:
-        """Setup for each test method"""
-        self.client = AnalyticsEngineClient()
+        """Setup method for each test"""
+        # Reset client state before each test
+        self.client = None
     
     def teardown_method(self) -> None:
-        """Cleanup after each test method"""
-        # Reset any global state
-        pass
+        """Teardown method for each test"""
+        # Clean up after each test
+        if self.client:
+            # Perform any necessary cleanup
+            pass
     
     def test_client_initialization(self) -> None:
         """Test client initialization without Kuzu connection"""
