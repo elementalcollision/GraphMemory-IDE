@@ -11,7 +11,8 @@ import os
 sys.path.insert(0, 'server')
 os.environ['PYTHONPATH'] = 'server'
 
-def test_integration():
+def test_integration() -> bool:
+    """Test integration between database and analytics components"""
     print('🔍 Testing GraphMemory-IDE Production Integration...')
     print()
     

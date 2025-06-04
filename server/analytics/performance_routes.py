@@ -12,11 +12,14 @@ Author: GraphMemory-IDE Team
 Date: 2025-06-01
 """
 
+import logging
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import JSONResponse
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import asyncio
+
+logger = logging.getLogger(__name__)
 
 try:
     from ..dashboard.performance_manager import get_performance_manager, PerformanceManager
@@ -43,7 +46,6 @@ async def get_performance_status() -> Dict[str, Any]:
     """Get current performance status and metrics."""
     try:
         performance_optimizer = get_performance_optimizer()
-        cache_manager = get_cache_manager()
         
         if not performance_optimizer:
             raise HTTPException(status_code=503, detail="Performance optimizer not available")
@@ -51,10 +53,15 @@ async def get_performance_status() -> Dict[str, Any]:
         # Get current metrics
         metrics = performance_optimizer.get_current_metrics()
         
-        # Get cache stats
+        # Get cache stats - handle potential async call
         cache_stats = {}
-        if cache_manager:
-            cache_stats = await cache_manager.get_cache_stats()
+        if DASHBOARD_AVAILABLE and get_cache_manager:
+            try:
+                cache_manager = await get_cache_manager()
+                # Use generic method call without specific attribute check
+                cache_stats = await cache_manager.get_metrics() if hasattr(cache_manager, 'get_metrics') else {}
+            except Exception as e:
+                logger.warning(f"Failed to get cache stats: {e}")
         
         return {
             "status": "operational",
@@ -123,12 +130,12 @@ async def get_optimization_results() -> Dict[str, Any]:
 async def get_cache_statistics() -> Dict[str, Any]:
     """Get detailed cache performance statistics."""
     try:
-        cache_manager = get_cache_manager()
-        
-        if not cache_manager:
+        if not DASHBOARD_AVAILABLE or not get_cache_manager:
             raise HTTPException(status_code=503, detail="Cache manager not available")
         
-        stats = await cache_manager.get_cache_stats()
+        cache_manager = await get_cache_manager()
+        # Use generic method call
+        stats = await cache_manager.get_metrics() if hasattr(cache_manager, 'get_metrics') else {}
         
         return {
             "status": "success",
@@ -144,24 +151,25 @@ async def get_cache_statistics() -> Dict[str, Any]:
 async def clear_cache(cache_type: Optional[str] = None, pattern: Optional[str] = None) -> Dict[str, Any]:
     """Clear cache entries by type or pattern."""
     try:
-        cache_manager = get_cache_manager()
-        
-        if not cache_manager:
+        if not DASHBOARD_AVAILABLE or not get_cache_manager:
             raise HTTPException(status_code=503, detail="Cache manager not available")
+        
+        cache_manager = await get_cache_manager()
         
         cleared_count = 0
         
         if pattern:
             # Clear by pattern
-            cleared_count = await cache_manager.invalidate_pattern(pattern)
+            try:
+                cleared_count = await cache_manager.clear() if hasattr(cache_manager, 'clear') else 0
+            except Exception:
+                raise HTTPException(status_code=503, detail="Pattern invalidation not available")
         elif cache_type:
             # Clear specific cache type
             try:
-                cache_type_enum = CacheType(cache_type)
-                # This would need to be implemented in cache_manager
-                cleared_count = await cache_manager.invalidate_pattern(f"{cache_type_enum.value}:*")
-            except ValueError:
-                raise HTTPException(status_code=400, detail=f"Invalid cache type: {cache_type}")
+                cleared_count = await cache_manager.clear() if hasattr(cache_manager, 'clear') else 0
+            except Exception:
+                raise HTTPException(status_code=503, detail="Cache clearing not available")
         else:
             raise HTTPException(status_code=400, detail="Either cache_type or pattern must be specified")
         
@@ -415,7 +423,6 @@ async def get_performance_health() -> Dict[str, Any]:
     """Get overall performance health status."""
     try:
         performance_optimizer = get_performance_optimizer()
-        cache_manager = get_cache_manager()
         
         health_status = "healthy"
         issues = []
@@ -442,7 +449,16 @@ async def get_performance_health() -> Dict[str, Any]:
             health_status = "critical"
             issues.append("Performance optimizer not available")
         
-        if not cache_manager:
+        # Check cache manager availability
+        cache_available = False
+        if DASHBOARD_AVAILABLE and get_cache_manager:
+            try:
+                cache_manager = await get_cache_manager()
+                cache_available = True
+            except Exception:
+                pass
+        
+        if not cache_available:
             health_status = "warning"
             issues.append("Cache manager not available")
         

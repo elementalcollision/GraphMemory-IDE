@@ -55,7 +55,7 @@ class SSEEvent(BaseValidationModel, Generic[T]):
         
         # Add data (JSON serialized)
         data_dict = {
-            "data": self.data.model_dump() if hasattr(self.data, 'model_dump') else self.data,
+            "data": self.data.model_dump() if hasattr(self.data, 'model_dump') and callable(getattr(self.data, 'model_dump', None)) else self.data,
             "timestamp": self.timestamp,
             "event_type": self.event_type.value
         }
@@ -171,7 +171,7 @@ class SSEResponse(BaseValidationModel, Generic[T]):
         }
         
         if self.data is not None:
-            result["data"] = self.data.dict() if hasattr(self.data, 'dict') else self.data
+            result["data"] = self.data.dict() if hasattr(self.data, 'dict') and callable(getattr(self.data, 'dict', None)) else self.data
         
         if self.message:
             result["message"] = self.message

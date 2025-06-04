@@ -8,7 +8,7 @@ for DragonflyDB in the GraphMemory-IDE streaming analytics pipeline.
 import os
 import asyncio
 import logging
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any, List, Union, AsyncGenerator
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import redis.asyncio as redis
@@ -109,11 +109,11 @@ class DragonflyConnectionManager:
             logger.error(f"Failed to initialize DragonflyDB connection: {e}")
             raise
     
-    async def _test_connection(self) -> None:
-        """Test the DragonflyDB connection"""
+    async def _test_connection(self) -> bool:
+        """Test DragonflyDB connection"""
         if not self.redis_client:
-            raise ConnectionError("Redis client not initialized")
-            
+            raise ConnectionError("DragonflyDB client not initialized")
+        
         start_time = time.time()
         try:
             response = await self.redis_client.ping()
@@ -175,7 +175,7 @@ class DragonflyConnectionManager:
                 )
     
     @asynccontextmanager
-    async def get_client(self) -> None:
+    async def get_client(self) -> AsyncGenerator[redis.Redis, None]:
         """Get Redis client with performance tracking"""
         if not self.redis_client:
             raise ConnectionError("DragonflyDB client not initialized")
@@ -194,7 +194,7 @@ class DragonflyConnectionManager:
         """Get current performance statistics"""
         stats = self._performance_stats.copy()
         stats["is_healthy"] = self._is_healthy
-        stats["connection_pool_size"] = self.pool.connection_kwargs if self.pool else 0
+        stats["connection_pool_size"] = len(self.pool.connection_kwargs) if self.pool and self.pool.connection_kwargs else 0
         
         # Add real-time stats
         if self.redis_client:
@@ -224,6 +224,7 @@ class DragonflyConnectionManager:
         }
         
         async with self.get_client() as client:
+            # Type annotation handled by context manager return type
             # Test SET operations
             start_time = time.time()
             for i in range(num_operations):

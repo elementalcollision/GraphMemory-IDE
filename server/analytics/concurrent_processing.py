@@ -91,13 +91,13 @@ class ConcurrentProcessingManager:
             logger.error(f"Process pool operation failed: {e}")
             raise
     
-    async def run_cpu_intensive_task(self, func: Callable, *args, **kwargs) -> Any:
+    async def run_cpu_intensive_task(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """Run CPU-intensive task in process pool"""
         async with self.process_pool_context() as executor:
             loop = asyncio.get_event_loop()
             return await loop.run_in_executor(executor, func, *args, **kwargs)
     
-    async def run_io_intensive_task(self, func: Callable, *args, **kwargs) -> Any:
+    async def run_io_intensive_task(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """Run I/O-intensive task in thread pool"""
         async with self.thread_pool_context() as executor:
             loop = asyncio.get_event_loop()
@@ -124,7 +124,8 @@ class ConcurrentProcessingManager:
                 futures.append(future)
             
             results = await asyncio.gather(*futures, return_exceptions=True)
-            return results
+            # Convert tuple result to list to match return type
+            return list(results)
     
     async def run_parallel_algorithms(self, 
                                     algorithms: List[Dict[str, Any]], 

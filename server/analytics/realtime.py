@@ -11,6 +11,7 @@ from datetime import datetime
 from fastapi import WebSocket, WebSocketDisconnect
 import weakref
 from collections import defaultdict
+import time
 
 from .models import RealtimeUpdate, AnalyticsType
 
@@ -153,7 +154,7 @@ class RealtimeAnalytics:
         if analytics_type in self.analytics_streams:
             return  # Already running
         
-        queue = asyncio.Queue()
+        queue: asyncio.Queue[RealtimeUpdate] = asyncio.Queue()
         self.analytics_streams[analytics_type] = queue
         
         # Start background task to process the stream
@@ -166,11 +167,11 @@ class RealtimeAnalytics:
     async def stop_analytics_stream(self, analytics_type: str) -> None:
         """Stop a background analytics stream"""
         if analytics_type in self.analytics_streams:
-            queue = self.analytics_streams[analytics_type]
+            queue: asyncio.Queue[RealtimeUpdate] = self.analytics_streams[analytics_type]
             await queue.put(None)  # Signal to stop
             del self.analytics_streams[analytics_type]
     
-    async def _process_analytics_stream(self, analytics_type: str, queue: asyncio.Queue, interval: float) -> None:
+    async def _process_analytics_stream(self, analytics_type: str, queue: asyncio.Queue[RealtimeUpdate], interval: float) -> None:
         """Process analytics stream updates"""
         logger.info(f"Started analytics stream for {analytics_type}")
         
@@ -286,18 +287,27 @@ class RealtimeAnalytics:
     async def generate_sse_stream(self, analytics_type: str) -> AsyncGenerator[str, None]:
         """Generate Server-Sent Events stream for analytics"""
         # This would be used with FastAPI's StreamingResponse
-        queue = asyncio.Queue()
+        queue: asyncio.Queue[str] = asyncio.Queue()
         
         # Subscribe to updates
         def update_handler(update: RealtimeUpdate) -> None:
-            asyncio.create_task(queue.put(update))
+            # Convert update to JSON string
+            if hasattr(update, 'dict') and callable(getattr(update, 'dict', None)):
+                update_data = update.dict()
+            else:
+                update_data = {
+                    "update_type": getattr(update, 'update_type', 'unknown'),
+                    "data": getattr(update, 'data', {}),
+                    "timestamp": getattr(update, 'timestamp', time.time())
+                }
+            asyncio.create_task(queue.put(json.dumps(update_data)))
         
         self.register_update_handler(analytics_type, update_handler)
         
         try:
             while True:
-                update = await queue.get()
-                yield f"data: {json.dumps(update.dict())}\n\n"
+                update_json = await queue.get()
+                yield f"data: {update_json}\n\n"
         except asyncio.CancelledError:
             pass
     

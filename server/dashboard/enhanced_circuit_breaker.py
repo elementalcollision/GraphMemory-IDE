@@ -324,8 +324,9 @@ class EnhancedCircuitBreaker:
                     return True
                 
                 return False
-        
-        return False
+            
+            # This should never be reached, but included for completeness
+            return False
     
     async def _record_success(self, result: RequestResult) -> None:
         """Record a successful request"""

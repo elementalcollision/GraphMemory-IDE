@@ -44,7 +44,7 @@ class BackupCode(Base):
     # Audit fields
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
-    def __repr__(self) -> None:
+    def __repr__(self) -> str:
         return f"<BackupCode(id='{self.id}', user_id='{self.user_id}', used={self.is_used})>"
     
     def to_dict(self) -> Dict[str, Any]:

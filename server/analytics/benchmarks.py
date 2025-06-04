@@ -53,10 +53,20 @@ class AnalyticsBenchmarkSuite:
     """
     
     def __init__(self) -> None:
-        self.graph_algorithms = GraphAlgorithms()
-        self.ml_analytics = MLAnalytics()
+        """Initialize benchmark suite."""
+        self.executor = None
+        self.graph_algorithms: Optional[GraphAlgorithms] = None
+        self.ml_analytics: Optional[MLAnalytics] = None
+        try:
+            from .algorithms import GraphAlgorithms, MLAnalytics
+            self.graph_algorithms = GraphAlgorithms()
+            self.ml_analytics = MLAnalytics()
+        except ImportError:
+            self.graph_algorithms = None
+            self.ml_analytics = None
         self.results: List[BenchmarkResult] = []
         self.comparisons: List[ComparisonResult] = []
+        self._metrics: Dict[str, Any] = {}
     
     async def initialize(self) -> None:
         """Initialize benchmarking components"""
@@ -85,9 +95,9 @@ class AnalyticsBenchmarkSuite:
     async def _run_benchmark(
         self,
         test_name: str,
-        test_function: Callable,
-        *args,
-        **kwargs
+        test_function: Callable[..., Any],
+        *args: Any,
+        **kwargs: Any
     ) -> BenchmarkResult:
         """Run a single benchmark test with resource monitoring"""
         start_resources = self._monitor_system_resources()
@@ -437,8 +447,8 @@ benchmark_suite = AnalyticsBenchmarkSuite()
 
 # Pytest integration functions
 @pytest.mark.asyncio
-async def test_centrality_performance(benchmark) -> None:
-    """Pytest benchmark for centrality algorithms"""
+async def test_centrality_performance(benchmark: Any) -> None:
+    """Test centrality calculation performance."""
     await benchmark_suite.initialize()
     test_graph = benchmark_suite._generate_test_graph(500)
     
@@ -451,8 +461,8 @@ async def test_centrality_performance(benchmark) -> None:
 
 
 @pytest.mark.asyncio
-async def test_community_performance(benchmark) -> None:
-    """Pytest benchmark for community detection"""
+async def test_community_performance(benchmark: Any) -> None:
+    """Test community detection performance."""
     await benchmark_suite.initialize()
     test_graph = benchmark_suite._generate_test_graph(500)
     
@@ -465,8 +475,8 @@ async def test_community_performance(benchmark) -> None:
 
 
 @pytest.mark.asyncio
-async def test_clustering_performance(benchmark) -> None:
-    """Pytest benchmark for ML clustering"""
+async def test_clustering_performance(benchmark: Any) -> None:
+    """Test ML clustering performance."""
     await benchmark_suite.initialize()
     test_graph = benchmark_suite._generate_test_graph(500)
     

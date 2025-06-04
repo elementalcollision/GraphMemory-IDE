@@ -16,7 +16,8 @@ Date: 2025-06-01
 import asyncio
 import time
 import json
-from typing import Dict, Optional, Tuple, List
+import logging
+from typing import Dict, Optional, Tuple, List, Union, Any
 from dataclasses import dataclass, asdict
 from enum import Enum
 from collections import defaultdict
@@ -29,6 +30,9 @@ from starlette.types import ASGIApp
 
 from ..core.config import settings
 from ..core.logger import logger
+
+# Configure logger locally to avoid import issues
+logger = logging.getLogger(__name__)
 
 
 class RateLimitType(Enum):
@@ -94,7 +98,7 @@ class TokenBucket:
         
         # Add tokens based on elapsed time
         elapsed = now - self.last_refill
-        self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)
+        self.tokens = min(float(self.capacity), self.tokens + elapsed * self.refill_rate)
         self.last_refill = now
         
         # Check if we have enough tokens
@@ -108,7 +112,7 @@ class TokenBucket:
         """Get current number of available tokens."""
         now = time.time()
         elapsed = now - self.last_refill
-        current_tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)
+        current_tokens = min(float(self.capacity), self.tokens + elapsed * self.refill_rate)
         return int(current_tokens)
 
 
@@ -128,6 +132,10 @@ class AdvancedRateLimiter:
         """Initialize rate limiter with Redis connection."""
         self.redis_url = redis_url
         self.redis: Optional[aioredis.Redis] = None
+        self.redis_client: Optional[aioredis.Redis] = None
+        self.storage_type: str = "memory"
+        self.rate_limits: Dict[str, Any] = {}
+        self.request_counts: defaultdict = defaultdict(list)
         self.local_buckets: Dict[str, TokenBucket] = {}
         
         # Default rate limit rules
@@ -162,8 +170,8 @@ class AdvancedRateLimiter:
     
     async def close(self) -> None:
         """Close Redis connection."""
-        if self.redis:
-            await self.redis.aclose()
+        if self.redis_client:
+            await self.redis_client.close()
     
     def get_rate_limit_key(self, identifier: str, rule: RateLimitRule) -> str:
         """Generate Redis key for rate limit tracking."""
@@ -391,7 +399,7 @@ class AdvancedRateLimiter:
 
     def calculate_retry_after(self, rule: RateLimitRule) -> float:
         """Calculate retry-after time for rate limited requests"""
-        timeframe_seconds = self.normalize_timeframe(rule.timeframe)
+        timeframe_seconds = float(rule.rate_type.value)
         return min(timeframe_seconds, max(1.0, timeframe_seconds * 0.1))  # 10% of timeframe or 1 second minimum
 
 
@@ -402,7 +410,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.rate_limiter = rate_limiter
     
-    async def dispatch(self, request: Request, call_next) -> None:
+    async def dispatch(self, request: Request, call_next) -> JSONResponse:
         """Process request through rate limiter."""
         # Skip rate limiting for health checks and static files
         if request.url.path in ["/health", "/metrics"] or request.url.path.startswith("/static"):
@@ -439,7 +447,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 
 # Global rate limiter instance
-rate_limiter = AdvancedRateLimiter(settings.RATE_LIMIT_REDIS_URL)
+rate_limiter = AdvancedRateLimiter("redis://localhost:6379")
 
 
 async def initialize_rate_limiter() -> None:

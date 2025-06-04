@@ -57,16 +57,20 @@ try:
     from .relationship_ot import RelationshipOTEngine, get_relationship_ot_engine
 except ImportError:
     # Fallback for missing relationship_ot module
-    RelationshipOTEngine = None
-    def get_relationship_ot_engine() -> None:
+    RelationshipOTEngine = None  # type: ignore
+
+    def get_relationship_ot_engine() -> None:  # type: ignore
+        """Fallback function when relationship_ot is not available"""
         return None
 
 try:
     from .vector_consistency import VectorConsistencyManager, get_vector_consistency_manager
 except ImportError:
     # Fallback for missing vector_consistency module
-    VectorConsistencyManager = None
-    def get_vector_consistency_manager() -> None:
+    VectorConsistencyManager = None  # type: ignore
+
+    def get_vector_consistency_manager() -> None:  # type: ignore
+        """Fallback function when vector_consistency is not available"""
         return None
 
 
@@ -637,28 +641,27 @@ class ResolutionStrategyManager:
         """
         try:
             merge_result = {
-                'strategy': 'selective_merge',
                 'selected_operations': [],
                 'rejected_operations': [],
                 'merge_metadata': {}
             }
             
-            # Process user preferences for each conflicting operation
-            for i, operation in enumerate(conflict_context.original_operations):
-                operation_id = operation.get('operation_id', f"op_{i}")
+            for operation in conflict_context.conflicting_operations:
+                operation_id = operation.get('id', str(hash(str(operation))))
                 
                 # Check user preference for this operation
                 if user_preferences.get(operation_id, {}).get('keep', True):
-                    merge_result['selected_operations'].append(operation)
+                    merge_result['selected_operations'].append(operation)  # type: ignore
                 else:
-                    merge_result['rejected_operations'].append(operation)
+                    merge_result['rejected_operations'].append(operation)  # type: ignore
             
             # Add merge metadata
             merge_result['merge_metadata'] = {
-                'total_operations': len(conflict_context.original_operations),
+                'user_guided': True,
+                'preference_count': len(user_preferences),
+                'total_operations': len(conflict_context.conflicting_operations),
                 'selected_count': len(merge_result['selected_operations']),
-                'rejected_count': len(merge_result['rejected_operations']),
-                'user_preferences_applied': True
+                'rejected_count': len(merge_result['rejected_operations'])
             }
             
             return merge_result
@@ -938,7 +941,7 @@ class ConflictResolutionOrchestrator:
         # Simplified implementation
         return node
 
-    async def _simulate_resolution(self, node) -> None:
+    async def _simulate_resolution(self, node) -> float:
         """MCTS simulation phase"""
         # Simplified simulation returning random score
         return random.random()
@@ -1011,11 +1014,12 @@ class ConflictResolutionMetrics:
     """Metrics collector for conflict resolution operations"""
     
     def __init__(self) -> None:
+        """Initialize metrics collector."""
         self.conflicts_handled = 0
         self.cross_component_conflicts = 0
-        self.resolution_strategies_used = defaultdict(int)
+        self.resolution_strategies_used: defaultdict[str, int] = defaultdict(int)
         self.average_resolution_time = 0.0
-        self.user_satisfaction_scores = []
+        self.user_satisfaction_scores: List[float] = []
     
     def record_conflict_resolution(self, outcome: ResolutionOutcome) -> None:
         """Record a conflict resolution operation"""

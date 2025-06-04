@@ -40,7 +40,7 @@ class SimpleCircuitBreaker:
     def __init__(self, *args, **kwargs) -> None:
         pass
     
-    async def __aenter__(self) -> None:
+    async def __aenter__(self) -> "SimpleCircuitBreaker":
         return self
     
     async def __aexit__(self,

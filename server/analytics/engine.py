@@ -55,7 +55,7 @@ class AnalyticsEngine:
         self.initialized = False
         
         # Simple in-memory implementations to avoid complex dependencies for now
-        self._graph_cache = {}
+        self._graph_cache: Dict[str, Any] = {}
         self._last_graph_update = 0
     
     async def initialize(self) -> None:
@@ -190,7 +190,7 @@ class AnalyticsEngine:
             
             # Basic connected components analysis
             # Build adjacency list
-            adjacency = {}
+            adjacency: Dict[str, set] = {}
             for node in nodes:
                 node_id = node.get('id', str(node))
                 adjacency[node_id] = set()
@@ -206,7 +206,7 @@ class AnalyticsEngine:
             visited = set()
             components = []
             
-            def dfs(node, component) -> None:
+            def dfs(node: str, component: List[str]) -> None:
                 if node in visited:
                     return
                 visited.add(node)
@@ -216,7 +216,7 @@ class AnalyticsEngine:
             
             for node_id in adjacency:
                 if node_id not in visited:
-                    component = []
+                    component: List[str] = []
                     dfs(node_id, component)
                     if component:
                         components.append(component)
@@ -380,7 +380,7 @@ class AnalyticsEngine:
             )
             
             # Calculate community sizes
-            community_sizes = {}
+            community_sizes: Dict[str, int] = {}
             for node, comm_id in partition.items():
                 community_sizes[comm_id] = community_sizes.get(comm_id, 0) + 1
             
@@ -438,7 +438,7 @@ class AnalyticsEngine:
             edges = graph_data["edges"]
             
             # Build adjacency list
-            adjacency = {}
+            adjacency: Dict[str, List[str]] = {}
             for node in nodes:
                 node_id = node.get('id', str(node))
                 adjacency[node_id] = []

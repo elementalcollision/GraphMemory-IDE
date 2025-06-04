@@ -28,8 +28,9 @@ class GraphAlgorithms:
     """
     
     def __init__(self) -> None:
-        self.graph_cache = {}
+        """Initialize graph algorithms engine."""
         self.executor = ThreadPoolExecutor(max_workers=4)
+        self.graph_cache: Dict[str, Any] = {}
     
     def build_networkx_graph(self, nodes: List[Dict], edges: List[Dict]) -> nx.Graph:
         """Build NetworkX graph from node and edge data"""
@@ -81,7 +82,7 @@ class GraphAlgorithms:
         
         # Run in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
-        centrality_scores = await loop.run_in_executor(self.executor, _calculate)  # type: ignore
+        centrality_scores = await loop.run_in_executor(self.executor, _calculate)
         
         # Filter nodes if specified
         if node_filters:
@@ -105,9 +106,9 @@ class GraphAlgorithms:
             if algorithm == "louvain":
                 try:
                     # Try to import python-louvain community detection
-                    import community as community_louvain  # type: ignore
+                    import community as community_louvain
                     partition = community_louvain.best_partition(graph, resolution=resolution)
-                    modularity = community_louvain.modularity(partition, graph)
+                    modularity = community_louvain.modularity(partition, graph, weight='weight')
                 except ImportError:
                     logger.warning("python-louvain not available, using greedy modularity")
                     communities = nx.community.greedy_modularity_communities(graph, resolution=resolution)
@@ -134,10 +135,10 @@ class GraphAlgorithms:
             return partition, modularity
         
         loop = asyncio.get_event_loop()
-        partition, modularity = await loop.run_in_executor(self.executor, _detect)  # type: ignore
+        partition, modularity = await loop.run_in_executor(self.executor, _detect)
         
         # Filter small communities
-        community_sizes = {}
+        community_sizes: Dict[Any, int] = {}
         for node, comm_id in partition.items():
             community_sizes[comm_id] = community_sizes.get(comm_id, 0) + 1
         
@@ -161,7 +162,7 @@ class GraphAlgorithms:
         """Calculate metrics for each community"""
         
         def _calculate() -> List[CommunityMetrics]:
-            communities = {}
+            communities: Dict[Any, List[str]] = {}
             for node, comm_id in partition.items():
                 if comm_id not in communities:
                     communities[comm_id] = []
@@ -208,7 +209,7 @@ class GraphAlgorithms:
             return metrics
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _calculate)  # type: ignore
+        return await loop.run_in_executor(self.executor, _calculate)
     
     async def analyze_paths(
         self,
@@ -285,7 +286,7 @@ class GraphAlgorithms:
             return results
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _analyze)  # type: ignore
+        return await loop.run_in_executor(self.executor, _analyze)
     
     async def calculate_graph_metrics(self, graph: nx.Graph) -> GraphMetrics:
         """Calculate overall graph metrics"""
@@ -348,7 +349,7 @@ class GraphAlgorithms:
             )
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _calculate)  # type: ignore
+        return await loop.run_in_executor(self.executor, _calculate)
 
 
 class MLAnalytics:
@@ -358,8 +359,10 @@ class MLAnalytics:
     """
     
     def __init__(self) -> None:
-        self.scaler = StandardScaler()
-        self.models = {}
+        """Initialize ML analytics engine."""
+        self.models: Dict[str, Any] = {}
+        self.scalers: Dict[str, Any] = {}
+        self.feature_cache: Dict[str, np.ndarray] = {}
         self.executor = ThreadPoolExecutor(max_workers=2)
     
     async def cluster_nodes(
@@ -373,7 +376,7 @@ class MLAnalytics:
         
         def _cluster() -> Tuple[np.ndarray, float, Optional[np.ndarray]]:
             # Scale features
-            features_scaled = self.scaler.fit_transform(features)
+            features_scaled = self.scalers[clustering_type].fit_transform(features)
             
             # Determine number of clusters if not specified
             if n_clusters is None:
@@ -412,7 +415,7 @@ class MLAnalytics:
             return labels, silhouette, centers
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _cluster)  # type: ignore
+        return await loop.run_in_executor(self.executor, _cluster)
     
     async def detect_anomalies(
         self,
@@ -425,7 +428,7 @@ class MLAnalytics:
             from sklearn.ensemble import IsolationForest
             
             # Scale features
-            features_scaled = self.scaler.fit_transform(features)
+            features_scaled = self.scalers[ClusteringType.SPECTRAL].fit_transform(features)
             
             # Fit isolation forest
             iso_forest = IsolationForest(
@@ -439,7 +442,7 @@ class MLAnalytics:
             return anomaly_labels, anomaly_scores
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _detect)  # type: ignore
+        return await loop.run_in_executor(self.executor, _detect)
     
     async def extract_node_features(
         self,
@@ -450,15 +453,16 @@ class MLAnalytics:
         """Extract numerical features from graph nodes for ML analysis"""
         
         def _extract() -> Tuple[np.ndarray, List[str], List[str]]:
-            nodes = list(graph.nodes())
+            # Extract features from each node
             features = []
-            feature_names = []
+            node_ids = list(graph.nodes())
+            feature_names: List[str] = []
             
             # Basic structural features
             # Handle NetworkX degree method directly for each node
             clustering_coeffs = nx.clustering(graph)
             
-            for node in nodes:
+            for node in node_ids:
                 node_features: List[float] = []
                 
                 # Degree - get directly from graph
@@ -502,7 +506,7 @@ class MLAnalytics:
                 
                 features.append(node_features)
             
-            return np.array(features), nodes, feature_names
+            return np.array(features), node_ids, feature_names
         
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.executor, _extract)  # type: ignore 
+        return await loop.run_in_executor(self.executor, _extract) 

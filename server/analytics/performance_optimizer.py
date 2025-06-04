@@ -238,26 +238,30 @@ class MemoryOptimizer:
     """Memory usage optimization."""
     
     def __init__(self) -> None:
+        """Initialize memory optimizer."""
+        self._metrics: Dict[str, Any] = {}
         self.memory_stats: List[float] = []
         self.gc_stats: List[Dict[str, Any]] = []
     
     def get_memory_usage(self) -> Dict[str, Any]:
         """Get current memory usage statistics."""
-        process = psutil.Process()
-        memory_info = process.memory_info()
-        memory_percent = process.memory_percent()
-        
-        # System memory info
-        system_memory = psutil.virtual_memory()
-        
-        return {
-            "process_memory_mb": round(memory_info.rss / 1024 / 1024, 2),
-            "process_memory_percent": round(memory_percent, 2),
-            "system_memory_total_gb": round(system_memory.total / 1024 / 1024 / 1024, 2),
-            "system_memory_available_gb": round(system_memory.available / 1024 / 1024 / 1024, 2),
-            "system_memory_percent": system_memory.percent,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        try:
+            process = psutil.Process()
+            memory_info = process.memory_info()
+            memory_percent = process.memory_percent()
+            
+            # System memory info
+            virtual_memory = psutil.virtual_memory()
+            
+            return {
+                "process_memory_mb": memory_info.rss / 1024 / 1024,
+                "process_memory_percent": memory_percent,
+                "system_memory_total_gb": virtual_memory.total / 1024 / 1024 / 1024,
+                "system_memory_used_percent": virtual_memory.percent,
+                "system_memory_available_gb": virtual_memory.available / 1024 / 1024 / 1024
+            }
+        except Exception as e:
+            return {"error": f"Failed to get memory usage: {e}"}
     
     def optimize_garbage_collection(self) -> Dict[str, Any]:
         """Optimize Python garbage collection."""
@@ -386,6 +390,7 @@ class PerformanceOptimizer:
         
         # Background optimization task
         self._optimization_task: Optional[asyncio.Task] = None
+        self._metrics: Dict[str, Any] = {}
     
     async def initialize(self) -> None:
         """Initialize performance optimization."""
@@ -410,7 +415,7 @@ class PerformanceOptimizer:
     
     async def run_full_optimization(self) -> Dict[str, Any]:
         """Run comprehensive performance optimization."""
-        results = {}
+        results: Dict[str, Any] = {}
         
         try:
             # Database optimization
@@ -420,10 +425,11 @@ class PerformanceOptimizer:
             results["database_maintenance"] = await self.db_optimizer.vacuum_and_analyze()
             
             # Memory optimization
-            print("Running memory optimization...")
+            print("Optimizing memory usage...")
             results["memory_usage"] = self.memory_optimizer.get_memory_usage()
             results["garbage_collection"] = self.memory_optimizer.optimize_garbage_collection()
-            results["memory_leaks"] = self.memory_optimizer.monitor_memory_leaks()
+            memory_leaks = self.memory_optimizer.monitor_memory_leaks()
+            results["memory_leaks"] = memory_leaks
             
             # Response time optimization
             print("Analyzing response times...")
@@ -432,7 +438,8 @@ class PerformanceOptimizer:
             # Cache performance
             cache_manager = get_cache_manager()
             if cache_manager:
-                results["cache_stats"] = await cache_manager.get_cache_stats()
+                cache_stats = await cache_manager.get_cache_stats()
+                results["cache_stats"] = cache_stats
             
             results["optimization_completed"] = True
             results["timestamp"] = datetime.utcnow().isoformat()

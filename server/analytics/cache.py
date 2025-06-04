@@ -29,6 +29,8 @@ class AnalyticsCache:
         # Initialize in-memory cache attributes (used as fallback)
         self._memory_cache: Dict[str, Dict[str, Any]] = {}
         self._cache_timestamps: Dict[str, datetime] = {}
+        self._cache: Dict[str, Any] = {}
+        self._timestamps: Dict[str, float] = {}
     
     async def connect(self) -> None:
         """Initialize Redis connection"""
