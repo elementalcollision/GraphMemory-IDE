@@ -172,7 +172,9 @@ class AdvancedSettings(BaseModel):
         """Parse CORS origins from string or list."""
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+        elif isinstance(v, list):
+            return [str(item) for item in v]
+        return []
     
     @field_validator("SSO_PROVIDERS", mode='before')
     @classmethod
@@ -180,7 +182,9 @@ class AdvancedSettings(BaseModel):
         """Parse SSO providers from string or list."""
         if isinstance(v, str):
             return [provider.strip() for provider in v.split(",") if provider.strip()]
-        return v
+        elif isinstance(v, list):
+            return [str(item) for item in v]
+        return []
     
     @field_validator("IP_WHITELIST", mode='before')
     @classmethod
@@ -188,7 +192,9 @@ class AdvancedSettings(BaseModel):
         """Parse IP whitelist from string or list."""
         if isinstance(v, str):
             return [ip.strip() for ip in v.split(",") if ip.strip()]
-        return v
+        elif isinstance(v, list):
+            return [str(item) for item in v]
+        return []
     
     @field_validator("ADMIN_IP_WHITELIST", mode='before')
     @classmethod
@@ -196,7 +202,9 @@ class AdvancedSettings(BaseModel):
         """Parse admin IP whitelist from string or list."""
         if isinstance(v, str):
             return [ip.strip() for ip in v.split(",") if ip.strip()]
-        return v
+        elif isinstance(v, list):
+            return [str(item) for item in v]
+        return []
     
     @field_validator("ANALYTICS_SAMPLE_RATE")
     @classmethod

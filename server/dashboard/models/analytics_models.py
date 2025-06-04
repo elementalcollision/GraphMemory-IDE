@@ -5,7 +5,7 @@ This module contains Pydantic models for analytics data structures that match
 the output from the analytics engine client and provide validation for real-time streaming.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, Field, validator
@@ -64,11 +64,11 @@ class SystemMetricsData(BaseValidationModel):
     status: AnalyticsStatus = Field(default=AnalyticsStatus.HEALTHY, description="System status")
     
     @validator('cache_hit_rate', pre=True)
-    def validate_cache_hit_rate(cls, v) -> None:
+    def validate_cache_hit_rate(cls, v: Union[int, float]) -> float:
         """Convert percentage to ratio if needed"""
         if isinstance(v, (int, float)) and v > 1.0:
             return v / 100.0
-        return v
+        return float(v)
     
     def validate_consistency(self) -> ValidationResult:
         """Validate that metrics are internally consistent"""
@@ -115,7 +115,7 @@ class MemoryInsightsData(BaseValidationModel):
     status: AnalyticsStatus = Field(default=AnalyticsStatus.HEALTHY, description="Memory system status")
     
     @validator('total_memories')
-    def validate_total_memories(cls, v, values) -> None:
+    def validate_total_memories(cls, v: int, values: Dict[str, Any]) -> int:
         """Ensure total memories equals sum of memory types"""
         if 'procedural_memories' in values and 'semantic_memories' in values and 'episodic_memories' in values:
             expected_total = values['procedural_memories'] + values['semantic_memories'] + values['episodic_memories']
@@ -177,14 +177,14 @@ class GraphMetricsData(BaseValidationModel):
     status: AnalyticsStatus = Field(default=AnalyticsStatus.HEALTHY, description="Graph analysis status")
     
     @validator('largest_component_size')
-    def validate_largest_component_size(cls, v, values) -> None:
+    def validate_largest_component_size(cls, v: int, values: Dict[str, Any]) -> int:
         """Ensure largest component size doesn't exceed total nodes"""
         if 'node_count' in values and v > values['node_count']:
             raise ValueError(f"Largest component size {v} cannot exceed total nodes {values['node_count']}")
         return v
     
     @validator('connected_components')
-    def validate_connected_components(cls, v, values) -> None:
+    def validate_connected_components(cls, v: int, values: Dict[str, Any]) -> int:
         """Validate connected components count"""
         if 'node_count' in values:
             if values['node_count'] == 0 and v != 0:

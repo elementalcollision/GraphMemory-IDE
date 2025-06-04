@@ -14,17 +14,94 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union, Deque, AsyncGenerator
 from contextlib import asynccontextmanager
+import traceback
+
+# Define types and classes locally to avoid import redefinition
+class ErrorType(Enum):
+    """Types of errors that can occur"""
+    TRANSIENT = "transient"
+    RATE_LIMIT = "rate_limit" 
+    AUTHENTICATION = "authentication"
+    DATA_VALIDATION = "data_validation"
+    PERMANENT = "permanent"
+    UNKNOWN = "unknown"
+
+class ErrorSeverity(Enum):
+    """Severity levels for errors"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+class ErrorCategory(Enum):
+    """Categories of errors"""
+    VALIDATION = "validation"
+    SYSTEM = "system"
+    NETWORK = "network"
+
+class CircuitBreakerOpenError(Exception):
+    """Exception raised when circuit breaker is open"""
+    pass
+
+class AnalyticsError(Exception):
+    """Analytics-related exceptions"""
+    pass
+
+def generate_error_id() -> str:
+    """Generate a unique error ID"""
+    return str(uuid.uuid4())
+
+class SSEEvent:
+    """Server-Sent Events event class"""
+    def __init__(self, event_type: str, data: Any) -> None:
+        self.event_type = event_type
+        self.data = data
+
+class SSEEventType(Enum):
+    """SSE event types"""
+    ERROR = "error"
+    
+class SSEFormatter:
+    """SSE formatting utilities"""
+    pass
+
+# Try to import from actual modules if available, but use local definitions as fallback
+try:
+    from .enhanced_circuit_breaker import ErrorType as _ErrorType, CircuitBreakerOpenError as _CircuitBreakerOpenError
+    # Only use imported version if different from local
+    if hasattr(_ErrorType, 'TRANSIENT'):
+        ErrorType = _ErrorType
+        CircuitBreakerOpenError = _CircuitBreakerOpenError
+except ImportError:
+    pass
 
 try:
-    from .enhanced_circuit_breaker import ErrorType, CircuitBreakerOpenError
-    from .models.error_models import AnalyticsError, ErrorSeverity, ErrorCategory, generate_error_id
-    from .models.sse_models import SSEEvent, SSEEventType, SSEFormatter
+    from .models.error_models import (
+        AnalyticsError as _AnalyticsError, 
+        ErrorSeverity as _ErrorSeverity, 
+        ErrorCategory as _ErrorCategory, 
+        generate_error_id as _generate_error_id
+    )
+    # Only use imported versions if available
+    if hasattr(_ErrorSeverity, 'LOW'):
+        AnalyticsError = _AnalyticsError
+        ErrorSeverity = _ErrorSeverity
+        ErrorCategory = _ErrorCategory
+        generate_error_id = _generate_error_id
 except ImportError:
-    from enhanced_circuit_breaker import ErrorType, CircuitBreakerOpenError
-    from models.error_models import AnalyticsError, ErrorSeverity, ErrorCategory, generate_error_id
-    from models.sse_models import SSEEvent, SSEEventType, SSEFormatter
+    pass
+
+try:
+    from .models.sse_models import SSEEvent as _SSEEvent, SSEEventType as _SSEEventType, SSEFormatter as _SSEFormatter
+    # Only use imported versions if available
+    if hasattr(_SSEEventType, 'ERROR'):
+        SSEEvent = _SSEEvent
+        SSEEventType = _SSEEventType
+        SSEFormatter = _SSEFormatter
+except ImportError:
+    pass
 
 
 class ErrorHandlingStrategy(Enum):
@@ -105,8 +182,8 @@ class ErrorAggregator:
     def __init__(self, window_size: int = 1000) -> None:
         self.window_size = window_size
         self.error_patterns: Dict[str, ErrorPattern] = {}
-        self.recent_errors: deque = deque(maxlen=window_size)
-        self.error_history: deque = deque(maxlen=10000)
+        self.recent_errors: Deque[Dict[str, Any]] = deque(maxlen=window_size)
+        self.error_history: Deque[Dict[str, Any]] = deque(maxlen=10000)
         
     def add_error(self, error: Exception, context: ErrorContext, error_type: ErrorType) -> None:
         """Add an error to the aggregator"""
@@ -215,33 +292,25 @@ class ErrorAggregator:
 
 
 class FallbackManager:
-    """Manages fallback strategies for different components"""
+    """Manages fallback strategies for error recovery"""
     
     def __init__(self) -> None:
+        """Initialize fallback manager"""
         self.cache_fallbacks: Dict[str, Any] = {}
-        self.default_fallbacks: Dict[str, Callable] = {}
-        
+        self.default_fallbacks: Dict[str, Callable[[], Any]] = {}
+
     def register_cache_fallback(self, component: str, data: Any) -> None:
-        """Register cached data as fallback for component"""
-        self.cache_fallbacks[component] = {
-            "data": data,
-            "timestamp": datetime.now()
-        }
-    
-    def register_default_fallback(self, component: str, fallback_func: Callable) -> None:
-        """Register default data generator as fallback for component"""
+        """Register cached data as fallback"""
+        self.cache_fallbacks[component] = data
+
+    def register_default_fallback(self, component: str, fallback_func: Callable[[], Any]) -> None:
+        """Register default fallback function"""
         self.default_fallbacks[component] = fallback_func
-    
+
     async def get_fallback_data(self, component: str, strategy: ErrorHandlingStrategy) -> Optional[Any]:
         """Get fallback data based on strategy"""
         if strategy == ErrorHandlingStrategy.FALLBACK_TO_CACHE:
-            if component in self.cache_fallbacks:
-                fallback = self.cache_fallbacks[component]
-                # Check if cache is not too old (1 hour)
-                age = (datetime.now() - fallback["timestamp"]).total_seconds()
-                if age < 3600:
-                    return fallback["data"]
-        
+            return self.cache_fallbacks.get(component)
         elif strategy == ErrorHandlingStrategy.FALLBACK_TO_DEFAULT:
             if component in self.default_fallbacks:
                 fallback_func = self.default_fallbacks[component]
@@ -252,61 +321,38 @@ class FallbackManager:
                         return fallback_func()
                 except Exception:
                     return None
-        
         return None
 
 
 class RecoveryManager:
-    """Manages recovery actions for different error scenarios"""
+    """Manages recovery actions for errors"""
     
     def __init__(self) -> None:
-        self.recovery_handlers: Dict[RecoveryAction, Callable] = {}
-        self.recovery_history: List[Dict[str, Any]] = []
-        
-    def register_recovery_handler(self, action: RecoveryAction, handler: Callable) -> None:
-        """Register a recovery handler for specific action"""
+        self.recovery_handlers: Dict[RecoveryAction, Callable[[ErrorContext], bool]] = {}
+
+    def register_recovery_handler(self, action: RecoveryAction, handler: Callable[[ErrorContext], bool]) -> None:
+        """Register a recovery handler"""
         self.recovery_handlers[action] = handler
-    
+
     async def execute_recovery(self, action: RecoveryAction, context: ErrorContext) -> bool:
         """Execute recovery action"""
         if action == RecoveryAction.NONE:
             return True
-            
+        
         if action not in self.recovery_handlers:
             return False
         
         handler = self.recovery_handlers[action]
         
         try:
-            start_time = time.time()
-            
             if asyncio.iscoroutinefunction(handler):
                 result = await handler(context)
             else:
                 result = handler(context)
             
-            execution_time = (time.time() - start_time) * 1000
-            
-            # Record recovery attempt
-            self.recovery_history.append({
-                "action": action.value,
-                "context": context,
-                "success": bool(result) if result is not None else False,
-                "execution_time_ms": execution_time,
-                "timestamp": datetime.now()
-            })
-            
             return bool(result) if result is not None else False
             
-        except Exception as e:
-            # Record failed recovery
-            self.recovery_history.append({
-                "action": action.value,
-                "context": context,
-                "success": False,
-                "error": str(e),
-                "timestamp": datetime.now()
-            })
+        except Exception:
             return False
 
 
@@ -457,14 +503,13 @@ class EnhancedErrorHandler:
     async def error_context(self, component: str, operation: str, 
                            request_id: Optional[str] = None,
                            user_id: Optional[str] = None,
-                           **additional_data) -> None:
+                           **additional_data: Any) -> AsyncGenerator[ErrorContext, None]:
         """Context manager for error handling"""
-        
         context = ErrorContext(
             component=component,
             operation=operation,
             timestamp=datetime.now(),
-            request_id=request_id or str(uuid.uuid4())[:8],
+            request_id=request_id or str(uuid.uuid4()),
             user_id=user_id,
             additional_data=additional_data
         )
@@ -474,38 +519,40 @@ class EnhancedErrorHandler:
         except Exception as e:
             # Handle the error
             await self.handle_error(e, context)
-            raise  # Re-raise the error
+            raise
     
     def get_error_analytics(self) -> ErrorAnalytics:
         """Get comprehensive error analytics"""
         return self.error_aggregator.get_analytics()
     
     def create_error_sse_event(self, error: Exception, context: ErrorContext) -> str:
-        """Create SSE event for error notification"""
+        """Create SSE event for error"""
         try:
-            error_data = {
+            # Create event data
+            event_data = {
                 "error_id": generate_error_id(),
                 "component": context.component,
                 "operation": context.operation,
                 "error_type": type(error).__name__,
                 "error_message": str(error),
                 "timestamp": context.timestamp.isoformat(),
-                "request_id": context.request_id,
-                "severity": "medium"  # Default severity
+                "request_id": context.request_id
             }
             
-            event = SSEEvent(
-                event_type=SSEEventType.ERROR,
-                data=error_data,
-                timestamp=context.timestamp.isoformat(),
-                event_id=str(uuid.uuid4())[:8]
-            )
-            
-            return event.to_sse_format()
-            
+            return json.dumps({
+                "event": SSEEventType.ERROR.value,
+                "data": event_data
+            })
         except Exception:
-            # Fallback error event
-            return SSEFormatter.format_error(f"Error in {context.component}: {str(error)}")
+            # Fallback if SSE creation fails
+            return json.dumps({
+                "event": "error",
+                "data": {
+                    "error_id": str(uuid.uuid4()),
+                    "error_type": "unknown",
+                    "error_message": "Error processing failed"
+                }
+            })
     
     def configure_error_strategy(self, error_type: ErrorType, strategy: ErrorHandlingStrategy) -> None:
         """Configure handling strategy for specific error type"""

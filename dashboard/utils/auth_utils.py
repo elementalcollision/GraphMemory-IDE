@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 def store_token(token: str) -> None:
     """Store JWT token in session state"""
     try:
-        st.session_state.access_token = token
-        st.session_state.token_expires = extract_expiry(token)
+        setattr(st.session_state, 'access_token', token)
+        setattr(st.session_state, 'token_expires', extract_expiry(token))
         logger.info("Token stored successfully")
     except Exception as e:
         logger.error(f"Error storing token: {e}")
@@ -26,18 +26,18 @@ def store_token(token: str) -> None:
 
 def get_auth_headers() -> Dict[str, str]:
     """Get authentication headers for API requests"""
-    if 'access_token' in st.session_state:
-        return {"Authorization": f"Bearer {st.session_state.access_token}"}
+    if hasattr(st.session_state, 'access_token'):
+        return {"Authorization": f"Bearer {getattr(st.session_state, 'access_token')}"}
     return {}
 
 
 def validate_token() -> bool:
     """Validate if current token is still valid"""
-    if 'access_token' not in st.session_state:
+    if not hasattr(st.session_state, 'access_token'):
         return False
     
-    if 'token_expires' in st.session_state:
-        if datetime.now(timezone.utc) > st.session_state.token_expires:
+    if hasattr(st.session_state, 'token_expires'):
+        if datetime.now(timezone.utc) > getattr(st.session_state, 'token_expires'):
             logger.warning("Token has expired")
             return False
     
@@ -60,8 +60,14 @@ def extract_expiry(token: str) -> Optional[datetime]:
 
 
 def clear_auth_session() -> None:
-    """Clear authentication data from session state"""
-    auth_keys = ['access_token', 'token_expires', 'authenticated']
+    """
+    Clear all authentication session data from Streamlit session state
+    """
+    auth_keys = [
+        'authenticated', 'username', 'user_role', 'sso_provider',
+        'mfa_enabled', 'auth_timestamp', 'session_token', 'user_permissions'
+    ]
+    
     for key in auth_keys:
         if key in st.session_state:
             del st.session_state[key]
@@ -70,12 +76,12 @@ def clear_auth_session() -> None:
 
 def get_user_info() -> Optional[Dict[str, Any]]:
     """Extract user information from JWT token"""
-    if 'access_token' not in st.session_state:
+    if not hasattr(st.session_state, 'access_token'):
         return None
     
     try:
         # Decode without verification to get user info
-        decoded = jwt.decode(st.session_state.access_token, options={"verify_signature": False})
+        decoded = jwt.decode(getattr(st.session_state, 'access_token'), options={"verify_signature": False})
         return {
             "username": decoded.get('sub'),
             "expires": decoded.get('exp'),
@@ -89,6 +95,6 @@ def get_user_info() -> Optional[Dict[str, Any]]:
 def is_authenticated() -> bool:
     """Check if user is currently authenticated"""
     return (
-        st.session_state.get('authenticated', False) and
+        getattr(st.session_state, 'authenticated', False) and
         validate_token()
     ) 

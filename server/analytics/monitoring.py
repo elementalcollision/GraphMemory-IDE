@@ -252,10 +252,12 @@ class AnalyticsMonitoringMiddleware:
     
     def record_analytics_operation(
         self,
-        operation_type: str,
-        algorithm: str,
+        operation: str,
         duration: float,
-        success: bool
+        success: bool = True,
+        algorithm: Optional[str] = None,
+        backend: Optional[str] = None,
+        graph_size: Optional[str] = None
     ) -> None:
         """Record analytics operation metrics"""
         if not PROMETHEUS_AVAILABLE or not self.analytics_operations:
@@ -264,14 +266,14 @@ class AnalyticsMonitoringMiddleware:
         status = "success" if success else "error"
         
         self.analytics_operations.labels(
-            operation_type=operation_type,
+            operation_type=operation,
             algorithm=algorithm,
             status=status
         ).inc()
         
         if success and self.analytics_duration:
             self.analytics_duration.labels(
-                operation_type=operation_type,
+                operation_type=operation,
                 algorithm=algorithm
             ).observe(duration)
     

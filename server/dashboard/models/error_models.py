@@ -5,7 +5,7 @@ This module contains Pydantic models for structured error handling,
 validation errors, and error reporting in the analytics dashboard.
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, Field
@@ -307,7 +307,7 @@ class ErrorReport(BaseValidationModel):
     
     def _get_category_breakdown(self) -> Dict[str, int]:
         """Get breakdown of errors by category"""
-        category_counts = {}
+        category_counts: Dict[str, int] = {}
         for error in self.errors:
             category = error.category.value if hasattr(error.category, 'value') else str(error.category)
             category_counts[category] = category_counts.get(category, 0) + 1
@@ -358,12 +358,15 @@ class ErrorContext:
     def __enter__(self) -> "ErrorContext":
         return self
     
-    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+    def __exit__(self, exc_type: Optional[type], exc_val: Optional[BaseException], exc_tb: Optional[object]) -> Literal[False]:
         if exc_type is not None:
             # An exception occurred, create an error
+            # Convert BaseException to Exception for our error handling
+            exception = exc_val if isinstance(exc_val, Exception) else Exception(str(exc_val) if exc_val else "Unknown exception")
+            
             error = AnalyticsError.from_exception(
                 error_id=self.error_id,
-                exception=exc_val,
+                exception=exception,
                 category=self.category,
                 severity=self.severity,
                 component=self.component,

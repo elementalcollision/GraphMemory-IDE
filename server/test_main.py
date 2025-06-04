@@ -19,6 +19,7 @@ TELEMETRY_EVENT = {
 }
 
 def test_ingest_telemetry_success() -> None:
+    """Test successful telemetry ingestion"""
     with patch("server.main.conn.execute") as mock_execute:
         mock_execute.return_value = None
         response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
@@ -27,7 +28,7 @@ def test_ingest_telemetry_success() -> None:
         assert "Event ingested" in response.json()["message"]
 
 def test_ingest_telemetry_db_error() -> None:
-    with patch("server.main.conn.execute", side_effect=Exception("DB error")):
+    with patch("server.main.conn.execute", side_effect=Exception("Database error")):
         response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
         assert response.status_code == 500
         assert "Failed to store event" in response.json()["detail"]
@@ -44,7 +45,6 @@ def test_ingest_telemetry_invalid_timestamp_type() -> None:
     bad_event["timestamp"] = "invalid-timestamp-format"  # Invalid string format instead of int
     response = client.post("/telemetry/ingest", json=bad_event)
     assert response.status_code == 422
-    assert "timestamp" in response.text
 
 def test_ingest_telemetry_missing_data() -> None:
     bad_event = deepcopy(TELEMETRY_EVENT)

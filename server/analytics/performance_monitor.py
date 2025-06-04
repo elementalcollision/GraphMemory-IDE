@@ -118,14 +118,21 @@ class PerformanceMonitor:
     def record_cache_miss(self) -> None:
         """Record a cache miss"""
         self.cache_stats["misses"] += 1
-        self._update_cache_hit_rate()
+        if self.cache_stats["hits"] + self.cache_stats["misses"] > 0:
+            self._update_cache_hit_rate()
     
     def _update_cache_hit_rate(self) -> None:
         """Update cache hit rate metric"""
         total = self.cache_stats["hits"] + self.cache_stats["misses"]
         if total > 0:
-            hit_rate = (self.cache_stats["hits"] / total) * 100
+            hit_rate = self.cache_stats["hits"] / total
             CACHE_HIT_RATE.set(hit_rate)
+            
+            # Log cache performance when hit rate drops
+            if hit_rate < 0.8:
+                logger.warning(f"Cache hit rate low: {hit_rate:.2%}")
+        else:
+            CACHE_HIT_RATE.set(0)
     
     def get_system_metrics(self) -> Dict[str, Any]:
         """Get current system performance metrics"""
@@ -179,15 +186,17 @@ class PerformanceMonitor:
     
     def update_graph_size(self, node_count: int, edge_count: int) -> None:
         """Update graph size metrics"""
-        # This method was missing but called by the engine
-        # For now, we'll just log the information
-        logger.info(f"Graph size updated: {node_count} nodes, {edge_count} edges")
+        GRAPH_NODES.set(node_count)
+        GRAPH_EDGES.set(edge_count)
+        
+        # Log significant graph changes
+        if node_count > 1000000:  # 1M nodes
+            logger.info(f"Large graph detected: {node_count:,} nodes, {edge_count:,} edges")
     
     def reset_cache_stats(self) -> None:
         """Reset cache statistics"""
         self.cache_stats = {"hits": 0, "misses": 0}
         CACHE_HIT_RATE.set(0)
-        logger.info("Cache statistics reset")
 
 
 # Global instance for easy access

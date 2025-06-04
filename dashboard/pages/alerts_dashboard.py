@@ -53,7 +53,12 @@ except ImportError as e:
 
 
 def main() -> None:
-    """Main alerts dashboard page"""
+    """
+    Main function for the alerts dashboard page.
+    
+    This function serves as the entry point for the alerts dashboard,
+    providing comprehensive alert management functionality.
+    """
     
     # Page configuration
     st.set_page_config(

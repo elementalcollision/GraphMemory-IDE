@@ -10,9 +10,10 @@ import asyncio
 import json
 import time
 import uuid
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, List
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
+from collections import defaultdict
 
 # Import analytics client
 try:
@@ -69,9 +70,8 @@ class PerformanceMonitor:
     """Monitor performance of data transformations"""
     
     def __init__(self) -> None:
-        self.system_transform_times: list[float] = []
-        self.memory_transform_times: list[float] = []
-        self.graph_transform_times: list[float] = []
+        """Initialize performance monitor"""
+        self.transform_times: Dict[str, List[float]] = defaultdict(list)
         self.total_transformations: int = 0
         self.failed_transformations: int = 0
         self.cache_hits: int = 0
@@ -79,24 +79,14 @@ class PerformanceMonitor:
     
     def record_transform_time(self, data_type: str, duration: float) -> None:
         """Record transformation time for a data type"""
-        if data_type == "system":
-            self.system_transform_times.append(duration)
-            # Keep only last 100 measurements
-            if len(self.system_transform_times) > 100:
-                self.system_transform_times = self.system_transform_times[-100:]
-        elif data_type == "memory":
-            self.memory_transform_times.append(duration)
-            if len(self.memory_transform_times) > 100:
-                self.memory_transform_times = self.memory_transform_times[-100:]
-        elif data_type == "graph":
-            self.graph_transform_times.append(duration)
-            if len(self.graph_transform_times) > 100:
-                self.graph_transform_times = self.graph_transform_times[-100:]
+        self.transform_times[data_type].append(duration)
+        if len(self.transform_times[data_type]) > 100:
+            self.transform_times[data_type] = self.transform_times[data_type][-100:]
         
         self.total_transformations += 1
     
     def record_failure(self) -> None:
-        """Record a transformation failure"""
+        """Record a failed transformation"""
         self.failed_transformations += 1
     
     def record_cache_hit(self) -> None:
@@ -109,16 +99,9 @@ class PerformanceMonitor:
     
     def get_average_time(self, data_type: str) -> float:
         """Get average transformation time for a data type"""
-        if data_type == "system":
-            times = self.system_transform_times
-        elif data_type == "memory":
-            times = self.memory_transform_times
-        elif data_type == "graph":
-            times = self.graph_transform_times
-        else:
+        if data_type not in self.transform_times:
             return 0.0
-        
-        return sum(times) / len(times) if times else 0.0
+        return sum(self.transform_times[data_type]) / len(self.transform_times[data_type]) if self.transform_times[data_type] else 0.0
     
     def get_cache_hit_rate(self) -> float:
         """Get cache hit rate as percentage"""

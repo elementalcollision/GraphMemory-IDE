@@ -17,7 +17,7 @@ import logging
 import asyncio
 import psutil
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Callable, Union
+from typing import Dict, List, Optional, Any, Callable, Union, AsyncGenerator
 from dataclasses import dataclass, field
 from contextlib import asynccontextmanager
 from collections import defaultdict, deque
@@ -435,7 +435,7 @@ class GraphMemoryMetricsCollector:
     
     # Context Managers for Automatic Metric Recording
     @asynccontextmanager
-    async def time_database_query(self, database: str, operation: str) -> None:
+    async def time_database_query(self, database: str, operation: str) -> AsyncGenerator[None, None]:
         """Context manager for timing database queries"""
         start_time = time.time()
         status = 'success'
@@ -450,7 +450,7 @@ class GraphMemoryMetricsCollector:
             self.record_db_query(database, operation, duration, status)
     
     @asynccontextmanager
-    async def time_queue_processing(self, queue_name: str) -> None:
+    async def time_queue_processing(self, queue_name: str) -> AsyncGenerator[None, None]:
         """Context manager for timing queue processing"""
         start_time = time.time()
         status = 'success'

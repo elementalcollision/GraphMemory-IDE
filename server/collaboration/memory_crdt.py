@@ -670,18 +670,18 @@ class MemoryCRDTMetrics:
         self.operation_count = 0
         self.sync_count = 0
         self.error_count = 0
-        self.last_sync_time = 0.0
-        self.average_sync_time = 0.0
+        self.total_sync_time = 0.0
+        self.avg_sync_time = 0.0
     
     def record_operation(self) -> None:
-        """Record a memory operation"""
+        """Record an operation"""
         self.operation_count += 1
     
     def record_sync(self, duration: float) -> None:
         """Record a sync operation"""
         self.sync_count += 1
-        self.last_sync_time = duration
-        self.average_sync_time = (self.average_sync_time * (self.sync_count - 1) + duration) / self.sync_count
+        self.total_sync_time += duration
+        self.avg_sync_time = self.total_sync_time / self.sync_count
     
     def record_error(self) -> None:
         """Record an error"""
@@ -693,8 +693,8 @@ class MemoryCRDTMetrics:
             "operation_count": self.operation_count,
             "sync_count": self.sync_count,
             "error_count": self.error_count,
-            "last_sync_time": self.last_sync_time,
-            "average_sync_time": self.average_sync_time
+            "total_sync_time": self.total_sync_time,
+            "avg_sync_time": self.avg_sync_time
         }
 
 

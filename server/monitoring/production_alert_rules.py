@@ -18,6 +18,8 @@ Implementation based on research findings from:
 Created for TASK-022 Phase 1: Enhanced Alerting & Notification System
 """
 
+# mypy: disable-error-code=call-arg
+
 import logging
 from datetime import timedelta
 from typing import Dict, List, Optional, Any
@@ -663,8 +665,8 @@ class ProductionAlertRules:
         total_rules = len(self.alert_rules)
         enabled_rules = len(self.get_enabled_rules())
         
-        by_category = {}
-        by_severity = {}
+        by_category: Dict[str, int] = {}
+        by_severity: Dict[str, int] = {}
         
         for rule in self.alert_rules.values():
             category = rule.category.value
@@ -679,8 +681,8 @@ class ProductionAlertRules:
             "disabled_rules": total_rules - enabled_rules,
             "by_category": by_category,
             "by_severity": by_severity,
-            "categories": list(AlertCategory),
-            "severities": list(AlertSeverity)
+            "categories": [category.value for category in AlertCategory],
+            "severities": [severity.value for severity in AlertSeverity]
         }
     
     def export_rules_config(self) -> Dict[str, Any]:
@@ -710,6 +712,18 @@ class ProductionAlertRules:
             }
             for rule_key, rule in self.alert_rules.items()
         }
+
+    def get_category_rules(self, category: AlertCategory) -> List[AlertRule]:
+        """Get all rules for a specific category"""
+        return [rule for rule in self.alert_rules.values() if rule.category == category]
+    
+    def get_all_categories(self) -> List[str]:
+        """Get all available alert categories"""
+        return [category.value for category in AlertCategory]
+    
+    def get_all_severities(self) -> List[str]:
+        """Get all available alert severities"""
+        return [severity.value for severity in AlertSeverity]
 
 
 # Global production alert rules instance

@@ -21,7 +21,11 @@ from pydantic import BaseModel
 from .dragonfly_config import get_dragonfly_stats, benchmark_dragonfly
 from .stream_producer import get_stream_producer
 from .feature_workers import get_worker_manager
-from ..auth import get_optional_current_user
+
+# Local fallback for authentication dependency
+def get_optional_current_user():
+    """Fallback authentication function when auth module is not available"""
+    return None
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +128,7 @@ class ConnectionManager:
         self.connection_stats["active_connections"] = len(self.active_connections)
         logger.info(f"WebSocket disconnected: {client_id} (remaining: {len(self.active_connections)})")
     
-    async def subscribe(self, client_id: str, subscription: SubscriptionRequest) -> None:
+    async def subscribe(self, client_id: str, subscription: SubscriptionRequest) -> bool:
         """Subscribe client to specific data streams"""
         if client_id not in self.active_connections:
             return False
@@ -137,15 +141,16 @@ class ConnectionManager:
             type="subscription_confirmed",
             data={
                 "event_types": subscription.event_types,
+                "feature_names": subscription.feature_names,
+                "pattern_types": subscription.pattern_types,
                 "update_interval": subscription.update_interval
             },
-            timestamp=datetime.utcnow().isoformat(),
-            client_id=client_id
+            timestamp=datetime.utcnow().isoformat()
         )
         await self._send_to_client(client_id, confirmation)
         return True
     
-    async def _send_to_client(self, client_id: str, message: WebSocketMessage) -> None:
+    async def _send_to_client(self, client_id: str, message: WebSocketMessage) -> bool:
         """Send message to a specific client"""
         if client_id not in self.active_connections:
             return False
@@ -464,7 +469,7 @@ def create_analytics_router() -> FastAPI:
             raise HTTPException(status_code=500, detail=str(e))
     
     @router.get("/api/analytics/streams/info")
-    async def get_stream_info(current_user = Depends(get_optional_current_user)):
+    async def get_stream_info(current_user = Depends(get_optional_current_user)) -> Dict[str, Any]:
         """Get information about all analytics streams"""
         try:
             producer = await get_stream_producer()
@@ -482,7 +487,7 @@ def create_analytics_router() -> FastAPI:
             raise HTTPException(status_code=500, detail=str(e))
     
     @router.get("/api/analytics/system/status")
-    async def get_system_status(current_user = Depends(get_optional_current_user)):
+    async def get_system_status(current_user = Depends(get_optional_current_user)) -> Dict[str, Any]:
         """Get overall system status"""
         try:
             # DragonflyDB stats

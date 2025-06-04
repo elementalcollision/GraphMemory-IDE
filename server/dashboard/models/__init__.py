@@ -33,6 +33,8 @@ from .analytics_models import (
 )
 
 # Import SSE models (depends on analytics and validation models)
+from typing import Optional, Any, Type
+
 try:
     from .sse_models import (
         SSEResponse,
@@ -45,13 +47,13 @@ try:
     )
 except ImportError:
     # SSE models may have issues, provide fallbacks
-    SSEResponse = None
-    SSEEvent = None
-    SSEEventType = None
-    AnalyticsSSEResponse = None
-    MemorySSEResponse = None
-    GraphSSEResponse = None
-    ErrorSSEResponse = None
+    SSEResponse: Optional[Type[Any]] = None
+    SSEEvent: Optional[Type[Any]] = None
+    SSEEventType: Optional[Type[Any]] = None
+    AnalyticsSSEResponse: Optional[Type[Any]] = None
+    MemorySSEResponse: Optional[Type[Any]] = None
+    GraphSSEResponse: Optional[Type[Any]] = None
+    ErrorSSEResponse: Optional[Type[Any]] = None
 
 __all__ = [
     # Validation Models

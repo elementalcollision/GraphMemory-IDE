@@ -69,6 +69,8 @@ class MemoryOperationEvent(StreamEvent):
     
     def __post_init__(self) -> None:
         self.event_type = EventType.MEMORY_OPERATION
+        if self.timestamp is None:
+            self.timestamp = datetime.utcnow().isoformat()
 
 @dataclass
 class UserInteractionEvent(StreamEvent):
@@ -101,7 +103,7 @@ class StreamProducer:
         self._buffer_size = 100
         self._flush_interval = 5.0  # seconds
         self._flush_task: Optional[asyncio.Task] = None
-        self._stats = {
+        self._stats: Dict[str, Any] = {
             "events_produced": 0,
             "events_failed": 0,
             "last_flush": None,
@@ -159,6 +161,7 @@ class StreamProducer:
         """Produce a memory operation event"""
         event = MemoryOperationEvent(
             event_id=str(uuid.uuid4()),
+            event_type=EventType.MEMORY_OPERATION,
             timestamp=datetime.utcnow().isoformat(),
             source=self.source,
             operation_type=operation_type,
@@ -187,6 +190,7 @@ class StreamProducer:
         """Produce a user interaction event"""
         event = UserInteractionEvent(
             event_id=str(uuid.uuid4()),
+            event_type=EventType.USER_INTERACTION,
             timestamp=datetime.utcnow().isoformat(),
             source=self.source,
             interaction_type=interaction_type,
@@ -212,6 +216,7 @@ class StreamProducer:
         """Produce a system metric event"""
         event = SystemMetricEvent(
             event_id=str(uuid.uuid4()),
+            event_type=EventType.SYSTEM_METRIC,
             timestamp=datetime.utcnow().isoformat(),
             source=self.source,
             metric_name=metric_name,

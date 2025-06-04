@@ -660,35 +660,20 @@ class PerformanceProfiler:
     
     @asynccontextmanager
     async def profile_operation(self, operation_name: str) -> AsyncGenerator[None, None]:
-        """Profile an async operation"""
-        if not self.profiling_enabled:
-            yield
-            return
-        
+        """Context manager for profiling operations"""
         start_time = time.time()
-        start_memory = 0
-        
-        if self.config.memory_profiling_enabled and tracemalloc.is_tracing():
-            current, peak = tracemalloc.get_traced_memory()
-            start_memory = current
-        
-        self.active_operations[operation_name] = (start_time, start_memory)
+        start_memory = self._get_memory_usage()
         
         try:
             yield
         finally:
             end_time = time.time()
-            duration = end_time - start_time
+            end_memory = self._get_memory_usage()
             
-            memory_delta = 0
-            if self.config.memory_profiling_enabled and tracemalloc.is_tracing():
-                current, peak = tracemalloc.get_traced_memory()
-                memory_delta = current - start_memory
+            duration = end_time - start_time
+            memory_delta = end_memory - start_memory
             
             await self._record_operation(operation_name, duration, memory_delta)
-            
-            if operation_name in self.active_operations:
-                del self.active_operations[operation_name]
     
     async def _record_operation(self, operation: str, duration: float, memory_delta: float) -> None:
         """Record operation performance data"""

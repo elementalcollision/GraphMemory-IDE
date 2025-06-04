@@ -104,7 +104,7 @@ class CircuitMetrics:
     state_transitions: List[Dict[str, Any]] = field(default_factory=list)
     
     # Recent requests (for analysis)
-    recent_results: deque = field(default_factory=lambda: deque(maxlen=100))
+    recent_results: deque[RequestResult] = field(default_factory=lambda: deque(maxlen=100))
 
 
 class ErrorClassifier:
@@ -220,8 +220,8 @@ class EnhancedCircuitBreaker:
         self._backoff_attempt = 0
         
         # Request tracking
-        self._request_history: deque = deque(maxlen=self.config.metrics_window_size)
-        self._recent_results: deque = deque(maxlen=100)
+        self._request_history: deque[RequestResult] = deque(maxlen=self.config.metrics_window_size)
+        self._recent_results: deque[RequestResult] = deque(maxlen=100)
         
         # Metrics
         self._metrics = CircuitMetrics(
@@ -254,7 +254,7 @@ class EnhancedCircuitBreaker:
         """Check if circuit is half-open (testing)"""
         return self._state == CircuitState.HALF_OPEN
     
-    async def call(self, func: Callable, *args, **kwargs) -> Any:
+    async def call(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """Execute a function with circuit breaker protection"""
         async with self.protect():
             return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
@@ -422,12 +422,12 @@ class EnhancedCircuitBreaker:
         """Check if error should be monitored by circuit breaker"""
         # Check if error is in ignored exceptions
         for ignored_type in self.config.ignored_exceptions:
-            if isinstance(error, ignored_type):
+            if isinstance(error, ignored_type):  # type: ignore[arg-type]
                 return False
         
         # Check if error is in monitored exceptions
         for monitored_type in self.config.monitored_exceptions:
-            if isinstance(error, monitored_type):
+            if isinstance(error, monitored_type):  # type: ignore[arg-type]
                 return True
         
         return False

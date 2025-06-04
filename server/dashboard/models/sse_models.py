@@ -6,7 +6,7 @@ for type-safe real-time data streaming to the dashboard.
 """
 
 import json
-from typing import Generic, TypeVar, Optional, Dict, Any, Union
+from typing import Generic, TypeVar, Optional, Dict, Any, Union, cast
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, Field, validator
@@ -76,12 +76,12 @@ class SSEEvent(BaseValidationModel, Generic[T]):
         event_id: Optional[str] = None
     ) -> "SSEEvent[SystemMetricsData]":
         """Create an analytics SSE event"""
-        return cls(
+        return cast("SSEEvent[SystemMetricsData]", cls(
             event_type=SSEEventType.ANALYTICS,
             data=data,
             timestamp=data.timestamp,
             event_id=event_id
-        )
+        ))
     
     @classmethod
     def create_memory_event(
@@ -90,12 +90,12 @@ class SSEEvent(BaseValidationModel, Generic[T]):
         event_id: Optional[str] = None
     ) -> "SSEEvent[MemoryInsightsData]":
         """Create a memory insights SSE event"""
-        return cls(
+        return cast("SSEEvent[MemoryInsightsData]", cls(
             event_type=SSEEventType.MEMORY,
             data=data,
             timestamp=data.timestamp,
             event_id=event_id
-        )
+        ))
     
     @classmethod
     def create_graph_event(
@@ -104,12 +104,12 @@ class SSEEvent(BaseValidationModel, Generic[T]):
         event_id: Optional[str] = None
     ) -> "SSEEvent[GraphMetricsData]":
         """Create a graph metrics SSE event"""
-        return cls(
+        return cast("SSEEvent[GraphMetricsData]", cls(
             event_type=SSEEventType.GRAPH,
             data=data,
             timestamp=data.timestamp,
             event_id=event_id
-        )
+        ))
 
 
 class SSEResponse(BaseValidationModel, Generic[T]):
@@ -133,13 +133,13 @@ class SSEResponse(BaseValidationModel, Generic[T]):
         if timestamp is None:
             timestamp = datetime.now().isoformat()
         
-        return cls(
+        return cast("SSEResponse[T]", cls(
             success=True,
             data=data,
             message=message,
             timestamp=timestamp,
             status=AnalyticsStatus.HEALTHY
-        )
+        ))
     
     @classmethod
     def error_response(
@@ -153,14 +153,14 @@ class SSEResponse(BaseValidationModel, Generic[T]):
         if timestamp is None:
             timestamp = datetime.now().isoformat()
         
-        return cls(
+        return cast("SSEResponse[None]", cls(
             success=False,
             data=None,
             message=message,
             error=error,
             timestamp=timestamp,
             status=status
-        )
+        ))
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
@@ -189,11 +189,12 @@ class AnalyticsSSEResponse(SSEResponse[SystemMetricsData]):
     @classmethod
     def from_metrics(cls, metrics: SystemMetricsData) -> "AnalyticsSSEResponse":
         """Create analytics SSE response from metrics data"""
-        return cls.success_response(
+        response = cls.success_response(
             data=metrics,
             message="Analytics metrics updated",
             timestamp=metrics.timestamp
         )
+        return cast("AnalyticsSSEResponse", response)
 
 
 class MemorySSEResponse(SSEResponse[MemoryInsightsData]):
@@ -202,11 +203,12 @@ class MemorySSEResponse(SSEResponse[MemoryInsightsData]):
     @classmethod
     def from_insights(cls, insights: MemoryInsightsData) -> "MemorySSEResponse":
         """Create memory SSE response from insights data"""
-        return cls.success_response(
+        response = cls.success_response(
             data=insights,
             message="Memory insights updated",
             timestamp=insights.timestamp
         )
+        return cast("MemorySSEResponse", response)
 
 
 class GraphSSEResponse(SSEResponse[GraphMetricsData]):
@@ -215,11 +217,12 @@ class GraphSSEResponse(SSEResponse[GraphMetricsData]):
     @classmethod
     def from_metrics(cls, metrics: GraphMetricsData) -> "GraphSSEResponse":
         """Create graph SSE response from metrics data"""
-        return cls.success_response(
+        response = cls.success_response(
             data=metrics,
             message="Graph metrics updated",
             timestamp=metrics.timestamp
         )
+        return cast("GraphSSEResponse", response)
 
 
 class ErrorSSEResponse(SSEResponse[None]):
@@ -236,30 +239,33 @@ class ErrorSSEResponse(SSEResponse[None]):
         if context:
             error_msg = f"{context} - {error_msg}"
         
-        return cls.error_response(
+        response = cls.error_response(
             error=error_msg,
             message="An error occurred during data processing",
             status=AnalyticsStatus.ERROR
         )
+        return cast("ErrorSSEResponse", response)
     
     @classmethod
     def analytics_unavailable(cls) -> "ErrorSSEResponse":
         """Create error response for analytics engine unavailability"""
-        return cls.error_response(
+        response = cls.error_response(
             error="Analytics engine is currently unavailable",
             message="Using fallback data",
             status=AnalyticsStatus.UNAVAILABLE
         )
+        return cast("ErrorSSEResponse", response)
     
     @classmethod
     def validation_error(cls, validation_errors: list[str]) -> "ErrorSSEResponse":
         """Create error response for validation failures"""
         error_msg = "Validation failed: " + "; ".join(validation_errors)
-        return cls.error_response(
+        response = cls.error_response(
             error=error_msg,
             message="Data validation failed",
             status=AnalyticsStatus.ERROR
         )
+        return cast("ErrorSSEResponse", response)
 
 
 # Heartbeat and status models
@@ -268,7 +274,7 @@ class HeartbeatData(BaseValidationModel):
     
     server_time: TimestampStr = Field(description="Server timestamp")
     uptime_seconds: float = Field(description="Server uptime in seconds")
-    active_connections: int = Field(ge=0, description="Number of active SSE connections")
+    active_connections: int = Field(0, ge=0, description="Number of active SSE connections")
     last_data_update: TimestampStr = Field(description="Timestamp of last data update")
     status: AnalyticsStatus = Field(description="Overall system status")
 
@@ -281,8 +287,8 @@ class StatusData(BaseValidationModel):
     graph_system_status: AnalyticsStatus = Field(description="Graph system status")
     sse_server_status: AnalyticsStatus = Field(description="SSE server status")
     last_health_check: TimestampStr = Field(description="Last health check timestamp")
-    error_count: int = Field(ge=0, description="Number of recent errors")
-    warning_count: int = Field(ge=0, description="Number of recent warnings")
+    error_count: int = Field(0, ge=0, description="Number of recent errors")
+    warning_count: int = Field(0, ge=0, description="Number of recent warnings")
 
 
 # Specialized event types

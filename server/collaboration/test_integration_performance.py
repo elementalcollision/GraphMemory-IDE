@@ -116,7 +116,7 @@ class IntegrationPerformanceTest:
         print(f"   Requirements validated: {len(validation_results)}")
         
     async def test_storage_system_performance(self) -> None:
-        """Test Audit Storage System performance"""
+        """Test storage system performance under load"""
         print("\n🗄️ Testing Audit Storage System Performance...")
         
         # Test batch storage performance

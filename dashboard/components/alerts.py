@@ -31,6 +31,36 @@ from ..utils.api_client import get_api_client, APIClient
 from ..utils.auth import get_current_user, require_authentication
 from ..utils.formatting import format_timestamp, format_duration, get_severity_color
 
+# Import compatibility layer for Streamlit features
+import sys
+from pathlib import Path
+dashboard_path = Path(__file__).parent.parent
+sys.path.append(str(dashboard_path))
+
+try:
+    from utils.streamlit_compat import st_rerun, st_data_editor, get_column_config
+except ImportError:
+    # Fallback definitions if compatibility layer is not available
+    def st_rerun() -> None:
+        if hasattr(st, 'experimental_rerun'):
+            st.experimental_rerun()
+        else:
+            st.stop()
+    
+    def st_data_editor(data: pd.DataFrame, **kwargs: Any) -> pd.DataFrame:
+        st.dataframe(data)
+        return data
+    
+    def get_column_config():
+        class MockColumnConfig:
+            @staticmethod
+            def CheckboxColumn(label: str, **kwargs: Any) -> Dict[str, Any]:
+                return {"type": "checkbox", "label": label}
+            @staticmethod
+            def TextColumn(label: str, **kwargs: Any) -> Dict[str, Any]:
+                return {"type": "text", "label": label}
+        return MockColumnConfig()
+
 # Constants for alert management
 ALERT_SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO']
 ALERT_STATUSES = ['ACTIVE', 'ACKNOWLEDGED', 'RESOLVED', 'SUPPRESSED']
