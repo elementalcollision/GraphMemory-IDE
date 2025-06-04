@@ -501,7 +501,7 @@ class OperationalTransform:
         
         return text
     
-    def _apply_object_operation(self, obj: dict, operation: Operation) -> dict:
+    def _apply_object_operation(self, obj: Dict[str, Any], operation: Operation) -> Dict[str, Any]:
         """Apply operation to object content"""
         result = obj.copy()
         

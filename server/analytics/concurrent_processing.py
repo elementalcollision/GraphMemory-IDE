@@ -214,7 +214,7 @@ class ConcurrentProcessingManager:
             if self.thread_executor:
                 async with self.thread_pool_context() as executor:
                     loop = asyncio.get_event_loop()
-                    test_result = await loop.run_in_executor(executor, test_function)
+                    test_result = await loop.run_in_executor(executor, lambda: test_function())
                     health_status["thread_executor"] = test_result == "test"
         except Exception as e:
             logger.error(f"Thread executor health check failed: {e}")
@@ -225,7 +225,7 @@ class ConcurrentProcessingManager:
             if self.process_executor:
                 async with self.process_pool_context() as executor:
                     loop = asyncio.get_event_loop()
-                    test_result = await loop.run_in_executor(executor, test_function)
+                    test_result = await loop.run_in_executor(executor, lambda: test_function())
                     health_status["process_executor"] = test_result == "test"
         except Exception as e:
             logger.error(f"Process executor health check failed: {e}")

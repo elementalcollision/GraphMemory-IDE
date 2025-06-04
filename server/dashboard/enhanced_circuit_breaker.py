@@ -317,16 +317,13 @@ class EnhancedCircuitBreaker:
                 
                 return False
             
-            elif self._state == CircuitState.HALF_OPEN:
+            else:  # CircuitState.HALF_OPEN
                 # Allow limited requests in half-open state
                 if self._half_open_requests < self.config.half_open_max_requests:
                     self._half_open_requests += 1
                     return True
                 
                 return False
-            
-            # This should never be reached, but included for completeness
-            return False
     
     async def _record_success(self, result: RequestResult) -> None:
         """Record a successful request"""
@@ -423,12 +420,12 @@ class EnhancedCircuitBreaker:
         """Check if error should be monitored by circuit breaker"""
         # Check if error is in ignored exceptions
         for ignored_type in self.config.ignored_exceptions:
-            if isinstance(error, ignored_type):  # type: ignore[arg-type]
+            if isinstance(error, ignored_type):
                 return False
         
         # Check if error is in monitored exceptions
         for monitored_type in self.config.monitored_exceptions:
-            if isinstance(error, monitored_type):  # type: ignore[arg-type]
+            if isinstance(error, monitored_type):
                 return True
         
         return False

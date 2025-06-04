@@ -163,6 +163,11 @@ class AnalyticsBenchmarkSuite:
         results = []
         algorithms = [CentralityType.PAGERANK, CentralityType.BETWEENNESS, CentralityType.CLOSENESS, CentralityType.EIGENVECTOR]
         
+        # Check if graph algorithms are available
+        if not self.graph_algorithms:
+            logger.warning("GraphAlgorithms not available, skipping centrality benchmarks")
+            return results
+        
         for size in graph_sizes:
             # Generate test graph
             test_graph = self._generate_test_graph(size)

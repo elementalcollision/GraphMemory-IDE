@@ -435,7 +435,7 @@ class RedisBackupManager:
         """
         logger.info(f"Validating backup: {backup_id}")
         
-        validation_results = {
+        validation_results: Dict[str, Any] = {
             "backup_id": backup_id,
             "is_valid": True,
             "checks": {},

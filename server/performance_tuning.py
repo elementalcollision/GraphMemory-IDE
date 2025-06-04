@@ -445,7 +445,7 @@ track_functions = all
             """))
             tables = result.fetchall()
             
-            results = {
+            results: Dict[str, Any] = {
                 'tables_analyzed': len(tables),
                 'start_time': datetime.now().isoformat(),
                 'errors': []

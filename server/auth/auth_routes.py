@@ -82,7 +82,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db=Depends(get_db),
+    db: Any = Depends(get_db),
     settings: AdvancedSettings = Depends()
 ) -> User:
     """Get current authenticated user from JWT token."""

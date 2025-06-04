@@ -449,7 +449,7 @@ class MFAManager:
     - Security monitoring and logging
     """
     
-    def __init__(self, settings, db_session: Any) -> None:
+    def __init__(self, settings: Any, db_session: Any) -> None:
         self.settings = settings
         self.db = db_session
         self.device_manager = MFADeviceManager(db_session)
@@ -612,7 +612,7 @@ class MFAManager:
 mfa_manager = None
 
 
-async def initialize_mfa_manager(settings, db_session: Any) -> None:
+async def initialize_mfa_manager(settings: Any, db_session: Any) -> None:
     """Initialize the global MFA manager."""
     global mfa_manager
     if settings.MFA_ENABLED:

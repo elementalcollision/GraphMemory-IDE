@@ -246,9 +246,10 @@ class MemoryOptimizer:
     def get_memory_usage(self) -> Dict[str, Any]:
         """Get current memory usage statistics."""
         try:
-            process = psutil.Process()
-            memory_info = process.memory_info()
-            memory_percent = process.memory_percent()
+            # Get current process memory info
+            current_process = psutil.Process()
+            memory_info = current_process.memory_info()
+            memory_percent = current_process.memory_percent()
             
             # System memory info
             virtual_memory = psutil.virtual_memory()
@@ -474,7 +475,7 @@ class PerformanceOptimizer:
         """Get current performance metrics."""
         # Collect query times from cache
         query_cache = get_query_cache()
-        query_times = []
+        query_times: List[float] = []
         
         # Get memory usage
         memory_info = self.memory_optimizer.get_memory_usage()

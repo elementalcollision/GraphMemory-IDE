@@ -22,7 +22,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple, Union, Any, Callable
+from typing import Dict, List, Optional, Set, Tuple, Union, Any, Callable, Type
 from uuid import UUID, uuid4
 from dataclasses import dataclass, field
 from collections import defaultdict, deque
@@ -669,8 +669,14 @@ class AlertManager:
                 # Load alert states
                 async with db.execute("SELECT alert_id, state FROM alert_states") as cursor:
                     async for row in cursor:
+                        alert_id = row[0]
                         state_value = row[1]
-                        self._alert_states[row[0]] = AlertState(state_value)
+                        try:
+                            self._alert_states[alert_id] = AlertState(state_value)
+                        except ValueError:
+                            # Handle invalid state values gracefully
+                            logger.warning(f"Invalid alert state '{state_value}' for alert {alert_id}, defaulting to CREATED")
+                            self._alert_states[alert_id] = AlertState.CREATED
                 
                 # Load alert history
                 async with db.execute("SELECT alert_id, action, timestamp, data FROM alert_history ORDER BY timestamp") as cursor:
@@ -757,7 +763,7 @@ class AlertManager:
                                  if state == AlertState.ESCALATED)
             
             # Calculate average resolution time
-            resolution_times = []
+            resolution_times: List[float] = []
             for alert in self._alerts.values():
                 if alert.resolved_at and alert.triggered_at:
                     resolution_time = (alert.resolved_at - alert.triggered_at).total_seconds() / 60

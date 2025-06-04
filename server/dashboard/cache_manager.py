@@ -285,7 +285,7 @@ class CacheWarmer:
             except Exception as e:
                 print(f"Preload failed for {key}: {e}")
     
-    async def start_background_warming(self, interval_seconds: int = 600) -> Optional[asyncio.Task]:
+    async def start_background_warming(self, interval_seconds: int = 600) -> Optional[asyncio.Task[None]]:
         """Start background cache warming task"""
         if not self.warming_enabled:
             return None

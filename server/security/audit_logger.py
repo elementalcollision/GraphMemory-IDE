@@ -127,8 +127,8 @@ class AuditEvent:
         """Create from dictionary"""
         return cls(
             event_id=data['event_id'],
-            event_type=AuditEventType(str(data['event_type'])),  # type: ignore
-            level=AuditLevel(str(data['level'])),  # type: ignore
+            event_type=AuditEventType(data['event_type']),
+            level=AuditLevel(data['level']),
             timestamp=datetime.fromisoformat(data['timestamp']),
             source=data['source'],
             user_id=data.get('user_id'),
@@ -142,7 +142,7 @@ class AuditEvent:
             message=data.get('message', ''),
             details=data.get('details', {}),
             tags=data.get('tags', []),
-            compliance_frameworks=[ComplianceFramework(str(fw)) for fw in data.get('compliance_frameworks', [])],  # type: ignore
+            compliance_frameworks=[ComplianceFramework(fw) for fw in data.get('compliance_frameworks', [])],
             risk_score=data.get('risk_score'),
             request_id=data.get('request_id'),
             correlation_id=data.get('correlation_id'),
