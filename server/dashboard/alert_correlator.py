@@ -134,7 +134,7 @@ class TemporalCorrelator:
         """Find temporal correlations for new alert"""
         try:
             correlated_alerts = set()
-            correlation_factors = {}
+            correlation_factors: Dict[str, Any] = {}
             
             # Find alerts within time window
             current_time = new_alert.triggered_at
@@ -567,7 +567,7 @@ class AlertCorrelator:
         self.alert_to_correlation: Dict[UUID, UUID] = {}
         
         # Performance tracking
-        self.correlation_metrics = {
+        self.correlation_metrics: Dict[str, Any] = {
             'total_correlations': 0,
             'successful_correlations': 0,
             'processing_times': deque(maxlen=1000),

@@ -79,15 +79,28 @@ class CollaborationMessage:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "CollaborationMessage":
         """Create from dictionary"""
+        # Handle enum conversions with explicit typing
+        message_type_raw = data["message_type"]
+        if isinstance(message_type_raw, MessageType):
+            message_type: MessageType = message_type_raw
+        else:
+            message_type = MessageType(str(message_type_raw))
+            
+        priority_raw = data.get("priority", "normal")
+        if isinstance(priority_raw, MessagePriority):
+            priority: MessagePriority = priority_raw
+        else:
+            priority = MessagePriority(str(priority_raw))
+            
         return cls(
             message_id=data["message_id"],
-            message_type=MessageType(data["message_type"]) if isinstance(data["message_type"], str) else data["message_type"],
+            message_type=message_type,
             session_id=data["session_id"],
             user_id=data["user_id"],
             server_id=data["server_id"],
             payload=data["payload"],
             timestamp=datetime.fromisoformat(data["timestamp"]),
-            priority=MessagePriority(data.get("priority", "normal")) if isinstance(data.get("priority", "normal"), str) else data.get("priority", MessagePriority.NORMAL),
+            priority=priority,
             retry_count=data.get("retry_count", 0),
             max_retries=data.get("max_retries", 3),
             expiry=datetime.fromisoformat(data["expiry"]) if data.get("expiry") else None

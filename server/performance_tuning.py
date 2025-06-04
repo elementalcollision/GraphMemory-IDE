@@ -73,7 +73,7 @@ class DatabaseOptimizer:
         """Close database connections"""
         await self.engine.dispose()
 
-    async def get_system_metrics(self) -> Dict[str, float]:
+    async def get_system_metrics(self) -> Dict[str, Any]:
         """Get current system resource metrics"""
         metrics = {
             'cpu_usage': psutil.cpu_percent(interval=1),
@@ -376,7 +376,8 @@ class DatabaseOptimizer:
         max_connections = min(200, max(100, int(total_memory_gb * 50)))
         
         # I/O settings
-        effective_io_concurrency = psutil.cpu_count() * 2
+        cpu_count = psutil.cpu_count()
+        effective_io_concurrency = (cpu_count or 4) * 2
         
         return OptimizationSettings(
             shared_buffers=f"{shared_buffers_gb:.1f}GB",

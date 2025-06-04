@@ -115,7 +115,7 @@ class KuzuBackupManager:
                 
                 # Run compression in thread pool to avoid blocking
                 create_archive_func: Callable[[], bool] = create_archive
-                success = await asyncio.get_event_loop().run_in_executor(None, create_archive_func)  # type: ignore
+                success = await asyncio.get_event_loop().run_in_executor(None, create_archive_func)
                 if not success:
                     raise RuntimeError("Failed to create archive")
                 
@@ -136,7 +136,7 @@ class KuzuBackupManager:
                         return False
                 
                 copy_directory_func: Callable[[], bool] = copy_directory
-                success = await asyncio.get_event_loop().run_in_executor(None, copy_directory_func)  # type: ignore
+                success = await asyncio.get_event_loop().run_in_executor(None, copy_directory_func)
                 if not success:
                     raise RuntimeError("Failed to copy directory")
                 
@@ -332,7 +332,7 @@ class KuzuBackupManager:
                         return False
                 
                 extract_archive_func: Callable[[], bool] = extract_archive
-                success = await asyncio.get_event_loop().run_in_executor(None, extract_archive_func)  # type: ignore
+                success = await asyncio.get_event_loop().run_in_executor(None, extract_archive_func)
                 if not success:
                     raise RuntimeError("Failed to extract archive")
                 
@@ -353,7 +353,7 @@ class KuzuBackupManager:
                             return False
                     
                     copy_directory_func: Callable[[], bool] = copy_directory
-                    success = await asyncio.get_event_loop().run_in_executor(None, copy_directory_func)  # type: ignore
+                    success = await asyncio.get_event_loop().run_in_executor(None, copy_directory_func)
                     if not success:
                         raise RuntimeError("Failed to copy directory")
                 else:
@@ -418,7 +418,7 @@ class KuzuBackupManager:
                             return False
                     
                     check_archive_func: Callable[[], bool] = check_archive
-                    is_valid_archive = await asyncio.get_event_loop().run_in_executor(None, check_archive_func)  # type: ignore
+                    is_valid_archive = await asyncio.get_event_loop().run_in_executor(None, check_archive_func)
                     
                     if is_valid_archive:
                         validation_results["checks"]["archive_integrity"] = "PASS"

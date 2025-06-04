@@ -179,7 +179,7 @@ class BackwardCompatibilityLayer:
 
     def __init__(self, integration_manager: CollaborationIntegrationManager) -> None:
         self.integration_manager = integration_manager
-        self.compatibility_cache = {}
+        self.compatibility_cache: Dict[str, Any] = {}
 
     async def translate_legacy_api_call(self, endpoint: str, data: Dict[str, Any], 
                                       user_id: str) -> Dict[str, Any]:
@@ -253,7 +253,7 @@ class PerformanceOptimizer:
 
     def __init__(self, redis_client: Redis) -> None:
         self.redis_client = redis_client
-        self.operation_cache = {}
+        self.operation_cache: Dict[str, Any] = {}
         self.batch_queue = []
         self.cache_ttl = 300  # 5 minutes
 

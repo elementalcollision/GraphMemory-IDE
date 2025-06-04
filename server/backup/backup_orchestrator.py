@@ -333,7 +333,7 @@ class BackupOrchestrator:
     
     async def get_backup_status(self) -> Dict[str, Any]:
         """Get comprehensive backup status"""
-        status = {
+        status: Dict[str, Any] = {
             "jobs": {},
             "active_executions": {},
             "recent_executions": [],

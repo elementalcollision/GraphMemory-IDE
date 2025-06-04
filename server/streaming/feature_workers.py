@@ -523,7 +523,7 @@ class FeatureWorkerManager:
         self.running = False
         self.memory_worker = MemoryOperationFeatureWorker()
         self.pattern_worker = PatternDetectionWorker()
-        self._workers = [self.memory_worker, self.pattern_worker]
+        self._workers: List[Union[MemoryOperationFeatureWorker, PatternDetectionWorker]] = [self.memory_worker, self.pattern_worker]
     
     async def start(self) -> None:
         """Start all workers"""

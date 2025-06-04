@@ -78,14 +78,18 @@ class Operation:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Operation":
         """Create operation from dictionary"""
-        # Handle enum conversions
-        operation_type = data["operation_type"]
-        if isinstance(operation_type, str):
-            operation_type = OperationType(operation_type)
+        # Handle enum conversions with proper type casting
+        operation_type_raw = data["operation_type"]
+        if isinstance(operation_type_raw, OperationType):
+            operation_type = operation_type_raw
+        else:
+            operation_type = OperationType(str(operation_type_raw))
             
-        target = data["target"]
-        if isinstance(target, str):
-            target = OperationTarget(target)
+        target_raw = data["target"]
+        if isinstance(target_raw, OperationTarget):
+            target = target_raw
+        else:
+            target = OperationTarget(str(target_raw))
             
         return cls(
             operation_id=data["operation_id"],
