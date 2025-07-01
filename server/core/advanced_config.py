@@ -276,7 +276,9 @@ class AdvancedSettings(BaseSettings):
         return self.ENVIRONMENT.lower() == "development"
     
     def is_testing(self) -> bool:
-        """Check if running in testing environment."""
+        """
+        Return True if the current environment is set to "test" or "testing".
+        """
         return self.ENVIRONMENT.lower() in ["test", "testing"]
     
     model_config = {

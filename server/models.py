@@ -31,7 +31,18 @@ class TelemetryEvent(BaseModel):
     @validator('timestamp')
     @classmethod
     def validate_timestamp(cls, v: str) -> str:
-        """Validate timestamp format"""
+        """
+        Validates that the provided timestamp string is in ISO 8601 format.
+        
+        Parameters:
+            v (str): The timestamp string to validate.
+        
+        Returns:
+            str: The validated timestamp string.
+        
+        Raises:
+            ValueError: If the timestamp is not in valid ISO 8601 format.
+        """
         try:
             datetime.fromisoformat(v.replace('Z', '+00:00'))
             return v
@@ -105,7 +116,12 @@ class AnalyticsQuery(BaseModel):
     @validator('limit')
     @classmethod
     def validate_limit(cls, v: int) -> int:
-        """Validate limit range"""
+        """
+        Validates that the limit value is within the range 1 to 10,000 inclusive.
+        
+        Raises:
+            ValueError: If the limit is less than 1 or greater than 10,000.
+        """
         if v < 1 or v > 10000:
             raise ValueError('limit must be between 1 and 10000')
         return v
@@ -186,7 +202,15 @@ class KuzuQueryRequest(BaseModel):
     @validator('cypher_query')
     @classmethod
     def validate_cypher_query(cls, v: str) -> str:
-        """Basic validation for Cypher query"""
+        """
+        Validates that the Cypher query string is not empty or whitespace.
+        
+        Raises:
+            ValueError: If the Cypher query is empty or contains only whitespace.
+        
+        Returns:
+            The trimmed Cypher query string.
+        """
         if not v or not v.strip():
             raise ValueError('Cypher query cannot be empty')
         return v.strip()
@@ -194,7 +218,15 @@ class KuzuQueryRequest(BaseModel):
     @validator('timeout_seconds')
     @classmethod
     def validate_timeout(cls, v: int) -> int:
-        """Validate timeout range"""
+        """
+        Validates that the timeout value is within the allowed range of 1 to 300 seconds.
+        
+        Raises:
+            ValueError: If the timeout is less than 1 or greater than 300 seconds.
+        
+        Returns:
+            int: The validated timeout value.
+        """
         if v < 1 or v > 300:
             raise ValueError('timeout_seconds must be between 1 and 300')
         return v
