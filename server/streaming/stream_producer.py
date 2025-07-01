@@ -254,14 +254,32 @@ class StreamProducer:
     
     async def _periodic_flush(self) -> None:
         """Periodically flush events from buffer to streams"""
+        consecutive_errors = 0
+        max_consecutive_errors = 10
+        base_backoff = 1.0
+        max_backoff = 60.0
+        
         while True:
             try:
                 await asyncio.sleep(self._flush_interval)
                 await self._flush_buffer()
+                consecutive_errors = 0  # Reset error count on success
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in periodic flush: {e}")
+                consecutive_errors += 1
+                logger.error(f"Error in periodic flush: {e} (consecutive errors: {consecutive_errors})")
+                
+                # Implement circuit breaker pattern
+                if consecutive_errors >= max_consecutive_errors:
+                    logger.critical(f"Too many consecutive flush errors ({consecutive_errors}), entering circuit breaker mode")
+                    await asyncio.sleep(max_backoff)
+                    consecutive_errors = 0  # Reset to try again
+                else:
+                    # Exponential backoff with jitter
+                    backoff_time = min(base_backoff * (2 ** consecutive_errors), max_backoff)
+                    jitter = backoff_time * 0.1 * (0.5 - asyncio.get_event_loop().time() % 1)
+                    await asyncio.sleep(backoff_time + jitter)
     
     async def _flush_buffer(self) -> None:
         """Flush buffered events to DragonflyDB streams"""

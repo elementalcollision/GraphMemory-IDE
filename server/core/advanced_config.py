@@ -16,9 +16,10 @@ import os
 import secrets
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, field_validator
+from pydantic_settings import BaseSettings
 
 
-class AdvancedSettings(BaseModel):
+class AdvancedSettings(BaseSettings):
     """Enhanced settings for GraphMemory-IDE advanced features."""
     
     # Base application settings
@@ -278,10 +279,12 @@ class AdvancedSettings(BaseModel):
         """Check if running in testing environment."""
         return self.ENVIRONMENT.lower() in ["test", "testing"]
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
 
 
 # Global settings instance

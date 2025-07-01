@@ -298,7 +298,8 @@ class InstrumentationConfig:
         for threshold_name, threshold_value in self.alert_thresholds.items():
             if not isinstance(threshold_value, (int, float)):
                 errors.append(f"alert threshold {threshold_name} must be numeric, got {type(threshold_value)}")
-            elif threshold_value < 0:
+                continue  # Skip further validation for non-numeric values
+            if threshold_value < 0:
                 errors.append(f"alert threshold {threshold_name} must be non-negative, got {threshold_value}")
         
         # Validate endpoints
