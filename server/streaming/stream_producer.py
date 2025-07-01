@@ -253,7 +253,11 @@ class StreamProducer:
         await self.produce_event(event)
     
     async def _periodic_flush(self) -> None:
-        """Periodically flush events from buffer to streams"""
+        """
+        Periodically flushes buffered events to their respective streams, applying error handling with exponential backoff and a circuit breaker.
+        
+        This coroutine runs in a loop, sleeping for the configured flush interval before attempting to flush the event buffer. On repeated flush failures, it increases the delay between attempts using exponential backoff with jitter, and after a threshold of consecutive errors, temporarily halts further attempts before retrying. Cancels cleanly when the task is stopped.
+        """
         consecutive_errors = 0
         max_consecutive_errors = 10
         base_backoff = 1.0
@@ -282,7 +286,11 @@ class StreamProducer:
                     await asyncio.sleep(backoff_time + jitter)
     
     async def _flush_buffer(self) -> None:
-        """Flush buffered events to DragonflyDB streams"""
+        """
+        Flushes all buffered events to their corresponding DragonflyDB streams.
+        
+        Events are grouped by stream type and sent to DragonflyDB using the xadd command, maintaining a maximum of 10,000 events per stream. On successful flush, event production statistics are updated. If an error occurs during the flush, failed events are re-added to the buffer and failure statistics are incremented.
+        """
         if not self._event_buffer:
             return
         

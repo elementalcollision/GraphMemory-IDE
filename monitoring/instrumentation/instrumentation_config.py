@@ -266,10 +266,10 @@ class InstrumentationConfig:
     
     def validate(self) -> List[str]:
         """
-        Validate configuration and return list of validation errors.
+        Validates the instrumentation configuration and returns a list of error messages for any invalid fields.
         
         Returns:
-            List of validation error messages
+            List[str]: A list of validation error messages. The list is empty if the configuration is valid.
         """
         errors = []
         
