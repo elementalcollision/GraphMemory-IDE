@@ -2,6 +2,8 @@
 
 A comprehensive IDE for graph-based memory management and collaborative development.
 
+> **🚀 Performance Refactoring in Progress**: This project is currently being refactored to [Condon Python](https://github.com/exaloop/codon) for enhanced performance. The refactoring targets computational components for 10x+ performance improvements while maintaining API compatibility.
+
 ## 📚 Documentation
 
 All documentation has been organized into topic-specific directories for better navigation:
@@ -57,4 +59,8 @@ All documentation has been organized into topic-specific directories for better 
 
 ---
 
-**Note**: All documentation has been reorganized for better discoverability. If you can't find a specific document, check the appropriate topic directory above. 
+**Note**: All documentation has been reorganized for better discoverability. If you can't find a specific document, check the appropriate topic directory above.
+
+## 🔗 External Resources
+
+- **[Condon Python](https://github.com/exaloop/codon)** - High-performance Python compiler used for performance optimization in this project 
