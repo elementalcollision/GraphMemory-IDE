@@ -13,6 +13,39 @@ GITHUB_READY_SUMMARY.md
 # Development and Enhancement Files
 enhancements/
 
+# CRITICAL: Sensitive Configuration Files
+# These contain actual secrets and credentials - NEVER commit these
+config/*_secrets.json
+config/*_secrets.yaml
+config/*_secrets.yml
+config/secrets/
+config/credentials/
+config/keys/
+config/tokens/
+
+# Environment-specific secrets
+config/development_secrets.json
+config/production_secrets.json
+config/staging_secrets.json
+config/testing_secrets.json
+
+# Kubernetes secrets (contain actual passwords)
+kubernetes/manifests/configmaps-secrets.yaml
+kubernetes/secrets/
+kubernetes/*-secrets.yaml
+kubernetes/*-secrets.yml
+
+# Security and secrets
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.truststore
+
 # Python
 __pycache__/
 *.py[cod]
@@ -45,6 +78,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+codon-dev-env/
 
 # PyInstaller
 *.manifest
@@ -98,6 +132,7 @@ celerybeat.pid
 .env.development.local
 .env.test.local
 .env.production.local
+.env.staging.local
 
 # Spyder project settings
 .spyderproject
@@ -301,6 +336,8 @@ error_logs/
 .env.local
 .env.production
 .env.development
+.env.staging
+.env.testing
 secrets/
 *.pem
 *.key
@@ -348,6 +385,21 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
+# Cursor IDE files
+.cursor/
+
+# Compilation artifacts
+compilation_plan.json
+compile.sh
+env.codon
+
+# Thread safety reports (generated)
+thread-safety-results.xml
+reports/thread_safety_report.json
+
+# Dependency analysis (generated)
+dependency_analysis.json
+
 # Keep important files
 !requirements.txt
 !requirements.in
@@ -355,4 +407,22 @@ pnpm-lock.yaml
 !docker-compose.yml
 !Dockerfile
 !.gitkeep
-!README.md 
+!README.md
+
+# Generated reports (keep structure, ignore generated content)
+reports/analysis/
+reports/code-quality/
+reports/security/
+reports/validation/
+reports/thread_safety/
+
+# Test results and artifacts
+tests/performance/results/
+tests/thread_safety/results/
+tests/integration/results/
+
+# Local development files
+Makefile
+*.local
+*.dev
+*.test 
