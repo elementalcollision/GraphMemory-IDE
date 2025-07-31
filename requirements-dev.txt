@@ -1,0 +1,79 @@
+# Development dependencies for GraphMemory-IDE Project
+# These packages are installed within the virtual environment for isolation
+
+# Code formatting and linting
+black>=25.1.0
+pylint>=3.1.0
+flake8>=7.2.0
+isort>=5.13.0
+autopep8>=2.0.0
+
+# Type checking and validation
+mypy>=1.10.0
+pyright>=1.1.0
+types-requests>=2.31.0
+types-PyYAML>=6.0.0
+
+# Testing and quality assurance
+pytest>=8.3.5
+pytest-cov>=6.1.1
+pytest-mock>=3.12.0
+pytest-asyncio>=0.24.0
+pytest-xdist>=3.6.0
+pytest-html>=4.1.0
+pytest-benchmark>=4.0.0
+
+# Development tools and utilities
+pre-commit>=4.0.0
+ipdb>=0.13.13
+ipython>=8.20.0
+jupyter>=1.0.0
+
+# Documentation generation
+sphinx>=7.2.6
+sphinx-rtd-theme>=2.0.0
+sphinx-autodoc-typehints>=1.25.0
+myst-parser>=2.0.0
+
+# Code analysis and security
+bandit>=1.7.0
+safety>=2.3.0
+semgrep>=1.50.0
+radon>=6.0.0
+mccabe>=0.7.0
+
+# Performance profiling
+memory-profiler>=0.61.0
+psutil>=7.0.0
+py-spy>=0.3.14
+
+# Development environment
+python-dotenv>=1.0.0
+click>=8.2.1
+rich>=14.0.0
+
+# Build and packaging
+setuptools>=69.0.0
+wheel>=0.42.0
+build>=1.2.0
+twine>=4.0.0
+
+# Dependency management
+pip-tools>=8.0.0
+pipdeptree>=2.16.0
+
+# Git hooks and version control
+pre-commit>=4.0.0
+gitpython>=3.1.44
+
+# API development and testing
+httpie>=3.2.0
+curlify>=2.2.1
+
+# Database development
+alembic>=1.16.1
+sqlalchemy>=2.0.41
+
+# Monitoring and debugging
+debugpy>=1.8.0
+py-spy>=0.3.14 

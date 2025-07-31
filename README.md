@@ -6,60 +6,48 @@ A comprehensive IDE for graph-based memory management and collaborative developm
 
 ## 📚 Documentation
 
-All documentation has been organized into topic-specific directories for better navigation:
+All documentation is organized in the [`docs/`](docs/) folder with logical structure:
 
-### 🏗️ **Project & Architecture**
-- [Project Overview](docs/project/) - Main project documentation, PRD, contributing guidelines
-- [Architecture](docs/architecture/) - System architecture, code paths, network flows
-- [API Reference](docs/api/) - API documentation and guides
-
-### 🛠️ **Development**
-- [Developer Guide](docs/development/) - Development setup, code quality, enhancements
-- [IDE Plugins](docs/ide-plugins/) - Plugin development and documentation
-- [Testing](docs/testing/) - Testing setup and procedures
-
-### 🚀 **Deployment & Operations**
-- [Deployment](docs/deployment/) - Docker, Kubernetes, and deployment guides
-- [Operations](docs/operations/) - System operations, performance tuning
-- [Monitoring](docs/monitoring/) - Monitoring setup and alerting systems
-
-### 📊 **Analytics & User Experience**
-- [Analytics](docs/analytics/) - Analytics system and machine learning components
-- [User Guides](docs/user-guides/) - Tutorials and user documentation
-
-### 📋 **Project Management**
-- [Summaries](docs/summaries/) - Project summaries, session logs, and analysis
-- [Security](docs/security/) - Security documentation and guidelines
+- **[📖 Documentation Index](docs/README.md)** - Complete documentation navigation
+- **[🚀 Getting Started](docs/project/README.md)** - Project overview and setup
+- **[🏗️ Architecture](docs/architecture/)** - System design and code structure
+- **[🛠️ Development](docs/development/)** - Development guides and best practices
+- **[🧪 Testing](docs/testing/)** - Testing strategies and frameworks
+- **[📊 Monitoring](docs/monitoring/)** - System monitoring and observability
+- **[🚀 Deployment](docs/deployment/)** - Deployment and CI/CD guides
+- **[📈 Analytics](docs/analytics/)** - Analytics system documentation
+- **[📋 Requirements](docs/requirements/)** - Dependency management and setup
 
 ## 🚀 Quick Start
 
-1. **Setup**: See [Deployment Guide](docs/deployment/HOW_TO_RUN_GRAPHMEMORY_IDE.md)
-2. **Development**: See [Developer Guide](docs/development/)
-3. **API**: See [API Documentation](docs/api/)
-4. **User Guide**: See [User Documentation](docs/user-guides/)
+1. **Setup Environment**: See [Setup Guide](docs/setup/GITHUB_SETUP.md)
+2. **Install Dependencies**: See [Requirements Guide](docs/requirements/REQUIREMENTS_OVERVIEW.md)
+3. **Development**: See [Development Guide](docs/development/README.md)
+4. **API Reference**: See [API Documentation](docs/api/API_GUIDE.md)
 
 ## 🔧 Development
 
-- **Code Quality**: [Code Quality Status](docs/development/COMPREHENSIVE_CODE_QUALITY_STATUS.md)
-- **Testing**: [Testing Setup](docs/development/TESTING_SETUP.md)
+- **Requirements**: [Requirements Management](docs/requirements/REQUIREMENTS_OVERVIEW.md)
+- **Code Quality**: [Code Quality Standards](docs/development/CODE_QUALITY_IMPROVEMENT_SUMMARY.md)
+- **Testing**: [Testing Guide](docs/testing/test-summary.md)
 - **Contributing**: [Contributing Guidelines](docs/project/CONTRIBUTING.md)
 
 ## 📈 Project Status
 
-- **Current Phase**: See [Phase 3 Summary](docs/summaries/PHASE3_COMPLETION_SUMMARY.md)
-- **Recent Updates**: See [End of Day Summary](docs/summaries/END_OF_DAY_SUMMARY_JUNE01_2025.md)
-- **Troubleshooting**: See [Troubleshooting Guide](docs/summaries/TROUBLESHOOTING.md)
+- **Current Phase**: See [Session Summaries](docs/summaries/)
+- **Recent Updates**: See [Requirements Update Summary](docs/requirements/REQUIREMENTS_UPDATE_SUMMARY.md)
+- **Migration Progress**: See [Condon Migration](docs/condon-migration/README.md)
 
 ## 🔗 Quick Links
 
 - [Project Requirements](docs/project/PRD%20-%20GraphMemory-IDE%20-%20Combined.md)
 - [Architecture Overview](docs/architecture/ARCHITECTURE_OVERVIEW.md)
-- [Docker Deployment](docs/deployment/DOCKER_DEPLOYMENT_GUIDE.md)
-- [Security Guidelines](docs/project/SECURITY.md)
+- [Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md)
+- [Team Onboarding](docs/team_onboarding.md)
 
 ---
 
-**Note**: All documentation has been reorganized for better discoverability. If you can't find a specific document, check the appropriate topic directory above.
+**Note**: All documentation has been reorganized for better discoverability. Start with the [Documentation Index](docs/README.md) for complete navigation.
 
 ## 🔗 External Resources
 

@@ -1,0 +1,87 @@
+# Test Requirements for GraphMemory-IDE Project
+# This file contains all dependencies needed for comprehensive testing
+
+# Core Testing Framework
+pytest>=8.3.5
+pytest-cov>=6.1.1
+pytest-mock>=3.12.0
+pytest-asyncio>=0.24.0
+pytest-xdist>=3.6.0
+pytest-html>=4.1.0
+pytest-benchmark>=4.0.0
+
+# Coverage and Quality
+coverage[toml]>=7.8.2
+pytest-cov>=6.1.1
+
+# HTTP Testing
+httpx>=0.28.1
+requests>=2.32.3
+responses>=0.24.0
+
+# Database Testing
+pytest-postgresql>=4.1.0
+pytest-redis>=4.0.0
+
+# Async Testing
+pytest-asyncio>=0.24.0
+asyncio-test>=0.3.0
+
+# Performance Testing
+locust>=2.37.5
+pytest-benchmark>=4.0.0
+
+# Browser Testing
+playwright>=1.52.0
+pytest-playwright>=0.4.0
+
+# Security Testing
+bandit>=1.7.0
+safety>=2.3.0
+
+# Mocking and Fixtures
+factory-boy>=3.3.0
+faker>=25.0.0
+pytest-mock>=3.12.0
+
+# Test Data and Utilities
+pytest-freezegun>=0.4.2
+pytest-env>=1.1.3
+
+# Integration Testing
+pytest-docker>=2.0.0
+pytest-selenium>=4.0.0
+
+# Load Testing
+locust>=2.37.5
+locust-cloud>=1.21.8
+
+# Memory and Performance Profiling
+memory-profiler>=0.61.0
+psutil>=7.0.0
+
+# Type Checking for Tests
+mypy>=1.10.0
+types-requests>=2.31.0
+types-PyYAML>=6.0.0
+
+# Test Reporting
+pytest-html>=4.1.0
+pytest-json-report>=1.5.0
+
+# Test Utilities
+pytest-randomly>=3.18.0
+pytest-repeat>=0.9.1
+pytest-timeout>=2.2.0
+
+# Network Testing
+pytest-httpbin>=1.0.0
+pytest-socket>=0.6.0
+
+# Validation Testing
+jsonschema>=4.24.0
+pydantic>=2.11.5
+
+# Test Environment
+python-dotenv>=1.0.0
+pytest-env>=1.1.3

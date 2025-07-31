@@ -1,0 +1,63 @@
+# Condon Development Environment Requirements
+# This file contains all dependencies needed for Condon development, testing, and validation
+
+# Core Condon Dependencies
+codon>=0.16.0
+codon-python>=0.16.0
+
+# Python Interoperability
+py-codon>=0.16.0
+
+# Development and Testing
+pytest>=8.0.0
+pytest-cov>=5.0.0
+pytest-mock>=3.12.0
+pytest-asyncio>=0.24.0
+
+# Code Quality
+black>=25.1.0
+flake8>=7.0.0
+mypy>=1.10.0
+pylint>=3.1.0
+
+# Documentation
+sphinx>=7.2.6
+sphinx-rtd-theme>=2.0.0
+
+# Debugging and Development Tools
+ipdb>=0.13.13
+pre-commit>=4.0.0
+
+# Validation and Testing Tools
+pytest-benchmark>=4.0.0
+pytest-xdist>=3.6.0
+pytest-html>=4.1.0
+
+# Performance Monitoring
+psutil>=7.0.0
+memory-profiler>=0.61.0
+
+# Type Checking and Validation
+types-requests>=2.31.0
+types-PyYAML>=6.0.0
+
+# Condon-specific Testing
+codon-test>=0.16.0
+
+# Interoperability Testing
+pytest-cov>=5.0.0
+coverage>=7.8.2
+
+# Security and Validation
+bandit>=1.7.0
+safety>=2.3.0
+
+# Build and Distribution
+setuptools>=69.0.0
+wheel>=0.42.0
+build>=1.2.0
+
+# Environment Management
+virtualenv>=20.25.0
+pip-tools>=8.0.0
+

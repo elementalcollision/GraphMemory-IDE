@@ -1,0 +1,665 @@
+---
+# Hybrid CPython/Condon Deployment Strategy
+# This file contains the complete deployment configuration for the hybrid architecture
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: graphmemory
+  labels:
+    name: graphmemory
+    environment: production
+---
+# Istio Gateway for external traffic
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: graphmemory-gateway
+  namespace: graphmemory
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.example.com"
+    - "graphmemory.example.com"
+---
+# Virtual Service for routing
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: hybrid-app
+  namespace: graphmemory
+spec:
+  hosts:
+  - "graphmemory.example.com"
+  gateways:
+  - graphmemory-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/auth
+    route:
+    - destination:
+        host: auth-service
+        port:
+          number: 8000
+        subset: v1
+      weight: 100
+  - match:
+    - uri:
+        prefix: /api/analytics
+    route:
+    - destination:
+        host: analytics-service
+        port:
+          number: 8000
+        subset: v1
+      weight: 100
+  - match:
+    - uri:
+        prefix: /api/ai-detection
+    route:
+    - destination:
+        host: ai-detection-service
+        port:
+          number: 8000
+        subset: v1
+      weight: 100
+---
+# CPython Auth Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: graphmemory
+  labels:
+    app: auth-service
+    runtime: cpython
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+        runtime: cpython
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - name: auth-service
+        image: graphmemory/auth-service:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-secrets
+              key: url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secrets
+              key: secret
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "auth-service"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+---
+# CPython Auth Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: graphmemory
+  labels:
+    app: auth-service
+    runtime: cpython
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: auth-service
+---
+# Condon Analytics Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: graphmemory
+  labels:
+    app: analytics-service
+    runtime: condon
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+        runtime: condon
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - name: analytics-service
+        image: graphmemory/analytics-service:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        env:
+        - name: MODEL_PATH
+          value: "/app/models"
+        - name: THREAD_POOL_SIZE
+          value: "4"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "analytics-service"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+---
+# Condon Analytics Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: graphmemory
+  labels:
+    app: analytics-service
+    runtime: condon
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: analytics-service
+---
+# Condon AI Detection Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-detection-service
+  namespace: graphmemory
+  labels:
+    app: ai-detection-service
+    runtime: condon
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ai-detection-service
+  template:
+    metadata:
+      labels:
+        app: ai-detection-service
+        runtime: condon
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - name: ai-detection-service
+        image: graphmemory/ai-detection-service:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        env:
+        - name: MODEL_PATH
+          value: "/app/models"
+        - name: GPU_ENABLED
+          value: "true"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "ai-detection-service"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 90
+          periodSeconds: 30
+          timeoutSeconds: 15
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 3
+---
+# Condon AI Detection Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-detection-service
+  namespace: graphmemory
+  labels:
+    app: ai-detection-service
+    runtime: condon
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: ai-detection-service
+---
+# Destination Rules for Traffic Management
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: auth-service
+  namespace: graphmemory
+spec:
+  host: auth-service
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 30ms
+      http:
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: analytics-service
+  namespace: graphmemory
+spec:
+  host: analytics-service
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    connectionPool:
+      tcp:
+        maxConnections: 50
+        connectTimeout: 30ms
+      http:
+        http2MaxRequests: 500
+        maxRequestsPerConnection: 5
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: ai-detection-service
+  namespace: graphmemory
+spec:
+  host: ai-detection-service
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    connectionPool:
+      tcp:
+        maxConnections: 30
+        connectTimeout: 30ms
+      http:
+        http2MaxRequests: 200
+        maxRequestsPerConnection: 3
+    outlierDetection:
+      consecutive5xxErrors: 2
+      interval: 10s
+      baseEjectionTime: 30s
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+# Horizontal Pod Autoscalers
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: auth-service-hpa
+  namespace: graphmemory
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: auth-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: analytics-service-hpa
+  namespace: graphmemory
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analytics-service
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-detection-service-hpa
+  namespace: graphmemory
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-detection-service
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+---
+# Network Policies
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hybrid-app-network-policy
+  namespace: graphmemory
+spec:
+  podSelector:
+    matchLabels:
+      app: hybrid-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+  - from:
+    - podSelector:
+        matchLabels:
+          app: hybrid-app
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: database
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 4317
+---
+# OpenTelemetry Collector
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-collector
+  namespace: graphmemory
+spec:
+  mode: deployment
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    
+    processors:
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 1500
+      resource:
+        attributes:
+          - key: environment
+            value: production
+            action: upsert
+          - key: service.namespace
+            value: graphmemory
+            action: upsert
+    
+    exporters:
+      logging:
+        loglevel: debug
+      prometheus:
+        endpoint: 0.0.0.0:8889
+      jaeger:
+        endpoint: jaeger:14250
+        tls:
+          insecure: true
+      otlp:
+        endpoint: "http://tempo:4317"
+        tls:
+          insecure: true
+    
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch, memory_limiter, resource]
+          exporters: [jaeger, otlp]
+        metrics:
+          receivers: [otlp]
+          processors: [batch, memory_limiter, resource]
+          exporters: [prometheus, otlp]
+        logs:
+          receivers: [otlp]
+          processors: [batch, memory_limiter, resource]
+          exporters: [logging, otlp]
+---
+# Secrets (placeholder - should be managed by external secret management)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: database-secrets
+  namespace: graphmemory
+type: Opaque
+data:
+  url: <base64-encoded-database-url>
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jwt-secrets
+  namespace: graphmemory
+type: Opaque
+data:
+  secret: <base64-encoded-jwt-secret> 
