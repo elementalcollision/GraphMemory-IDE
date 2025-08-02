@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Hybrid CPython/Condon Deployment Script
+# Hybrid CPython/Codon Deployment Script
 # This script deploys the hybrid architecture with proper error handling and rollback
 
 set -euo pipefail
@@ -82,9 +82,9 @@ deploy_cpython_services() {
     log_info "CPython services deployed successfully"
 }
 
-# Deploy Condon services
-deploy_condon_services() {
-    log_info "Deploying Condon services..."
+# Deploy Codon services
+deploy_codon_services() {
+    log_info "Deploying Codon services..."
     
     # Deploy analytics service
     kubectl apply -f $DEPLOYMENT_FILE -n $NAMESPACE --selector=app=analytics-service
@@ -92,11 +92,11 @@ deploy_condon_services() {
     # Deploy AI detection service
     kubectl apply -f $DEPLOYMENT_FILE -n $NAMESPACE --selector=app=ai-detection-service
     
-    # Wait for Condon services to be ready
+    # Wait for Codon services to be ready
     kubectl wait --for=condition=available --timeout=600s deployment/analytics-service -n $NAMESPACE
     kubectl wait --for=condition=available --timeout=600s deployment/ai-detection-service -n $NAMESPACE
     
-    log_info "Condon services deployed successfully"
+    log_info "Codon services deployed successfully"
 }
 
 # Deploy infrastructure components
@@ -216,9 +216,9 @@ main() {
         exit 1
     fi
     
-    # Deploy Condon services
-    if ! deploy_condon_services; then
-        log_error "Condon services deployment failed"
+    # Deploy Codon services
+    if ! deploy_codon_services; then
+        log_error "Codon services deployment failed"
         rollback
         exit 1
     fi

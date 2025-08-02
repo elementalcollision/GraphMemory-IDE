@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 Comprehensive Integration Test Runner
-Demonstrates the full integration testing framework for hybrid CPython/Condon 
+Demonstrates the full integration testing framework for hybrid CPython/Codon 
 architecture
 
 This script runs the complete integration testing suite including:
 - CPython integration testing
-- Condon integration testing
+- Codon integration testing
 - Hybrid integration testing
 - Validation frameworks
 - Quality assurance testing
@@ -176,7 +176,7 @@ class ComprehensiveTestRunner:
                 f"  CPython Tests: {'✅ PASSED' if integration.get('cpython_tests', {}).get('passed') else '❌ FAILED'}"
             )
             print(
-                f"  Condon Tests: {'✅ PASSED' if integration.get('condon_tests', {}).get('passed') else '❌ FAILED'}"
+                f"  Codon Tests: {'✅ PASSED' if integration.get('codon_tests', {}).get('passed') else '❌ FAILED'}"
             )
             print(
                 f"  Hybrid Tests: {'✅ PASSED' if integration.get('hybrid_tests', {}).get('passed') else '❌ FAILED'}"

@@ -1,7 +1,7 @@
 """
-Thread Safety Testing for Condon No-GIL Environment
+Thread Safety Testing for Codon No-GIL Environment
 
-This module provides comprehensive testing for thread safety in the Condon
+This module provides comprehensive testing for thread safety in the Codon
 free-threaded Python environment. It tests singleton patterns, shared state
 access, and other concurrent operations to ensure thread safety.
 
@@ -94,8 +94,8 @@ class TestStreamProducer(ThreadSafeSingleton):
 
 
 @pytest.mark.thread_safety
-class TestCondonThreadSafety:
-    """Comprehensive thread safety tests for Condon environment"""
+class TestCodonThreadSafety:
+    """Comprehensive thread safety tests for Codon environment"""
 
     def setup_method(self):
         """Setup test environment"""
@@ -442,8 +442,8 @@ class TestCondonThreadSafety:
 
 
 @pytest.mark.thread_safety
-class TestCondonSpecificIssues:
-    """Test specific issues related to Condon no-GIL environment"""
+class TestCodonSpecificIssues:
+    """Test specific issues related to Codon no-GIL environment"""
 
     def setup_method(self):
         """Setup test environment"""
@@ -583,11 +583,11 @@ if __name__ == "__main__":
     async def run_all_tests():
         """Run all thread safety tests"""
 
-        print("Starting Condon Thread Safety Tests...")
+        print("Starting Codon Thread Safety Tests...")
         print("=" * 50)
 
         # Create test instance
-        test_instance = TestCondonThreadSafety()
+        test_instance = TestCodonThreadSafety()
         test_instance.setup_method()
 
         # Run all tests

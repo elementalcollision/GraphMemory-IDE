@@ -1,6 +1,6 @@
 """
-Condon Service Monitoring
-Specialized monitoring for Condon services in hybrid architecture
+Codon Service Monitoring
+Specialized monitoring for Codon services in hybrid architecture
 """
 
 import logging
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class CompilationType(Enum):
-    """Types of Condon compilation"""
+    """Types of Codon compilation"""
 
     JIT = "jit"
     AOT = "aot"
@@ -49,9 +49,9 @@ class CompilationMetrics:
     cache_misses: int
 
 
-class CondonMonitor:
+class CodonMonitor:
     """
-    Condon-specific monitoring for hybrid architecture
+    Codon-specific monitoring for hybrid architecture
 
     Monitors:
     - Compilation performance and metrics
@@ -61,83 +61,83 @@ class CondonMonitor:
     - Native code execution
     """
 
-    def __init__(self, service_name: str = "condon-service"):
+    def __init__(self, service_name: str = "codon-service"):
         self.service_name = service_name
         self.process = psutil.Process()
 
-        # Condon-specific metrics
+        # Codon-specific metrics
         self.metrics = {
             # Compilation metrics
             "compilation_duration": Histogram(
-                "condon_compilation_duration_seconds",
+                "codon_compilation_duration_seconds",
                 "Compilation duration",
                 ["compilation_type", "optimization_level"],
             ),
             "compilation_memory": Histogram(
-                "condon_compilation_memory_bytes",
+                "codon_compilation_memory_bytes",
                 "Memory used during compilation",
                 ["compilation_type"],
             ),
             "compilation_threads": Gauge(
-                "condon_compilation_threads",
+                "codon_compilation_threads",
                 "Threads used during compilation",
                 ["compilation_type"],
             ),
             "compilation_cache_hits": Counter(
-                "condon_compilation_cache_hits_total",
+                "codon_compilation_cache_hits_total",
                 "Compilation cache hits",
                 ["cache_type"],
             ),
             "compilation_cache_misses": Counter(
-                "condon_compilation_cache_misses_total",
+                "codon_compilation_cache_misses_total",
                 "Compilation cache misses",
                 ["cache_type"],
             ),
             # Thread safety metrics
             "thread_safety_events": Counter(
-                "condon_thread_safety_events_total",
+                "codon_thread_safety_events_total",
                 "Thread safety events",
                 ["event_type", "severity"],
             ),
             "lock_contention_time": Histogram(
-                "condon_lock_contention_seconds",
+                "codon_lock_contention_seconds",
                 "Time spent waiting for locks",
                 ["lock_type"],
             ),
             "deadlock_detections": Counter(
-                "condon_deadlock_detections_total", "Deadlock detections"
+                "codon_deadlock_detections_total", "Deadlock detections"
             ),
             "race_condition_detections": Counter(
-                "condon_race_condition_detections_total", "Race condition detections"
+                "codon_race_condition_detections_total", "Race condition detections"
             ),
             # Memory metrics
             "memory_allocation": Counter(
-                "condon_memory_allocation_bytes_total",
+                "codon_memory_allocation_bytes_total",
                 "Memory allocation",
                 ["allocation_type"],
             ),
             "memory_deallocation": Counter(
-                "condon_memory_deallocation_bytes_total",
+                "codon_memory_deallocation_bytes_total",
                 "Memory deallocation",
                 ["allocation_type"],
             ),
-            "memory_peak": Gauge("condon_memory_peak_bytes", "Peak memory usage"),
+            "memory_peak": Gauge("codon_memory_peak_bytes", "Peak memory usage"),
             "memory_fragmentation": Gauge(
-                "condon_memory_fragmentation_ratio", "Memory fragmentation ratio"
+                "codon_memory_fragmentation_ratio", "Memory fragmentation ratio"
             ),
             # Performance metrics
             "native_execution_time": Histogram(
-                "condon_native_execution_seconds",
+                "codon_native_execution_seconds",
                 "Native code execution time",
                 ["function_name", "optimization_level"],
             ),
             "optimization_effectiveness": Gauge(
-                "condon_optimization_effectiveness",
+                "codon_optimization_effectiveness",
                 "Optimization effectiveness ratio",
                 ["optimization_type"],
             ),
             "cache_efficiency": Gauge(
-                "condon_cache_efficiency_ratio",
+                "codon_cache_efficiency_ratio",
                 "Cache efficiency ratio",
                 ["cache_type"],
             ),
@@ -148,27 +148,27 @@ class CondonMonitor:
         self._monitoring_thread = None
         self._compilation_history: List[CompilationMetrics] = []
 
-        logger.info(f"Initialized Condon monitor for {service_name}")
+        logger.info(f"Initialized Codon monitor for {service_name}")
 
     def start_monitoring(self):
-        """Start comprehensive Condon monitoring"""
+        """Start comprehensive Codon monitoring"""
         if not self._monitoring_thread:
             self._monitoring_active = True
             self._monitoring_thread = threading.Thread(
                 target=self._monitoring_loop, daemon=True
             )
             self._monitoring_thread.start()
-            logger.info("Started Condon monitoring")
+            logger.info("Started Codon monitoring")
 
     def stop_monitoring(self):
-        """Stop Condon monitoring"""
+        """Stop Codon monitoring"""
         self._monitoring_active = False
 
         if self._monitoring_thread:
             self._monitoring_thread.join(timeout=5)
             self._monitoring_thread = None
 
-        logger.info("Stopped Condon monitoring")
+        logger.info("Stopped Codon monitoring")
 
     def _monitoring_loop(self):
         """Main monitoring loop"""
@@ -407,7 +407,7 @@ class CondonMonitor:
             return {}
 
     def get_performance_summary(self) -> Dict[str, Any]:
-        """Get Condon performance summary"""
+        """Get Codon performance summary"""
         try:
             memory_info = self.process.memory_info()
             cpu_percent = self.process.cpu_percent()
@@ -440,16 +440,16 @@ class CondonMonitor:
             return {}
 
 
-class CondonServiceMonitor:
+class CodonServiceMonitor:
     """
-    Service-specific Condon monitoring
+    Service-specific Codon monitoring
 
-    Provides monitoring for specific Condon services in the hybrid architecture
+    Provides monitoring for specific Codon services in the hybrid architecture
     """
 
     def __init__(self, service_name: str):
         self.service_name = service_name
-        self.monitor = CondonMonitor(service_name)
+        self.monitor = CodonMonitor(service_name)
         self.request_metrics = {
             "request_count": Counter(
                 f"{service_name}_requests_total",
@@ -471,7 +471,7 @@ class CondonServiceMonitor:
             ),
         }
 
-        logger.info(f"Initialized Condon service monitor for {service_name}")
+        logger.info(f"Initialized Codon service monitor for {service_name}")
 
     def start_monitoring(self):
         """Start monitoring for this service"""
@@ -549,20 +549,20 @@ class CondonServiceMonitor:
         }
 
 
-# Global Condon monitoring instance
-_condon_monitor = None
+# Global Codon monitoring instance
+_codon_monitor = None
 
 
-def get_condon_monitor(service_name: str = "condon-service") -> CondonServiceMonitor:
-    """Get Condon service monitor instance"""
-    global _condon_monitor
-    if _condon_monitor is None:
-        _condon_monitor = CondonServiceMonitor(service_name)
-    return _condon_monitor
+def get_codon_monitor(service_name: str = "codon-service") -> CodonServiceMonitor:
+    """Get Codon service monitor instance"""
+    global _codon_monitor
+    if _codon_monitor is None:
+        _codon_monitor = CodonServiceMonitor(service_name)
+    return _codon_monitor
 
 
-def initialize_condon_monitoring(service_name: str) -> CondonServiceMonitor:
-    """Initialize Condon monitoring for a service"""
-    monitor = CondonServiceMonitor(service_name)
+def initialize_codon_monitoring(service_name: str) -> CodonServiceMonitor:
+    """Initialize Codon monitoring for a service"""
+    monitor = CodonServiceMonitor(service_name)
     monitor.start_monitoring()
     return monitor

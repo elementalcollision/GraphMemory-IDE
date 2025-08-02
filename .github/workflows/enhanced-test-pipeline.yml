@@ -1,0 +1,415 @@
+name: Enhanced Test Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+        
+    - name: Run unit tests
+      run: |
+        pytest tests/unit/ \
+          --verbose \
+          --tb=short \
+          --maxfail=5 \
+          --junitxml=unit-results.xml \
+          --html=unit-report.html \
+          --self-contained-html \
+          --cov=server \
+          --cov-report=html:unit-coverage \
+          --cov-report=xml:unit-coverage.xml \
+          -m "unit" \
+          --durations=10
+          
+    - name: Generate test summary
+      run: |
+        python scripts/generate_test_summary.py unit-results.xml unit-summary.json
+        
+    - name: Upload unit test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: unit-test-results
+        path: |
+          unit-results.xml
+          unit-report.html
+          unit-summary.json
+          unit-coverage/
+          unit-coverage.xml
+
+  api-compatibility-tests:
+    name: API Compatibility Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+        
+    - name: Run API compatibility tests
+      run: |
+        pytest tests/compatibility/ \
+          --verbose \
+          --tb=short \
+          --maxfail=3 \
+          --junitxml=compatibility-results.xml \
+          --html=compatibility-report.html \
+          --self-contained-html \
+          -m "compatibility" \
+          --durations=20
+          
+    - name: Run behavioral parity tests
+      run: |
+        pytest tests/compatibility/test_api_compatibility_framework.py::TestBehavioralParityTester \
+          --verbose \
+          --tb=short \
+          --junitxml=behavioral-parity-results.xml \
+          --html=behavioral-parity-report.html \
+          --self-contained-html \
+          -m "behavioral" \
+          --durations=10
+          
+    - name: Run dynamic feature tests
+      run: |
+        pytest tests/compatibility/test_api_compatibility_framework.py::TestDynamicFeatureValidator \
+          --verbose \
+          --tb=short \
+          --junitxml=dynamic-feature-results.xml \
+          --html=dynamic-feature-report.html \
+          --self-contained-html \
+          -m "dynamic" \
+          --durations=10
+          
+    - name: Generate compatibility summary
+      run: |
+        python scripts/generate_compatibility_summary.py \
+          compatibility-results.xml \
+          behavioral-parity-results.xml \
+          dynamic-feature-results.xml \
+          compatibility-summary.json
+          
+    - name: Upload compatibility test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: compatibility-test-results
+        path: |
+          compatibility-results.xml
+          compatibility-report.html
+          behavioral-parity-results.xml
+          behavioral-parity-report.html
+          dynamic-feature-results.xml
+          dynamic-feature-report.html
+          compatibility-summary.json
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: api-compatibility-tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+        
+    - name: Wait for services
+      run: |
+        echo "Waiting for PostgreSQL..."
+        until pg_isready -h localhost -p 5432 -U test; do
+          sleep 2
+        done
+        echo "Waiting for Redis..."
+        until redis-cli -h localhost ping; do
+          sleep 2
+        done
+        
+    - name: Run database migrations
+      run: |
+        alembic upgrade head
+        
+    - name: Seed test data
+      run: |
+        python scripts/seed_test_data.py
+        
+    - name: Run integration tests
+      run: |
+        pytest tests/integration/ \
+          --verbose \
+          --tb=short \
+          --maxfail=3 \
+          --junitxml=integration-results.xml \
+          --html=integration-report.html \
+          --self-contained-html \
+          --cov=server \
+          --cov-report=html:integration-coverage \
+          --cov-report=xml:integration-coverage.xml \
+          -m "integration" \
+          --durations=20
+          
+    - name: Generate integration test summary
+      run: |
+        python scripts/generate_test_summary.py integration-results.xml integration-summary.json
+        
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: integration-test-results
+        path: |
+          integration-results.xml
+          integration-report.html
+          integration-summary.json
+          integration-coverage/
+          integration-coverage.xml
+
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+        pip install locust k6-python
+        
+    - name: Start application services
+      run: |
+        # Start FastAPI backend (simulated for performance testing)
+        echo "Starting application services..."
+        
+    - name: Run performance tests
+      run: |
+        pytest tests/performance/ \
+          --verbose \
+          --tb=short \
+          --junitxml=performance-results.xml \
+          --html=performance-report.html \
+          --self-contained-html \
+          -m "performance" \
+          --durations=10
+          
+    - name: Run load tests
+      run: |
+        locust -f tests/performance/locustfile.py \
+          --headless \
+          --users 50 \
+          --spawn-rate 10 \
+          --run-time 300s \
+          --html=locust-report.html
+          
+    - name: Analyze performance regression
+      run: |
+        python scripts/analyze_performance_regression.py \
+          performance-metrics.json \
+          performance-baseline.json \
+          performance-analysis.json
+          
+    - name: Upload performance test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-test-results
+        path: |
+          performance-results.xml
+          performance-report.html
+          performance-analysis.json
+          locust-report.html
+
+  test-reporting:
+    name: Test Reporting and Notifications
+    runs-on: ubuntu-latest
+    needs: [unit-tests, api-compatibility-tests, integration-tests, performance-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Download test artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: test-artifacts
+        
+    - name: Install reporting dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests jinja2
+        
+    - name: Generate comprehensive report
+      run: |
+        python scripts/generate_comprehensive_report.py \
+          test-artifacts/unit-test-results/unit-results.xml \
+          test-artifacts/compatibility-test-results/compatibility-results.xml \
+          test-artifacts/integration-test-results/integration-results.xml \
+          test-artifacts/performance-test-results/performance-results.xml \
+          comprehensive-test-report.html
+          
+    - name: Analyze test results
+      run: |
+        python scripts/analyze_test_results.py \
+          test-artifacts/unit-test-results/unit-summary.json \
+          test-artifacts/compatibility-test-results/compatibility-summary.json \
+          test-artifacts/integration-test-results/integration-summary.json \
+          test-artifacts/performance-test-results/performance-analysis.json \
+          test-analysis.json
+          
+    - name: Send notifications
+      run: |
+        python scripts/send_notifications.py \
+          test-analysis.json \
+          comprehensive-test-report.html
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        EMAIL_RECIPIENTS: ${{ secrets.EMAIL_RECIPIENTS }}
+        
+    - name: Upload comprehensive report
+      uses: actions/upload-artifact@v3
+      with:
+        name: comprehensive-test-report
+        path: |
+          comprehensive-test-report.html
+          test-analysis.json
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: test-reporting
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download test artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: test-artifacts
+        
+    - name: Generate test summary
+      run: |
+        echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "test-artifacts/comprehensive-test-report/test-analysis.json" ]; then
+          echo "✅ All test stages completed successfully" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Some test stages failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Test Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Unit Tests: Available in artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- API Compatibility Tests: Available in artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Integration Tests: Available in artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Performance Tests: Available in artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Comprehensive Report: Available in artifacts" >> $GITHUB_STEP_SUMMARY 

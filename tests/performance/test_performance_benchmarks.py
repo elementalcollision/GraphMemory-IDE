@@ -1,5 +1,5 @@
 """
-Performance benchmarking tests for Condon development.
+Performance benchmarking tests for Codon development.
 All tests run within the virtual environment for proper isolation.
 """
 
@@ -11,11 +11,11 @@ from pathlib import Path
 
 @pytest.mark.performance
 def test_codon_compilation_performance():
-    """Benchmark Condon compilation performance within virtual environment"""
+    """Benchmark Codon compilation performance within virtual environment"""
     import subprocess
     import tempfile
     
-    # Create a simple Condon test file
+    # Create a simple Codon test file
     codon_code = """
 def add(a: int, b: int) -> int:
     return a + b
@@ -53,7 +53,7 @@ def fibonacci(n: int) -> int:
         # Assert compilation time is reasonable (should be under 5 seconds)
         assert compilation_time < 5.0, f"Compilation took too long: {compilation_time:.2f} seconds"
         
-        print(f"Condon compilation completed in {compilation_time:.4f} seconds")
+        print(f"Codon compilation completed in {compilation_time:.4f} seconds")
         
     finally:
         # Clean up

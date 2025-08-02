@@ -7,14 +7,14 @@ All project requirements files have been updated and are now up to date and prop
 
 ### 1. `requirements-codon.txt` (NEW)
 - **Status**: Created from empty file
-- **Purpose**: Condon-specific development environment
+- **Purpose**: Codon-specific development environment
 - **Dependencies**: 32 packages
 - **Key additions**:
-  - Core Condon dependencies (codon, codon-python, py-codon)
+  - Core Codon dependencies (codon, codon-python, py-codon)
   - Python interoperability tools
-  - Condon-specific testing (codon-test)
+  - Codon-specific testing (codon-test)
   - Development and validation tools
-  - Performance monitoring for Condon code
+  - Performance monitoring for Codon code
 
 ### 2. `requirements-test.txt` (UPDATED)
 - **Status**: Completely rewritten
@@ -91,7 +91,7 @@ All project requirements files have been updated and are now up to date and prop
 - Total of 310 production dependencies
 - 47 test dependencies
 - 49 development dependencies
-- 32 Condon-specific dependencies
+- 32 Codon-specific dependencies
 
 ## Key Improvements
 
@@ -139,7 +139,7 @@ pip install -r requirements-dev.txt
 pip install -r requirements-test.txt
 ```
 
-### For Condon Development
+### For Codon Development
 ```bash
 pip install -r requirements-codon.txt
 ```

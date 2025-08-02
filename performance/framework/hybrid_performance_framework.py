@@ -1,8 +1,8 @@
 """
-Hybrid Performance Framework for CPython/Condon Architecture
+Hybrid Performance Framework for CPython/Codon Architecture
 
 This module provides comprehensive performance benchmarking and optimization
-strategies for hybrid CPython/Condon architectures, including performance
+strategies for hybrid CPython/Codon architectures, including performance
 monitoring, optimization techniques, and production-ready performance validation.
 """
 
@@ -325,18 +325,18 @@ class CPythonBenchmarker:
         return {"latency_ms": 1.8, "throughput": 2500}
 
 
-class CondonBenchmarker:
-    """Performance benchmarking for Condon components"""
+class CodonBenchmarker:
+    """Performance benchmarking for Codon components"""
 
     def __init__(self):
         self.computation_benchmarker = ComputationBenchmarker()
         self.memory_benchmarker = MemoryBenchmarker()
         self.thread_safety_benchmarker = ThreadSafetyBenchmarker()
-        self.optimization_strategies = CondonOptimizationStrategies()
+        self.optimization_strategies = CodonOptimizationStrategies()
 
     async def benchmark_analytics_engine(self) -> BenchmarkResult:
         """Benchmark analytics engine performance"""
-        logger.info("Benchmarking Condon analytics engine performance")
+        logger.info("Benchmarking Codon analytics engine performance")
 
         try:
             # Start memory tracking
@@ -359,8 +359,8 @@ class CondonBenchmarker:
             times = [graph_latency["latency_ms"], ml_latency["latency_ms"]]
 
             return BenchmarkResult(
-                test_name="condon_analytics_engine_benchmark",
-                component="condon",
+                test_name="codon_analytics_engine_benchmark",
+                component="codon",
                 iterations=100,
                 min_time_ms=min(times),
                 max_time_ms=max(times),
@@ -377,8 +377,8 @@ class CondonBenchmarker:
         except Exception as e:
             logger.error(f"Analytics engine benchmark failed: {e}")
             return BenchmarkResult(
-                test_name="condon_analytics_engine_benchmark",
-                component="condon",
+                test_name="codon_analytics_engine_benchmark",
+                component="codon",
                 iterations=0,
                 min_time_ms=0,
                 max_time_ms=0,
@@ -395,7 +395,7 @@ class CondonBenchmarker:
 
     async def benchmark_ai_detection(self) -> BenchmarkResult:
         """Benchmark AI detection performance"""
-        logger.info("Benchmarking Condon AI detection performance")
+        logger.info("Benchmarking Codon AI detection performance")
 
         try:
             # Start memory tracking
@@ -418,8 +418,8 @@ class CondonBenchmarker:
             times = [anomaly_latency["latency_ms"], inference_latency["latency_ms"]]
 
             return BenchmarkResult(
-                test_name="condon_ai_detection_benchmark",
-                component="condon",
+                test_name="codon_ai_detection_benchmark",
+                component="codon",
                 iterations=100,
                 min_time_ms=min(times),
                 max_time_ms=max(times),
@@ -436,8 +436,8 @@ class CondonBenchmarker:
         except Exception as e:
             logger.error(f"AI detection benchmark failed: {e}")
             return BenchmarkResult(
-                test_name="condon_ai_detection_benchmark",
-                component="condon",
+                test_name="codon_ai_detection_benchmark",
+                component="codon",
                 iterations=0,
                 min_time_ms=0,
                 max_time_ms=0,
@@ -454,7 +454,7 @@ class CondonBenchmarker:
 
     async def benchmark_monitoring_system(self) -> BenchmarkResult:
         """Benchmark monitoring system performance"""
-        logger.info("Benchmarking Condon monitoring system performance")
+        logger.info("Benchmarking Codon monitoring system performance")
 
         try:
             # Start memory tracking
@@ -481,8 +481,8 @@ class CondonBenchmarker:
             ]
 
             return BenchmarkResult(
-                test_name="condon_monitoring_system_benchmark",
-                component="condon",
+                test_name="codon_monitoring_system_benchmark",
+                component="codon",
                 iterations=100,
                 min_time_ms=min(times),
                 max_time_ms=max(times),
@@ -499,8 +499,8 @@ class CondonBenchmarker:
         except Exception as e:
             logger.error(f"Monitoring system benchmark failed: {e}")
             return BenchmarkResult(
-                test_name="condon_monitoring_system_benchmark",
-                component="condon",
+                test_name="codon_monitoring_system_benchmark",
+                component="codon",
                 iterations=0,
                 min_time_ms=0,
                 max_time_ms=0,
@@ -584,11 +584,11 @@ class HybridBenchmarker:
             # Start memory tracking
             tracemalloc.start()
 
-            # Benchmark CPython to Condon integration
-            cpython_to_condon = await self._benchmark_cpython_to_condon()
+            # Benchmark CPython to Codon integration
+            cpython_to_codon = await self._benchmark_cpython_to_codon()
 
-            # Benchmark Condon to CPython integration
-            condon_to_cpython = await self._benchmark_condon_to_cpython()
+            # Benchmark Codon to CPython integration
+            codon_to_cpython = await self._benchmark_codon_to_cpython()
 
             # Benchmark hybrid service integration
             hybrid_integration = await self._benchmark_hybrid_integration()
@@ -599,8 +599,8 @@ class HybridBenchmarker:
 
             # Calculate statistics
             times = [
-                cpython_to_condon["latency_ms"],
-                condon_to_cpython["latency_ms"],
+                cpython_to_codon["latency_ms"],
+                codon_to_cpython["latency_ms"],
                 hybrid_integration["latency_ms"],
             ]
 
@@ -639,16 +639,16 @@ class HybridBenchmarker:
                 error_message=str(e),
             )
 
-    async def _benchmark_cpython_to_condon(self) -> Dict[str, float]:
-        """Benchmark CPython to Condon integration"""
+    async def _benchmark_cpython_to_codon(self) -> Dict[str, float]:
+        """Benchmark CPython to Codon integration"""
         # Mock implementation for demonstration
-        await asyncio.sleep(0.002)  # Simulate CPython to Condon call
+        await asyncio.sleep(0.002)  # Simulate CPython to Codon call
         return {"latency_ms": 5.2, "throughput": 600}
 
-    async def _benchmark_condon_to_cpython(self) -> Dict[str, float]:
-        """Benchmark Condon to CPython integration"""
+    async def _benchmark_codon_to_cpython(self) -> Dict[str, float]:
+        """Benchmark Codon to CPython integration"""
         # Mock implementation for demonstration
-        await asyncio.sleep(0.003)  # Simulate Condon to CPython call
+        await asyncio.sleep(0.003)  # Simulate Codon to CPython call
         return {"latency_ms": 7.8, "throughput": 450}
 
     async def _benchmark_hybrid_integration(self) -> Dict[str, float]:
@@ -804,11 +804,11 @@ class OptimizationEngine:
 
 
 class HybridPerformanceFramework:
-    """Performance benchmarking framework for CPython/Condon architecture"""
+    """Performance benchmarking framework for CPython/Codon architecture"""
 
     def __init__(self):
         self.cpython_benchmarker = CPythonBenchmarker()
-        self.condon_benchmarker = CondonBenchmarker()
+        self.codon_benchmarker = CodonBenchmarker()
         self.hybrid_benchmarker = HybridBenchmarker()
         self.optimization_engine = OptimizationEngine()
         self.results: List[BenchmarkResult] = []
@@ -825,10 +825,10 @@ class HybridPerformanceFramework:
         cpython_results = await self._run_cpython_benchmarks()
         all_results.extend(cpython_results)
 
-        # Run Condon benchmarks
-        logger.info("Running Condon benchmarks")
-        condon_results = await self._run_condon_benchmarks()
-        all_results.extend(condon_results)
+        # Run Codon benchmarks
+        logger.info("Running Codon benchmarks")
+        codon_results = await self._run_codon_benchmarks()
+        all_results.extend(codon_results)
 
         # Run hybrid benchmarks
         logger.info("Running hybrid benchmarks")
@@ -870,8 +870,8 @@ class HybridPerformanceFramework:
                 [auth_optimization, dashboard_optimization, streaming_optimization]
             )
 
-        elif component == "condon":
-            # Optimize Condon components
+        elif component == "codon":
+            # Optimize Codon components
             analytics_optimization = (
                 await self.optimization_engine.optimize_algorithm_performance(
                     "analytics_engine"
@@ -924,7 +924,7 @@ class HybridPerformanceFramework:
             "failed_benchmarks": 0,
             "performance_thresholds": {
                 "cpython": {"max_latency_ms": 50, "min_throughput_ops_per_sec": 1000},
-                "condon": {"max_latency_ms": 100, "min_throughput_ops_per_sec": 500},
+                "codon": {"max_latency_ms": 100, "min_throughput_ops_per_sec": 500},
                 "hybrid": {"max_latency_ms": 75, "min_throughput_ops_per_sec": 750},
             },
             "validation_results": [],
@@ -988,20 +988,20 @@ class HybridPerformanceFramework:
 
         return results
 
-    async def _run_condon_benchmarks(self) -> List[BenchmarkResult]:
-        """Run Condon benchmarks"""
+    async def _run_codon_benchmarks(self) -> List[BenchmarkResult]:
+        """Run Codon benchmarks"""
         results = []
 
         # Benchmark analytics engine
-        analytics_result = await self.condon_benchmarker.benchmark_analytics_engine()
+        analytics_result = await self.codon_benchmarker.benchmark_analytics_engine()
         results.append(analytics_result)
 
         # Benchmark AI detection
-        ai_result = await self.condon_benchmarker.benchmark_ai_detection()
+        ai_result = await self.codon_benchmarker.benchmark_ai_detection()
         results.append(ai_result)
 
         # Benchmark monitoring system
-        monitoring_result = await self.condon_benchmarker.benchmark_monitoring_system()
+        monitoring_result = await self.codon_benchmarker.benchmark_monitoring_system()
         results.append(monitoring_result)
 
         return results
@@ -1102,8 +1102,8 @@ class ThreadSafetyBenchmarker:
     pass
 
 
-class CondonOptimizationStrategies:
-    """Mock Condon optimization strategies"""
+class CodonOptimizationStrategies:
+    """Mock Codon optimization strategies"""
 
     pass
 

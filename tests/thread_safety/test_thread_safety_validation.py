@@ -1,5 +1,5 @@
 """
-Thread safety validation tests for Condon development.
+Thread safety validation tests for Codon development.
 All tests run within the virtual environment for proper isolation.
 """
 

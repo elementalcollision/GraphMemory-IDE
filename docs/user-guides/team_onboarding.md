@@ -1,15 +1,15 @@
-# Team Onboarding Guide: Condon Integration with Thread Safety
+# Team Onboarding Guide: Codon Integration with Thread Safety
 
-## 🚀 Welcome to GraphMemory-IDE with Condon Integration
+## 🚀 Welcome to GraphMemory-IDE with Codon Integration
 
-This guide will help you get started with the Condon-integrated development environment, focusing on thread safety and production-ready development practices.
+This guide will help you get started with the Codon-integrated development environment, focusing on thread safety and production-ready development practices.
 
 ## 📋 Table of Contents
 
 1. [Quick Start](#quick-start)
 2. [Environment Setup](#environment-setup)
 3. [Thread Safety Framework](#thread-safety-framework)
-4. [Condon Development Workflow](#codon-development-workflow)
+4. [Codon Development Workflow](#codon-development-workflow)
 5. [CI/CD Pipeline](#cicd-pipeline)
 6. [Best Practices](#best-practices)
 7. [Troubleshooting](#troubleshooting)
@@ -29,7 +29,7 @@ This guide will help you get started with the Condon-integrated development envi
 git clone <repository-url>
 cd GraphMemory-IDE-1
 
-# Activate the Condon virtual environment
+# Activate the Codon virtual environment
 source codon-dev-env/bin/activate
 
 # Verify environment
@@ -44,7 +44,7 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 pip install -r requirements-test.txt
 
-# Verify Condon installation
+# Verify Codon installation
 codon --version
 ```
 
@@ -61,14 +61,14 @@ python -m pytest tests/thread_safety/ -v
 ### Virtual Environment
 The project uses a dedicated virtual environment (`codon-dev-env`) that includes:
 - Python 3.13.3
-- Condon compiler
+- Codon compiler
 - Thread safety testing framework
 - All project dependencies
 
 ### Configuration Files
-- `config/codon_config.py` - Condon integration configuration
+- `config/codon_config.py` - Codon integration configuration
 - `pytest.ini` - Test configuration with thread safety markers
-- `env.codon` - Environment variables for Condon
+- `env.codon` - Environment variables for Codon
 
 ### IDE Setup
 #### VS Code Configuration
@@ -146,7 +146,7 @@ for thread in threads:
 assert counter.value == 4
 ```
 
-## 🔄 Condon Development Workflow
+## 🔄 Codon Development Workflow
 
 ### 1. Development Process
 ```bash
@@ -159,7 +159,7 @@ source codon-dev-env/bin/activate
 # 3. Run thread safety tests
 python -m pytest tests/thread_safety/ -v
 
-# 4. Compile with Condon (if needed)
+# 4. Compile with Codon (if needed)
 codon build -release your_module.py -o compiled_module
 
 # 5. Test compiled module
@@ -169,7 +169,7 @@ codon build -release your_module.py -o compiled_module
 python -m pytest tests/ -v
 ```
 
-### 2. Condon Compilation
+### 2. Codon Compilation
 ```bash
 # Basic compilation
 codon build -release module.py -o executable
@@ -186,7 +186,7 @@ codon build -release -python-interop module.py -o executable
 # Run performance benchmarks
 python -m pytest tests/thread_safety/test_thread_performance.py::test_thread_performance_benchmarking -v
 
-# Compare Python vs Condon performance
+# Compare Python vs Codon performance
 python config/codon_config.py
 ```
 
@@ -195,7 +195,7 @@ python config/codon_config.py
 ### Overview
 The CI/CD pipeline includes:
 - Thread safety validation
-- Condon compilation testing
+- Codon compilation testing
 - Security scanning
 - Performance benchmarking
 - Docker build and push
@@ -203,7 +203,7 @@ The CI/CD pipeline includes:
 
 ### Pipeline Stages
 1. **Thread Safety Validation** - Ensures thread safety
-2. **Condon Compilation** - Compiles performance-critical modules
+2. **Codon Compilation** - Compiles performance-critical modules
 3. **Security Scan** - Runs Bandit and Semgrep
 4. **Performance Benchmark** - Validates performance improvements
 5. **Docker Build** - Creates optimized container images
@@ -239,7 +239,7 @@ docker build -f docker/production/Dockerfile -t graphmemory-ide .
 
 ### Performance
 1. **Profile before optimizing**
-2. **Use Condon for performance-critical code**
+2. **Use Codon for performance-critical code**
 3. **Benchmark regularly**
 4. **Monitor memory usage**
 5. **Use appropriate data structures**
@@ -263,9 +263,9 @@ source codon-dev-env/bin/activate
 which python  # Should show codon-dev-env/bin/python
 ```
 
-#### 2. Condon Installation Issues
+#### 2. Codon Installation Issues
 ```bash
-# Problem: Condon not found
+# Problem: Codon not found
 # Solution:
 /bin/bash -c "$(curl -fsSL https://exaloop.io/install.sh)"
 export PATH="$HOME/.codon/bin:$PATH"
@@ -287,7 +287,7 @@ export PATH="$HOME/.codon/bin:$PATH"
 # Solution:
 # 1. Profile the code
 # 2. Identify bottlenecks
-# 3. Consider Condon compilation
+# 3. Consider Codon compilation
 # 4. Optimize algorithms
 ```
 
@@ -351,7 +351,7 @@ Before merging any code:
 ### Documentation
 - [Thread Safety Guidelines](tests/thread_safety/thread_safety_guidelines.md)
 - [Thread Safety Framework](tests/thread_safety/README.md)
-- [Condon Documentation](https://docs.exaloop.io/codon)
+- [Codon Documentation](https://docs.exaloop.io/codon)
 - [Project Architecture](docs/architecture/)
 
 ### Tools
@@ -370,7 +370,7 @@ Before merging any code:
 
 - [ ] Environment setup complete
 - [ ] Thread safety tests passing
-- [ ] Condon compilation working
+- [ ] Codon compilation working
 - [ ] CI/CD pipeline configured
 - [ ] Documentation reviewed
 - [ ] Team collaboration tools set up

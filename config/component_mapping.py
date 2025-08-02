@@ -1,7 +1,7 @@
 """Component Mapping & Runtime Assignment Configuration.
 
 This module defines the comprehensive mapping of all GraphMemory-IDE components
-to their target runtimes (CPython vs Condon) with migration strategies,
+to their target runtimes (CPython vs Codon) with migration strategies,
 performance characteristics, and thread safety requirements.
 
 Based on Task 3-B requirements and analysis of current architecture.
@@ -12,7 +12,7 @@ from enum import Enum
 from typing import Literal, Optional
 
 # Runtime Types
-RuntimeType = Literal["cpython", "condon", "hybrid"]
+RuntimeType = Literal["cpython", "codon", "hybrid"]
 
 
 class MigrationPhase(Enum):
@@ -41,7 +41,7 @@ class PerformanceBenchmark:
     target_throughput_rps: float
     memory_limit_mb: float
     cpu_limit_percent: float
-    expected_speedup: float  # Expected improvement with Condon
+    expected_speedup: float  # Expected improvement with Codon
 
 
 @dataclass
@@ -66,16 +66,16 @@ class ComponentMapping:
     performance_requirements: ThreadSafetyLevel
     migration_strategy: MigrationStrategy
     performance_benchmark: PerformanceBenchmark
-    condon_parts: list[str] = field(default_factory=list)  # For hybrid
+    codon_parts: list[str] = field(default_factory=list)  # For hybrid
     cpython_parts: list[str] = field(default_factory=list)  # For hybrid
 
 
 # Component Mapping Configuration
 COMPONENT_MAPPINGS: dict[str, ComponentMapping] = {
-    # ===== CONDON RUNTIME COMPONENTS (Performance Critical) =====
+    # ===== CODON RUNTIME COMPONENTS (Performance Critical) =====
     "analytics_engine": ComponentMapping(
         component_name="analytics_engine",
-        runtime="condon",
+        runtime="codon",
         reason=(
             "Graph algorithms and ML analytics performance critical - "
             "10-100x speedup expected"
@@ -99,7 +99,7 @@ COMPONENT_MAPPINGS: dict[str, ComponentMapping] = {
     ),
     "ai_detection": ComponentMapping(
         component_name="ai_detection",
-        runtime="condon",
+        runtime="codon",
         reason=(
             "ML model inference and TensorFlow operations - " "5-10x speedup expected"
         ),
@@ -122,7 +122,7 @@ COMPONENT_MAPPINGS: dict[str, ComponentMapping] = {
     ),
     "performance_monitor": ComponentMapping(
         component_name="performance_monitor",
-        runtime="condon",
+        runtime="codon",
         reason=(
             "Real-time metrics processing and Prometheus integration - "
             "3-5x speedup expected"
@@ -146,7 +146,7 @@ COMPONENT_MAPPINGS: dict[str, ComponentMapping] = {
     ),
     "ai_performance_optimizer": ComponentMapping(
         component_name="ai_performance_optimizer",
-        runtime="condon",
+        runtime="codon",
         reason="ML-driven optimization algorithms - 10-20x speedup expected",
         performance_requirements=ThreadSafetyLevel.CRITICAL,
         migration_strategy=MigrationStrategy(
@@ -236,7 +236,7 @@ COMPONENT_MAPPINGS: dict[str, ComponentMapping] = {
     "collaboration": ComponentMapping(
         component_name="collaboration",
         runtime="hybrid",
-        reason="Mixed web API (CPython) and real-time processing (Condon)",
+        reason="Mixed web API (CPython) and real-time processing (Codon)",
         performance_requirements=ThreadSafetyLevel.CRITICAL,
         migration_strategy=MigrationStrategy(
             phase=MigrationPhase.ACTIVE,
@@ -253,14 +253,14 @@ COMPONENT_MAPPINGS: dict[str, ComponentMapping] = {
             cpu_limit_percent=75.0,
             expected_speedup=3.0,
         ),
-        condon_parts=["real_time_processing", "ml_features", "crdt_engine"],
+        codon_parts=["real_time_processing", "ml_features", "crdt_engine"],
         cpython_parts=["web_api", "websocket", "auth_integration"],
     ),
     "memory_conflict_resolution": ComponentMapping(
         component_name="memory_conflict_resolution",
         runtime="hybrid",
         reason=(
-            "Complex conflict resolution with ML algorithms (Condon) "
+            "Complex conflict resolution with ML algorithms (Codon) "
             "and web API (CPython)"
         ),
         performance_requirements=ThreadSafetyLevel.CRITICAL,
@@ -279,7 +279,7 @@ COMPONENT_MAPPINGS: dict[str, ComponentMapping] = {
             cpu_limit_percent=70.0,
             expected_speedup=5.0,
         ),
-        condon_parts=["ml_algorithms", "conflict_detection", "resolution_engine"],
+        codon_parts=["ml_algorithms", "conflict_detection", "resolution_engine"],
         cpython_parts=["web_api", "user_interface", "audit_logging"],
     ),
 }
@@ -307,7 +307,7 @@ RUNTIME_PERFORMANCE_CHARACTERISTICS = {
             "Dynamic code execution",
         ],
     },
-    "condon": {
+    "codon": {
         "description": ("High-performance Python compiler with native code generation"),
         "strengths": [
             "10-100x performance improvement",
@@ -357,22 +357,22 @@ MIGRATION_STRATEGY_CONFIG = {
         "ENABLE_CONDON_ANALYTICS": {
             "default": False,
             "environment_var": "ENABLE_CONDON_ANALYTICS",
-            "description": "Enable Condon runtime for analytics engine",
+            "description": "Enable Codon runtime for analytics engine",
         },
         "ENABLE_CONDON_AI_DETECTION": {
             "default": False,
             "environment_var": "ENABLE_CONDON_AI_DETECTION",
-            "description": "Enable Condon runtime for AI detection",
+            "description": "Enable Codon runtime for AI detection",
         },
         "ENABLE_CONDON_MONITORING": {
             "default": False,
             "environment_var": "ENABLE_CONDON_MONITORING",
-            "description": "Enable Condon runtime for performance monitoring",
+            "description": "Enable Codon runtime for performance monitoring",
         },
         "ENABLE_CONDON_AI_OPTIMIZER": {
             "default": False,
             "environment_var": "ENABLE_CONDON_AI_OPTIMIZER",
-            "description": ("Enable Condon runtime for AI performance optimizer"),
+            "description": ("Enable Codon runtime for AI performance optimizer"),
         },
         "ENABLE_HYBRID_COLLABORATION": {
             "default": False,
@@ -409,12 +409,12 @@ def get_component_mapping(component_name: str) -> Optional[ComponentMapping]:
     return COMPONENT_MAPPINGS.get(component_name)
 
 
-def get_condon_components() -> list[str]:
-    """Get list of components mapped to Condon runtime"""
+def get_codon_components() -> list[str]:
+    """Get list of components mapped to Codon runtime"""
     return [
         name
         for name, mapping in COMPONENT_MAPPINGS.items()
-        if mapping.runtime == "condon"
+        if mapping.runtime == "codon"
     ]
 
 

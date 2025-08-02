@@ -1,7 +1,7 @@
 """
 Comprehensive tests for API compatibility layer
 
-This module tests the API compatibility layer for the hybrid CPython/Condon
+This module tests the API compatibility layer for the hybrid CPython/Codon
 architecture, including API versioning, backward compatibility, schema validation,
 and performance monitoring.
 """
@@ -164,23 +164,23 @@ class TestCompatibilityChecker:
         """Set up test fixtures"""
         self.checker = CompatibilityChecker()
 
-    def test_check_cpython_condon_compatibility(self):
-        """Test CPython/Condon compatibility checking"""
+    def test_check_cpython_codon_compatibility(self):
+        """Test CPython/Codon compatibility checking"""
         cpython_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
-        condon_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
+        codon_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
 
-        result = self.checker.check_cpython_condon_compatibility(
-            cpython_schema, condon_schema
+        result = self.checker.check_cpython_codon_compatibility(
+            cpython_schema, codon_schema
         )
         assert result is True
 
     def test_generate_compatibility_layer(self):
         """Test compatibility layer generation"""
         cpython_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
-        condon_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
+        codon_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
 
         result = self.checker.generate_compatibility_layer(
-            cpython_schema, condon_schema
+            cpython_schema, codon_schema
         )
 
         assert isinstance(result, dict)
@@ -502,25 +502,25 @@ class TestIntegration:
     """Integration tests for API compatibility layer"""
 
     @pytest.mark.asyncio
-    async def test_cpython_condon_integration(self):
-        """Test CPython/Condon API integration"""
+    async def test_cpython_codon_integration(self):
+        """Test CPython/Codon API integration"""
         # Create compatibility layer
         layer = create_api_compatibility_layer()
 
-        # Register CPython and Condon schemas
+        # Register CPython and Codon schemas
         cpython_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
-        condon_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
+        codon_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
 
         layer.version_manager.register_api_version(
             "cpython_service", "v1", cpython_schema
         )
         layer.version_manager.register_api_version(
-            "condon_service", "v1", condon_schema
+            "codon_service", "v1", codon_schema
         )
 
         # Test compatibility
-        compatibility = layer.compatibility_checker.check_cpython_condon_compatibility(
-            cpython_schema, condon_schema
+        compatibility = layer.compatibility_checker.check_cpython_codon_compatibility(
+            cpython_schema, codon_schema
         )
         assert compatibility is True
 

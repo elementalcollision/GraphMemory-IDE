@@ -1,6 +1,6 @@
 """
 Hybrid Integration Testing Framework
-Comprehensive integration testing for CPython/Condon hybrid architecture
+Comprehensive integration testing for CPython/Codon hybrid architecture
 """
 
 import asyncio
@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 import pytest
 from httpx import AsyncClient
 
-from .condon_integrator import CondonIntegrator
+from .codon_integrator import CodonIntegrator
 from .cpython_integrator import CPythonIntegrator
 from .quality_assurance import QualityAssurance
 from .validation_engine import ValidationEngine
@@ -47,11 +47,11 @@ class IntegrationTestResult:
 
 class HybridIntegrationFramework:
     """
-    Integration testing framework for CPython/Condon hybrid architecture
+    Integration testing framework for CPython/Codon hybrid architecture
 
     Features:
     - Comprehensive integration testing
-    - CPython and Condon service integration
+    - CPython and Codon service integration
     - End-to-end workflow testing
     - Performance validation
     - Quality assurance integration
@@ -64,7 +64,7 @@ class HybridIntegrationFramework:
 
         # Integration components
         self.cpython_integrator = CPythonIntegrator(self.client)
-        self.condon_integrator = CondonIntegrator(self.client)
+        self.codon_integrator = CodonIntegrator(self.client)
         self.hybrid_integrator = HybridIntegrator(self.client)
         self.validation_engine = ValidationEngine()
         self.quality_assurance = QualityAssurance()
@@ -85,7 +85,7 @@ class HybridIntegrationFramework:
         start_time = time.time()
         results = {
             "cpython_tests": {},
-            "condon_tests": {},
+            "codon_tests": {},
             "hybrid_tests": {},
             "validation_tests": {},
             "quality_tests": {},
@@ -100,10 +100,10 @@ class HybridIntegrationFramework:
                 await self.cpython_integrator.run_integration_tests()
             )
 
-            # Test Condon integration
-            logger.info("Running Condon integration tests")
-            results["condon_tests"] = (
-                await self.condon_integrator.run_integration_tests()
+            # Test Codon integration
+            logger.info("Running Codon integration tests")
+            results["codon_tests"] = (
+                await self.codon_integrator.run_integration_tests()
             )
 
             # Test hybrid integration
@@ -269,7 +269,7 @@ class HybridIntegrationFramework:
         """Test system latency"""
         latency_results = {
             "cpython_latency": {},
-            "condon_latency": {},
+            "codon_latency": {},
             "hybrid_latency": {},
         }
 
@@ -284,12 +284,12 @@ class HybridIntegrationFramework:
             "passed": cpython_latency < 0.1,
         }
 
-        # Test Condon service latency (simulated)
-        condon_latency = 0.05  # Simulated
-        latency_results["condon_latency"] = {
-            "compilation_endpoint": condon_latency,
+        # Test Codon service latency (simulated)
+        codon_latency = 0.05  # Simulated
+        latency_results["codon_latency"] = {
+            "compilation_endpoint": codon_latency,
             "threshold": 0.2,
-            "passed": condon_latency < 0.2,
+            "passed": codon_latency < 0.2,
         }
 
         # Test hybrid boundary latency
@@ -313,7 +313,7 @@ class HybridIntegrationFramework:
         # Simulate throughput tests
         throughput_results["requests_per_second"] = {
             "cpython": 1000,
-            "condon": 500,
+            "codon": 500,
             "hybrid": 750,
             "threshold": 100,
             "passed": True,
@@ -335,7 +335,7 @@ class HybridIntegrationFramework:
 
     async def _test_memory_usage(self) -> Dict[str, Any]:
         """Test memory usage"""
-        memory_results = {"cpython_memory": {}, "condon_memory": {}, "total_memory": {}}
+        memory_results = {"cpython_memory": {}, "codon_memory": {}, "total_memory": {}}
 
         # Simulate memory usage tests
         memory_results["cpython_memory"] = {
@@ -344,7 +344,7 @@ class HybridIntegrationFramework:
             "passed": True,
         }
 
-        memory_results["condon_memory"] = {
+        memory_results["codon_memory"] = {
             "usage_mb": 256,
             "threshold_mb": 512,
             "passed": True,
@@ -360,7 +360,7 @@ class HybridIntegrationFramework:
 
     async def _test_cpu_usage(self) -> Dict[str, Any]:
         """Test CPU usage"""
-        cpu_results = {"cpython_cpu": {}, "condon_cpu": {}, "total_cpu": {}}
+        cpu_results = {"cpython_cpu": {}, "codon_cpu": {}, "total_cpu": {}}
 
         # Simulate CPU usage tests
         cpu_results["cpython_cpu"] = {
@@ -369,7 +369,7 @@ class HybridIntegrationFramework:
             "passed": True,
         }
 
-        cpu_results["condon_cpu"] = {
+        cpu_results["codon_cpu"] = {
             "usage_percent": 15.0,
             "threshold_percent": 60.0,
             "passed": True,
@@ -429,12 +429,12 @@ class HybridIntegrationFramework:
         latency_tests = performance_tests["latency_tests"]
         performance_validation["latency_validation"] = {
             "cpython_passed": latency_tests["cpython_latency"]["passed"],
-            "condon_passed": latency_tests["condon_latency"]["passed"],
+            "codon_passed": latency_tests["codon_latency"]["passed"],
             "hybrid_passed": latency_tests["hybrid_latency"]["passed"],
             "overall_passed": all(
                 [
                     latency_tests["cpython_latency"]["passed"],
-                    latency_tests["condon_latency"]["passed"],
+                    latency_tests["codon_latency"]["passed"],
                     latency_tests["hybrid_latency"]["passed"],
                 ]
             ),
@@ -462,14 +462,14 @@ class HybridIntegrationFramework:
             "memory_passed": all(
                 [
                     memory_tests["cpython_memory"]["passed"],
-                    memory_tests["condon_memory"]["passed"],
+                    memory_tests["codon_memory"]["passed"],
                     memory_tests["total_memory"]["passed"],
                 ]
             ),
             "cpu_passed": all(
                 [
                     cpu_tests["cpython_cpu"]["passed"],
-                    cpu_tests["condon_cpu"]["passed"],
+                    cpu_tests["codon_cpu"]["passed"],
                     cpu_tests["total_cpu"]["passed"],
                 ]
             ),
@@ -721,7 +721,7 @@ class HybridIntegrationFramework:
         # Count test results (simplified)
         for test_category in [
             "cpython_tests",
-            "condon_tests",
+            "codon_tests",
             "hybrid_tests",
             "validation_tests",
             "quality_tests",
@@ -767,7 +767,7 @@ class HybridIntegrationFramework:
             "benchmarks": {
                 "latency_benchmarks": {
                     "cpython_target": 0.1,
-                    "condon_target": 0.2,
+                    "codon_target": 0.2,
                     "hybrid_target": 0.3,
                 },
                 "throughput_benchmarks": {
@@ -804,12 +804,12 @@ class HybridIntegrationFramework:
             ):
                 recommendations.append("Improve CPython service integration testing")
 
-        if "condon_tests" in test_results:
-            condon_results = test_results["condon_tests"]
-            if isinstance(condon_results, dict) and not condon_results.get(
+        if "codon_tests" in test_results:
+            codon_results = test_results["codon_tests"]
+            if isinstance(codon_results, dict) and not codon_results.get(
                 "passed", True
             ):
-                recommendations.append("Enhance Condon service integration testing")
+                recommendations.append("Enhance Codon service integration testing")
 
         if "hybrid_tests" in test_results:
             hybrid_results = test_results["hybrid_tests"]
@@ -907,57 +907,57 @@ class HybridIntegrator:
     async def _test_service_boundaries(self) -> Dict[str, Any]:
         """Test service boundary calls"""
         boundary_results = {
-            "cpython_to_condon": {},
-            "condon_to_cpython": {},
+            "cpython_to_codon": {},
+            "codon_to_cpython": {},
             "hybrid_boundary_latency": {},
             "passed": True,
         }
 
         try:
-            # Test CPython to Condon boundary
+            # Test CPython to Codon boundary
             start_time = time.time()
             response = await self.client.post(
                 "/api/hybrid/boundary-test",
                 json={
                     "from_service": "cpython",
-                    "to_service": "condon",
+                    "to_service": "codon",
                     "data": {"test": "data"},
                 },
             )
-            cpython_to_condon_latency = time.time() - start_time
+            cpython_to_codon_latency = time.time() - start_time
 
-            boundary_results["cpython_to_condon"] = {
+            boundary_results["cpython_to_codon"] = {
                 "status_code": response.status_code,
-                "latency": cpython_to_condon_latency,
+                "latency": cpython_to_codon_latency,
                 "passed": response.status_code == 200
-                and cpython_to_condon_latency < 0.5,
+                and cpython_to_codon_latency < 0.5,
             }
 
-            # Test Condon to CPython boundary
+            # Test Codon to CPython boundary
             start_time = time.time()
             response = await self.client.post(
                 "/api/hybrid/boundary-test",
                 json={
-                    "from_service": "condon",
+                    "from_service": "codon",
                     "to_service": "cpython",
                     "data": {"test": "data"},
                 },
             )
-            condon_to_cpython_latency = time.time() - start_time
+            codon_to_cpython_latency = time.time() - start_time
 
-            boundary_results["condon_to_cpython"] = {
+            boundary_results["codon_to_cpython"] = {
                 "status_code": response.status_code,
-                "latency": condon_to_cpython_latency,
+                "latency": codon_to_cpython_latency,
                 "passed": response.status_code == 200
-                and condon_to_cpython_latency < 0.5,
+                and codon_to_cpython_latency < 0.5,
             }
 
             # Overall boundary latency
             boundary_results["hybrid_boundary_latency"] = {
-                "avg_latency": (cpython_to_condon_latency + condon_to_cpython_latency)
+                "avg_latency": (cpython_to_codon_latency + codon_to_cpython_latency)
                 / 2,
                 "max_latency": max(
-                    cpython_to_condon_latency, condon_to_cpython_latency
+                    cpython_to_codon_latency, codon_to_cpython_latency
                 ),
                 "threshold": 0.5,
                 "passed": True,
@@ -966,8 +966,8 @@ class HybridIntegrator:
             # Overall result
             boundary_results["passed"] = all(
                 [
-                    boundary_results["cpython_to_condon"]["passed"],
-                    boundary_results["condon_to_cpython"]["passed"],
+                    boundary_results["cpython_to_codon"]["passed"],
+                    boundary_results["codon_to_cpython"]["passed"],
                     boundary_results["hybrid_boundary_latency"]["passed"],
                 ]
             )

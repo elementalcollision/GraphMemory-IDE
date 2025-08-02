@@ -1,8 +1,8 @@
 """
-Comprehensive Thread Safety Framework for Hybrid CPython/Condon Architecture
+Comprehensive Thread Safety Framework for Hybrid CPython/Codon Architecture
 
 This module provides production-ready thread safety patterns, memory safety mechanisms,
-concurrency controls, and validation framework for the hybrid CPython/Condon runtime.
+concurrency controls, and validation framework for the hybrid CPython/Codon runtime.
 """
 
 import asyncio
@@ -42,7 +42,7 @@ class RuntimeType(Enum):
     """Runtime types for hybrid architecture"""
 
     CPYTHON = "cpython"
-    CONDON = "condon"
+    CONDON = "codon"
     HYBRID = "hybrid"
 
 
@@ -90,7 +90,7 @@ class MemorySafetyManager:
             if component not in self.memory_tracker:
                 self.memory_tracker[component] = {
                     "cpython": {"allocated": 0, "peak": 0},
-                    "condon": {"allocated": 0, "peak": 0},
+                    "codon": {"allocated": 0, "peak": 0},
                     "hybrid": {"allocated": 0, "peak": 0},
                 }
 
@@ -430,7 +430,7 @@ class ThreadSafetyMonitor:
 
 
 class HybridThreadSafetyFramework:
-    """Main thread safety framework for hybrid CPython/Condon architecture"""
+    """Main thread safety framework for hybrid CPython/Codon architecture"""
 
     def __init__(self, config: ThreadSafetyConfig):
         self.config = config
@@ -442,7 +442,7 @@ class HybridThreadSafetyFramework:
 
         # Runtime-specific safety managers
         self.cpython_safety = CPythonThreadSafety(config)
-        self.condon_safety = CondonThreadSafety(config)
+        self.codon_safety = CodonThreadSafety(config)
         self.hybrid_safety = HybridThreadSafety(config)
 
     def initialize(self) -> None:
@@ -538,20 +538,20 @@ class CPythonThreadSafety:
         return {"id": resource_id, "created": time.time()}
 
 
-class CondonThreadSafety:
-    """Thread safety patterns for Condon services"""
+class CodonThreadSafety:
+    """Thread safety patterns for Codon services"""
 
     def __init__(self, config: ThreadSafetyConfig):
         self.config = config
         self.memory_isolation = True
         self.thread_safety_validation = True
         self.resource_cleanup = True
-        self._condon_lock = threading.RLock()
+        self._codon_lock = threading.RLock()
 
-    def safe_condon_execution(self, func: Callable, *args, **kwargs) -> Any:
-        """Thread-safe Condon function execution"""
-        with self._condon_lock:
-            # Condon-specific thread safety
+    def safe_codon_execution(self, func: Callable, *args, **kwargs) -> Any:
+        """Thread-safe Codon function execution"""
+        with self._codon_lock:
+            # Codon-specific thread safety
             if self.memory_isolation:
                 self._ensure_memory_isolation()
 
@@ -560,48 +560,48 @@ class CondonThreadSafety:
                 return result
             finally:
                 if self.resource_cleanup:
-                    self._cleanup_condon_resources()
+                    self._cleanup_codon_resources()
 
     def safe_memory_isolation(self) -> None:
-        """Ensure memory isolation between threads in Condon"""
-        # Condon-specific memory isolation
-        if hasattr(threading.current_thread(), "_condon_memory_space"):
-            del threading.current_thread()._condon_memory_space
+        """Ensure memory isolation between threads in Codon"""
+        # Codon-specific memory isolation
+        if hasattr(threading.current_thread(), "_codon_memory_space"):
+            del threading.current_thread()._codon_memory_space
 
     def safe_resource_cleanup(self) -> None:
-        """Thread-safe resource cleanup for Condon"""
-        with self._condon_lock:
-            # Condon-specific cleanup
-            if hasattr(threading.current_thread(), "_condon_resources"):
-                for resource in threading.current_thread()._condon_resources:
+        """Thread-safe resource cleanup for Codon"""
+        with self._codon_lock:
+            # Codon-specific cleanup
+            if hasattr(threading.current_thread(), "_codon_resources"):
+                for resource in threading.current_thread()._codon_resources:
                     try:
                         resource.cleanup()
                     except Exception as e:
-                        logger.error(f"Condon resource cleanup failed: {e}")
+                        logger.error(f"Codon resource cleanup failed: {e}")
 
     def _ensure_memory_isolation(self) -> None:
-        """Ensure memory isolation for Condon threads"""
-        # Implementation for Condon memory isolation
+        """Ensure memory isolation for Codon threads"""
+        # Implementation for Codon memory isolation
         pass
 
-    def _cleanup_condon_resources(self) -> None:
-        """Clean up Condon-specific resources"""
-        # Implementation for Condon resource cleanup
+    def _cleanup_codon_resources(self) -> None:
+        """Clean up Codon-specific resources"""
+        # Implementation for Codon resource cleanup
         pass
 
 
 class HybridThreadSafety:
-    """Thread safety patterns for hybrid CPython/Condon services"""
+    """Thread safety patterns for hybrid CPython/Codon services"""
 
     def __init__(self, config: ThreadSafetyConfig):
         self.config = config
         self.cpython_safety = CPythonThreadSafety(config)
-        self.condon_safety = CondonThreadSafety(config)
+        self.codon_safety = CodonThreadSafety(config)
         self.boundary_safety = True
         self._hybrid_lock = threading.RLock()
 
     def safe_cross_boundary_communication(self, data: Any) -> Any:
-        """Thread-safe communication across CPython/Condon boundaries"""
+        """Thread-safe communication across CPython/Codon boundaries"""
         with self._hybrid_lock:
             # Validate data format for cross-boundary communication
             validated_data = self._validate_cross_boundary_data(data)

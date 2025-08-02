@@ -2,7 +2,7 @@
 Performance Benchmarking Runner for Hybrid Architecture
 
 This script provides a comprehensive performance benchmarking and optimization
-runner for the hybrid CPython/Condon architecture, including performance monitoring,
+runner for the hybrid CPython/Codon architecture, including performance monitoring,
 optimization techniques, and production-ready performance validation.
 """
 
@@ -73,7 +73,7 @@ class PerformanceBenchmarkRunner:
                 logger.info("Running performance optimizations...")
                 optimization_results = []
 
-                for component in ["cpython", "condon", "hybrid"]:
+                for component in ["cpython", "codon", "hybrid"]:
                     component_optimizations = (
                         await self.performance_framework.optimize_performance(component)
                     )
@@ -120,7 +120,7 @@ class PerformanceBenchmarkRunner:
 
         all_optimizations = []
 
-        for component in ["cpython", "condon", "hybrid"]:
+        for component in ["cpython", "codon", "hybrid"]:
             component_optimizations = (
                 await self.performance_framework.optimize_performance(component)
             )

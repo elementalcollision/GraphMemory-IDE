@@ -1,6 +1,6 @@
 """
-Comprehensive testing framework for hybrid CPython/Condon architecture.
-This framework provides unified testing capabilities for both CPython and Condon components.
+Comprehensive testing framework for hybrid CPython/Codon architecture.
+This framework provides unified testing capabilities for both CPython and Codon components.
 """
 
 import asyncio
@@ -207,8 +207,8 @@ class CPythonTester:
         pass
 
 
-class CondonTester:
-    """Testing framework for Condon components"""
+class CodonTester:
+    """Testing framework for Codon components"""
 
     def __init__(self):
         self.performance_validator = PerformanceValidator()
@@ -236,7 +236,7 @@ class CondonTester:
             duration = time.time() - start_time
             return TestResult(
                 test_name="analytics_engine_test",
-                component="condon",
+                component="codon",
                 status="passed",
                 duration=duration,
                 performance_metrics=performance_metrics,
@@ -247,7 +247,7 @@ class CondonTester:
             duration = time.time() - start_time
             return TestResult(
                 test_name="analytics_engine_test",
-                component="condon",
+                component="codon",
                 status="failed",
                 duration=duration,
                 error_message=str(e),
@@ -273,7 +273,7 @@ class CondonTester:
             duration = time.time() - start_time
             return TestResult(
                 test_name="ai_detection_test",
-                component="condon",
+                component="codon",
                 status="passed",
                 duration=duration,
                 performance_metrics={**performance_metrics, **accuracy_metrics},
@@ -283,7 +283,7 @@ class CondonTester:
             duration = time.time() - start_time
             return TestResult(
                 test_name="ai_detection_test",
-                component="condon",
+                component="codon",
                 status="failed",
                 duration=duration,
                 error_message=str(e),
@@ -309,7 +309,7 @@ class CondonTester:
             duration = time.time() - start_time
             return TestResult(
                 test_name="monitoring_system_test",
-                component="condon",
+                component="codon",
                 status="passed",
                 duration=duration,
                 performance_metrics=health_metrics,
@@ -319,7 +319,7 @@ class CondonTester:
             duration = time.time() - start_time
             return TestResult(
                 test_name="monitoring_system_test",
-                component="condon",
+                component="codon",
                 status="failed",
                 duration=duration,
                 error_message=str(e),
@@ -400,11 +400,11 @@ class IntegrationTester:
         start_time = time.time()
 
         try:
-            # Test CPython to Condon integration
-            await self._test_cpython_to_condon_integration()
+            # Test CPython to Codon integration
+            await self._test_cpython_to_codon_integration()
 
-            # Test Condon to CPython integration
-            await self._test_condon_to_cpython_integration()
+            # Test Codon to CPython integration
+            await self._test_codon_to_cpython_integration()
 
             # Test hybrid service integration
             await self._test_hybrid_service_integration()
@@ -465,13 +465,13 @@ class IntegrationTester:
                 error_message=str(e),
             )
 
-    async def _test_cpython_to_condon_integration(self):
-        """Test CPython to Condon integration"""
+    async def _test_cpython_to_codon_integration(self):
+        """Test CPython to Codon integration"""
         # Mock implementation for testing
         pass
 
-    async def _test_condon_to_cpython_integration(self):
-        """Test Condon to CPython integration"""
+    async def _test_codon_to_cpython_integration(self):
+        """Test Codon to CPython integration"""
         # Mock implementation for testing
         pass
 
@@ -524,8 +524,8 @@ class PerformanceTester:
             # Test CPython performance
             cpython_metrics = await self._test_cpython_performance()
 
-            # Test Condon performance
-            condon_metrics = await self._test_condon_performance()
+            # Test Codon performance
+            codon_metrics = await self._test_codon_performance()
 
             # Test hybrid performance
             hybrid_metrics = await self._test_hybrid_performance()
@@ -541,7 +541,7 @@ class PerformanceTester:
                 duration=duration,
                 performance_metrics={
                     "cpython": cpython_metrics,
-                    "condon": condon_metrics,
+                    "codon": codon_metrics,
                     "hybrid": hybrid_metrics,
                     "scalability": scalability_metrics,
                 },
@@ -603,8 +603,8 @@ class PerformanceTester:
         # Mock implementation for testing
         return {"throughput": 1000, "latency": 0.1, "memory_usage": 128.5}
 
-    async def _test_condon_performance(self) -> Dict[str, Any]:
-        """Test Condon performance"""
+    async def _test_codon_performance(self) -> Dict[str, Any]:
+        """Test Codon performance"""
         # Mock implementation for testing
         return {"throughput": 2000, "latency": 0.05, "memory_usage": 256.0}
 
@@ -656,8 +656,8 @@ class ThreadSafetyTester:
             # Test CPython thread safety
             cpython_safety = await self._test_cpython_thread_safety()
 
-            # Test Condon thread safety
-            condon_safety = await self._test_condon_thread_safety()
+            # Test Codon thread safety
+            codon_safety = await self._test_codon_thread_safety()
 
             # Test hybrid thread safety
             hybrid_safety = await self._test_hybrid_thread_safety()
@@ -672,7 +672,7 @@ class ThreadSafetyTester:
                 status="passed",
                 duration=duration,
                 thread_safety_score=min(
-                    cpython_safety, condon_safety, hybrid_safety, memory_safety
+                    cpython_safety, codon_safety, hybrid_safety, memory_safety
                 ),
             )
 
@@ -726,8 +726,8 @@ class ThreadSafetyTester:
         # Mock implementation for testing
         return 0.98
 
-    async def _test_condon_thread_safety(self) -> float:
-        """Test Condon thread safety"""
+    async def _test_codon_thread_safety(self) -> float:
+        """Test Codon thread safety"""
         # Mock implementation for testing
         return 0.99
 
@@ -763,11 +763,11 @@ class ThreadSafetyTester:
 
 
 class HybridTestingFramework:
-    """Comprehensive testing framework for CPython/Condon architecture"""
+    """Comprehensive testing framework for CPython/Codon architecture"""
 
     def __init__(self):
         self.cpython_tester = CPythonTester()
-        self.condon_tester = CondonTester()
+        self.codon_tester = CodonTester()
         self.integration_tester = IntegrationTester()
         self.performance_tester = PerformanceTester()
         self.thread_safety_tester = ThreadSafetyTester()
@@ -784,10 +784,10 @@ class HybridTestingFramework:
         cpython_results = await self.run_cpython_tests()
         all_results.extend(cpython_results)
 
-        # Run Condon tests
-        logger.info("Running Condon tests")
-        condon_results = await self.run_condon_tests()
-        all_results.extend(condon_results)
+        # Run Codon tests
+        logger.info("Running Codon tests")
+        codon_results = await self.run_codon_tests()
+        all_results.extend(codon_results)
 
         # Run integration tests
         logger.info("Running integration tests")
@@ -829,20 +829,20 @@ class HybridTestingFramework:
 
         return results
 
-    async def run_condon_tests(self) -> List[TestResult]:
-        """Run Condon unit tests"""
+    async def run_codon_tests(self) -> List[TestResult]:
+        """Run Codon unit tests"""
         results = []
 
         # Test analytics engine
-        analytics_result = await self.condon_tester.test_analytics_engine()
+        analytics_result = await self.codon_tester.test_analytics_engine()
         results.append(analytics_result)
 
         # Test AI detection
-        ai_detection_result = await self.condon_tester.test_ai_detection()
+        ai_detection_result = await self.codon_tester.test_ai_detection()
         results.append(ai_detection_result)
 
         # Test monitoring system
-        monitoring_result = await self.condon_tester.test_monitoring_system()
+        monitoring_result = await self.codon_tester.test_monitoring_system()
         results.append(monitoring_result)
 
         return results
@@ -897,8 +897,8 @@ class HybridTestingFramework:
         """Run unit tests for specific component"""
         if component.lower() == "cpython":
             return await self.run_cpython_tests()
-        elif component.lower() == "condon":
-            return await self.run_condon_tests()
+        elif component.lower() == "codon":
+            return await self.run_codon_tests()
         else:
             raise ValueError(f"Unknown component: {component}")
 
@@ -1046,8 +1046,8 @@ def test_cpython_unit_tests():
     pass
 
 
-def test_condon_unit_tests():
-    """Test Condon unit test framework"""
+def test_codon_unit_tests():
+    """Test Codon unit test framework"""
     # Test analytics engine unit tests
     # Test AI detection unit tests
     # Test monitoring system unit tests
@@ -1067,7 +1067,7 @@ def test_integration_tests():
 def test_performance_tests():
     """Test performance test framework"""
     # Test CPython performance
-    # Test Condon performance
+    # Test Codon performance
     # Test hybrid performance
     # Test scalability tests
     pass
@@ -1076,7 +1076,7 @@ def test_performance_tests():
 def test_thread_safety_tests():
     """Test thread safety test framework"""
     # Test CPython thread safety
-    # Test Condon thread safety
+    # Test Codon thread safety
     # Test hybrid thread safety
     # Test memory safety tests
     pass
@@ -1084,8 +1084,8 @@ def test_thread_safety_tests():
 
 def test_service_integration():
     """Test service integration patterns"""
-    # Test CPython to Condon integration
-    # Test Condon to CPython integration
+    # Test CPython to Codon integration
+    # Test Codon to CPython integration
     # Test hybrid service integration
     # Test error propagation
     pass

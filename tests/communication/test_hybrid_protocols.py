@@ -1,7 +1,7 @@
 """
 Comprehensive tests for hybrid communication protocols
 
-This module tests the communication protocols for the hybrid CPython/Condon architecture,
+This module tests the communication protocols for the hybrid CPython/Codon architecture,
 including inter-service communication, data serialization, error handling, and performance optimization.
 """
 
@@ -47,27 +47,27 @@ class TestHybridDataSerializer:
         deserialized = self.serializer.deserialize_from_cpython(serialized)
         assert deserialized == self.test_data
 
-    def test_serialize_for_condon(self):
-        """Test Condon serialization"""
-        serialized = self.serializer.serialize_for_condon(self.test_data)
+    def test_serialize_for_codon(self):
+        """Test Codon serialization"""
+        serialized = self.serializer.serialize_for_codon(self.test_data)
         assert isinstance(serialized, bytes)
 
         # Test deserialization
-        deserialized = self.serializer.deserialize_from_condon(serialized)
+        deserialized = self.serializer.deserialize_from_codon(serialized)
         assert deserialized == self.test_data
 
     def test_compatibility_layer(self):
         """Test compatibility layer conversion"""
-        # Test CPython to Condon conversion
+        # Test CPython to Codon conversion
         cpython_data = {"test": "data"}
-        condon_data = self.serializer.compatibility_layer.convert_for_condon(
+        codon_data = self.serializer.compatibility_layer.convert_for_codon(
             cpython_data
         )
-        assert condon_data == cpython_data
+        assert codon_data == cpython_data
 
-        # Test Condon to CPython conversion
+        # Test Codon to CPython conversion
         cpython_converted = self.serializer.compatibility_layer.convert_for_cpython(
-            condon_data
+            codon_data
         )
         assert cpython_converted == cpython_data
 
@@ -270,8 +270,8 @@ class TestHybridCommunicationProtocol:
             mock_route.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_send_request_condon(self):
-        """Test sending request to Condon service"""
+    async def test_send_request_codon(self):
+        """Test sending request to Codon service"""
         # Mock the load balancer
         with patch.object(self.protocol.load_balancer, "route_request") as mock_route:
             mock_route.return_value = {
@@ -280,7 +280,7 @@ class TestHybridCommunicationProtocol:
             }
 
             data = {"test": "data"}
-            result = await self.protocol.send_request("condon_service", data)
+            result = await self.protocol.send_request("codon_service", data)
 
             assert result == {"status": "success"}
             mock_route.assert_called_once()

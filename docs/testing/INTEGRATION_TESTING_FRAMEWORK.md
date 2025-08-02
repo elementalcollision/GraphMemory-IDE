@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Integration Testing Framework provides comprehensive testing capabilities for the hybrid CPython/Condon architecture. It includes end-to-end testing, validation frameworks, quality assurance, and production readiness validation.
+The Integration Testing Framework provides comprehensive testing capabilities for the hybrid CPython/Codon architecture. It includes end-to-end testing, validation frameworks, quality assurance, and production readiness validation.
 
 ## Architecture
 
@@ -10,7 +10,7 @@ The Integration Testing Framework provides comprehensive testing capabilities fo
 
 1. **HybridIntegrationFramework** - Main integration testing orchestrator
 2. **CPythonIntegrator** - CPython service integration testing
-3. **CondonIntegrator** - Condon service integration testing
+3. **CodonIntegrator** - Codon service integration testing
 4. **ValidationEngine** - Comprehensive validation frameworks
 5. **QualityAssurance** - Quality assurance and compliance testing
 6. **EndToEndTester** - Complete workflow and scenario testing
@@ -19,7 +19,7 @@ The Integration Testing Framework provides comprehensive testing capabilities fo
 
 #### Integration Tests
 - **CPython Integration**: Authentication, dashboard, streaming services
-- **Condon Integration**: Analytics, AI detection, monitoring services
+- **Codon Integration**: Analytics, AI detection, monitoring services
 - **Hybrid Integration**: Service boundaries, communication patterns, API integration
 
 #### Validation Tests
@@ -87,7 +87,7 @@ reports = await framework.generate_validation_reports()
     "streaming_integration": {"passed": true, "duration": 1.8},
     "passed": true
   },
-  "condon_tests": {
+  "codon_tests": {
     "analytics_integration": {"passed": true, "duration": 4.2},
     "ai_detection_integration": {"passed": true, "duration": 3.7},
     "monitoring_integration": {"passed": true, "duration": 2.9},
@@ -345,7 +345,7 @@ When contributing to the integration testing framework:
 
 - [Hybrid Integration Framework](./hybrid_integration_framework.py)
 - [CPython Integrator](./cpython_integrator.py)
-- [Condon Integrator](./condon_integrator.py)
+- [Codon Integrator](./codon_integrator.py)
 - [Validation Engine](./validation_engine.py)
 - [Quality Assurance](./quality_assurance.py)
 - [End-to-End Tester](./end_to_end_tester.py) 

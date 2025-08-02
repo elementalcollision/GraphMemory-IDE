@@ -1,0 +1,641 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-8.0.0, pluggy-1.6.0
+rootdir: /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1
+configfile: pytest.ini
+plugins: cov-5.0.0, mock-3.12.0
+collected 197 items / 40 errors
+
+==================================== ERRORS ====================================
+____________ ERROR collecting monitoring/test_hybrid_monitoring.py _____________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/monitoring/test_hybrid_monitoring.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+monitoring/test_hybrid_monitoring.py:14: in <module>
+    from .codon_monitor import (
+E   ImportError: attempted relative import with no known parent package
+____ ERROR collecting server/collaboration/test_integration_performance.py _____
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/collaboration/test_integration_performance.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+server/collaboration/__init__.py:13: in <module>
+    from .state import (
+server/collaboration/state.py:15: in <module>
+    from pydantic import BaseModel
+E   ModuleNotFoundError: No module named 'pydantic'
+________ ERROR collecting server/collaboration/test_rbac_integration.py ________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/collaboration/test_rbac_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+server/collaboration/__init__.py:13: in <module>
+    from .state import (
+server/collaboration/state.py:15: in <module>
+    from pydantic import BaseModel
+E   ModuleNotFoundError: No module named 'pydantic'
+________ ERROR collecting server/collaboration/test_tenant_isolation.py ________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/collaboration/test_tenant_isolation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+server/collaboration/__init__.py:13: in <module>
+    from .state import (
+server/collaboration/state.py:15: in <module>
+    from pydantic import BaseModel
+E   ModuleNotFoundError: No module named 'pydantic'
+__________ ERROR collecting server/dashboard/test_analytics_client.py __________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_analytics_client.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+server/dashboard/test_analytics_client.py:15: in <module>
+    from analytics_client import (
+E   ModuleNotFoundError: No module named 'analytics_client'
+___________ ERROR collecting server/dashboard/test_cache_manager.py ____________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_cache_manager.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+server/dashboard/test_cache_manager.py:11: in <module>
+    import pytest_asyncio
+E   ModuleNotFoundError: No module named 'pytest_asyncio'
+________ ERROR collecting server/dashboard/test_performance_manager.py _________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_performance_manager.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+server/dashboard/test_performance_manager.py:11: in <module>
+    import pytest_asyncio
+E   ModuleNotFoundError: No module named 'pytest_asyncio'
+_____________________ ERROR collecting server/test_main.py _____________________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/test_main.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+server/test_main.py:2: in <module>
+    from fastapi.testclient import TestClient
+E   ModuleNotFoundError: No module named 'fastapi'
+___________ ERROR collecting server/tests/locust_performance_test.py ___________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/tests/locust_performance_test.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+server/tests/locust_performance_test.py:11: in <module>
+    from locust import HttpUser, task, between
+E   ModuleNotFoundError: No module named 'locust'
+_________ ERROR collecting server/tests/test_analytics_integration.py __________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/tests/test_analytics_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+server/tests/test_analytics_integration.py:19: in <module>
+    from server.analytics.kuzu_analytics import KuzuAnalyticsEngine, GraphAnalyticsType, GraphMetrics
+server/analytics/__init__.py:11: in <module>
+    from .models import (
+server/analytics/models.py:5: in <module>
+    from pydantic import BaseModel, Field
+E   ModuleNotFoundError: No module named 'pydantic'
+_________ ERROR collecting server/tests/test_performance_analytics.py __________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/tests/test_performance_analytics.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+server/tests/test_performance_analytics.py:23: in <module>
+    from server.analytics.kuzu_analytics import KuzuAnalyticsEngine, GraphAnalyticsType
+server/analytics/__init__.py:11: in <module>
+    from .models import (
+server/analytics/models.py:5: in <module>
+    from pydantic import BaseModel, Field
+E   ModuleNotFoundError: No module named 'pydantic'
+__________ ERROR collecting tests/analytics/test_integration_suite.py __________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/analytics/test_integration_suite.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/analytics/test_integration_suite.py:12: in <module>
+    import kuzu
+E   ModuleNotFoundError: No module named 'kuzu'
+____________ ERROR collecting tests/api/test_compatibility_layer.py ____________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/api/test_compatibility_layer.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/api/test_compatibility_layer.py:16: in <module>
+    from server.api.compatibility_layer import (
+server/api/compatibility_layer.py:18: in <module>
+    import jsonschema
+E   ModuleNotFoundError: No module named 'jsonschema'
+_________ ERROR collecting tests/cloud/test_digitalocean_deployment.py _________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/cloud/test_digitalocean_deployment.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/cloud/test_digitalocean_deployment.py:13: in <module>
+    import httpx
+E   ModuleNotFoundError: No module named 'httpx'
+________ ERROR collecting tests/communication/test_hybrid_protocols.py _________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/communication/test_hybrid_protocols.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/communication/test_hybrid_protocols.py:15: in <module>
+    from server.communication.hybrid_protocols import (
+server/communication/hybrid_protocols.py:17: in <module>
+    import jwt
+E   ModuleNotFoundError: No module named 'jwt'
+___ ERROR collecting tests/compatibility/test_api_compatibility_framework.py ___
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/compatibility/test_api_compatibility_framework.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/compatibility/__init__.py:9: in <module>
+    from .api_validator import APIContractValidator
+tests/compatibility/api_validator.py:16: in <module>
+    from jsonschema import Draft7Validator
+E   ModuleNotFoundError: No module named 'jsonschema'
+____________ ERROR collecting tests/condon/unit/test_algorithms.py _____________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/condon/unit/test_algorithms.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/condon/unit/__init__.py:8: in <module>
+    from .test_algorithms import TestAlgorithms
+tests/condon/unit/test_algorithms.py:10: in <module>
+    from tests.codon.base import (
+E   ModuleNotFoundError: No module named 'tests.codon'
+_________ ERROR collecting tests/condon/unit/test_analytics_engine.py __________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/condon/unit/test_analytics_engine.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/condon/unit/__init__.py:8: in <module>
+    from .test_algorithms import TestAlgorithms
+tests/condon/unit/test_algorithms.py:10: in <module>
+    from tests.codon.base import (
+E   ModuleNotFoundError: No module named 'tests.codon'
+_______________ ERROR collecting tests/condon/unit/test_cache.py _______________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/condon/unit/test_cache.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/condon/unit/__init__.py:8: in <module>
+    from .test_algorithms import TestAlgorithms
+tests/condon/unit/test_algorithms.py:10: in <module>
+    from tests.codon.base import (
+E   ModuleNotFoundError: No module named 'tests.codon'
+__________ ERROR collecting tests/condon/unit/test_data_generator.py ___________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/condon/unit/test_data_generator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/condon/unit/__init__.py:8: in <module>
+    from .test_algorithms import TestAlgorithms
+tests/condon/unit/test_algorithms.py:10: in <module>
+    from tests.codon.base import (
+E   ModuleNotFoundError: No module named 'tests.codon'
+______________ ERROR collecting tests/condon/unit/test_runner.py _______________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/condon/unit/test_runner.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/condon/unit/__init__.py:8: in <module>
+    from .test_algorithms import TestAlgorithms
+tests/condon/unit/test_algorithms.py:10: in <module>
+    from tests.codon.base import (
+E   ModuleNotFoundError: No module named 'tests.codon'
+____ ERROR collecting tests/functional/test_phase1_async_infrastructure.py _____
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/functional/test_phase1_async_infrastructure.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/functional/test_phase1_async_infrastructure.py:22: in <module>
+    import pytest_asyncio
+E   ModuleNotFoundError: No module named 'pytest_asyncio'
+_________ ERROR collecting tests/integration/test_basic_integration.py _________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/integration/test_basic_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_basic_integration.py:8: in <module>
+    from httpx import AsyncClient
+E   ModuleNotFoundError: No module named 'httpx'
+____ ERROR collecting tests/integration/test_cross_database_transactions.py ____
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/integration/test_cross_database_transactions.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_cross_database_transactions.py:15: in <module>
+    from tests.fixtures.advanced_database_fixtures import (
+tests/fixtures/advanced_database_fixtures.py:21: in <module>
+    import kuzu
+E   ModuleNotFoundError: No module named 'kuzu'
+_______ ERROR collecting tests/integration/test_database_integration.py ________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/integration/test_database_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_database_integration.py:22: in <module>
+    import sqlalchemy
+E   ModuleNotFoundError: No module named 'sqlalchemy'
+_______ ERROR collecting tests/integration/test_database_performance.py ________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/integration/test_database_performance.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_database_performance.py:15: in <module>
+    from tests.fixtures.advanced_database_fixtures import (
+tests/fixtures/advanced_database_fixtures.py:21: in <module>
+    import kuzu
+E   ModuleNotFoundError: No module named 'kuzu'
+_ ERROR collecting tests/integration/test_end_to_end_dashboard_integration.py __
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/integration/test_end_to_end_dashboard_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_end_to_end_dashboard_integration.py:21: in <module>
+    from selenium import webdriver
+E   ModuleNotFoundError: No module named 'selenium'
+__________ ERROR collecting tests/integration/test_real_analytics.py ___________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/integration/test_real_analytics.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_real_analytics.py:14: in <module>
+    from tests.fixtures.real_services import real_analytics_engine, real_service_integration
+tests/fixtures/real_services.py:14: in <module>
+    import httpx
+E   ModuleNotFoundError: No module named 'httpx'
+__ ERROR collecting tests/integration/test_realtime_performance_monitoring.py __
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/integration/test_realtime_performance_monitoring.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_realtime_performance_monitoring.py:26: in <module>
+    import pytest_asyncio
+E   ModuleNotFoundError: No module named 'pytest_asyncio'
+_____ ERROR collecting tests/integration/test_realtime_sse_integration.py ______
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/integration/test_realtime_sse_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_realtime_sse_integration.py:20: in <module>
+    import pytest_asyncio
+E   ModuleNotFoundError: No module named 'pytest_asyncio'
+_ ERROR collecting tests/integration/test_websocket_realtime_communication.py __
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/integration/test_websocket_realtime_communication.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_websocket_realtime_communication.py:21: in <module>
+    import pytest_asyncio
+E   ModuleNotFoundError: No module named 'pytest_asyncio'
+____ ERROR collecting tests/load_testing/test_concurrent_user_simulation.py ____
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/load_testing/test_concurrent_user_simulation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/load_testing/test_concurrent_user_simulation.py:23: in <module>
+    import httpx
+E   ModuleNotFoundError: No module named 'httpx'
+__________ ERROR collecting tests/performance/test_production_load.py __________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/performance/test_production_load.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/performance/test_production_load.py:16: in <module>
+    from tests.fixtures.real_services import real_service_integration
+tests/fixtures/real_services.py:14: in <module>
+    import httpx
+E   ModuleNotFoundError: No module named 'httpx'
+__________ ERROR collecting tests/production/test_data_validation.py ___________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/production/test_data_validation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/production/test_data_validation.py:11: in <module>
+    import httpx
+E   ModuleNotFoundError: No module named 'httpx'
+_________ ERROR collecting tests/scenarios/test_cursor_integration.py __________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/scenarios/test_cursor_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/scenarios/test_cursor_integration.py:10: in <module>
+    import httpx
+E   ModuleNotFoundError: No module named 'httpx'
+____ ERROR collecting tests/service_architecture/test_service_boundaries.py ____
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/service_architecture/test_service_boundaries.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/service_architecture/test_service_boundaries.py:8: in <module>
+    from server.core.service_architecture import (
+server/core/service_architecture.py:16: in <module>
+    import aiohttp
+E   ModuleNotFoundError: No module named 'aiohttp'
+_______________ ERROR collecting tests/smoke/test_smoke_tests.py _______________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/smoke/test_smoke_tests.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/smoke/test_smoke_tests.py:7: in <module>
+    import httpx
+E   ModuleNotFoundError: No module named 'httpx'
+_____________ ERROR collecting tests/test_condon_infrastructure.py _____________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/test_condon_infrastructure.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_condon_infrastructure.py:12: in <module>
+    from tests.utils.codon_runner import (
+E   ModuleNotFoundError: No module named 'tests.utils.codon_runner'
+_______ ERROR collecting tests/test_condon_infrastructure_validation.py ________
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/test_condon_infrastructure_validation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_condon_infrastructure_validation.py:13: in <module>
+    from tests.utils.codon_runner import (
+E   ModuleNotFoundError: No module named 'tests.utils.codon_runner'
+______ ERROR collecting tests/thread_safety/test_condon_thread_safety.py _______
+ImportError while importing test module '/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_condon_thread_safety.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.3_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/thread_safety/test_condon_thread_safety.py:25: in <module>
+    from server.utils.thread_safety import (
+E   ImportError: cannot import name 'ThreadSafeDict' from 'server.utils.thread_safety' (/Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/utils/thread_safety.py)
+=============================== warnings summary ===============================
+server/dashboard/test_enhanced_circuit_breaker.py:91
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:91: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:107
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:107: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:193
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:193: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:211
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:211: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:230
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:230: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:255
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:255: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:280
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:280: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:311
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:311: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:332
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:332: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:353
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:353: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:379
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:379: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:404
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:404: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:433
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:433: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:488
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:488: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:520
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:520: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+server/dashboard/test_enhanced_circuit_breaker.py:564
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/server/dashboard/test_enhanced_circuit_breaker.py:564: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+tests/framework/test_coverage_analyzer.py:499
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/framework/test_coverage_analyzer.py:499: PytestCollectionWarning: cannot collect test class 'TestCoverageAnalyzer' because it has a __init__ constructor (from: tests/framework/test_coverage_analyzer.py)
+    class TestCoverageAnalyzer:
+
+tests/utils/interop_tester.py:22
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/utils/interop_tester.py:22: PytestCollectionWarning: cannot collect test class 'TestType' because it has a __init__ constructor (from: tests/integration/condon_cpython/test_data_type_conversions.py)
+    class TestType(Enum):
+
+tests/utils/interop_tester.py:22
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/utils/interop_tester.py:22: PytestCollectionWarning: cannot collect test class 'TestType' because it has a __init__ constructor (from: tests/integration/condon_cpython/test_service_boundaries.py)
+    class TestType(Enum):
+
+tests/utils/interop_tester.py:22
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/utils/interop_tester.py:22: PytestCollectionWarning: cannot collect test class 'TestType' because it has a __init__ constructor (from: tests/integration/condon_cpython/test_thread_safety.py)
+    class TestType(Enum):
+
+tests/performance/test_performance_benchmarks.py:12
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/performance/test_performance_benchmarks.py:12: PytestUnknownMarkWarning: Unknown pytest.mark.performance - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.performance
+
+tests/performance/test_performance_benchmarks.py:66
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/performance/test_performance_benchmarks.py:66: PytestUnknownMarkWarning: Unknown pytest.mark.performance - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.performance
+
+tests/performance/test_performance_benchmarks.py:112
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/performance/test_performance_benchmarks.py:112: PytestUnknownMarkWarning: Unknown pytest.mark.performance - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.performance
+
+tests/performance/test_performance_benchmarks.py:156
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/performance/test_performance_benchmarks.py:156: PytestUnknownMarkWarning: Unknown pytest.mark.performance - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.performance
+
+tests/performance/test_performance_benchmarks.py:187
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/performance/test_performance_benchmarks.py:187: PytestUnknownMarkWarning: Unknown pytest.mark.performance - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.performance
+
+tests/performance/test_performance_benchmarks.py:219
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/performance/test_performance_benchmarks.py:219: PytestUnknownMarkWarning: Unknown pytest.mark.performance - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.performance
+
+tests/thread_safety/test_thread_performance.py:14
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_performance.py:14: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_performance.py:53
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_performance.py:53: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_performance.py:96
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_performance.py:96: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_performance.py:145
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_performance.py:145: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_performance.py:176
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_performance.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_performance.py:222
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_performance.py:222: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_safety_validation.py:17
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_safety_validation.py:17: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_safety_validation.py:51
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_safety_validation.py:51: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_safety_validation.py:76
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_safety_validation.py:76: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_safety_validation.py:104
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_safety_validation.py:104: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_safety_validation.py:137
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_safety_validation.py:137: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/thread_safety/test_thread_safety_validation.py:181
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/thread_safety/test_thread_safety_validation.py:181: PytestUnknownMarkWarning: Unknown pytest.mark.thread_safety - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.thread_safety
+
+tests/unit/test_basic_functionality.py:11
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/unit/test_basic_functionality.py:11: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_basic_functionality.py:27
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/unit/test_basic_functionality.py:27: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_basic_functionality.py:37
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/unit/test_basic_functionality.py:37: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_basic_functionality.py:46
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/unit/test_basic_functionality.py:46: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_basic_functionality.py:55
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/unit/test_basic_functionality.py:55: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_basic_functionality.py:61
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/unit/test_basic_functionality.py:61: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_basic_functionality.py:75
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/unit/test_basic_functionality.py:75: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_basic_functionality.py:106
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/unit/test_basic_functionality.py:106: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_basic_functionality.py:114
+  /Users/davidgraham/Cursor_Projects_1/GraphMemory-IDE-1/tests/unit/test_basic_functionality.py:114: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR monitoring/test_hybrid_monitoring.py
+ERROR server/collaboration/test_integration_performance.py
+ERROR server/collaboration/test_rbac_integration.py
+ERROR server/collaboration/test_tenant_isolation.py
+ERROR server/dashboard/test_analytics_client.py
+ERROR server/dashboard/test_cache_manager.py
+ERROR server/dashboard/test_performance_manager.py
+ERROR server/test_main.py
+ERROR server/tests/locust_performance_test.py
+ERROR server/tests/test_analytics_integration.py
+ERROR server/tests/test_performance_analytics.py
+ERROR tests/analytics/test_integration_suite.py
+ERROR tests/api/test_compatibility_layer.py
+ERROR tests/cloud/test_digitalocean_deployment.py
+ERROR tests/communication/test_hybrid_protocols.py
+ERROR tests/compatibility/test_api_compatibility_framework.py
+ERROR tests/condon/unit/test_algorithms.py
+ERROR tests/condon/unit/test_analytics_engine.py
+ERROR tests/condon/unit/test_cache.py
+ERROR tests/condon/unit/test_data_generator.py
+ERROR tests/condon/unit/test_runner.py
+ERROR tests/functional/test_phase1_async_infrastructure.py
+ERROR tests/integration/test_basic_integration.py
+ERROR tests/integration/test_cross_database_transactions.py
+ERROR tests/integration/test_database_integration.py
+ERROR tests/integration/test_database_performance.py
+ERROR tests/integration/test_end_to_end_dashboard_integration.py
+ERROR tests/integration/test_real_analytics.py
+ERROR tests/integration/test_realtime_performance_monitoring.py
+ERROR tests/integration/test_realtime_sse_integration.py
+ERROR tests/integration/test_websocket_realtime_communication.py
+ERROR tests/load_testing/test_concurrent_user_simulation.py
+ERROR tests/performance/test_production_load.py
+ERROR tests/production/test_data_validation.py
+ERROR tests/scenarios/test_cursor_integration.py
+ERROR tests/service_architecture/test_service_boundaries.py
+ERROR tests/smoke/test_smoke_tests.py
+ERROR tests/test_condon_infrastructure.py
+ERROR tests/test_condon_infrastructure_validation.py
+ERROR tests/thread_safety/test_condon_thread_safety.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 40 errors during collection !!!!!!!!!!!!!!!!!!!
+======================= 47 warnings, 40 errors in 1.27s ========================

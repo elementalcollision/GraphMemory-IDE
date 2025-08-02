@@ -1,11 +1,11 @@
 """
-Compatibility Layer for CPython-Condon Integration
+Compatibility Layer for CPython-Codon Integration
 
-This module provides seamless integration between CPython and Condon runtimes,
+This module provides seamless integration between CPython and Codon runtimes,
 handling data format conversions, API compatibility, error handling, and
 thread safety for hybrid components.
 
-Based on Task 3-B requirements and Condon Python interoperability features.
+Based on Task 3-B requirements and Codon Python interoperability features.
 """
 
 import asyncio
@@ -32,7 +32,7 @@ class RuntimeType(Enum):
     """Runtime type enumeration"""
 
     CPYTHON = "cpython"
-    CONDON = "condon"
+    CONDON = "codon"
     HYBRID = "hybrid"
 
 
@@ -217,7 +217,7 @@ class ErrorHandler:
 
 
 class RuntimeBridge:
-    """Bridge for communication between CPython and Condon runtimes"""
+    """Bridge for communication between CPython and Codon runtimes"""
 
     def __init__(self, config: CompatibilityConfig):
         self.config = config
@@ -327,14 +327,14 @@ class HybridComponentManager:
         self,
         component_name: str,
         cpython_parts: List[str],
-        condon_parts: List[str],
+        codon_parts: List[str],
         config: Dict[str, Any],
     ) -> bool:
         """Register a hybrid component"""
         try:
             self.hybrid_components[component_name] = {
                 "cpython_parts": cpython_parts,
-                "condon_parts": condon_parts,
+                "codon_parts": codon_parts,
                 "config": config,
                 "state": "initializing",
             }
@@ -342,7 +342,7 @@ class HybridComponentManager:
             # Initialize component state
             self.component_states[component_name] = {
                 "cpython_ready": False,
-                "condon_ready": False,
+                "codon_ready": False,
                 "last_sync": time.time(),
                 "error_count": 0,
             }
@@ -379,7 +379,7 @@ class HybridComponentManager:
                     component_name, operation, data
                 )
             elif target_runtime == RuntimeType.CONDON:
-                result = await self._execute_condon_operation(
+                result = await self._execute_codon_operation(
                     component_name, operation, data
                 )
             else:
@@ -387,10 +387,10 @@ class HybridComponentManager:
                 cpython_result = await self._execute_cpython_operation(
                     component_name, operation, data
                 )
-                condon_result = await self._execute_condon_operation(
+                codon_result = await self._execute_codon_operation(
                     component_name, operation, data
                 )
-                result = self._combine_results(cpython_result, condon_result)
+                result = self._combine_results(cpython_result, codon_result)
 
             # Update component state
             self._update_component_state(component_name, "success")
@@ -429,20 +429,20 @@ class HybridComponentManager:
         logger.info(f"Executing {operation} on CPython for {component_name}")
         return {"result": "cpython_operation", "data": data}
 
-    async def _execute_condon_operation(
+    async def _execute_codon_operation(
         self, component_name: str, operation: str, data: Any
     ) -> Any:
-        """Execute operation on Condon runtime"""
+        """Execute operation on Codon runtime"""
         # Placeholder implementation
-        # In practice, this would call the actual Condon component
-        logger.info(f"Executing {operation} on Condon for {component_name}")
-        return {"result": "condon_operation", "data": data}
+        # In practice, this would call the actual Codon component
+        logger.info(f"Executing {operation} on Codon for {component_name}")
+        return {"result": "codon_operation", "data": data}
 
-    def _combine_results(self, cpython_result: Any, condon_result: Any) -> Any:
+    def _combine_results(self, cpython_result: Any, codon_result: Any) -> Any:
         """Combine results from both runtimes"""
         return {
             "cpython_result": cpython_result,
-            "condon_result": condon_result,
+            "codon_result": codon_result,
             "combined": True,
         }
 

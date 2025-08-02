@@ -1,7 +1,7 @@
 """
-Condon Configuration for GraphMemory-IDE Project
+Codon Configuration for GraphMemory-IDE Project
 
-This module provides comprehensive configuration for Condon integration
+This module provides comprehensive configuration for Codon integration
 with thread safety considerations and production-ready settings.
 """
 
@@ -13,9 +13,9 @@ from typing import Dict, List, Optional, Any
 # Project root directory
 PROJECT_ROOT = Path(__file__).parent.parent
 
-# Condon Configuration
+# Codon Configuration
 CODON_CONFIG = {
-    # Target directories for Condon compilation
+    # Target directories for Codon compilation
     "target_directories": [
         "server/analytics/",
         "server/monitoring/",
@@ -116,9 +116,9 @@ CICD_CONFIG = {
     }
 }
 
-class CondonManager:
+class CodonManager:
     """
-    Manages Condon compilation and integration with thread safety.
+    Manages Codon compilation and integration with thread safety.
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -129,15 +129,15 @@ class CondonManager:
         
     def validate_environment(self) -> bool:
         """
-        Validate that the environment is properly configured for Condon.
+        Validate that the environment is properly configured for Codon.
         """
         try:
-            # Check if Condon is installed
+            # Check if Codon is installed
             import subprocess
             result = subprocess.run(["codon", "--version"], 
                                   capture_output=True, text=True)
             if result.returncode != 0:
-                print("❌ Condon not found. Please install Condon first.")
+                print("❌ Codon not found. Please install Codon first.")
                 return False
                 
             # Check virtual environment
@@ -160,7 +160,7 @@ class CondonManager:
     
     def compile_module(self, module_path: str, output_name: Optional[str] = None) -> bool:
         """
-        Compile a Python module using Condon with thread safety validation.
+        Compile a Python module using Codon with thread safety validation.
         """
         try:
             if not self.validate_environment():
@@ -235,7 +235,7 @@ class CondonManager:
                                   capture_output=True, text=True)
             python_time = time.time() - start_time
             
-            # Benchmark Condon execution
+            # Benchmark Codon execution
             compiled_name = Path(module_path).stem
             start_time = time.time()
             result = subprocess.run([f"./{compiled_name}"], 
@@ -255,7 +255,7 @@ class CondonManager:
     
     def generate_documentation(self) -> bool:
         """
-        Generate comprehensive documentation for the Condon integration.
+        Generate comprehensive documentation for the Codon integration.
         """
         try:
             # Generate thread safety documentation
@@ -275,7 +275,7 @@ class CondonManager:
             performance_doc = PROJECT_ROOT / "docs" / "performance.md"
             with open(performance_doc, "w") as f:
                 f.write("# Performance Documentation\n\n")
-                f.write("## Condon Performance Benchmarks\n")
+                f.write("## Codon Performance Benchmarks\n")
                 f.write("Performance benchmarks for compiled modules.\n")
             
             print("✅ Documentation generated successfully.")
@@ -311,12 +311,12 @@ class CondonManager:
 
 def main():
     """
-    Main function to run Condon integration setup.
+    Main function to run Codon integration setup.
     """
-    print("🚀 Starting Condon Integration Setup...")
+    print("🚀 Starting Codon Integration Setup...")
     
-    # Initialize Condon manager
-    manager = CondonManager()
+    # Initialize Codon manager
+manager = CodonManager()
     
     # Validate environment
     if not manager.validate_environment():
@@ -350,7 +350,7 @@ def main():
         print("❌ CI/CD configuration failed")
         return False
     
-    print("✅ Condon integration setup completed successfully!")
+    print("✅ Codon integration setup completed successfully!")
     return True
 
 if __name__ == "__main__":

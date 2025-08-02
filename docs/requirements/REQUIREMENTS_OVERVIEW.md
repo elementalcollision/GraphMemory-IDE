@@ -38,12 +38,12 @@ This document provides an overview of all requirements files in the GraphMemory-
 - Test reporting and utilities
 
 ### `requirements-codon.txt`
-**Purpose**: Condon-specific development environment
-- Core Condon dependencies (codon, codon-python, py-codon)
+**Purpose**: Codon-specific development environment
+- Core Codon dependencies (codon, codon-python, py-codon)
 - Python interoperability tools
-- Condon-specific testing (codon-test)
+- Codon-specific testing (codon-test)
 - Development and validation tools
-- Performance monitoring for Condon code
+- Performance monitoring for Codon code
 - Security and validation tools
 - Build and distribution tools
 
@@ -85,9 +85,9 @@ pip install -r requirements-dev.txt
 pip install -r requirements-test.txt
 ```
 
-### For Condon Development
+### For Codon Development
 ```bash
-# Install Condon-specific dependencies
+# Install Codon-specific dependencies
 pip install -r requirements-codon.txt
 ```
 
@@ -115,7 +115,7 @@ pip install -r monitoring/requirements.txt
    - Production: `requirements.in`
    - Development: `requirements-dev.txt`
    - Testing: `requirements-test.txt`
-   - Condon: `requirements-codon.txt`
+   - Codon: `requirements-codon.txt`
    - Component-specific: respective component file
 
 ### Version Pinning

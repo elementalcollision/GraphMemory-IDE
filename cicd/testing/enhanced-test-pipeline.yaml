@@ -1,0 +1,680 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: enhanced-test-pipeline-config
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    component: enhanced-configuration
+data:
+  pytest.ini: |
+    [tool:pytest]
+    minversion = 6.0
+    addopts = 
+        -ra
+        -q
+        --strict-markers
+        --strict-config
+        --color=yes
+        --tb=short
+        --maxfail=10
+        --durations=10
+        --cov=server
+        --cov-report=term-missing
+        --cov-report=html:htmlcov
+        --cov-report=xml
+        --junitxml=test-results.xml
+        --html=test-report.html
+        --self-contained-html
+    testpaths = tests
+    markers =
+        unit: Unit tests
+        integration: Integration tests
+        e2e: End-to-end tests
+        performance: Performance tests
+        slow: Slow running tests
+        smoke: Smoke tests for quick validation
+        security: Security tests
+        database: Tests requiring database
+        redis: Tests requiring Redis
+        api: API endpoint tests
+        memory: Memory operation tests
+        graph: Graph database tests
+        compatibility: API compatibility tests
+        behavioral: Behavioral parity tests
+        dynamic: Dynamic feature tests
+        regression: Performance regression tests
+  
+  test-config.yaml: |
+    testing:
+      environments:
+        unit:
+          database_url: "sqlite:///test.db"
+          redis_url: "redis://localhost:6379/0"
+          timeout: 30
+        integration:
+          database_url: "postgresql://test:test@postgres:5432/test_db"
+          redis_url: "redis://redis:6379/0"
+          timeout: 120
+        e2e:
+          base_url: "http://fastapi-backend:8080"
+          dashboard_url: "http://streamlit-dashboard:8501"
+          timeout: 300
+        performance:
+          base_url: "http://fastapi-backend:8080"
+          concurrent_users: 50
+          test_duration: 300
+          ramp_up_time: 60
+        compatibility:
+          cpython_env: "python3.11"
+          condon_env: "condon"
+          timeout: 600
+          parallel_execution: true
+      
+      thresholds:
+        performance:
+          response_time_p95: 500  # milliseconds
+          response_time_p99: 1000
+          error_rate: 0.01  # 1%
+          throughput_min: 100  # requests per second
+          regression_threshold: 0.15  # 15% performance regression
+        
+        coverage:
+          minimum: 85
+          target: 95
+        
+        security:
+          max_critical: 0
+          max_high: 2
+          max_medium: 10
+        
+        compatibility:
+          api_contract_score: 0.95
+          behavioral_parity_score: 0.98
+          feature_compatibility_score: 0.90
+          performance_parity_threshold: 0.20  # 20% performance difference allowed
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-config
+  namespace: graphmemory-staging
+data:
+  slack-webhook: "${SLACK_WEBHOOK_URL}"
+  teams-webhook: "${TEAMS_WEBHOOK_URL}"
+  email-recipients: "${EMAIL_RECIPIENTS}"
+  alert-thresholds: |
+    performance_regression: 0.15
+    test_failure_rate: 0.05
+    coverage_drop: 0.05
+    compatibility_score: 0.90
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: unit-tests-enhanced
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: unit
+    automation: ci-cd
+    enhanced: "true"
+  annotations:
+    ci.graphmemory.dev/triggered-by: "github-actions"
+    ci.graphmemory.dev/commit-sha: "${GITHUB_SHA:-unknown}"
+    ci.graphmemory.dev/pipeline-run: "${GITHUB_RUN_ID:-unknown}"
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: unit
+        enhanced: "true"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      
+      containers:
+        - name: unit-tests
+          image: ghcr.io/elementalcollision/graphmemory-ide/test-runner:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: TEST_TYPE
+              value: "unit"
+            - name: DATABASE_URL
+              value: "sqlite:///test.db"
+            - name: REDIS_URL
+              value: "redis://localhost:6379/0"
+            - name: TESTING
+              value: "true"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: PYTHONPATH
+              value: "/app"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting enhanced unit tests..."
+              
+              # Install dependencies
+              pip install -r requirements.txt
+              pip install -r requirements-test.txt
+              
+              # Run unit tests with enhanced reporting
+              pytest tests/unit/ \
+                --verbose \
+                --tb=short \
+                --maxfail=5 \
+                --junitxml=unit-results.xml \
+                --html=unit-report.html \
+                --self-contained-html \
+                --cov=server \
+                --cov-report=html:unit-coverage \
+                --cov-report=xml:unit-coverage.xml \
+                -m "unit" \
+                --durations=10
+              
+              # Generate test summary
+              python scripts/generate_test_summary.py unit-results.xml unit-summary.json
+              
+              echo "Unit tests completed successfully"
+          
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          
+          volumeMounts:
+            - name: test-results
+              mountPath: /app/test-results
+            - name: coverage-reports
+              mountPath: /app/coverage-reports
+      
+      volumes:
+        - name: test-results
+          emptyDir: {}
+        - name: coverage-reports
+          emptyDir: {}
+  
+  backoffLimit: 2
+  activeDeadlineSeconds: 1800  # 30 minutes
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: api-compatibility-tests
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: compatibility
+    automation: ci-cd
+    enhanced: "true"
+  annotations:
+    ci.graphmemory.dev/depends-on: "unit-tests-enhanced"
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: compatibility
+        enhanced: "true"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      
+      containers:
+        - name: api-compatibility-tests
+          image: ghcr.io/elementalcollision/graphmemory-ide/test-runner:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: TEST_TYPE
+              value: "compatibility"
+            - name: CPYTHON_ENV
+              value: "python3.11"
+            - name: CONDON_ENV
+              value: "condon"
+            - name: TESTING
+              value: "true"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: PYTHONPATH
+              value: "/app"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting API compatibility tests..."
+              
+              # Install dependencies
+              pip install -r requirements.txt
+              pip install -r requirements-test.txt
+              
+              # Run API compatibility tests
+              pytest tests/compatibility/ \
+                --verbose \
+                --tb=short \
+                --maxfail=3 \
+                --junitxml=compatibility-results.xml \
+                --html=compatibility-report.html \
+                --self-contained-html \
+                -m "compatibility" \
+                --durations=20
+              
+              # Run behavioral parity tests
+              pytest tests/compatibility/test_api_compatibility_framework.py::TestBehavioralParityTester \
+                --verbose \
+                --tb=short \
+                --junitxml=behavioral-parity-results.xml \
+                --html=behavioral-parity-report.html \
+                --self-contained-html \
+                -m "behavioral" \
+                --durations=10
+              
+              # Run dynamic feature tests
+              pytest tests/compatibility/test_api_compatibility_framework.py::TestDynamicFeatureValidator \
+                --verbose \
+                --tb=short \
+                --junitxml=dynamic-feature-results.xml \
+                --html=dynamic-feature-report.html \
+                --self-contained-html \
+                -m "dynamic" \
+                --durations=10
+              
+              # Generate compatibility summary
+              python scripts/generate_compatibility_summary.py \
+                compatibility-results.xml \
+                behavioral-parity-results.xml \
+                dynamic-feature-results.xml \
+                compatibility-summary.json
+              
+              echo "API compatibility tests completed successfully"
+          
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          
+          volumeMounts:
+            - name: test-results
+              mountPath: /app/test-results
+            - name: compatibility-reports
+              mountPath: /app/compatibility-reports
+      
+      volumes:
+        - name: test-results
+          emptyDir: {}
+        - name: compatibility-reports
+          emptyDir: {}
+  
+  backoffLimit: 2
+  activeDeadlineSeconds: 3600  # 60 minutes
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: integration-tests-enhanced
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: integration
+    automation: ci-cd
+    enhanced: "true"
+  annotations:
+    ci.graphmemory.dev/depends-on: "api-compatibility-tests"
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: integration
+        enhanced: "true"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      
+      initContainers:
+        - name: wait-for-dependencies
+          image: busybox:1.35
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for database and Redis..."
+              until nc -z postgres 5432; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+              until nc -z redis 6379; do
+                echo "Waiting for Redis..."
+                sleep 2
+              done
+              echo "Dependencies are ready"
+      
+      containers:
+        - name: integration-tests
+          image: ghcr.io/elementalcollision/graphmemory-ide/test-runner:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: TEST_TYPE
+              value: "integration"
+            - name: DATABASE_URL
+              value: "postgresql://test:test@postgres:5432/test_db"
+            - name: REDIS_URL
+              value: "redis://redis:6379/0"
+            - name: TESTING
+              value: "true"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: PYTHONPATH
+              value: "/app"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting enhanced integration tests..."
+              
+              # Wait for services to be fully ready
+              sleep 10
+              
+              # Run database migrations
+              alembic upgrade head
+              
+              # Seed test data
+              python scripts/seed_test_data.py
+              
+              # Run integration tests with enhanced reporting
+              pytest tests/integration/ \
+                --verbose \
+                --tb=short \
+                --maxfail=3 \
+                --junitxml=integration-results.xml \
+                --html=integration-report.html \
+                --self-contained-html \
+                --cov=server \
+                --cov-report=html:integration-coverage \
+                --cov-report=xml:integration-coverage.xml \
+                -m "integration" \
+                --durations=20
+              
+              # Generate integration test summary
+              python scripts/generate_test_summary.py integration-results.xml integration-summary.json
+              
+              echo "Integration tests completed successfully"
+          
+          resources:
+            requests:
+              cpu: 300m
+              memory: 1Gi
+            limits:
+              cpu: 1500m
+              memory: 2Gi
+          
+          volumeMounts:
+            - name: test-results
+              mountPath: /app/test-results
+            - name: coverage-reports
+              mountPath: /app/coverage-reports
+      
+      volumes:
+        - name: test-results
+          emptyDir: {}
+        - name: coverage-reports
+          emptyDir: {}
+  
+  backoffLimit: 2
+  activeDeadlineSeconds: 2700  # 45 minutes
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: performance-regression-tests
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: performance
+    automation: ci-cd
+    enhanced: "true"
+  annotations:
+    ci.graphmemory.dev/depends-on: "integration-tests-enhanced"
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: performance
+        enhanced: "true"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      
+      initContainers:
+        - name: wait-for-services
+          image: curlimages/curl:8.5.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for application services..."
+              
+              # Wait for FastAPI backend
+              until curl -f http://fastapi-backend:8080/health; do
+                echo "Waiting for FastAPI backend..."
+                sleep 5
+              done
+              
+              echo "Services are ready"
+      
+      containers:
+        - name: performance-tests
+          image: ghcr.io/elementalcollision/graphmemory-ide/test-runner:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: TEST_TYPE
+              value: "performance"
+            - name: FASTAPI_BASE_URL
+              value: "http://fastapi-backend:8080"
+            - name: TESTING
+              value: "true"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: PYTHONPATH
+              value: "/app"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting performance regression tests..."
+              
+              # Install performance testing dependencies
+              pip install locust k6-python
+              
+              # Run performance tests
+              pytest tests/performance/ \
+                --verbose \
+                --tb=short \
+                --junitxml=performance-results.xml \
+                --html=performance-report.html \
+                --self-contained-html \
+                -m "performance" \
+                --durations=10
+              
+              # Run load tests with Locust
+              locust -f tests/performance/locustfile.py \
+                --headless \
+                --users 50 \
+                --spawn-rate 10 \
+                --run-time 300s \
+                --html=locust-report.html
+              
+              # Run k6 performance tests
+              k6 run tests/performance/k6-script.js \
+                --out json=performance-metrics.json \
+                --out html=performance-report.html
+              
+              # Analyze performance regression
+              python scripts/analyze_performance_regression.py \
+                performance-metrics.json \
+                performance-baseline.json \
+                performance-analysis.json
+              
+              echo "Performance regression tests completed successfully"
+          
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 2Gi
+            limits:
+              cpu: 4000m
+              memory: 4Gi
+          
+          volumeMounts:
+            - name: test-results
+              mountPath: /app/test-results
+            - name: performance-reports
+              mountPath: /app/performance-reports
+      
+      volumes:
+        - name: test-results
+          emptyDir: {}
+        - name: performance-reports
+          emptyDir: {}
+  
+  backoffLimit: 1
+  activeDeadlineSeconds: 3600  # 60 minutes
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-reporting-and-notifications
+  namespace: graphmemory-staging
+  labels:
+    app: graphmemory-testing
+    test-type: reporting
+    automation: ci-cd
+    enhanced: "true"
+  annotations:
+    ci.graphmemory.dev/depends-on: "performance-regression-tests"
+spec:
+  template:
+    metadata:
+      labels:
+        app: graphmemory-testing
+        test-type: reporting
+        enhanced: "true"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: test-runner
+      
+      containers:
+        - name: test-reporting
+          image: ghcr.io/elementalcollision/graphmemory-ide/test-runner:latest
+          imagePullPolicy: Always
+          
+          env:
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: notification-secrets
+                  key: slack-webhook
+            - name: TEAMS_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: notification-secrets
+                  key: teams-webhook
+            - name: EMAIL_RECIPIENTS
+              valueFrom:
+                secretKeyRef:
+                  name: notification-secrets
+                  key: email-recipients
+            - name: TESTING
+              value: "true"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: PYTHONPATH
+              value: "/app"
+          
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting test reporting and notifications..."
+              
+              # Install reporting dependencies
+              pip install requests jinja2
+              
+              # Generate comprehensive test report
+              python scripts/generate_comprehensive_report.py \
+                unit-results.xml \
+                compatibility-results.xml \
+                integration-results.xml \
+                performance-results.xml \
+                comprehensive-test-report.html
+              
+              # Analyze test results and generate alerts
+              python scripts/analyze_test_results.py \
+                unit-summary.json \
+                compatibility-summary.json \
+                integration-summary.json \
+                performance-analysis.json \
+                test-analysis.json
+              
+              # Send notifications based on results
+              python scripts/send_notifications.py \
+                test-analysis.json \
+                comprehensive-test-report.html
+              
+              # Upload reports to artifact storage
+              python scripts/upload_reports.py \
+                comprehensive-test-report.html \
+                test-analysis.json
+              
+              echo "Test reporting and notifications completed successfully"
+          
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          
+          volumeMounts:
+            - name: test-results
+              mountPath: /app/test-results
+            - name: reports
+              mountPath: /app/reports
+      
+      volumes:
+        - name: test-results
+          emptyDir: {}
+        - name: reports
+          emptyDir: {}
+  
+  backoffLimit: 1
+  activeDeadlineSeconds: 900  # 15 minutes 

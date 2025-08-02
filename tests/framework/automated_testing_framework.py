@@ -105,9 +105,9 @@ class TestOrchestrator:
 
         # Run only unit tests
         cpython_results = await framework.run_cpython_tests()
-        condon_results = await framework.run_condon_tests()
+        codon_results = await framework.run_codon_tests()
 
-        all_results = cpython_results + condon_results
+        all_results = cpython_results + codon_results
 
         # Generate report for unit tests only
         total_tests = len(all_results)

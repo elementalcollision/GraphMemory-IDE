@@ -9,7 +9,7 @@ This section contains all documentation related to project dependencies, require
 - **[requirements.in](../requirements.in)** - Source file for main dependencies
 - **[requirements-dev.txt](../requirements-dev.txt)** - Development environment dependencies
 - **[requirements-test.txt](../requirements-test.txt)** - Comprehensive testing dependencies
-- **[requirements-codon.txt](../requirements-codon.txt)** - Condon-specific development environment
+- **[requirements-codon.txt](../requirements-codon.txt)** - Codon-specific development environment
 
 ### Component-Specific Requirements
 - **[dashboard/requirements.txt](../dashboard/requirements.txt)** - Streamlit dashboard dependencies
@@ -48,7 +48,7 @@ This section contains all documentation related to project dependencies, require
    pip install -r requirements-test.txt
    ```
 
-### For Condon Development
+### For Codon Development
 ```bash
 pip install -r requirements-codon.txt
 ```
@@ -68,7 +68,7 @@ pip install -r monitoring/requirements.txt
 1. **Production Dependencies**: Add to `requirements.in`
 2. **Development Dependencies**: Add to `requirements-dev.txt`
 3. **Test Dependencies**: Add to `requirements-test.txt`
-4. **Condon Dependencies**: Add to `requirements-codon.txt`
+4. **Codon Dependencies**: Add to `requirements-codon.txt`
 5. **Component Dependencies**: Add to respective component file
 
 ### Updating Dependencies
@@ -101,7 +101,7 @@ python scripts/validate_requirements.py
 - **Production**: 310 dependencies (requirements.txt)
 - **Development**: 49 dependencies (requirements-dev.txt)
 - **Testing**: 47 dependencies (requirements-test.txt)
-- **Condon**: 32 dependencies (requirements-codon.txt)
+- **Codon**: 32 dependencies (requirements-codon.txt)
 - **Dashboard**: 19 dependencies (dashboard/requirements.txt)
 - **Monitoring**: 31 dependencies (monitoring/requirements.txt)
 

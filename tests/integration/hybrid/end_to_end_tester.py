@@ -284,7 +284,7 @@ class WorkflowTester:
     async def _test_integration_workflows(self) -> Dict[str, Any]:
         """Test integration workflows"""
         integration_workflows = {
-            "cpython_condon_integration": {},
+            "cpython_codon_integration": {},
             "api_integration": {},
             "database_integration": {},
             "external_service_integration": {},
@@ -292,18 +292,18 @@ class WorkflowTester:
         }
 
         try:
-            # Test CPython-Condon integration
+            # Test CPython-Codon integration
             start_time = time.time()
             integration_response = await self.client.post(
                 "/hybrid/process",
                 json={
                     "cpython_data": {"test": "cpython"},
-                    "condon_data": {"test": "condon"},
+                    "codon_data": {"test": "codon"},
                 },
             )
             integration_time = time.time() - start_time
 
-            integration_workflows["cpython_condon_integration"] = {
+            integration_workflows["cpython_codon_integration"] = {
                 "status_code": integration_response.status_code,
                 "response_time": integration_time,
                 "data_transfer": True,
@@ -343,7 +343,7 @@ class WorkflowTester:
             # Overall result
             integration_workflows["passed"] = all(
                 [
-                    integration_workflows["cpython_condon_integration"]["passed"],
+                    integration_workflows["cpython_codon_integration"]["passed"],
                     integration_workflows["api_integration"]["passed"],
                     integration_workflows["database_integration"]["passed"],
                     integration_workflows["external_service_integration"]["passed"],

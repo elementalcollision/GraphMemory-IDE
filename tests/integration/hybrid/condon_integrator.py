@@ -1,6 +1,6 @@
 """
-Condon Integration Testing
-Integration testing for Condon services in hybrid architecture
+Codon Integration Testing
+Integration testing for Codon services in hybrid architecture
 """
 
 import logging
@@ -12,8 +12,8 @@ from httpx import AsyncClient
 logger = logging.getLogger(__name__)
 
 
-class CondonIntegrator:
-    """Integration testing for Condon services"""
+class CodonIntegrator:
+    """Integration testing for Codon services"""
 
     def __init__(self, client: AsyncClient):
         self.client = client
@@ -23,8 +23,8 @@ class CondonIntegrator:
         self.performance_validator = PerformanceValidator()
 
     async def run_integration_tests(self) -> Dict[str, Any]:
-        """Run Condon integration tests"""
-        logger.info("Starting Condon integration tests")
+        """Run Codon integration tests"""
+        logger.info("Starting Codon integration tests")
 
         results = {
             "analytics_integration": {},
@@ -55,11 +55,11 @@ class CondonIntegrator:
             )
 
             # Run performance tests
-            logger.info("Running Condon performance tests")
+            logger.info("Running Codon performance tests")
             results["performance_tests"] = await self._run_performance_tests()
 
             # Run thread safety tests
-            logger.info("Running Condon thread safety tests")
+            logger.info("Running Codon thread safety tests")
             results["thread_safety_tests"] = await self._run_thread_safety_tests()
 
             # Overall result
@@ -74,14 +74,14 @@ class CondonIntegrator:
             )
 
         except Exception as e:
-            logger.error(f"Error in Condon integration tests: {e}")
+            logger.error(f"Error in Codon integration tests: {e}")
             results["error"] = str(e)
             results["passed"] = False
 
         return results
 
     async def _run_performance_tests(self) -> Dict[str, Any]:
-        """Run Condon performance tests"""
+        """Run Codon performance tests"""
         performance_results = {
             "compilation_tests": {},
             "execution_tests": {},
@@ -120,7 +120,7 @@ class CondonIntegrator:
             )
 
         except Exception as e:
-            logger.error(f"Error in Condon performance tests: {e}")
+            logger.error(f"Error in Codon performance tests: {e}")
             performance_results["error"] = str(e)
             performance_results["passed"] = False
 
@@ -139,7 +139,7 @@ class CondonIntegrator:
             # Test JIT compilation
             start_time = time.time()
             response = await self.client.post(
-                "/condon/compile",
+                "/codon/compile",
                 json={"type": "jit", "code": "def test_function(): return 42"},
             )
             jit_time = time.time() - start_time
@@ -154,7 +154,7 @@ class CondonIntegrator:
             # Test AOT compilation
             start_time = time.time()
             response = await self.client.post(
-                "/condon/compile",
+                "/codon/compile",
                 json={"type": "aot", "code": "def test_function(): return 42"},
             )
             aot_time = time.time() - start_time
@@ -203,7 +203,7 @@ class CondonIntegrator:
             # Test native execution
             start_time = time.time()
             response = await self.client.post(
-                "/condon/execute", json={"function": "test_function", "args": []}
+                "/codon/execute", json={"function": "test_function", "args": []}
             )
             execution_time = time.time() - start_time
 
@@ -1373,13 +1373,13 @@ class MonitoringIntegrator:
 
 
 class PerformanceValidator:
-    """Performance validation for Condon services"""
+    """Performance validation for Codon services"""
 
     def __init__(self):
         pass
 
     async def validate_performance(self) -> Dict[str, Any]:
-        """Validate Condon performance"""
+        """Validate Codon performance"""
         validation_results = {
             "compilation_performance": {},
             "execution_performance": {},

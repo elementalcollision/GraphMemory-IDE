@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Disaster Recovery Script for Hybrid CPython/Condon Architecture
+# Disaster Recovery Script for Hybrid CPython/Codon Architecture
 # This script handles disaster recovery procedures with automated recovery
 
 set -euo pipefail
@@ -99,10 +99,10 @@ scale_services() {
     kubectl scale deployment auth-service --replicas=5 -n $NAMESPACE
     log_info "Scaled auth-service to 5 replicas"
     
-    # Scale Condon services
+    # Scale Codon services
     kubectl scale deployment analytics-service --replicas=3 -n $NAMESPACE
     kubectl scale deployment ai-detection-service --replicas=2 -n $NAMESPACE
-    log_info "Scaled Condon services for recovery"
+    log_info "Scaled Codon services for recovery"
     
     # Wait for scaling to complete
     kubectl rollout status deployment/auth-service -n $NAMESPACE --timeout=300s

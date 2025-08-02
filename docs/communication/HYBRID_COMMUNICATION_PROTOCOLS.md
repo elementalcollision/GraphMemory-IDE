@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the comprehensive communication protocols designed for the hybrid CPython/Condon architecture. The protocols provide inter-service communication, data serialization, error handling, and performance optimization for production deployment.
+This document describes the comprehensive communication protocols designed for the hybrid CPython/Codon architecture. The protocols provide inter-service communication, data serialization, error handling, and performance optimization for production deployment.
 
 ## Architecture
 
@@ -11,7 +11,7 @@ The hybrid communication system consists of several key components:
 ### Core Components
 
 1. **HybridCommunicationProtocol** - Main protocol orchestrator
-2. **HybridDataSerializer** - Data serialization for CPython/Condon boundaries
+2. **HybridDataSerializer** - Data serialization for CPython/Codon boundaries
 3. **CircuitBreaker** - Fault tolerance and error handling
 4. **ServiceAuthentication** - Security and authentication
 5. **ServiceLoadBalancer** - Load balancing and failover
@@ -20,8 +20,8 @@ The hybrid communication system consists of several key components:
 ### Service Types
 
 - **CPython Services** - Standard Python services
-- **Condon Services** - Compiled Python services using Condon
-- **Hybrid Services** - Services that can handle both CPython and Condon
+- **Codon Services** - Compiled Python services using Codon
+- **Hybrid Services** - Services that can handle both CPython and Codon
 
 ## Quick Start
 
@@ -36,8 +36,8 @@ protocol = create_hybrid_protocol()
 # Send request to CPython service
 result = await protocol.send_request("cpython_service", {"data": "test"})
 
-# Send request to Condon service
-result = await protocol.send_request("condon_service", {"data": "test"})
+# Send request to Codon service
+result = await protocol.send_request("codon_service", {"data": "test"})
 ```
 
 ### Custom Configuration
@@ -76,21 +76,21 @@ serialized = serializer.serialize_for_cpython(data)
 deserialized = serializer.deserialize_from_cpython(serialized)
 ```
 
-### Condon Serialization
+### Codon Serialization
 
-Condon uses special methods `__to_py__` and `__from_py__` for data conversion:
+Codon uses special methods `__to_py__` and `__from_py__` for data conversion:
 
 ```python
-# Serialize for Condon
-serialized = serializer.serialize_for_condon(data)
+# Serialize for Codon
+serialized = serializer.serialize_for_codon(data)
 
-# Deserialize from Condon
-deserialized = serializer.deserialize_from_condon(serialized)
+# Deserialize from Codon
+deserialized = serializer.deserialize_from_codon(serialized)
 ```
 
 ### Compatibility Layer
 
-The compatibility layer handles conversion between CPython and Condon data types:
+The compatibility layer handles conversion between CPython and Codon data types:
 
 ```python
 compatibility = serializer.compatibility_layer
@@ -100,8 +100,8 @@ if compatibility.needs_conversion(data):
     # Convert for CPython
     cpython_data = compatibility.convert_for_cpython(data)
     
-    # Convert for Condon
-    condon_data = compatibility.convert_for_condon(data)
+    # Convert for Codon
+    codon_data = compatibility.convert_for_codon(data)
 ```
 
 ## Error Handling
@@ -320,8 +320,8 @@ async def test_communication():
     result = await protocol.send_request("cpython_service", {"test": "data"})
     assert result["status"] == "success"
     
-    # Test Condon communication
-    result = await protocol.send_request("condon_service", {"test": "data"})
+    # Test Codon communication
+    result = await protocol.send_request("codon_service", {"test": "data"})
     assert result["status"] == "success"
 ```
 
@@ -399,7 +399,7 @@ config = CommunicationConfig(
 
 4. **Serialization Errors**
    - Check data compatibility
-   - Verify Condon integration
+   - Verify Codon integration
    - Review data formats
 
 ### Debugging
@@ -478,6 +478,6 @@ Service authentication and authorization.
 
 ## Conclusion
 
-The hybrid communication protocols provide a robust, secure, and performant solution for inter-service communication in the CPython/Condon architecture. The protocols handle data serialization, error handling, security, and performance optimization while maintaining compatibility between different service types.
+The hybrid communication protocols provide a robust, secure, and performant solution for inter-service communication in the CPython/Codon architecture. The protocols handle data serialization, error handling, security, and performance optimization while maintaining compatibility between different service types.
 
 For more information, see the test suite and implementation examples in the codebase. 

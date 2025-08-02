@@ -1,5 +1,5 @@
 """
-Hybrid Monitoring Framework for CPython/Condon Architecture
+Hybrid Monitoring Framework for CPython/Codon Architecture
 Comprehensive monitoring and observability patterns for hybrid services
 """
 
@@ -43,7 +43,7 @@ class ServiceType(Enum):
     """Service types for hybrid architecture"""
 
     CPYTHON = "cpython"
-    CONDON = "condon"
+    CONDON = "codon"
     HYBRID = "hybrid"
 
 
@@ -70,10 +70,10 @@ class ServiceMetrics:
 
 class HybridMonitoringFramework:
     """
-    Comprehensive monitoring framework for hybrid CPython/Condon architecture
+    Comprehensive monitoring framework for hybrid CPython/Codon architecture
 
     Features:
-    - Unified monitoring for CPython and Condon services
+    - Unified monitoring for CPython and Codon services
     - Production-ready observability patterns
     - Distributed tracing across service boundaries
     - Custom metrics for hybrid architecture
@@ -105,7 +105,7 @@ class HybridMonitoringFramework:
 
         # Service registries
         self.cpython_services: Dict[str, ServiceMetrics] = {}
-        self.condon_services: Dict[str, ServiceMetrics] = {}
+        self.codon_services: Dict[str, ServiceMetrics] = {}
         self.hybrid_services: Dict[str, ServiceMetrics] = {}
 
         # Monitoring components
@@ -253,8 +253,8 @@ class HybridMonitoringFramework:
                 ["event_type", "service"],
             ),
             "compilation_metrics": Histogram(
-                "condon_compilation_duration_seconds",
-                "Condon compilation duration",
+                "codon_compilation_duration_seconds",
+                "Codon compilation duration",
                 ["compilation_type"],
             ),
         }
@@ -277,14 +277,14 @@ class HybridMonitoringFramework:
             "async_tasks": Gauge("cpython_async_tasks_active", "Active async tasks"),
         }
 
-        # Condon performance monitoring
-        self.condon_performance = {
+        # Codon performance monitoring
+        self.codon_performance = {
             "compilation_time": Histogram(
-                "condon_compilation_time_seconds", "Compilation time"
+                "codon_compilation_time_seconds", "Compilation time"
             ),
-            "memory_usage": Gauge("condon_memory_usage_bytes", "Memory usage"),
-            "thread_count": Gauge("condon_thread_count", "Active thread count"),
-            "cache_hit_ratio": Gauge("condon_cache_hit_ratio", "Cache hit ratio"),
+            "memory_usage": Gauge("codon_memory_usage_bytes", "Memory usage"),
+            "thread_count": Gauge("codon_thread_count", "Active thread count"),
+            "cache_hit_ratio": Gauge("codon_cache_hit_ratio", "Cache hit ratio"),
         }
 
         # Hybrid performance monitoring
@@ -341,22 +341,22 @@ class HybridMonitoringFramework:
             logger.info(f"Registered CPython service: {service_name}")
             return service_metrics
 
-    def register_condon_service(
+    def register_codon_service(
         self, service_name: str, custom_labels: Optional[Dict[str, str]] = None
     ) -> ServiceMetrics:
-        """Register a Condon service for monitoring"""
+        """Register a Codon service for monitoring"""
         with self._lock:
             service_metrics = ServiceMetrics(
                 service_name=service_name,
                 service_type=ServiceType.CONDON,
                 custom_labels=custom_labels or {},
             )
-            self.condon_services[service_name] = service_metrics
+            self.codon_services[service_name] = service_metrics
 
             # Initialize service-specific metrics
             self._initialize_service_metrics(service_metrics)
 
-            logger.info(f"Registered Condon service: {service_name}")
+            logger.info(f"Registered Codon service: {service_name}")
             return service_metrics
 
     def register_hybrid_service(
@@ -477,7 +477,7 @@ class HybridMonitoringFramework:
                 boundary_latency.observe(duration)
 
     def record_thread_safety_event(self, event_type: str, service_name: str):
-        """Record thread safety events for Condon services"""
+        """Record thread safety events for Codon services"""
         thread_safety_events = self.hybrid_metrics.get("thread_safety_events")
         if thread_safety_events:
             thread_safety_events.labels(
@@ -485,7 +485,7 @@ class HybridMonitoringFramework:
             ).inc()
 
     def record_compilation_metrics(self, compilation_type: str, duration: float):
-        """Record Condon compilation metrics"""
+        """Record Codon compilation metrics"""
         compilation_metrics = self.hybrid_metrics.get("compilation_metrics")
         if compilation_metrics:
             compilation_metrics.labels(compilation_type=compilation_type).observe(
@@ -514,7 +514,7 @@ class HybridMonitoringFramework:
         """Get service metrics by name"""
         return (
             self.cpython_services.get(service_name)
-            or self.condon_services.get(service_name)
+            or self.codon_services.get(service_name)
             or self.hybrid_services.get(service_name)
         )
 
@@ -545,7 +545,7 @@ class HybridMonitoringFramework:
             # Check error rates across services
             for service_name, service in {
                 **self.cpython_services,
-                **self.condon_services,
+                **self.codon_services,
                 **self.hybrid_services,
             }.items():
                 error_count = service.metrics.get("error_count")
@@ -601,7 +601,7 @@ class HybridMonitoringFramework:
             },
             "services": {
                 "cpython": len(self.cpython_services),
-                "condon": len(self.condon_services),
+                "codon": len(self.codon_services),
                 "hybrid": len(self.hybrid_services),
             },
             "alerts": {

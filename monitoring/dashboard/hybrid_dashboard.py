@@ -1,6 +1,6 @@
 """
 Hybrid Monitoring Dashboard
-Comprehensive dashboard for CPython/Condon hybrid architecture monitoring
+Comprehensive dashboard for CPython/Codon hybrid architecture monitoring
 """
 
 import asyncio
@@ -18,7 +18,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from ..condon_monitor import get_condon_monitor
+from ..codon_monitor import get_codon_monitor
 from ..cpython_monitor import get_cpython_monitor
 from ..hybrid_monitoring_framework import get_hybrid_monitoring
 
@@ -32,7 +32,7 @@ class DashboardMetrics:
     timestamp: datetime
     system_metrics: Dict[str, Any]
     cpython_metrics: Dict[str, Any]
-    condon_metrics: Dict[str, Any]
+    codon_metrics: Dict[str, Any]
     hybrid_metrics: Dict[str, Any]
     alerts: List[Dict[str, Any]]
 
@@ -171,8 +171,8 @@ class HybridDashboard:
                 </div>
                 
                 <div class="metric-card">
-                    <h3>Condon Services</h3>
-                    <div id="condon-metrics"></div>
+                    <h3>Codon Services</h3>
+                    <div id="codon-metrics"></div>
                 </div>
                 
                 <div class="metric-card">
@@ -208,8 +208,8 @@ class HybridDashboard:
                         `<div class="metric-value">${data.cpython.services}</div>
                          <div class="metric-label">Active Services</div>`;
                     
-                    document.getElementById('condon-metrics').innerHTML = 
-                        `<div class="metric-value">${data.condon.services}</div>
+                    document.getElementById('codon-metrics').innerHTML = 
+                        `<div class="metric-value">${data.codon.services}</div>
                          <div class="metric-label">Active Services</div>`;
                     
                     // Update alerts
@@ -238,9 +238,9 @@ class HybridDashboard:
             cpython_monitor = get_cpython_monitor()
             cpython_summary = cpython_monitor.get_service_summary()
 
-            # Get Condon metrics
-            condon_monitor = get_condon_monitor()
-            condon_summary = condon_monitor.get_service_summary()
+            # Get Codon metrics
+            codon_monitor = get_codon_monitor()
+            codon_summary = codon_monitor.get_service_summary()
 
             return {
                 "timestamp": datetime.now().isoformat(),
@@ -250,10 +250,10 @@ class HybridDashboard:
                     "performance": cpython_summary.get("performance", {}),
                     "gil_stats": cpython_summary.get("gil_stats", {}),
                 },
-                "condon": {
-                    "services": len(self.hybrid_monitoring.condon_services),
-                    "performance": condon_summary.get("performance", {}),
-                    "compilation": condon_summary.get("performance", {}).get(
+                "codon": {
+                    "services": len(self.hybrid_monitoring.codon_services),
+                    "performance": codon_summary.get("performance", {}),
+                    "compilation": codon_summary.get("performance", {}).get(
                         "compilation", {}
                     ),
                 },
@@ -276,11 +276,11 @@ class HybridDashboard:
         """Get service information"""
         return {
             "cpython_services": list(self.hybrid_monitoring.cpython_services.keys()),
-            "condon_services": list(self.hybrid_monitoring.condon_services.keys()),
+            "codon_services": list(self.hybrid_monitoring.codon_services.keys()),
             "hybrid_services": list(self.hybrid_monitoring.hybrid_services.keys()),
             "total_services": (
                 len(self.hybrid_monitoring.cpython_services)
-                + len(self.hybrid_monitoring.condon_services)
+                + len(self.hybrid_monitoring.codon_services)
                 + len(self.hybrid_monitoring.hybrid_services)
             ),
         }
@@ -289,11 +289,11 @@ class HybridDashboard:
         """Get performance summary"""
         try:
             cpython_monitor = get_cpython_monitor()
-            condon_monitor = get_condon_monitor()
+            codon_monitor = get_codon_monitor()
 
             return {
                 "cpython": cpython_monitor.get_service_summary(),
-                "condon": condon_monitor.get_service_summary(),
+                "codon": codon_monitor.get_service_summary(),
                 "hybrid": self.hybrid_monitoring.get_metrics_summary(),
             }
         except Exception as e:
@@ -310,7 +310,7 @@ class HybridDashboard:
                         timestamp=datetime.now(),
                         system_metrics=self.hybrid_monitoring.get_metrics_summary(),
                         cpython_metrics=get_cpython_monitor().get_service_summary(),
-                        condon_metrics=get_condon_monitor().get_service_summary(),
+                        codon_metrics=get_codon_monitor().get_service_summary(),
                         hybrid_metrics=self.hybrid_monitoring.get_metrics_summary(),
                         alerts=self.active_alerts,
                     )

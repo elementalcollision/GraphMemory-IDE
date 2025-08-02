@@ -2,7 +2,7 @@
 Migration Strategy Implementation for GraphMemory-IDE
 
 This module implements the comprehensive migration strategy for transitioning
-components between CPython and Condon runtimes with feature flags, gradual
+components between CPython and Codon runtimes with feature flags, gradual
 rollouts, rollback mechanisms, and performance monitoring.
 
 Based on Task 3-B requirements and industry best practices.

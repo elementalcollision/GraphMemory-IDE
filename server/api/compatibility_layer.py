@@ -1,8 +1,8 @@
 """
-Comprehensive API Compatibility Layer for Hybrid CPython/Condon Architecture
+Comprehensive API Compatibility Layer for Hybrid CPython/Codon Architecture
 
 This module implements a comprehensive API compatibility layer that ensures seamless
-integration between CPython and Condon services, including API versioning, backward
+integration between CPython and Codon services, including API versioning, backward
 compatibility, schema validation, and performance monitoring.
 """
 
@@ -94,7 +94,7 @@ class SchemaValidationConfig:
 
 
 class APIVersionManager:
-    """API versioning for CPython/Condon services"""
+    """API versioning for CPython/Codon services"""
 
     def __init__(self, config: APIVersionConfig):
         self.config = config
@@ -357,21 +357,21 @@ class CompatibilityChecker:
         self.compatibility_rules = {}
         self.type_mappings = {}
 
-    def check_cpython_condon_compatibility(
-        self, cpython_schema: dict, condon_schema: dict
+    def check_cpython_codon_compatibility(
+        self, cpython_schema: dict, codon_schema: dict
     ) -> bool:
-        """Check compatibility between CPython and Condon schemas"""
+        """Check compatibility between CPython and Codon schemas"""
         try:
             # Check if schemas are compatible
-            return self._compare_schemas(cpython_schema, condon_schema)
+            return self._compare_schemas(cpython_schema, codon_schema)
         except Exception as e:
             logger.error(f"Compatibility check failed: {e}")
             return False
 
     def generate_compatibility_layer(
-        self, cpython_schema: dict, condon_schema: dict
+        self, cpython_schema: dict, codon_schema: dict
     ) -> dict:
-        """Generate compatibility layer between CPython and Condon"""
+        """Generate compatibility layer between CPython and Codon"""
         compatibility_layer = {
             "type_mappings": {},
             "conversion_rules": {},
@@ -380,12 +380,12 @@ class CompatibilityChecker:
 
         # Generate type mappings
         compatibility_layer["type_mappings"] = self._generate_type_mappings(
-            cpython_schema, condon_schema
+            cpython_schema, codon_schema
         )
 
         # Generate conversion rules
         compatibility_layer["conversion_rules"] = self._generate_conversion_rules(
-            cpython_schema, condon_schema
+            cpython_schema, codon_schema
         )
 
         return compatibility_layer
@@ -396,9 +396,9 @@ class CompatibilityChecker:
         return True
 
     def _generate_type_mappings(
-        self, cpython_schema: dict, condon_schema: dict
+        self, cpython_schema: dict, codon_schema: dict
     ) -> dict:
-        """Generate type mappings between CPython and Condon"""
+        """Generate type mappings between CPython and Codon"""
         mappings = {
             "int": "int",
             "float": "float",
@@ -410,10 +410,10 @@ class CompatibilityChecker:
         return mappings
 
     def _generate_conversion_rules(
-        self, cpython_schema: dict, condon_schema: dict
+        self, cpython_schema: dict, codon_schema: dict
     ) -> dict:
-        """Generate conversion rules between CPython and Condon"""
-        rules = {"cpython_to_condon": {}, "condon_to_cpython": {}}
+        """Generate conversion rules between CPython and Codon"""
+        rules = {"cpython_to_codon": {}, "codon_to_cpython": {}}
         return rules
 
 

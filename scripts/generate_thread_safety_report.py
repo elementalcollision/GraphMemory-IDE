@@ -55,7 +55,7 @@ class ThreadSafetyReportGenerator:
             python_executable = sys.executable
             env_data["virtual_environment"] = "codon-dev-env" in python_executable
             
-            # Check Condon installation
+            # Check Codon installation
             try:
                 result = subprocess.run(["codon", "--version"], 
                                       capture_output=True, text=True, timeout=10)
@@ -206,7 +206,7 @@ class ThreadSafetyReportGenerator:
             recommendations.append("⚠️ Not running in codon-dev-env virtual environment")
         
         if not self.report_data["environment"]["codon_installed"]:
-            recommendations.append("⚠️ Condon not installed - install with: /bin/bash -c \"$(curl -fsSL https://exaloop.io/install.sh)\"")
+            recommendations.append("⚠️ Codon not installed - install with: /bin/bash -c \"$(curl -fsSL https://exaloop.io/install.sh)\"")
         
         if not self.report_data["environment"]["thread_safety_framework"]:
             recommendations.append("⚠️ Thread safety framework not found")
@@ -259,7 +259,7 @@ class ThreadSafetyReportGenerator:
     <div class="header">
         <h1>🧵 Thread Safety Report</h1>
         <p class="timestamp">Generated: {timestamp}</p>
-        <p>GraphMemory-IDE with Condon Integration</p>
+        <p>GraphMemory-IDE with Codon Integration</p>
     </div>
     
     <div class="section">
@@ -267,7 +267,7 @@ class ThreadSafetyReportGenerator:
         <ul>
             <li>Python Version: {python_version}</li>
             <li>Virtual Environment: {virtual_env}</li>
-            <li>Condon Installed: {codon_installed}</li>
+            <li>Codon Installed: {codon_installed}</li>
             <li>Thread Safety Framework: {thread_safety_framework}</li>
         </ul>
     </div>

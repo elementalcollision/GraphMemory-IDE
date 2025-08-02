@@ -1,8 +1,8 @@
-# Condon Thread Safety Guidelines
+# Codon Thread Safety Guidelines
 
 ## Overview
 
-This document provides comprehensive guidelines for developing thread-safe code in the Condon free-threaded Python environment. Condon removes the Global Interpreter Lock (GIL), making race conditions much more likely to occur.
+This document provides comprehensive guidelines for developing thread-safe code in the Codon free-threaded Python environment. Codon removes the Global Interpreter Lock (GIL), making race conditions much more likely to occur.
 
 ## Critical Thread Safety Issues
 
@@ -388,10 +388,10 @@ class ThreadSafetyPerformanceTester:
 
 ## Conclusion
 
-Following these guidelines ensures that your threaded code is safe, predictable, and production-ready in the Condon no-GIL environment. Always test thoroughly and monitor performance in production environments.
+Following these guidelines ensures that your threaded code is safe, predictable, and production-ready in the Codon no-GIL environment. Always test thoroughly and monitor performance in production environments.
 
 **Key Takeaways**:
-- Condon's no-GIL environment requires explicit thread safety measures
+- Codon's no-GIL environment requires explicit thread safety measures
 - Singleton patterns must use double-checked locking
 - Shared state access requires proper synchronization
 - Performance impact of thread safety measures is acceptable
@@ -401,5 +401,5 @@ Following these guidelines ensures that your threaded code is safe, predictable,
 
 **Document Version**: 1.0  
 **Last Updated**: 2025-03-05T12:41:19  
-**Environment**: Condon no-GIL Python build  
+**Environment**: Codon no-GIL Python build  
 **Status**: Production Ready 

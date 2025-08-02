@@ -1,5 +1,5 @@
 """
-Basic unit tests for Condon functionality.
+Basic unit tests for Codon functionality.
 All tests run within the virtual environment for proper isolation.
 """
 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 @pytest.mark.unit
 def test_codon_cli_available():
-    """Test that Condon CLI is available within virtual environment"""
+    """Test that Codon CLI is available within virtual environment"""
     import subprocess
     
     try:
@@ -20,9 +20,9 @@ def test_codon_cli_available():
             text=True,
             check=True
         )
-        assert "0.19.1" in result.stdout, f"Expected Condon 0.19.1, got: {result.stdout}"
+        assert "0.19.1" in result.stdout, f"Expected Codon 0.19.1, got: {result.stdout}"
     except subprocess.CalledProcessError as e:
-        pytest.fail(f"Condon CLI not available: {e}")
+        pytest.fail(f"Codon CLI not available: {e}")
 
 @pytest.mark.unit
 def test_python_interoperability_basic():

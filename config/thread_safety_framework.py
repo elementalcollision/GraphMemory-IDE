@@ -2,7 +2,7 @@
 Thread Safety Framework for GraphMemory-IDE
 
 This module defines comprehensive thread safety patterns and requirements
-for components running on both CPython and Condon runtimes, ensuring
+for components running on both CPython and Codon runtimes, ensuring
 safe concurrent operations and memory management.
 
 Based on Task 3-B requirements and industry best practices.
@@ -286,12 +286,12 @@ class CPythonThreadSafety:
             signal.signal(signal.SIGALRM, old_handler)
 
 
-class CondonThreadSafety:
-    """Thread safety patterns for Condon runtime"""
+class CodonThreadSafety:
+    """Thread safety patterns for Codon runtime"""
 
     def __init__(self, config: ThreadSafetyConfig):
         self.config = config
-        self.gil_aware = False  # Condon has no GIL
+        self.gil_aware = False  # Codon has no GIL
         self.resources: Dict[str, ThreadSafeResource] = {}
         self.caches: Dict[str, ThreadSafeCache] = {}
         self.queues: Dict[str, ThreadSafeQueue] = {}
@@ -300,30 +300,30 @@ class CondonThreadSafety:
         )
 
     def create_resource(self, resource_id: str) -> ThreadSafeResource:
-        """Create a thread-safe resource for Condon"""
+        """Create a thread-safe resource for Codon"""
         resource = ThreadSafeResource(resource_id, self.config)
         self.resources[resource_id] = resource
         return resource
 
     def create_cache(self, cache_id: str, max_size: int = 1000) -> ThreadSafeCache:
-        """Create a thread-safe cache for Condon"""
+        """Create a thread-safe cache for Codon"""
         cache = ThreadSafeCache(max_size, self.config)
         self.caches[cache_id] = cache
         return cache
 
     def create_queue(self, queue_id: str, maxsize: int = 1000) -> ThreadSafeQueue:
-        """Create a thread-safe queue for Condon"""
+        """Create a thread-safe queue for Codon"""
         queue = ThreadSafeQueue(maxsize, self.config)
         self.queues[queue_id] = queue
         return queue
 
     async def execute_concurrent(self, func: Callable, *args, **kwargs) -> Any:
-        """Execute function concurrently in Condon"""
+        """Execute function concurrently in Codon"""
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(self.thread_pool, func, *args, **kwargs)
 
     def memory_safety_check(self, operation: str) -> bool:
-        """Perform memory safety checks for Condon operations"""
+        """Perform memory safety checks for Codon operations"""
         if not self.config.memory_safety_checks:
             return True
 
@@ -336,10 +336,10 @@ class HybridThreadSafety:
     """Thread safety patterns for hybrid components"""
 
     def __init__(
-        self, cpython_config: ThreadSafetyConfig, condon_config: ThreadSafetyConfig
+        self, cpython_config: ThreadSafetyConfig, codon_config: ThreadSafetyConfig
     ):
         self.cpython_safety = CPythonThreadSafety(cpython_config)
-        self.condon_safety = CondonThreadSafety(condon_config)
+        self.codon_safety = CodonThreadSafety(codon_config)
         self.cross_runtime_locks: Dict[str, threading.Lock] = {}
 
     def create_cross_runtime_lock(self, lock_id: str) -> threading.Lock:
@@ -361,7 +361,7 @@ class HybridThreadSafety:
             raise
 
     async def execute_hybrid_operation(
-        self, cpython_func: Callable, condon_func: Callable, data: Any
+        self, cpython_func: Callable, codon_func: Callable, data: Any
     ) -> Dict[str, Any]:
         """Execute operation on both runtimes safely"""
         results = {}
@@ -374,14 +374,14 @@ class HybridThreadSafety:
         except Exception as e:
             results["cpython_error"] = str(e)
 
-        # Execute Condon operation
-        try:
-            condon_result = await self.condon_safety.execute_concurrent(
-                condon_func, data
-            )
-            results["condon_result"] = condon_result
-        except Exception as e:
-            results["condon_error"] = str(e)
+        # Execute Codon operation
+try:
+    codon_result = await self.codon_safety.execute_concurrent(
+        codon_func, data
+    )
+    results["codon_result"] = codon_result
+except Exception as e:
+    results["codon_error"] = str(e)
 
         return results
 
@@ -393,7 +393,7 @@ class ThreadSafetyManager:
         self.cpython_safety = CPythonThreadSafety(
             ThreadSafetyConfig(ThreadSafetyLevel.HIGH)
         )
-        self.condon_safety = CondonThreadSafety(
+        self.codon_safety = CodonThreadSafety(
             ThreadSafetyConfig(ThreadSafetyLevel.CRITICAL)
         )
         self.hybrid_safety = HybridThreadSafety(
@@ -404,15 +404,15 @@ class ThreadSafetyManager:
 
     def get_safety_for_component(
         self, component_name: str, runtime: str
-    ) -> Union[CPythonThreadSafety, CondonThreadSafety, HybridThreadSafety]:
+    ) -> Union[CPythonThreadSafety, CodonThreadSafety, HybridThreadSafety]:
         """Get thread safety implementation for component"""
         if component_name in self.component_safety:
             return self.component_safety[component_name]
 
         if runtime == "cpython":
             safety = self.cpython_safety
-        elif runtime == "condon":
-            safety = self.condon_safety
+        elif runtime == "codon":
+            safety = self.codon_safety
         elif runtime == "hybrid":
             safety = self.hybrid_safety
         else:

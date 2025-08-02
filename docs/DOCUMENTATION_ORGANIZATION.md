@@ -37,7 +37,7 @@ This document outlines the organization and structure of all documentation in th
 - **[requirements/](requirements/)** - Dependency management and requirements documentation
 
 #### 🔄 Migration & Compatibility
-- **[condon-migration/](condon-migration/)** - Condon framework migration guide and tools
+- **[codon-migration/](codon-migration/)** - Codon framework migration guide and tools
 
 ## 📋 Files Moved from Root
 

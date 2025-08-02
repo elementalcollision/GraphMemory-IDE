@@ -1,5 +1,5 @@
 """
-Core Service Architecture for GraphMemory-IDE Hybrid CPython-Condon System
+Core Service Architecture for GraphMemory-IDE Hybrid CPython-Codon System
 
 This module provides the foundational components for managing hybrid services
 with clear boundaries, resource management, and thread safety patterns.
@@ -23,7 +23,7 @@ class ServiceType(Enum):
     """Service type enumeration"""
 
     CPYTHON = "cpython"
-    CONDON = "condon"
+    CONDON = "codon"
     HYBRID = "hybrid"
 
 
@@ -460,11 +460,11 @@ class ServiceRegistry:
 
 
 class HybridLoadBalancer:
-    """Load balancer for hybrid CPython-Condon services"""
+    """Load balancer for hybrid CPython-Codon services"""
 
     def __init__(self):
         self.cpython_services = []
-        self.condon_services = []
+        self.codon_services = []
         self.hybrid_services = []
         self._load_metrics = {}
         self._lock = asyncio.Lock()
@@ -476,7 +476,7 @@ class HybridLoadBalancer:
             if service_type == ServiceType.CPYTHON.value:
                 self.cpython_services.append(service_info)
             elif service_type == ServiceType.CONDON.value:
-                self.condon_services.append(service_info)
+                self.codon_services.append(service_info)
             elif service_type == ServiceType.HYBRID.value:
                 self.hybrid_services.append(service_info)
 
@@ -488,20 +488,20 @@ class HybridLoadBalancer:
         """Route request to appropriate service based on type and load"""
         async with self._lock:
             if request_type in ["analytics", "ml", "gpu"]:
-                return await self._route_to_condon_service(request_data)
+                return await self._route_to_codon_service(request_data)
             elif request_type in ["auth", "web", "session"]:
                 return await self._route_to_cpython_service(request_data)
             else:
                 return await self._route_to_hybrid_service(request_data)
 
-    async def _route_to_condon_service(self, request_data: Dict[str, Any]) -> str:
-        """Route to least loaded Condon service"""
-        if not self.condon_services:
-            raise ServiceUnavailableError("No Condon services available")
+    async def _route_to_codon_service(self, request_data: Dict[str, Any]) -> str:
+        """Route to least loaded Codon service"""
+        if not self.codon_services:
+            raise ServiceUnavailableError("No Codon services available")
 
         # Select service with lowest load
         selected_service = min(
-            self.condon_services, key=lambda s: self._load_metrics.get(s["id"], 0)
+            self.codon_services, key=lambda s: self._load_metrics.get(s["id"], 0)
         )
 
         # Update load metrics
@@ -581,7 +581,7 @@ class FallbackManager:
                 )
 
     async def _fallback_to_cpython_analytics(self, *args, **kwargs):
-        """Fallback to CPython-based analytics when Condon analytics fails"""
+        """Fallback to CPython-based analytics when Codon analytics fails"""
         # Implement basic analytics using CPython
         logger.info("Using CPython fallback for analytics")
         return {"status": "fallback", "method": "cpython_analytics"}

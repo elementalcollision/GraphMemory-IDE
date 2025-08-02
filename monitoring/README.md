@@ -1,12 +1,12 @@
 # Hybrid Monitoring Framework
 
-Comprehensive monitoring and observability patterns for CPython/Condon hybrid architecture.
+Comprehensive monitoring and observability patterns for CPython/Codon hybrid architecture.
 
 ## Overview
 
-The Hybrid Monitoring Framework provides production-ready observability solutions for hybrid CPython/Condon architectures, including:
+The Hybrid Monitoring Framework provides production-ready observability solutions for hybrid CPython/Codon architectures, including:
 
-- **Unified Monitoring**: Single framework for both CPython and Condon services
+- **Unified Monitoring**: Single framework for both CPython and Codon services
 - **Distributed Tracing**: Cross-service boundary tracing with OpenTelemetry
 - **Custom Metrics**: Service-specific metrics for hybrid architectures
 - **Real-time Dashboard**: Web-based dashboard with WebSocket updates
@@ -20,7 +20,7 @@ The Hybrid Monitoring Framework provides production-ready observability solution
 │                    Hybrid Monitoring Framework              │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
-│  │ CPython     │  │ Condon      │  │ Hybrid      │       │
+│  │ CPython     │  │ Codon       │  │ Hybrid      │       │
 │  │ Monitor     │  │ Monitor     │  │ Monitor     │       │
 │  └─────────────┘  └─────────────┘  └─────────────┘       │
 ├─────────────────────────────────────────────────────────────┤
@@ -54,8 +54,8 @@ cpython_service = framework.register_cpython_service(
     {"environment": "production", "version": "1.0.0"}
 )
 
-# Register Condon services
-condon_service = framework.register_condon_service(
+# Register Codon services
+codon_service = framework.register_codon_service(
     "analytics-service",
     {"environment": "production", "version": "1.0.0"}
 )
@@ -75,7 +75,7 @@ with framework.monitor_request("auth-service", "/login", "POST"):
     # Your authentication logic here
     authenticate_user(credentials)
 
-# Monitor Condon service requests
+# Monitor Codon service requests
 with framework.monitor_request("analytics-service", "/process", "POST"):
     # Your analytics processing here
     process_data(data)
@@ -127,14 +127,14 @@ monitor.record_cpu_bound_operation("matrix_multiplication")
 monitor.record_io_bound_operation("file_reading")
 ```
 
-## Condon Monitoring
+## Codon Monitoring
 
 ### Compilation Monitoring
 
 ```python
-from monitoring.condon_monitor import CondonMonitor, CompilationType
+from monitoring.codon_monitor import CodonMonitor, CompilationType
 
-monitor = CondonMonitor("my-condon-service")
+monitor = CodonMonitor("my-codon-service")
 
 # Monitor JIT compilation
 with monitor.monitor_compilation(CompilationType.JIT, "optimized"):
@@ -150,7 +150,7 @@ with monitor.monitor_compilation(CompilationType.AOT, "release"):
 ### Thread Safety Monitoring
 
 ```python
-from monitoring.condon_monitor import ThreadSafetyEvent
+from monitoring.codon_monitor import ThreadSafetyEvent
 
 # Record thread safety events
 monitor.record_thread_safety_event(
@@ -268,13 +268,13 @@ framework = initialize_hybrid_monitoring(
 - `cpython_gc_collections_total`: Garbage collection events
 - `cpython_async_tasks_active`: Active async tasks
 
-### Condon Metrics
+### Codon Metrics
 
-- `condon_compilation_duration_seconds`: Compilation duration
-- `condon_compilation_memory_bytes`: Memory used during compilation
-- `condon_thread_safety_events_total`: Thread safety events
-- `condon_memory_allocation_bytes_total`: Memory allocation
-- `condon_native_execution_seconds`: Native code execution time
+- `codon_compilation_duration_seconds`: Compilation duration
+- `codon_compilation_memory_bytes`: Memory used during compilation
+- `codon_thread_safety_events_total`: Thread safety events
+- `codon_memory_allocation_bytes_total`: Memory allocation
+- `codon_native_execution_seconds`: Native code execution time
 
 ### Hybrid Metrics
 
@@ -294,7 +294,7 @@ pytest monitoring/test_hybrid_monitoring.py -v
 # Run specific test categories
 pytest monitoring/test_hybrid_monitoring.py::TestHybridMonitoringFramework -v
 pytest monitoring/test_hybrid_monitoring.py::TestCPythonMonitor -v
-pytest monitoring/test_hybrid_monitoring.py::TestCondonMonitor -v
+pytest monitoring/test_hybrid_monitoring.py::TestCodonMonitor -v
 ```
 
 ### Test Coverage

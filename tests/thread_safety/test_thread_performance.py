@@ -1,5 +1,5 @@
 """
-Thread performance benchmarking tests for Condon development.
+Thread performance benchmarking tests for Codon development.
 All tests run within the virtual environment for proper isolation.
 """
 
@@ -52,8 +52,8 @@ def test_thread_performance_benchmarking():
 
 @pytest.mark.thread_safety
 def test_codon_thread_safety():
-    """Test Condon thread safety within virtual environment"""
-    # Test concurrent Condon compilation
+    """Test Codon thread safety within virtual environment"""
+    # Test concurrent Codon compilation
     codon_code = """
 def add(a: int, b: int) -> int:
     return a + b
@@ -90,8 +90,8 @@ def add(a: int, b: int) -> int:
         results = [future.result() for future in futures]
     
     # Verify all compilations succeeded
-    assert all(results), "Some Condon compilations failed"
-    print(f"Condon thread safety test completed successfully")
+    assert all(results), "Some Codon compilations failed"
+    print(f"Codon thread safety test completed successfully")
 
 @pytest.mark.thread_safety
 def test_concurrent_development_workflows():

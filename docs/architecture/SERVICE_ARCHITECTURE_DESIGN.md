@@ -1,16 +1,16 @@
-# Service Architecture Design: CPython-Condon Hybrid Architecture
+# Service Architecture Design: CPython-Codon Hybrid Architecture
 
 ## Overview
 
-This document defines the core service architecture for GraphMemory-IDE's hybrid CPython-Condon system, establishing clear boundaries, resource management strategies, and thread safety patterns for production deployment.
+This document defines the core service architecture for GraphMemory-IDE's hybrid CPython-Codon system, establishing clear boundaries, resource management strategies, and thread safety patterns for production deployment.
 
 ## Architecture Principles
 
 ### 1. Service Isolation Patterns
 
 #### Process-Level Isolation
-- **CPython Services**: Run in separate processes/containers from Condon services
-- **Condon Services**: Execute in isolated environments with dedicated resources
+- **CPython Services**: Run in separate processes/containers from Codon services
+- **Codon Services**: Execute in isolated environments with dedicated resources
 - **No Shared Memory**: Services communicate only through serializable IPC mechanisms
 - **Container Boundaries**: Each service type runs in its own container with resource limits
 
@@ -23,7 +23,7 @@ This document defines the core service architecture for GraphMemory-IDE's hybrid
 - Session Management
 - Rate Limiting & Security Middleware
 
-**Condon Services (Compute/ML Layer)**
+**Codon Services (Compute/ML Layer)**
 - Analytics Engine (`server/analytics/engine.py`)
 - ML/AI Processing (`monitoring/ai_detection/`)
 - Graph Algorithms & Analytics
@@ -47,7 +47,7 @@ SERVICE_RESOURCE_LIMITS = {
         "cpu_limit": "0.5",
         "max_workers": 4
     },
-    "condon_services": {
+    "codon_services": {
         "memory_limit": "2Gi",
         "cpu_limit": "2.0",
         "gpu_memory": "4Gi",
@@ -234,11 +234,11 @@ class ServiceRegistry:
 #### Intelligent Load Balancer
 ```python
 class HybridLoadBalancer:
-    """Load balancer for hybrid CPython-Condon services"""
+    """Load balancer for hybrid CPython-Codon services"""
     
     def __init__(self):
         self.cpython_services = []
-        self.condon_services = []
+        self.codon_services = []
         self.hybrid_services = []
         self._load_metrics = {}
         self._lock = asyncio.Lock()
@@ -247,20 +247,20 @@ class HybridLoadBalancer:
         """Route request to appropriate service based on type and load"""
         async with self._lock:
             if request_type == "analytics" or request_type == "ml":
-                return await self._route_to_condon_service(request_data)
+                return await self._route_to_codon_service(request_data)
             elif request_type == "auth" or request_type == "web":
                 return await self._route_to_cpython_service(request_data)
             else:
                 return await self._route_to_hybrid_service(request_data)
     
-    async def _route_to_condon_service(self, request_data: Dict[str, Any]) -> str:
-        """Route to least loaded Condon service"""
-        if not self.condon_services:
-            raise ServiceUnavailableError("No Condon services available")
+    async def _route_to_codon_service(self, request_data: Dict[str, Any]) -> str:
+        """Route to least loaded Codon service"""
+        if not self.codon_services:
+            raise ServiceUnavailableError("No Codon services available")
         
         # Select service with lowest load
         selected_service = min(
-            self.condon_services,
+            self.codon_services,
             key=lambda s: self._load_metrics.get(s["id"], 0)
         )
         
@@ -348,7 +348,7 @@ class FallbackManager:
                 raise ServiceUnavailableError(f"No fallback available for {service_type}")
     
     async def _fallback_to_cpython_analytics(self, *args, **kwargs):
-        """Fallback to CPython-based analytics when Condon analytics fails"""
+        """Fallback to CPython-based analytics when Codon analytics fails"""
         # Implement basic analytics using CPython
         pass
     
@@ -505,11 +505,11 @@ services:
       timeout: 10s
       retries: 3
 
-  # Condon Services
+  # Codon Services
   analytics-service:
     build: ./server/analytics
     environment:
-      - SERVICE_TYPE=condon
+      - SERVICE_TYPE=codon
       - MEMORY_LIMIT=2Gi
       - CPU_LIMIT=2.0
       - GPU_MEMORY=4Gi
@@ -571,8 +571,8 @@ class CPythonServiceClient:
             else:
                 raise ServiceCommunicationError(f"Service returned {response.status}")
 
-# Service client for Condon services
-class CondonServiceClient:
+# Service client for Codon services
+class CodonServiceClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
         self.session = aiohttp.ClientSession()
@@ -587,7 +587,7 @@ class CondonServiceClient:
         async with self.session.post(
             f"{self.base_url}/{endpoint}",
             json=data,
-            timeout=60  # Longer timeout for Condon services
+            timeout=60  # Longer timeout for Codon services
         ) as response:
             if response.status == 200:
                 return await response.json()
@@ -719,7 +719,7 @@ class PerformanceTests:
 
 ## Conclusion
 
-This service architecture design provides a robust foundation for the GraphMemory-IDE hybrid CPython-Condon system. The key principles are:
+This service architecture design provides a robust foundation for the GraphMemory-IDE hybrid CPython-Codon system. The key principles are:
 
 1. **Clear Service Boundaries**: Each service type has well-defined responsibilities and isolation
 2. **Thread Safety**: All inter-service communication is thread-safe and memory-safe

@@ -2,7 +2,7 @@
 Performance Monitoring Framework for Hybrid Architecture
 
 This module provides comprehensive performance monitoring, alerting, and reporting
-for the hybrid CPython/Condon architecture, including real-time metrics collection,
+for the hybrid CPython/Codon architecture, including real-time metrics collection,
 performance analysis, and automated alerting.
 """
 
@@ -102,15 +102,15 @@ class MetricsCollector:
                 # Collect CPython metrics
                 cpython_metrics = self._collect_cpython_metrics()
 
-                # Collect Condon metrics
-                condon_metrics = self._collect_condon_metrics()
+                # Collect Codon metrics
+codon_metrics = self._collect_codon_metrics()
 
                 # Collect hybrid metrics
                 hybrid_metrics = self._collect_hybrid_metrics()
 
                 # Store all metrics
                 all_metrics = (
-                    system_metrics + cpython_metrics + condon_metrics + hybrid_metrics
+                    system_metrics + cpython_metrics + codon_metrics + hybrid_metrics
                 )
 
                 for metric in all_metrics:
@@ -280,19 +280,19 @@ class MetricsCollector:
 
         return metrics
 
-    def _collect_condon_metrics(self) -> List[PerformanceMetric]:
-        """Collect Condon component metrics"""
+    def _collect_codon_metrics(self) -> List[PerformanceMetric]:
+    """Collect Codon component metrics"""
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         metrics = []
 
         try:
-            # Mock Condon metrics for demonstration
-            # In a real implementation, these would be collected from actual Condon components
+            # Mock Codon metrics for demonstration
+# In a real implementation, these would be collected from actual Codon components
 
             # Analytics engine metrics
             metrics.append(
                 PerformanceMetric(
-                    component="condon",
+                    component="codon",
                     metric_name="analytics_engine_latency",
                     value=15.2,
                     unit="ms",
@@ -302,7 +302,7 @@ class MetricsCollector:
 
             metrics.append(
                 PerformanceMetric(
-                    component="condon",
+                    component="codon",
                     metric_name="analytics_engine_throughput",
                     value=300,
                     unit="ops/sec",
@@ -313,7 +313,7 @@ class MetricsCollector:
             # AI detection metrics
             metrics.append(
                 PerformanceMetric(
-                    component="condon",
+                    component="codon",
                     metric_name="ai_detection_latency",
                     value=8.5,
                     unit="ms",
@@ -323,7 +323,7 @@ class MetricsCollector:
 
             metrics.append(
                 PerformanceMetric(
-                    component="condon",
+                    component="codon",
                     metric_name="ai_detection_throughput",
                     value=400,
                     unit="ops/sec",
@@ -334,7 +334,7 @@ class MetricsCollector:
             # Monitoring system metrics
             metrics.append(
                 PerformanceMetric(
-                    component="condon",
+                    component="codon",
                     metric_name="monitoring_system_latency",
                     value=2.1,
                     unit="ms",
@@ -344,7 +344,7 @@ class MetricsCollector:
 
             metrics.append(
                 PerformanceMetric(
-                    component="condon",
+                    component="codon",
                     metric_name="monitoring_system_throughput",
                     value=1500,
                     unit="ops/sec",
@@ -353,7 +353,7 @@ class MetricsCollector:
             )
 
         except Exception as e:
-            logger.error(f"Error collecting Condon metrics: {e}")
+            logger.error(f"Error collecting Codon metrics: {e}")
 
         return metrics
 
@@ -1092,8 +1092,8 @@ class PerformanceMonitor:
                 "medium",
             ),
             AlertRule(
-                "high_latency_condon",
-                "condon",
+                "high_latency_codon",
+                "codon",
                 "analytics_engine_latency",
                 100.0,
                 "gt",
@@ -1108,8 +1108,8 @@ class PerformanceMonitor:
                 "medium",
             ),
             AlertRule(
-                "low_throughput_condon",
-                "condon",
+                "low_throughput_codon",
+                "codon",
                 "analytics_engine_throughput",
                 200.0,
                 "lt",

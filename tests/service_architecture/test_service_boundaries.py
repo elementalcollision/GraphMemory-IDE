@@ -274,9 +274,9 @@ class TestServiceRegistry:
         cpython_services = await registry.discover_service(ServiceType.CPYTHON.value)
         assert len(cpython_services) >= 2
 
-        # Discover Condon services
-        condon_services = await registry.discover_service(ServiceType.CONDON.value)
-        assert len(condon_services) >= 1
+        # Discover Codon services
+        codon_services = await registry.discover_service(ServiceType.CONDON.value)
+        assert len(codon_services) >= 1
 
 
 class TestHybridLoadBalancer:
@@ -296,7 +296,7 @@ class TestHybridLoadBalancer:
                 "url": "http://localhost:8001",
             },
             {
-                "id": "condon1",
+                "id": "codon1",
                 "type": ServiceType.CONDON.value,
                 "url": "http://localhost:8002",
             },
@@ -311,7 +311,7 @@ class TestHybridLoadBalancer:
             await load_balancer.register_service(service)
 
         assert len(load_balancer.cpython_services) == 1
-        assert len(load_balancer.condon_services) == 1
+        assert len(load_balancer.codon_services) == 1
         assert len(load_balancer.hybrid_services) == 1
 
     @pytest.mark.asyncio
@@ -325,7 +325,7 @@ class TestHybridLoadBalancer:
                 "url": "http://localhost:8001",
             },
             {
-                "id": "condon1",
+                "id": "codon1",
                 "type": ServiceType.CONDON.value,
                 "url": "http://localhost:8002",
             },
@@ -491,7 +491,7 @@ class TestServiceBoundaryIntegration:
     async def test_service_isolation(self):
         """Test service isolation between different service types."""
         cpython_manager = ServiceResourceManager()
-        condon_manager = ServiceResourceManager()
+        codon_manager = ServiceResourceManager()
 
         # Register resources for different service types
         cpython_config = ServiceConfig(
@@ -504,8 +504,8 @@ class TestServiceBoundaryIntegration:
             max_workers=4,
         )
 
-        condon_config = ServiceConfig(
-            service_id="condon-service",
+        codon_config = ServiceConfig(
+            service_id="codon-service",
             service_type=ServiceType.CONDON,
             url="http://localhost:8002",
             health_endpoint="/health",
@@ -517,13 +517,13 @@ class TestServiceBoundaryIntegration:
         await cpython_manager.register_service_resources(
             "cpython-service", cpython_config
         )
-        await condon_manager.register_service_resources("condon-service", condon_config)
+        await codon_manager.register_service_resources("codon-service", codon_config)
 
         # Verify isolation
         assert "cpython-service" in cpython_manager.active_connections
-        assert "condon-service" in condon_manager.active_connections
-        assert "cpython-service" not in condon_manager.active_connections
-        assert "condon-service" not in cpython_manager.active_connections
+        assert "codon-service" in codon_manager.active_connections
+        assert "cpython-service" not in codon_manager.active_connections
+        assert "codon-service" not in cpython_manager.active_connections
 
     @pytest.mark.asyncio
     async def test_thread_safety_concurrent_operations(self):

@@ -1,7 +1,7 @@
 """
-Condon Testing Framework
+Codon Testing Framework
 
-This module provides comprehensive testing utilities for Condon refactored components,
+This module provides comprehensive testing utilities for Codon refactored components,
 including thread safety testing, performance benchmarking, and compatibility validation.
 """
 
@@ -58,7 +58,7 @@ class CompatibilityResult:
 
 
 class ThreadSafetyTester:
-    """Comprehensive thread safety testing utility for Condon environment"""
+    """Comprehensive thread safety testing utility for Codon environment"""
 
     def __init__(self):
         self.results: List[ThreadSafetyResult] = []
@@ -255,7 +255,7 @@ class ThreadSafetyTester:
 
 
 class PerformanceTester:
-    """Comprehensive performance testing utility for Condon components"""
+    """Comprehensive performance testing utility for Codon components"""
 
     def __init__(self, baseline_file: str = "performance_baseline.json"):
         self.baseline_file = Path(baseline_file)
@@ -467,9 +467,9 @@ class CompatibilityTester:
 
     def _run_compiled(self, module_name: str, function_name: str, *args, **kwargs):
         """Run function in compiled mode"""
-        # This would use Condon's compiled version
+        # This would use Codon's compiled version
         # For now, we'll simulate by running the interpreted version
-        # In a real implementation, this would use Condon's API
+        # In a real implementation, this would use Codon's API
         return self._run_interpreted(module_name, function_name, *args, **kwargs)
 
     def test_dynamic_features(self) -> List[CompatibilityResult]:

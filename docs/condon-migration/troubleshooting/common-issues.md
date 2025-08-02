@@ -2,13 +2,13 @@
 
 ## Overview
 
-This guide provides solutions for common issues encountered during Condon migration. These issues are based on the comprehensive analysis completed in TASK-002 subtasks and real-world migration experiences.
+This guide provides solutions for common issues encountered during Codon migration. These issues are based on the comprehensive analysis completed in TASK-002 subtasks and real-world migration experiences.
 
 ## Critical Issues
 
 ### 1. Dynamic Import Compilation Errors
 
-**Issue**: Condon cannot compile dynamic imports like `__import__()` or `getattr()`.
+**Issue**: Codon cannot compile dynamic imports like `__import__()` or `getattr()`.
 
 **Symptoms**:
 ```
@@ -17,7 +17,7 @@ Error: getattr() not supported in compiled mode
 Error: Dynamic module loading not supported
 ```
 
-**Root Cause**: Condon requires static analysis and cannot handle dynamic imports at compile time.
+**Root Cause**: Codon requires static analysis and cannot handle dynamic imports at compile time.
 
 **Solution**:
 ```python
@@ -56,7 +56,7 @@ ValueError: Inconsistent state detected
 MemoryError: Excessive memory usage due to race conditions
 ```
 
-**Root Cause**: Condon removes the GIL, making race conditions much more likely.
+**Root Cause**: Codon removes the GIL, making race conditions much more likely.
 
 **Solution**:
 ```python
@@ -222,7 +222,7 @@ async def process_data(data):
 
 ### 6. Type Annotation Errors
 
-**Issue**: Condon compilation fails due to missing or incorrect type annotations.
+**Issue**: Codon compilation fails due to missing or incorrect type annotations.
 
 **Symptoms**:
 ```
@@ -231,7 +231,7 @@ Error: Cannot infer type for variable 'result'
 Error: Type annotation required for compiled code
 ```
 
-**Root Cause**: Condon requires explicit type annotations for compilation.
+**Root Cause**: Codon requires explicit type annotations for compilation.
 
 **Solution**:
 ```python
@@ -259,7 +259,7 @@ def process_data(data: List[Any]) -> List[Any]:
 
 ### 7. Dynamic Feature Compilation Errors
 
-**Issue**: Condon cannot compile code that uses dynamic features.
+**Issue**: Codon cannot compile code that uses dynamic features.
 
 **Symptoms**:
 ```
@@ -268,7 +268,7 @@ Error: exec() not supported in compiled mode
 Error: globals() not supported in compiled mode
 ```
 
-**Root Cause**: Condon requires static analysis and cannot handle dynamic features.
+**Root Cause**: Codon requires static analysis and cannot handle dynamic features.
 
 **Solution**:
 ```python
@@ -581,7 +581,7 @@ print(f"Memory delta: {summary['avg_memory_delta'] / 1024 / 1024:.2f}MB")
 
 ## Conclusion
 
-This troubleshooting guide provides solutions for the most common issues encountered during Condon migration. The key is to:
+This troubleshooting guide provides solutions for the most common issues encountered during Codon migration. The key is to:
 
 1. **Prevent issues** through proper design and testing
 2. **Detect issues early** through monitoring and validation

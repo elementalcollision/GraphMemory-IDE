@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for implementing thread safety in the GraphMemory-IDE codebase for Condon's no-GIL environment. Condon removes the Global Interpreter Lock (GIL), making race conditions much more likely to occur.
+This guide provides step-by-step instructions for implementing thread safety in the GraphMemory-IDE codebase for Codon's no-GIL environment. Codon removes the Global Interpreter Lock (GIL), making race conditions much more likely to occur.
 
 ## Critical Thread Safety Issues
 
@@ -668,10 +668,10 @@ class ThreadSafetyTestSuite:
 
 ## Conclusion
 
-Following this implementation guide ensures that your threaded code is safe, predictable, and production-ready in the Condon no-GIL environment. Always test thoroughly and monitor performance in production environments.
+Following this implementation guide ensures that your threaded code is safe, predictable, and production-ready in the Codon no-GIL environment. Always test thoroughly and monitor performance in production environments.
 
 **Key Takeaways**:
-- Condon's no-GIL environment requires explicit thread safety measures
+- Codon's no-GIL environment requires explicit thread safety measures
 - Singleton patterns must use double-checked locking
 - Shared state access requires proper synchronization
 - Performance impact of thread safety measures is acceptable

@@ -1,7 +1,7 @@
 """
-Comprehensive Communication Protocols for Hybrid CPython/Condon Architecture
+Comprehensive Communication Protocols for Hybrid CPython/Codon Architecture
 
-This module implements communication protocols for the hybrid CPython/Condon
+This module implements communication protocols for the hybrid CPython/Codon
 architecture, including inter-service communication, data serialization,
 error handling, and performance optimization.
 """
@@ -38,7 +38,7 @@ class ServiceType(Enum):
     """Service types in the hybrid architecture"""
 
     CPYTHON = "cpython"
-    CONDON = "condon"
+    CONDON = "codon"
     HYBRID = "hybrid"
 
 
@@ -65,11 +65,11 @@ class CommunicationConfig:
 
 
 class HybridDataSerializer:
-    """Data serialization for CPython/Condon boundaries"""
+    """Data serialization for CPython/Codon boundaries"""
 
     def __init__(self):
         self.cpython_serializer = CPythonSerializer()
-        self.condon_serializer = CondonSerializer()
+        self.codon_serializer = CodonSerializer()
         self.compatibility_layer = CompatibilityLayer()
 
     def serialize_for_cpython(self, data: dict) -> bytes:
@@ -84,16 +84,16 @@ class HybridDataSerializer:
             logger.error(f"Failed to serialize for CPython: {e}")
             raise
 
-    def serialize_for_condon(self, data: dict) -> bytes:
-        """Serialize data for Condon consumption"""
+    def serialize_for_codon(self, data: dict) -> bytes:
+        """Serialize data for Codon consumption"""
         try:
-            # Use Condon's native serialization with __to_py__ method
-            serialized = self.condon_serializer.serialize(data)
+            # Use Codon's native serialization with __to_py__ method
+            serialized = self.codon_serializer.serialize(data)
             if self.compatibility_layer.needs_conversion(data):
-                serialized = self.compatibility_layer.convert_for_condon(serialized)
+                serialized = self.compatibility_layer.convert_for_codon(serialized)
             return serialized
         except Exception as e:
-            logger.error(f"Failed to serialize for Condon: {e}")
+            logger.error(f"Failed to serialize for Codon: {e}")
             raise
 
     def deserialize_from_cpython(self, data: bytes) -> dict:
@@ -109,17 +109,17 @@ class HybridDataSerializer:
             logger.error(f"Failed to deserialize from CPython: {e}")
             raise
 
-    def deserialize_from_condon(self, data: bytes) -> dict:
-        """Deserialize data from Condon"""
+    def deserialize_from_codon(self, data: bytes) -> dict:
+        """Deserialize data from Codon"""
         try:
-            deserialized = self.condon_serializer.deserialize(data)
+            deserialized = self.codon_serializer.deserialize(data)
             if self.compatibility_layer.needs_conversion(deserialized):
-                deserialized = self.compatibility_layer.convert_from_condon(
+                deserialized = self.compatibility_layer.convert_from_codon(
                     deserialized
                 )
             return deserialized
         except Exception as e:
-            logger.error(f"Failed to deserialize from Condon: {e}")
+            logger.error(f"Failed to deserialize from Codon: {e}")
             raise
 
 
@@ -137,26 +137,26 @@ class CPythonSerializer:
         return json.loads(data.decode("utf-8"))
 
 
-class CondonSerializer:
-    """Condon-specific serialization using __to_py__ and __from_py__ methods"""
+class CodonSerializer:
+    """Codon-specific serialization using __to_py__ and __from_py__ methods"""
 
     def serialize(self, data: dict) -> bytes:
-        """Serialize data using Condon's __to_py__ method"""
-        # Convert to Condon object and use __to_py__
-        condon_obj = self._convert_to_condon_object(data)
-        py_obj = condon_obj.__to_py__()
+        """Serialize data using Codon's __to_py__ method"""
+        # Convert to Codon object and use __to_py__
+        codon_obj = self._convert_to_codon_object(data)
+        py_obj = codon_obj.__to_py__()
         return self._serialize_py_object(py_obj)
 
     def deserialize(self, data: bytes) -> dict:
-        """Deserialize data using Condon's __from_py__ method"""
+        """Deserialize data using Codon's __from_py__ method"""
         # Convert from Python object using __from_py__
         py_obj = self._deserialize_py_object(data)
-        condon_obj = self._convert_from_py_object(py_obj)
-        return self._convert_to_dict(condon_obj)
+        codon_obj = self._convert_from_py_object(py_obj)
+        return self._convert_to_dict(codon_obj)
 
-    def _convert_to_condon_object(self, data: dict):
-        """Convert dict to Condon object"""
-        # Implementation would create Condon objects
+    def _convert_to_codon_object(self, data: dict):
+        """Convert dict to Codon object"""
+        # Implementation would create Codon objects
         return data
 
     def _serialize_py_object(self, py_obj) -> bytes:
@@ -168,21 +168,21 @@ class CondonSerializer:
         return json.loads(data.decode("utf-8"))
 
     def _convert_from_py_object(self, py_obj):
-        """Convert from Python object to Condon object"""
+        """Convert from Python object to Codon object"""
         # Implementation would use __from_py__
         return py_obj
 
-    def _convert_to_dict(self, condon_obj) -> dict:
-        """Convert Condon object to dict"""
-        return condon_obj
+    def _convert_to_dict(self, codon_obj) -> dict:
+        """Convert Codon object to dict"""
+        return codon_obj
 
 
 class CompatibilityLayer:
-    """Compatibility layer for CPython/Condon data conversion"""
+    """Compatibility layer for CPython/Codon data conversion"""
 
     def needs_conversion(self, data: Any) -> bool:
-        """Check if data needs conversion between CPython and Condon"""
-        # Check for Condon-specific types or CPython-specific types
+        """Check if data needs conversion between CPython and Codon"""
+        # Check for Codon-specific types or CPython-specific types
         return hasattr(data, "__to_py__") or hasattr(data, "__from_py__")
 
     def convert_for_cpython(self, data: Any) -> Any:
@@ -191,8 +191,8 @@ class CompatibilityLayer:
             return data.__to_py__()
         return data
 
-    def convert_for_condon(self, data: Any) -> Any:
-        """Convert data for Condon consumption"""
+    def convert_for_codon(self, data: Any) -> Any:
+        """Convert data for Codon consumption"""
         if hasattr(data, "__from_py__"):
             return data.__from_py__()
         return data
@@ -201,8 +201,8 @@ class CompatibilityLayer:
         """Convert data from CPython format"""
         return data
 
-    def convert_from_condon(self, data: Any) -> Any:
-        """Convert data from Condon format"""
+    def convert_from_codon(self, data: Any) -> Any:
+        """Convert data from Codon format"""
         return data
 
 
@@ -608,8 +608,8 @@ class HybridCommunicationProtocol:
 
         try:
             # Serialize data for target service
-            if service.startswith("condon"):
-                serialized_data = self.serializer.serialize_for_condon(data)
+            if service.startswith("codon"):
+                serialized_data = self.serializer.serialize_for_codon(data)
             else:
                 serialized_data = self.serializer.serialize_for_cpython(data)
 
@@ -644,8 +644,8 @@ class HybridCommunicationProtocol:
                 decrypted_data = response["data"]
 
             # Deserialize response
-            if service.startswith("condon"):
-                result = self.serializer.deserialize_from_condon(decrypted_data)
+            if service.startswith("codon"):
+                result = self.serializer.deserialize_from_codon(decrypted_data)
             else:
                 result = self.serializer.deserialize_from_cpython(decrypted_data)
 

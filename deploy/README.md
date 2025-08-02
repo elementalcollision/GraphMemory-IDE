@@ -1,10 +1,10 @@
-# Hybrid CPython/Condon Deployment Strategy
+# Hybrid CPython/Codon Deployment Strategy
 
-This directory contains the comprehensive deployment strategy for the hybrid CPython/Condon architecture, including containerization, orchestration, service discovery, and production-ready deployment patterns.
+This directory contains the comprehensive deployment strategy for the hybrid CPython/Codon architecture, including containerization, orchestration, service discovery, and production-ready deployment patterns.
 
 ## Architecture Overview
 
-The hybrid architecture combines CPython services for general-purpose web applications with Condon-compiled services for performance-critical components:
+The hybrid architecture combines CPython services for general-purpose web applications with Codon-compiled services for performance-critical components:
 
 ### Service Types
 
@@ -13,7 +13,7 @@ The hybrid architecture combines CPython services for general-purpose web applic
 - **Dashboard Service**: Web interface and user management
 - **Streaming Service**: Real-time data streaming
 
-#### Condon Services
+#### Codon Services
 - **Analytics Service**: High-performance data analytics
 - **AI Detection Service**: Machine learning inference
 - **Monitoring Service**: System monitoring and alerting
@@ -36,7 +36,7 @@ deploy/
 │   └── disaster-recovery.sh          # Disaster recovery script
 ├── docker/
 │   ├── cpython-service.Dockerfile    # CPython service containerization
-│   └── condon-service.Dockerfile     # Condon service containerization
+│   └── codon-service.Dockerfile     # Codon service containerization
 └── README.md                         # This documentation
 ```
 
@@ -129,12 +129,12 @@ FROM python:3.11-slim as production
 USER app  # Non-root user
 ```
 
-### Condon Services
+### Codon Services
 
 ```dockerfile
 # Multi-stage build with performance optimization
 FROM condaforge/mambaforge:latest as builder
-# ... Condon compilation
+# ... Codon compilation
 
 FROM debian:bullseye-slim as production
 # ... minimal runtime
@@ -144,7 +144,7 @@ FROM debian:bullseye-slim as production
 
 ### Horizontal Scaling
 - **CPython Services**: 2-10 replicas based on CPU/memory usage
-- **Condon Services**: 2-6 replicas based on computational load
+- **Codon Services**: 2-6 replicas based on computational load
 - **Auto-scaling**: Triggered at 70% CPU or 80% memory utilization
 
 ### Performance Optimization
@@ -332,7 +332,7 @@ Configure alerts for:
 
 ### Version 1.0.0
 - Initial hybrid deployment strategy
-- CPython and Condon service containerization
+- CPython and Codon service containerization
 - Istio service mesh integration
 - OpenTelemetry observability
 - Automated disaster recovery

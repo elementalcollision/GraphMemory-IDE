@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive test runner for hybrid CPython/Condon architecture.
+Comprehensive test runner for hybrid CPython/Codon architecture.
 This script provides a unified interface for running all types of tests.
 """
 
@@ -58,7 +58,7 @@ class ComprehensiveTestRunner:
                 logger.info("Running unit tests...")
                 results["unit_tests"] = await self.hybrid_framework.run_cpython_tests()
                 results["unit_tests"].extend(
-                    await self.hybrid_framework.run_condon_tests()
+                    await self.hybrid_framework.run_codon_tests()
                 )
 
             # Run integration tests if requested
@@ -114,11 +114,11 @@ class ComprehensiveTestRunner:
 
         results = {
             "cpython_tests": await self.hybrid_framework.run_cpython_tests(),
-            "condon_tests": await self.hybrid_framework.run_condon_tests(),
+            "codon_tests": await self.hybrid_framework.run_codon_tests(),
         }
 
         # Generate summary
-        all_tests = results["cpython_tests"] + results["condon_tests"]
+        all_tests = results["cpython_tests"] + results["codon_tests"]
         total_tests = len(all_tests)
         passed_tests = len([t for t in all_tests if t.status == "passed"])
         failed_tests = len([t for t in all_tests if t.status == "failed"])

@@ -1,7 +1,7 @@
 # Thread Safety Guidelines and Documentation
 
 ## Overview
-This document provides comprehensive guidelines for developing thread-safe code within the Condon virtual environment. These guidelines ensure that concurrent operations are safe, predictable, and production-ready.
+This document provides comprehensive guidelines for developing thread-safe code within the Codon virtual environment. These guidelines ensure that concurrent operations are safe, predictable, and production-ready.
 
 ## Core Principles
 
@@ -295,10 +295,10 @@ def thread_safe_operation():
 - **Isolate dependencies**: Ensure thread operations don't interfere with environment
 - **Clean state**: Reset environment state between thread operations
 
-### Condon Integration
-- **Thread-safe compilation**: Ensure Condon compilation is thread-safe
-- **Resource management**: Properly manage Condon compiler resources
-- **Error isolation**: Prevent Condon errors from affecting other threads
+### Codon Integration
+- **Thread-safe compilation**: Ensure Codon compilation is thread-safe
+- **Resource management**: Properly manage Codon compiler resources
+- **Error isolation**: Prevent Codon errors from affecting other threads
 
 ## Checklist for Thread-Safe Code
 

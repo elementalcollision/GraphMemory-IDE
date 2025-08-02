@@ -1,5 +1,5 @@
 """
-Testing guidelines for hybrid CPython/Condon architecture.
+Testing guidelines for hybrid CPython/Codon architecture.
 This module provides comprehensive testing guidelines and best practices.
 """
 
@@ -127,7 +127,7 @@ class IntegrationTestGuidelines:
             TestingGuideline(
                 category="integration_testing",
                 title="Service Boundary Testing",
-                description="Test interactions between CPython and Condon components",
+                description="Test interactions between CPython and Codon components",
                 priority="high",
                 examples=[
                     "Test API compatibility layer",
@@ -426,7 +426,7 @@ class TestingGuidelines:
         """Generate unit testing summary"""
         return {
             "focus": "Individual component testing",
-            "scope": "CPython and Condon components",
+            "scope": "CPython and Codon components",
             "key_principles": [
                 "Test isolation",
                 "Mock external dependencies",
@@ -445,7 +445,7 @@ class TestingGuidelines:
         """Generate integration testing summary"""
         return {
             "focus": "Service boundary testing",
-            "scope": "CPython-Condon interactions",
+            "scope": "CPython-Codon interactions",
             "key_principles": [
                 "Test real service interactions",
                 "Test data flow across boundaries",

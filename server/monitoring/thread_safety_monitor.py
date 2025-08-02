@@ -1,7 +1,7 @@
 """
 Production Thread Safety Monitoring System
 
-This module provides production-ready monitoring for the hybrid CPython/Condon thread safety
+This module provides production-ready monitoring for the hybrid CPython/Codon thread safety
 framework, including real-time metrics, alerting, and integration with existing monitoring
 infrastructure.
 """

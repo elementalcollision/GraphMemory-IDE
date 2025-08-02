@@ -1,7 +1,7 @@
 """
 Comprehensive Test Suite for Hybrid Thread Safety Framework
 
-This module provides comprehensive testing for the hybrid CPython/Condon thread safety
+This module provides comprehensive testing for the hybrid CPython/Codon thread safety
 framework, including memory safety patterns, concurrency controls, and production
 validation.
 """
@@ -20,7 +20,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from server.utils.thread_safety import (
     ConcurrencyControl,
-    CondonThreadSafety,
+    CodonThreadSafety,
     CPythonThreadSafety,
     HybridThreadSafety,
     HybridThreadSafetyFramework,
@@ -77,7 +77,7 @@ class TestMemorySafetyManager:
         # Verify tracking data exists
         assert "test_component" in memory_manager.memory_tracker
         assert "cpython" in memory_manager.memory_tracker["test_component"]
-        assert "condon" in memory_manager.memory_tracker["test_component"]
+        assert "codon" in memory_manager.memory_tracker["test_component"]
         assert "hybrid" in memory_manager.memory_tracker["test_component"]
 
     def test_memory_leak_detection(self, framework):
@@ -328,39 +328,39 @@ class TestCPythonThreadSafety:
         # Should not raise exceptions
 
 
-class TestCondonThreadSafety:
-    """Test Condon-specific thread safety patterns"""
+class TestCodonThreadSafety:
+    """Test Codon-specific thread safety patterns"""
 
-    def test_safe_condon_execution(self, framework):
-        """Test safe Condon function execution"""
-        condon_safety = framework.condon_safety
+    def test_safe_codon_execution(self, framework):
+        """Test safe Codon function execution"""
+        codon_safety = framework.codon_safety
 
         def test_function(a: int, b: int) -> int:
             return a + b
 
         # Test safe execution
-        result = condon_safety.safe_condon_execution(test_function, 2, 3)
+        result = codon_safety.safe_codon_execution(test_function, 2, 3)
         assert result == 5
 
     def test_safe_memory_isolation(self, framework):
-        """Test safe memory isolation in Condon"""
-        condon_safety = framework.condon_safety
+        """Test safe memory isolation in Codon"""
+        codon_safety = framework.codon_safety
 
         # Test memory isolation
-        condon_safety.safe_memory_isolation()
+        codon_safety.safe_memory_isolation()
         # Should not raise exceptions
 
     def test_safe_resource_cleanup(self, framework):
-        """Test safe resource cleanup in Condon"""
-        condon_safety = framework.condon_safety
+        """Test safe resource cleanup in Codon"""
+        codon_safety = framework.codon_safety
 
         # Test resource cleanup
-        condon_safety.safe_resource_cleanup()
+        codon_safety.safe_resource_cleanup()
         # Should not raise exceptions
 
 
 class TestHybridThreadSafety:
-    """Test hybrid CPython/Condon thread safety patterns"""
+    """Test hybrid CPython/Codon thread safety patterns"""
 
     def test_safe_cross_boundary_communication(self, framework):
         """Test safe cross-boundary communication"""
@@ -394,7 +394,7 @@ class TestHybridThreadSafetyFramework:
         assert framework.validator is not None
         assert framework.monitor is not None
         assert framework.cpython_safety is not None
-        assert framework.condon_safety is not None
+        assert framework.codon_safety is not None
         assert framework.hybrid_safety is not None
 
         framework.shutdown()

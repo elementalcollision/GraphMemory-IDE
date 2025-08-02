@@ -80,7 +80,7 @@ class CoverageCollector:
                 branches_total=150,
                 branches_coverage=80.0,
             )
-        elif component == "condon":
+        elif component == "codon":
             return CoverageResult(
                 component=component,
                 total_lines=800,
@@ -134,7 +134,7 @@ class CoverageCollector:
 
     async def collect_all_coverage_data(self) -> Dict[str, CoverageResult]:
         """Collect coverage data for all components"""
-        components = ["cpython", "condon", "integration"]
+        components = ["cpython", "codon", "integration"]
         coverage_data = {}
 
         for component in components:

@@ -1,6 +1,6 @@
 """
 Test Hybrid Monitoring Framework
-Comprehensive tests for CPython/Condon hybrid monitoring
+Comprehensive tests for CPython/Codon hybrid monitoring
 """
 
 import asyncio
@@ -11,13 +11,13 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from .condon_monitor import (
+from .codon_monitor import (
     CompilationType,
-    CondonMonitor,
-    CondonServiceMonitor,
+    CodonMonitor,
+    CodonServiceMonitor,
     ThreadSafetyEvent,
-    get_condon_monitor,
-    initialize_condon_monitoring,
+    get_codon_monitor,
+    initialize_codon_monitoring,
 )
 from .cpython_monitor import (
     CPythonMonitor,
@@ -57,7 +57,7 @@ class TestHybridMonitoringFramework:
         # Test basic initialization
         assert self.framework.service_name == "test-hybrid"
         assert len(self.framework.cpython_services) == 0
-        assert len(self.framework.condon_services) == 0
+        assert len(self.framework.codon_services) == 0
         assert len(self.framework.hybrid_services) == 0
 
     def test_service_registration(self):
@@ -69,12 +69,12 @@ class TestHybridMonitoringFramework:
         assert cpython_service.service_name == "test-cpython"
         assert len(self.framework.cpython_services) == 1
 
-        # Register Condon service
-        condon_service = self.framework.register_condon_service(
-            "test-condon", {"environment": "test"}
+        # Register Codon service
+        codon_service = self.framework.register_codon_service(
+            "test-codon", {"environment": "test"}
         )
-        assert condon_service.service_name == "test-condon"
-        assert len(self.framework.condon_services) == 1
+        assert codon_service.service_name == "test-codon"
+        assert len(self.framework.codon_services) == 1
 
         # Register hybrid service
         hybrid_service = self.framework.register_hybrid_service(
@@ -120,7 +120,7 @@ class TestHybridMonitoringFramework:
         """Test metrics summary generation"""
         # Register some services
         self.framework.register_cpython_service("test-cpython")
-        self.framework.register_condon_service("test-condon")
+        self.framework.register_codon_service("test-codon")
 
         # Get summary
         summary = self.framework.get_metrics_summary()
@@ -129,7 +129,7 @@ class TestHybridMonitoringFramework:
         assert "services" in summary
         assert "alerts" in summary
         assert summary["services"]["cpython"] == 1
-        assert summary["services"]["condon"] == 1
+        assert summary["services"]["codon"] == 1
 
 
 class TestCPythonMonitor:
@@ -206,12 +206,12 @@ class TestCPythonMonitor:
         assert "acquisitions" in stats
 
 
-class TestCondonMonitor:
-    """Test Condon monitoring"""
+class TestCodonMonitor:
+    """Test Codon monitoring"""
 
     def setup_method(self):
         """Setup test environment"""
-        self.monitor = CondonMonitor("test-condon")
+        self.monitor = CodonMonitor("test-codon")
 
     def teardown_method(self):
         """Cleanup test environment"""
@@ -219,7 +219,7 @@ class TestCondonMonitor:
 
     def test_monitor_initialization(self):
         """Test monitor initialization"""
-        assert self.monitor.service_name == "test-condon"
+        assert self.monitor.service_name == "test-codon"
         assert "compilation_duration" in self.monitor.metrics
         assert "thread_safety_events" in self.monitor.metrics
         assert "memory_allocation" in self.monitor.metrics
@@ -296,12 +296,12 @@ class TestServiceMonitors:
     def setup_method(self):
         """Setup test environment"""
         self.cpython_service = CPythonServiceMonitor("test-cpython-service")
-        self.condon_service = CondonServiceMonitor("test-condon-service")
+        self.codon_service = CodonServiceMonitor("test-codon-service")
 
     def teardown_method(self):
         """Cleanup test environment"""
         self.cpython_service.stop_monitoring()
-        self.condon_service.stop_monitoring()
+        self.codon_service.stop_monitoring()
 
     def test_cpython_service_monitoring(self):
         """Test CPython service monitoring"""
@@ -316,37 +316,37 @@ class TestServiceMonitors:
         assert request_count._value.get() > 0
         assert request_duration._sum.get() > 0
 
-    def test_condon_service_monitoring(self):
-        """Test Condon service monitoring"""
+    def test_codon_service_monitoring(self):
+        """Test Codon service monitoring"""
         # Test request monitoring
-        with self.condon_service.monitor_request("/test", "GET"):
+        with self.codon_service.monitor_request("/test", "GET"):
             time.sleep(0.1)
 
         # Verify request metrics were recorded
-        request_count = self.condon_service.request_metrics["request_count"]
-        request_duration = self.condon_service.request_metrics["request_duration"]
+        request_count = self.codon_service.request_metrics["request_count"]
+        request_duration = self.codon_service.request_metrics["request_duration"]
 
         assert request_count._value.get() > 0
         assert request_duration._sum.get() > 0
 
         # Test compilation monitoring
-        with self.condon_service.monitor_compilation(CompilationType.AOT):
+        with self.codon_service.monitor_compilation(CompilationType.AOT):
             time.sleep(0.1)
 
         # Test thread safety event recording
-        self.condon_service.record_thread_safety_event(
+        self.codon_service.record_thread_safety_event(
             ThreadSafetyEvent.RACE_CONDITION, "warning"
         )
 
     def test_service_summaries(self):
         """Test service summary generation"""
         cpython_summary = self.cpython_service.get_service_summary()
-        condon_summary = self.condon_service.get_service_summary()
+        codon_summary = self.codon_service.get_service_summary()
 
         assert cpython_summary["service_name"] == "test-cpython-service"
-        assert condon_summary["service_name"] == "test-condon-service"
+        assert codon_summary["service_name"] == "test-codon-service"
         assert "performance" in cpython_summary
-        assert "performance" in condon_summary
+        assert "performance" in codon_summary
 
 
 class TestIntegration:
@@ -366,18 +366,18 @@ class TestIntegration:
         """Test complete monitoring workflow"""
         # Register services
         cpython_service = self.framework.register_cpython_service("test-cpython")
-        condon_service = self.framework.register_condon_service("test-condon")
+        codon_service = self.framework.register_codon_service("test-codon")
 
         # Simulate CPython service activity
         with self.framework.monitor_request("test-cpython", "/api/test", "POST"):
             time.sleep(0.1)
 
-        # Simulate Condon service activity
-        with self.framework.monitor_request("test-condon", "/compile", "POST"):
+        # Simulate Codon service activity
+        with self.framework.monitor_request("test-codon", "/compile", "POST"):
             time.sleep(0.1)
 
         # Simulate service boundary call
-        with self.framework.monitor_boundary_call("test-cpython", "test-condon"):
+        with self.framework.monitor_boundary_call("test-cpython", "test-codon"):
             time.sleep(0.1)
 
         # Update system metrics
@@ -388,7 +388,7 @@ class TestIntegration:
 
         # Verify all components are working
         assert summary["services"]["cpython"] == 1
-        assert summary["services"]["condon"] == 1
+        assert summary["services"]["codon"] == 1
         assert "system" in summary
         assert "alerts" in summary
 
@@ -397,7 +397,7 @@ class TestIntegration:
         # Register services
         self.framework.register_cpython_service("service-1")
         self.framework.register_cpython_service("service-2")
-        self.framework.register_condon_service("service-3")
+        self.framework.register_codon_service("service-3")
 
         # Simulate concurrent requests
         def make_requests(service_name: str, count: int):
@@ -419,7 +419,7 @@ class TestIntegration:
         # Verify metrics were recorded correctly
         summary = self.framework.get_metrics_summary()
         assert summary["services"]["cpython"] == 2
-        assert summary["services"]["condon"] == 1
+        assert summary["services"]["codon"] == 1
 
 
 class TestErrorHandling:
