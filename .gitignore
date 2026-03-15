@@ -224,14 +224,17 @@ docker-compose.*.yml
 docker/data/
 docker/backups/*.tar.gz
 
-# Kuzu Database files (keep structure, ignore data)
-data/*.kz
-data/.lock
-data/.shadow
-data/.wal
+# Kuzu Database files
+server/data/
+data/
 
-# Keep data directory structure but ignore database files
-!data/.gitkeep
+# Auto-generated reports (regenerate via CI)
+reports/
+
+# Codon compiled output
+codon/lib/*.so
+codon/lib/*.dylib
+!codon/lib/.gitkeep
 
 # Kestra
 .kestra/data/
@@ -302,6 +305,7 @@ error_logs/
 .env.production
 .env.development
 secrets/
+config/*_secrets.json
 *.pem
 *.key
 *.crt

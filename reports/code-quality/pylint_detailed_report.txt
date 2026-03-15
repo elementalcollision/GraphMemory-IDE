@@ -1,2 +1,0 @@
-usage: pylint [options]
-pylint: error: argument --spelling-dict: invalid choice: 'en_US' (choose from )
