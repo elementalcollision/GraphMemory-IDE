@@ -9,7 +9,7 @@ This module provides centralized metrics collection for all application componen
 - Alert correlation metrics (alert generation, escalation)
 
 Integration with Prometheus for monitoring and alerting.
-Created for TASK-022 Phase 2: Monitoring Infrastructure Implementation
+Part of the Monitoring Infrastructure
 """
 
 import time

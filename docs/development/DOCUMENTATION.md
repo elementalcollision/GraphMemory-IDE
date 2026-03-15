@@ -386,7 +386,7 @@ graph TB
 ## 📋 **Project Implementation**
 
 ### **Core Features**
-- **[Analytics Engine (Phase 3)](TASK-017-IMPLEMENTATION-SUMMARY.md)** - Performance analytics and optimization
+- **Analytics Engine** - Performance analytics and optimization
 - **[Enterprise Alerting (Step 8)](PROJECT_STATUS_DASHBOARD.md#enterprise-alerting-platform-step-8)** - Alert management system
 - **[MCP Server](server/)** - Model Context Protocol implementation
 - **[Graph Database](server/models/)** - Kuzu GraphDB integration

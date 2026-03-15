@@ -331,6 +331,9 @@ test-results/
 screenshots/
 videos/
 
+# Test/build report artifacts
+tests/production/*.json
+
 # Outdated test files (deprecated patterns)
 test_dashboard_phase*.py
 *_phase*_test.py

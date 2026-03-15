@@ -8,7 +8,6 @@ Provides secure email verification with:
 - Token expiration and cleanup
 - Audit logging and security features
 
-Created as part of TASK-021: User Onboarding Flow & Tenant Management
 Research foundation: Progressive onboarding best practices
 """
 

@@ -15,7 +15,7 @@ Implementation based on research findings from:
 - Modern notification management and routing systems
 - Alert correlation and deduplication strategies
 
-Created for TASK-022 Phase 1: Enhanced Alerting & Notification System
+Part of the Enhanced Alerting & Notification System
 """
 
 import asyncio

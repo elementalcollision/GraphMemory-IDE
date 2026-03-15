@@ -15,7 +15,7 @@ Implementation based on research findings from:
 - Modern alerting strategies and threshold optimization
 - Real-world production incident patterns
 
-Created for TASK-022 Phase 1: Enhanced Alerting & Notification System
+Part of the Enhanced Alerting & Notification System
 """
 
 # mypy: disable-error-code=call-arg

@@ -1,7 +1,7 @@
 """
 Analytics Engine Client for Dashboard Integration
 
-This module provides a client interface to the TASK-012 analytics engine,
+This module provides a client interface to the analytics engine,
 enabling real-time data collection for the dashboard SSE streams.
 """
 
@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import kuzu
 
-# Import analytics engine components from TASK-012
+# Import analytics engine components
 from analytics.engine import AnalyticsEngine
 from analytics.models import (
     AnalyticsRequest, AnalyticsType, GraphMetrics,
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class AnalyticsEngineClient:
     """
-    Client for interfacing with the TASK-012 analytics engine.
+    Client for interfacing with the analytics engine.
     Provides methods to collect real-time analytics data for dashboard streaming.
     """
     

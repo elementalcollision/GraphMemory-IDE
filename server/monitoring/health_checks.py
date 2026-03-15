@@ -9,7 +9,7 @@ This module provides detailed health monitoring for all system components:
 - Detailed status reporting for monitoring systems
 
 Integration with Prometheus metrics and monitoring infrastructure.
-Created for TASK-022 Phase 2: Monitoring Infrastructure Implementation
+Part of the Monitoring Infrastructure
 """
 
 import asyncio

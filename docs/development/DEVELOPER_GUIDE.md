@@ -399,7 +399,7 @@ main          # Production-ready code
 develop       # Integration branch for features
 
 # Feature branches
-feature/task-xxx-description
+feature/feature-description
 bugfix/issue-description
 hotfix/critical-fix
 ```
@@ -410,7 +410,7 @@ hotfix/critical-fix
    ```bash
    git checkout develop
    git pull origin develop
-   git checkout -b feature/task-011-documentation
+   git checkout -b feature/add-auth-middleware
    ```
 
 2. **Make Changes**:
@@ -440,7 +440,7 @@ hotfix/critical-fix
 
 4. **Submit Pull Request**:
    ```bash
-   git push origin feature/task-011-documentation
+   git push origin feature/add-auth-middleware
    # Create PR via GitHub interface
    ```
 

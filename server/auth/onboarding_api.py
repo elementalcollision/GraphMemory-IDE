@@ -8,7 +8,6 @@ Provides comprehensive user onboarding API including:
 - User preferences management
 - Progressive onboarding steps
 
-Created as part of TASK-021: User Onboarding Flow & Tenant Management
 Research foundation: Progressive onboarding best practices, security patterns
 """
 

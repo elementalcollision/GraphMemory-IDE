@@ -14,7 +14,7 @@ Implementation based on research findings from:
 - Modern production monitoring best practices
 - Real-world correlation scenarios and patterns
 
-Created for TASK-022 Phase 1: Enhanced Alerting & Notification System
+Part of the Enhanced Alerting & Notification System
 """
 
 import asyncio
