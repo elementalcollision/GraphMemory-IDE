@@ -49,6 +49,63 @@ services:
       retries: 3
       start_period: 40s
 
+  # Codon-accelerated MCP server (optional profile)
+  # Activate with: docker compose --profile codon up
+  mcp-server-codon:
+    profiles:
+      - codon
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.codon
+      args:
+        CODON_VERSION: "0.17.0"
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    environment:
+      - KUZU_DB_PATH=/database
+      - KUZU_READ_ONLY=${KUZU_READ_ONLY:-false}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - JWT_ENABLED=${JWT_ENABLED:-true}
+      - MTLS_ENABLED=${MTLS_ENABLED:-false}
+      - MTLS_PORT=50051
+      - CODON_ENABLED=true
+      - CODON_LIB_PATH=/app/codon/lib/
+    volumes:
+      - kuzu-data:/database:ro
+      - mcp-logs:/var/log/mcp
+      - mcp-tmp:/tmp/mcp
+    networks:
+      - memory-net
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./security/seccomp-profile.json
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+    restart: unless-stopped
+    user: "1000:1000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   kestra:
     image: kestra/kestra:latest
     command: server local -c /app/kestra.yml

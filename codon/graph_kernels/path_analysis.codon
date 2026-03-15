@@ -1,0 +1,184 @@
+"""
+Codon-native path analysis algorithms.
+BFS, Dijkstra shortest paths, and path statistics.
+"""
+
+from collections import deque
+import math
+
+
+def bfs_shortest_path(
+    adj: dict[int, list[tuple[int, float]]],
+    source: int,
+    target: int
+) -> list[int]:
+    """
+    Find shortest unweighted path using BFS.
+    Returns path as list of node indices, or empty list if no path.
+    """
+    if source == target:
+        return [source]
+
+    if source not in adj or target not in adj:
+        return []
+
+    visited: dict[int, bool] = {}
+    parent: dict[int, int] = {}
+
+    queue = deque[int]()
+    queue.append(source)
+    visited[source] = True
+
+    found = False
+    while len(queue) > 0:
+        v = queue.popleft()
+        for neighbor, _ in adj[v]:
+            if neighbor not in visited:
+                visited[neighbor] = True
+                parent[neighbor] = v
+                if neighbor == target:
+                    found = True
+                    break
+                queue.append(neighbor)
+        if found:
+            break
+
+    if not found:
+        return []
+
+    # Reconstruct path
+    path: list[int] = []
+    current = target
+    while current != source:
+        path.append(current)
+        current = parent[current]
+    path.append(source)
+    path.reverse()
+    return path
+
+
+def dijkstra_shortest_path(
+    adj: dict[int, list[tuple[int, float]]],
+    source: int,
+    target: int
+) -> tuple[list[int], float]:
+    """
+    Find shortest weighted path using Dijkstra's algorithm.
+    Returns (path, total_weight). Empty path and inf weight if unreachable.
+    """
+    if source not in adj or target not in adj:
+        return ([], float('inf'))
+
+    if source == target:
+        return ([source], 0.0)
+
+    INF = float('inf')
+    dist: dict[int, float] = {}
+    parent: dict[int, int] = {}
+    visited: dict[int, bool] = {}
+
+    for node in adj:
+        dist[node] = INF
+    dist[source] = 0.0
+
+    # Simple priority queue using linear scan (efficient for moderate graph sizes)
+    while True:
+        # Find unvisited node with minimum distance
+        min_dist = INF
+        u = -1
+        for node in adj:
+            if node not in visited and dist[node] < min_dist:
+                min_dist = dist[node]
+                u = node
+
+        if u == -1 or u == target:
+            break
+
+        visited[u] = True
+
+        for neighbor, weight in adj[u]:
+            if neighbor not in visited:
+                new_dist = dist[u] + weight
+                if new_dist < dist[neighbor]:
+                    dist[neighbor] = new_dist
+                    parent[neighbor] = u
+
+    if dist[target] == INF:
+        return ([], INF)
+
+    # Reconstruct path
+    path: list[int] = []
+    current = target
+    while current != source:
+        path.append(current)
+        current = parent[current]
+    path.append(source)
+    path.reverse()
+    return (path, dist[target])
+
+
+def all_pairs_shortest_paths(
+    adj: dict[int, list[tuple[int, float]]]
+) -> dict[int, dict[int, int]]:
+    """
+    Compute all-pairs shortest path distances using BFS (unweighted).
+    Returns dict[source][target] = distance.
+    """
+    result: dict[int, dict[int, int]] = {}
+    nodes = list(adj.keys())
+
+    for s in nodes:
+        distances: dict[int, int] = {}
+        distances[s] = 0
+
+        queue = deque[int]()
+        queue.append(s)
+
+        while len(queue) > 0:
+            v = queue.popleft()
+            for neighbor, _ in adj[v]:
+                if neighbor not in distances:
+                    distances[neighbor] = distances[v] + 1
+                    queue.append(neighbor)
+
+        result[s] = distances
+
+    return result
+
+
+def graph_diameter(adj: dict[int, list[tuple[int, float]]]) -> int:
+    """
+    Compute the diameter of the graph (longest shortest path).
+    Only meaningful for connected graphs.
+    """
+    apsp = all_pairs_shortest_paths(adj)
+    max_dist = 0
+
+    for s in apsp:
+        for t in apsp[s]:
+            if apsp[s][t] > max_dist:
+                max_dist = apsp[s][t]
+
+    return max_dist
+
+
+def average_shortest_path_length(adj: dict[int, list[tuple[int, float]]]) -> float:
+    """
+    Compute average shortest path length for the graph.
+    """
+    apsp = all_pairs_shortest_paths(adj)
+    n = len(adj)
+    if n <= 1:
+        return 0.0
+
+    total = 0
+    count = 0
+    for s in apsp:
+        for t in apsp[s]:
+            if s != t:
+                total += apsp[s][t]
+                count += 1
+
+    if count == 0:
+        return 0.0
+    return float(total) / float(count)

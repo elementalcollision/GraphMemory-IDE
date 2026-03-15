@@ -13,7 +13,7 @@ from sse_starlette.sse import EventSourceResponse
 from typing import Dict, Any, Optional
 
 from .sse_server import DashboardSSEManager
-from ..auth import get_optional_current_user
+from ..auth_jwt import get_optional_current_user
 from ..models import User
 
 logger = logging.getLogger(__name__)

@@ -182,6 +182,14 @@ class MetricsCollector:
         """Set current WebSocket connection count"""
         self.websocket_connections_active.set(count)
 
+    def increment(self, metric_name: str, value: int = 1) -> None:
+        """Generic counter increment for named metrics"""
+        self.graph_operations_total.labels(operation_type=metric_name).inc(value)
+
+    def record_histogram(self, metric_name: str, value: float) -> None:
+        """Generic histogram observation for named metrics"""
+        self.database_query_duration_seconds.labels(query_type=metric_name).observe(value)
+
     def record_graph_operation(self, operation_type: str) -> None:
         """Record graph database operation"""
         self.graph_operations_total.labels(operation_type=operation_type).inc()

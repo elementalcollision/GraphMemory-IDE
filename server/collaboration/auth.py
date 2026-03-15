@@ -18,7 +18,7 @@ from fastapi import WebSocket, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from .state import UserRole, SessionState
-from ..auth import verify_token  # Import from existing auth system
+from ..auth_jwt import verify_token  # Import from JWT auth module
 
 
 logger = logging.getLogger(__name__)

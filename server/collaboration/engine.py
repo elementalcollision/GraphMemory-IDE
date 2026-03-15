@@ -20,7 +20,7 @@ from .state import (
     UserPresence, CollaborationMetrics
 )
 from .session_manager import SessionManager
-from ..auth import verify_jwt_token
+from ..auth_jwt import verify_token as verify_jwt_token
 
 
 logger = logging.getLogger(__name__)

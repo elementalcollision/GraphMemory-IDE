@@ -23,7 +23,7 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from server.auth import get_current_user, create_user, get_password_hash
+from server.auth_jwt import get_current_user, create_user, get_password_hash
 from server.auth.email_verification import (
     get_email_verification_service, 
     EmailVerificationRequest,

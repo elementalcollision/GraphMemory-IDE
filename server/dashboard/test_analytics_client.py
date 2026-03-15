@@ -12,7 +12,7 @@ from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
 from typing import Optional
 
-from analytics_client import (
+from server.dashboard.analytics_client import (
     AnalyticsEngineClient, 
     get_analytics_client, 
     initialize_analytics_client,

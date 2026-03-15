@@ -1,0 +1,60 @@
+"""
+Codon-native hash utilities for cache key generation.
+Fast, deterministic hashing for analytics cache operations.
+"""
+
+
+def fnv1a_hash(data: str) -> int:
+    """
+    FNV-1a hash function for strings.
+    Fast, well-distributed hash with minimal collisions.
+    """
+    FNV_OFFSET = 14695981039346656037
+    FNV_PRIME = 1099511628211
+    MASK = (1 << 64) - 1  # 64-bit mask
+
+    h = FNV_OFFSET
+    for ch in data:
+        h = h ^ ord(ch)
+        h = (h * FNV_PRIME) & MASK
+
+    return h
+
+
+def hash_params(analytics_type: str, param_str: str) -> str:
+    """
+    Generate a deterministic cache key from analytics type and parameters.
+    Returns a hex string key.
+    """
+    combined = analytics_type + ":" + param_str
+    h = fnv1a_hash(combined)
+
+    # Convert to hex string
+    hex_chars = "0123456789abcdef"
+    result: list[str] = []
+    for i in range(16):  # 16 hex digits for 64-bit hash
+        result.append(hex_chars[h & 0xF])
+        h = h >> 4
+    result.reverse()
+
+    return "analytics:" + analytics_type + ":" + "".join(result)
+
+
+def consistent_hash(key: str, num_buckets: int) -> int:
+    """
+    Consistent hash for distributing keys across buckets.
+    Uses jump consistent hash algorithm.
+    """
+    if num_buckets <= 0:
+        return 0
+
+    h = fnv1a_hash(key)
+    b = -1
+    j = 0
+
+    while j < num_buckets:
+        b = j
+        h = ((h * 2862933555777941757) + 1) & ((1 << 64) - 1)
+        j = int(float(b + 1) * (float(1 << 31) / float((h >> 33) + 1)))
+
+    return b

@@ -15,7 +15,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from pydantic import ValidationError
 
-from models import User, TokenData
+from server.models import User, TokenData
 
 logger = logging.getLogger(__name__)
 

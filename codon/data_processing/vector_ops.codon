@@ -1,0 +1,86 @@
+"""
+Codon-native vector operations for data processing.
+Optimized for batch operations on numerical arrays.
+"""
+
+import math
+
+
+def normalize_vector(v: list[float]) -> list[float]:
+    """L2 normalize a vector."""
+    norm = 0.0
+    for x in v:
+        norm += x * x
+    norm = math.sqrt(norm)
+    if norm == 0.0:
+        return v
+    return [x / norm for x in v]
+
+
+def batch_normalize(vectors: list[list[float]]) -> list[list[float]]:
+    """L2 normalize a batch of vectors."""
+    return [normalize_vector(v) for v in vectors]
+
+
+def dot_product(a: list[float], b: list[float]) -> float:
+    """Compute dot product of two vectors."""
+    result = 0.0
+    n = min(len(a), len(b))
+    for i in range(n):
+        result += a[i] * b[i]
+    return result
+
+
+def vector_add(a: list[float], b: list[float]) -> list[float]:
+    """Element-wise vector addition."""
+    n = min(len(a), len(b))
+    result: list[float] = []
+    for i in range(n):
+        result.append(a[i] + b[i])
+    return result
+
+
+def vector_scale(v: list[float], scalar: float) -> list[float]:
+    """Scale a vector by a scalar."""
+    return [x * scalar for x in v]
+
+
+def centroid(vectors: list[list[float]]) -> list[float]:
+    """Compute the centroid (mean) of a set of vectors."""
+    if len(vectors) == 0:
+        return []
+
+    dim = len(vectors[0])
+    result = [0.0] * dim
+
+    for v in vectors:
+        for i in range(dim):
+            result[i] += v[i]
+
+    n = float(len(vectors))
+    for i in range(dim):
+        result[i] /= n
+
+    return result
+
+
+def pairwise_distances(vectors: list[list[float]]) -> list[list[float]]:
+    """Compute pairwise Euclidean distance matrix."""
+    n = len(vectors)
+    result: list[list[float]] = []
+
+    for i in range(n):
+        row: list[float] = []
+        for j in range(n):
+            if i == j:
+                row.append(0.0)
+            else:
+                dist_sq = 0.0
+                dim = len(vectors[i])
+                for d in range(dim):
+                    diff = vectors[i][d] - vectors[j][d]
+                    dist_sq += diff * diff
+                row.append(math.sqrt(dist_sq))
+        result.append(row)
+
+    return result

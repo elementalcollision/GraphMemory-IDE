@@ -4,7 +4,7 @@ Integrates security middleware, monitoring, and comprehensive configuration mana
 """
 
 import os
-import ast
+import json
 import time
 import logging
 from typing import Any, List, Optional, Dict
@@ -28,11 +28,11 @@ from server.monitoring.metrics import (
 
 # Import models and auth
 from server.models import TelemetryEvent, Token, User
-from server.auth import (
-    authenticate_user,  # type: ignore
-    create_access_token,  # type: ignore
-    ACCESS_TOKEN_EXPIRE_MINUTES,  # type: ignore
-    get_optional_current_user  # type: ignore
+from server.auth_jwt import (
+    authenticate_user,
+    create_access_token,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    get_optional_current_user
 )
 
 # Import routers
@@ -65,8 +65,8 @@ logger = logging.getLogger(__name__)
 def create_application() -> FastAPI:
     """Create and configure FastAPI application"""
     settings = get_settings()
-    
-    # Create FastAPI app with environment-specific settings
+
+    # Create FastAPI app with environment-specific settings and modern lifespan
     app = FastAPI(
         title=settings.APP_NAME,
         description="Model Context Protocol server for GraphMemory-IDE with enterprise features",
@@ -74,6 +74,7 @@ def create_application() -> FastAPI:
         debug=settings.server.DEBUG,
         docs_url="/docs" if not settings.is_production() else None,
         redoc_url="/redoc" if not settings.is_production() else None,
+        lifespan=create_lifespan(settings),
     )
 
     # Setup security middleware stack
@@ -96,9 +97,6 @@ def create_application() -> FastAPI:
     
     # Setup routers
     setup_routers(app, settings)
-    
-    # Setup lifecycle events
-    setup_lifecycle_events(app, settings)
     
     logger.info(f"FastAPI application created for {settings.ENVIRONMENT.value} environment")
     return app
@@ -143,30 +141,27 @@ def setup_routers(app: FastAPI, settings: Settings) -> None:
             logger.warning("Dashboard dependencies not available. Install with: pip install sse-starlette streamlit streamlit-echarts")
 
 
-def setup_lifecycle_events(app: FastAPI, settings: Settings) -> None:
-    """Setup application lifecycle events"""
-    
-    @app.on_event("startup")
-    async def startup_event() -> None:
-        """Initialize services on startup"""
+def create_lifespan(settings: Settings):
+    """Create application lifespan context manager"""
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # --- Startup ---
         logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
         logger.info(f"Environment: {settings.ENVIRONMENT.value}")
-        
+
         try:
-            # Initialize analytics engine
             await initialize_analytics_engine(
-                kuzu_conn=app.state.kuzu_conn, 
+                kuzu_conn=app.state.kuzu_conn,
                 redis_url=settings.database.REDIS_URL
             )
             logger.info("Analytics engine initialized")
-            
-            # Initialize streaming analytics pipeline
+
             if STREAMING_AVAILABLE and settings.ENABLE_STREAMING_ANALYTICS:
                 try:
                     await initialize_streaming_analytics()
-                    logger.info("🚀 Streaming Analytics Pipeline initialized")
-                    
-                    # Send startup metrics
+                    logger.info("Streaming Analytics Pipeline initialized")
                     await produce_system_metric_event(
                         metric_name="server_startup",
                         metric_value=1.0,
@@ -177,27 +172,22 @@ def setup_lifecycle_events(app: FastAPI, settings: Settings) -> None:
                             "version": settings.APP_VERSION
                         }
                     )
-                    
                 except Exception as e:
                     logger.error(f"Streaming analytics initialization failed: {e}")
-            
-            # Record startup in metrics
+
             metrics_collector = get_metrics_collector()
             metrics_collector.record_graph_operation("server_startup")
-            
-            logger.info("🚀 Application startup complete")
-            
+            logger.info("Application startup complete")
+
         except Exception as e:
             logger.error(f"Startup failed: {e}")
             raise
 
-    @app.on_event("shutdown")
-    async def shutdown_event() -> None:
-        """Cleanup services on shutdown"""
+        yield
+
+        # --- Shutdown ---
         logger.info("Shutting down services...")
-        
         try:
-            # Send shutdown metrics before stopping
             if STREAMING_AVAILABLE and settings.ENABLE_STREAMING_ANALYTICS:
                 try:
                     await produce_system_metric_event(
@@ -206,21 +196,21 @@ def setup_lifecycle_events(app: FastAPI, settings: Settings) -> None:
                         metric_unit="event",
                         additional_data={"component": "mcp_server"}
                     )
-                    
                     await shutdown_streaming_analytics()
                     logger.info("Streaming Analytics Pipeline shutdown complete")
                 except Exception as e:
                     logger.warning(f"Streaming analytics shutdown failed: {e}")
-            
+
             await shutdown_analytics_engine()
             logger.info("Analytics engine shutdown complete")
-            
-            # Record shutdown in metrics
+
             metrics_collector = get_metrics_collector()
             metrics_collector.record_graph_operation("server_shutdown")
-            
+
         except Exception as e:
             logger.warning(f"Services shutdown failed: {e}")
+
+    return lifespan
 
 
 # Initialize the FastAPI application
@@ -393,7 +383,7 @@ async def list_telemetry_events(
                 "timestamp": row[1],
                 "user_id": row[2],
                 "session_id": row[3],
-                "data": ast.literal_eval(row[4]) if row[4] else {}
+                "data": json.loads(row[4]) if row[4] else {}
             })
         
         # Record metrics
@@ -464,7 +454,7 @@ async def query_telemetry_events(
                 "timestamp": row[1],
                 "user_id": row[2],
                 "session_id": row[3],
-                "data": ast.literal_eval(row[4]) if row[4] else {}
+                "data": json.loads(row[4]) if row[4] else {}
             })
         
         # Record metrics

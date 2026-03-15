@@ -194,6 +194,12 @@ class Settings(BaseModel):
     ENABLE_STREAMING_ANALYTICS: bool = True
     ENABLE_DASHBOARD: bool = True
     ENABLE_JWT_AUTH: bool = True
+
+    # Codon acceleration settings
+    CODON_ENABLED: bool = True
+    CODON_LIB_PATH: str = "./codon/lib/"
+    CODON_FALLBACK: bool = True
+    CODON_MIN_GRAPH_SIZE: int = 100
     
     # Component settings
     security: SecuritySettings = SecuritySettings()

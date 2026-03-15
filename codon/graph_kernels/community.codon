@@ -1,0 +1,188 @@
+"""
+Codon-native community detection algorithms.
+Implements label propagation and modularity-based community detection.
+"""
+
+import random
+
+
+def label_propagation(
+    adj: dict[int, list[tuple[int, float]]]
+) -> dict[int, int]:
+    """
+    Detect communities using label propagation algorithm.
+    Each node is initially its own label. Nodes iteratively adopt
+    the most frequent label among their neighbors.
+
+    Returns: mapping of node -> community_id
+    """
+    # Initialize: each node is its own community
+    labels: dict[int, int] = {}
+    for node in adj:
+        labels[node] = node
+
+    nodes = list(adj.keys())
+    max_iter = 100
+    changed = True
+    iteration = 0
+
+    while changed and iteration < max_iter:
+        changed = False
+        iteration += 1
+
+        # Shuffle nodes for random order
+        random.shuffle(nodes)
+
+        for node in nodes:
+            neighbors = adj[node]
+            if len(neighbors) == 0:
+                continue
+
+            # Count label frequencies among neighbors (weighted)
+            label_weights: dict[int, float] = {}
+            for neighbor, weight in neighbors:
+                lbl = labels[neighbor]
+                if lbl in label_weights:
+                    label_weights[lbl] = label_weights[lbl] + weight
+                else:
+                    label_weights[lbl] = weight
+
+            # Find max weight label
+            best_label = labels[node]
+            best_weight = -1.0
+            for lbl, w in label_weights.items():
+                if w > best_weight:
+                    best_weight = w
+                    best_label = lbl
+
+            if best_label != labels[node]:
+                labels[node] = best_label
+                changed = True
+
+    return labels
+
+
+def modularity(
+    adj: dict[int, list[tuple[int, float]]],
+    communities: dict[int, int]
+) -> float:
+    """
+    Calculate modularity Q for a given community partition.
+    Q = (1/2m) * sum[ A_ij - (k_i * k_j)/(2m) ] for nodes in same community.
+    """
+    # Total edge weight (2m)
+    total_weight = 0.0
+    for node in adj:
+        for _, w in adj[node]:
+            total_weight += w
+    # Each edge counted twice in undirected graph
+    m2 = total_weight  # This is 2m
+
+    if m2 == 0.0:
+        return 0.0
+
+    # Degree (weighted) of each node
+    degree: dict[int, float] = {}
+    for node in adj:
+        d = 0.0
+        for _, w in adj[node]:
+            d += w
+        degree[node] = d
+
+    # Calculate modularity
+    q = 0.0
+    nodes = list(adj.keys())
+    for i in nodes:
+        for j_node, w_ij in adj[i]:
+            if communities[i] == communities[j_node]:
+                q += w_ij - (degree[i] * degree[j_node]) / m2
+
+    return q / m2
+
+
+def louvain_phase1(
+    adj: dict[int, list[tuple[int, float]]]
+) -> dict[int, int]:
+    """
+    Phase 1 of Louvain algorithm: local modularity optimization.
+    Move nodes to neighboring communities to maximize modularity gain.
+    """
+    # Initialize each node as its own community
+    community: dict[int, int] = {}
+    for node in adj:
+        community[node] = node
+
+    # Total edge weight
+    total_weight = 0.0
+    for node in adj:
+        for _, w in adj[node]:
+            total_weight += w
+    m2 = total_weight
+
+    if m2 == 0.0:
+        return community
+
+    # Weighted degree
+    degree: dict[int, float] = {}
+    for node in adj:
+        d = 0.0
+        for _, w in adj[node]:
+            d += w
+        degree[node] = d
+
+    nodes = list(adj.keys())
+    improved = True
+    max_iter = 50
+    iteration = 0
+
+    while improved and iteration < max_iter:
+        improved = False
+        iteration += 1
+        random.shuffle(nodes)
+
+        for node in nodes:
+            current_comm = community[node]
+
+            # Calculate weights to each neighboring community
+            neighbor_comm_weights: dict[int, float] = {}
+            for neighbor, w in adj[node]:
+                nc = community[neighbor]
+                if nc in neighbor_comm_weights:
+                    neighbor_comm_weights[nc] = neighbor_comm_weights[nc] + w
+                else:
+                    neighbor_comm_weights[nc] = w
+
+            # Sum of weights in current community
+            sum_in_current = 0.0
+            sum_tot_current = 0.0
+            for n2 in nodes:
+                if community[n2] == current_comm:
+                    sum_tot_current += degree[n2]
+
+            ki = degree[node]
+
+            # Try moving to each neighboring community
+            best_gain = 0.0
+            best_comm = current_comm
+
+            for target_comm, ki_in in neighbor_comm_weights.items():
+                if target_comm == current_comm:
+                    continue
+
+                sum_tot_target = 0.0
+                for n2 in nodes:
+                    if community[n2] == target_comm:
+                        sum_tot_target += degree[n2]
+
+                # Modularity gain formula
+                gain = ki_in - (sum_tot_target * ki) / m2
+
+                if gain > best_gain:
+                    best_gain = gain
+                    best_comm = target_comm
+
+            if best_comm != current_comm:
+                community[node] = best_comm
+                improved = True
+
+    return community

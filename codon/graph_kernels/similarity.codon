@@ -1,0 +1,98 @@
+"""
+Codon-native vector similarity operations.
+High-performance batch cosine similarity for embedding comparisons.
+"""
+
+import math
+
+
+def cosine_similarity(a: list[float], b: list[float]) -> float:
+    """Compute cosine similarity between two vectors."""
+    n = len(a)
+    if n != len(b) or n == 0:
+        return 0.0
+
+    dot = 0.0
+    norm_a = 0.0
+    norm_b = 0.0
+
+    for i in range(n):
+        dot += a[i] * b[i]
+        norm_a += a[i] * a[i]
+        norm_b += b[i] * b[i]
+
+    denom = math.sqrt(norm_a) * math.sqrt(norm_b)
+    if denom == 0.0:
+        return 0.0
+    return dot / denom
+
+
+def batch_cosine_similarity(
+    query: list[float],
+    vectors: list[list[float]]
+) -> list[float]:
+    """Compute cosine similarity between a query and a batch of vectors."""
+    results: list[float] = []
+    for vec in vectors:
+        results.append(cosine_similarity(query, vec))
+    return results
+
+
+def topk_similar(
+    query: list[float],
+    vectors: list[list[float]],
+    k: int
+) -> list[tuple[int, float]]:
+    """
+    Find top-k most similar vectors to query.
+    Returns list of (index, similarity_score) sorted descending.
+    """
+    scores = batch_cosine_similarity(query, vectors)
+
+    # Build (score, index) pairs and sort
+    indexed: list[tuple[float, int]] = []
+    for i in range(len(scores)):
+        indexed.append((scores[i], i))
+
+    # Sort descending by score
+    indexed.sort(reverse=True)
+
+    result: list[tuple[int, float]] = []
+    limit = min(k, len(indexed))
+    for i in range(limit):
+        score, idx = indexed[i]
+        result.append((idx, score))
+
+    return result
+
+
+def euclidean_distance(a: list[float], b: list[float]) -> float:
+    """Compute Euclidean distance between two vectors."""
+    n = len(a)
+    if n != len(b):
+        return 0.0
+
+    dist_sq = 0.0
+    for i in range(n):
+        d = a[i] - b[i]
+        dist_sq += d * d
+
+    return math.sqrt(dist_sq)
+
+
+@par(schedule='dynamic', chunk_size=64, num_threads=8)
+def parallel_batch_cosine(
+    query: list[float],
+    vectors: list[list[float]]
+) -> list[float]:
+    """
+    Parallel batch cosine similarity using Codon's native multithreading.
+    Significantly faster for large vector collections (>10K vectors).
+    """
+    n = len(vectors)
+    results = [0.0] * n
+
+    for i in range(n):
+        results[i] = cosine_similarity(query, vectors[i])
+
+    return results

@@ -1,0 +1,201 @@
+"""
+Codon-native centrality algorithm implementations.
+Compiles to native machine code for 10-100x speedup over NetworkX.
+
+Graph representation: adjacency list as Dict[int, List[Tuple[int, float]]]
+  - key: node index
+  - value: list of (neighbor_index, edge_weight)
+"""
+
+from collections import deque
+
+
+def degree_centrality(adj: dict[int, list[tuple[int, float]]], normalized: bool = True) -> dict[int, float]:
+    """Calculate degree centrality for all nodes."""
+    n = len(adj)
+    result: dict[int, float] = {}
+    if n <= 1:
+        for node in adj:
+            result[node] = 0.0
+        return result
+
+    for node in adj:
+        deg = float(len(adj[node]))
+        if normalized and n > 1:
+            result[node] = deg / float(n - 1)
+        else:
+            result[node] = deg
+    return result
+
+
+def betweenness_centrality(adj: dict[int, list[tuple[int, float]]], normalized: bool = True) -> dict[int, float]:
+    """
+    Calculate betweenness centrality using Brandes' algorithm.
+    O(V * E) for unweighted graphs.
+    """
+    n = len(adj)
+    centrality: dict[int, float] = {}
+    for node in adj:
+        centrality[node] = 0.0
+
+    nodes = list(adj.keys())
+
+    for s in nodes:
+        # BFS from source s
+        stack: list[int] = []
+        predecessors: dict[int, list[int]] = {}
+        for node in adj:
+            predecessors[node] = []
+
+        sigma: dict[int, float] = {}
+        dist: dict[int, int] = {}
+        for node in adj:
+            sigma[node] = 0.0
+            dist[node] = -1
+
+        sigma[s] = 1.0
+        dist[s] = 0
+
+        queue = deque[int]()
+        queue.append(s)
+
+        while len(queue) > 0:
+            v = queue.popleft()
+            stack.append(v)
+            for neighbor, _ in adj[v]:
+                # First visit?
+                if dist[neighbor] < 0:
+                    dist[neighbor] = dist[v] + 1
+                    queue.append(neighbor)
+                # Shortest path via v?
+                if dist[neighbor] == dist[v] + 1:
+                    sigma[neighbor] = sigma[neighbor] + sigma[v]
+                    predecessors[neighbor].append(v)
+
+        # Back-propagation of dependencies
+        delta: dict[int, float] = {}
+        for node in adj:
+            delta[node] = 0.0
+
+        while len(stack) > 0:
+            w = stack.pop()
+            for v in predecessors[w]:
+                if sigma[w] > 0.0:
+                    delta[v] = delta[v] + (sigma[v] / sigma[w]) * (1.0 + delta[w])
+            if w != s:
+                centrality[w] = centrality[w] + delta[w]
+
+    # Normalize for undirected graph
+    if normalized and n > 2:
+        norm = 1.0 / (float(n - 1) * float(n - 2))
+        for node in centrality:
+            centrality[node] = centrality[node] * norm
+    elif not normalized:
+        # Undirected: each pair counted twice
+        for node in centrality:
+            centrality[node] = centrality[node] / 2.0
+
+    return centrality
+
+
+def closeness_centrality(adj: dict[int, list[tuple[int, float]]], normalized: bool = True) -> dict[int, float]:
+    """
+    Calculate closeness centrality using BFS shortest paths.
+    closeness(v) = (n-1) / sum(d(v, u)) for all reachable u.
+    """
+    n = len(adj)
+    result: dict[int, float] = {}
+
+    if n <= 1:
+        for node in adj:
+            result[node] = 0.0
+        return result
+
+    nodes = list(adj.keys())
+
+    for s in nodes:
+        # BFS
+        dist: dict[int, int] = {}
+        for node in adj:
+            dist[node] = -1
+        dist[s] = 0
+
+        queue = deque[int]()
+        queue.append(s)
+        total_dist = 0
+        reachable = 0
+
+        while len(queue) > 0:
+            v = queue.popleft()
+            for neighbor, _ in adj[v]:
+                if dist[neighbor] < 0:
+                    dist[neighbor] = dist[v] + 1
+                    total_dist += dist[neighbor]
+                    reachable += 1
+                    queue.append(neighbor)
+
+        if total_dist > 0 and reachable > 0:
+            closeness = float(reachable) / float(total_dist)
+            if normalized:
+                closeness = closeness * (float(reachable) / float(n - 1))
+            result[s] = closeness
+        else:
+            result[s] = 0.0
+
+    return result
+
+
+def pagerank(
+    adj: dict[int, list[tuple[int, float]]],
+    damping: float = 0.85,
+    max_iter: int = 100,
+    tol: float = 1e-6
+) -> dict[int, float]:
+    """
+    Calculate PageRank using power iteration.
+    """
+    n = len(adj)
+    if n == 0:
+        return {}
+
+    nodes = list(adj.keys())
+
+    # Initialize uniform
+    rank: dict[int, float] = {}
+    for node in nodes:
+        rank[node] = 1.0 / float(n)
+
+    # Precompute out-degree
+    out_degree: dict[int, float] = {}
+    for node in nodes:
+        out_degree[node] = float(len(adj[node]))
+
+    for _ in range(max_iter):
+        new_rank: dict[int, float] = {}
+        for node in nodes:
+            new_rank[node] = (1.0 - damping) / float(n)
+
+        for node in nodes:
+            if out_degree[node] > 0.0:
+                share = damping * rank[node] / out_degree[node]
+                for neighbor, _ in adj[node]:
+                    new_rank[neighbor] = new_rank[neighbor] + share
+            else:
+                # Dangling node: distribute equally
+                share = damping * rank[node] / float(n)
+                for other in nodes:
+                    new_rank[other] = new_rank[other] + share
+
+        # Check convergence
+        diff = 0.0
+        for node in nodes:
+            d = new_rank[node] - rank[node]
+            if d < 0.0:
+                d = -d
+            diff += d
+
+        rank = new_rank
+        if diff < tol:
+            break
+
+    return rank

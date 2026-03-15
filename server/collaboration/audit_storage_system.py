@@ -801,7 +801,7 @@ class AuditStorageSystem:
                 value = log.get(header, '')
                 # Escape CSV special characters
                 if isinstance(value, str) and (',' in value or '"' in value or '\n' in value):
-                    value = f'"{value.replace('"', '""')}"'
+                    value = '"' + value.replace('"', '""') + '"'
                 row.append(str(value))
             csv_lines.append(','.join(row))
         
