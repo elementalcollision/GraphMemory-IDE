@@ -1,576 +1,418 @@
 # GraphMemory-IDE Architecture Overview
 
-## 🎯 System Architecture
+GraphMemory-IDE is an AI-assisted, long-term memory system for IDEs built on a hybrid CPython/Codon architecture. This document provides accurate, up-to-date architectural diagrams reflecting the actual codebase.
 
-GraphMemory-IDE is a sophisticated graph-based memory management system built on modern microservices architecture with real-time analytics capabilities. This document provides a comprehensive view of the system's architectural components, their relationships, and design patterns.
+## Table of Contents
 
-## 📋 Table of Contents
-
-- [High-Level Architecture](#high-level-architecture)
-- [Component Architecture](#component-architecture)
-- [Data Architecture](#data-architecture)
-- [Deployment Architecture](#deployment-architecture)
+- [System Architecture](#system-architecture)
+- [Request Flow](#request-flow)
+- [Data Flow](#data-flow)
+- [Codon Acceleration](#codon-acceleration)
+- [Production Deployment](#production-deployment)
 - [Security Architecture](#security-architecture)
-- [Integration Architecture](#integration-architecture)
 
-## 🏗️ High-Level Architecture
+---
 
-### System Overview
+## System Architecture
 
-```mermaid
-architecture-beta
-    group user_layer(cloud)[User Interaction Layer]
-    group api_layer(server)[API & Gateway Layer]
-    group application_layer(server)[Application Services Layer]
-    group data_layer(database)[Data & Storage Layer]
-    group infrastructure_layer(server)[Infrastructure & Operations Layer]
-
-    service web_ui(server)[Web Dashboard] in user_layer
-    service ide_plugins(server)[IDE Plugins] in user_layer
-    service cli_tools(server)[CLI Tools] in user_layer
-
-    service api_gateway(internet)[API Gateway] in api_layer
-    service auth_service(server)[Authentication] in api_layer
-    service rate_limiter(server)[Rate Limiter] in api_layer
-
-    service fastapi_backend(server)[FastAPI Backend] in application_layer
-    service streamlit_dashboard(server)[Streamlit Dashboard] in application_layer
-    service analytics_engine(server)[Analytics Engine] in application_layer
-    service ml_pipeline(server)[ML Pipeline] in application_layer
-
-    service kuzu_graph(database)[Kuzu GraphDB] in data_layer
-    service postgresql(database)[PostgreSQL] in data_layer
-    service redis_cache(database)[Redis Cache] in data_layer
-    service vector_store(database)[Vector Store] in data_layer
-
-    service kubernetes(server)[Kubernetes] in infrastructure_layer
-    service prometheus(server)[Prometheus] in infrastructure_layer
-    service grafana(server)[Grafana] in infrastructure_layer
-    service backup_system(disk)[Backup System] in infrastructure_layer
-
-    web_ui:R -- L:api_gateway
-    ide_plugins:R -- L:api_gateway
-    cli_tools:R -- L:api_gateway
-
-    api_gateway:B -- T:fastapi_backend
-    auth_service:B -- T:fastapi_backend
-    rate_limiter:B -- T:streamlit_dashboard
-
-    fastapi_backend:B -- T:kuzu_graph
-    analytics_engine:B -- T:postgresql
-    ml_pipeline:B -- T:vector_store
-    streamlit_dashboard:B -- T:redis_cache
-
-    kubernetes:T -- B:fastapi_backend
-    prometheus:T -- B:analytics_engine
-    grafana:R -- L:prometheus
-    backup_system:T -- B:postgresql
-```
-
-### Technology Stack
-
-```mermaid
-mindmap
-  root((GraphMemory-IDE))
-    Frontend
-      Streamlit
-        Real-time Dashboard
-        Interactive Components
-        WebSocket Support
-      IDE Plugins
-        Cursor Integration
-        VSCode Extension
-        Windsurf Plugin
-    Backend
-      FastAPI
-        RESTful APIs
-        WebSocket Support
-        Async/Await
-      Python 3.11+
-        Type Hints
-        Pydantic Models
-        Asyncio
-    Data Layer
-      Kuzu GraphDB
-        Graph Storage
-        OLAP Queries
-        Property Graphs
-      PostgreSQL
-        Relational Data
-        ACID Compliance
-        JSON Support
-      Redis
-        Caching Layer
-        Session Storage
-        Pub/Sub
-    Infrastructure
-      Kubernetes
-        Container Orchestration
-        Auto-scaling
-        Service Mesh
-      Docker
-        Containerization
-        Multi-stage Builds
-        Security Scanning
-    Monitoring
-      Prometheus
-        Metrics Collection
-        Alert Rules
-        Service Discovery
-      Grafana
-        Dashboards
-        Visualization
-        Alerting
-```
-
-## 🧩 Component Architecture
-
-### Microservices Breakdown
+The system is organized into six layers: client integrations, API gateway, application services, an optional Codon acceleration layer, a polyglot data layer, and observability infrastructure.
 
 ```mermaid
 flowchart TB
-    subgraph "Client Layer"
-        WEB[Web Dashboard<br/>Streamlit App<br/>Port: 8501]
-        IDE[IDE Plugins<br/>VSCode, Cursor, Windsurf<br/>WebSocket Client]
-        CLI[CLI Tools<br/>Python SDK<br/>Command Interface]
+    subgraph clients["Client Layer"]
+        VSCODE["VSCode Extension"]
+        CURSOR["Cursor Extension"]
+        WINDSURF["Windsurf Extension"]
+        DASHBOARD["Streamlit Dashboard\nPort 8501"]
     end
-    
-    subgraph "API Gateway Layer"
-        GATEWAY[API Gateway<br/>FastAPI<br/>Port: 8080]
-        AUTH[Authentication Service<br/>JWT Handler<br/>RBAC Controller]
-        RATE[Rate Limiter<br/>Token Bucket<br/>Per-user limits]
+
+    subgraph gateway["API Gateway — FastAPI · Port 8080"]
+        AUTH["JWT Auth\nEdDSA/Ed25519"]
+        RATE["Rate Limiter\n60/min per user"]
+        MCP["MCP Protocol\nHandler"]
+        REST["REST API\nEndpoints"]
+        WS["WebSocket/SSE\nStreaming"]
     end
-    
-    subgraph "Application Services"
-        BACKEND[Backend Service<br/>Core Business Logic<br/>Graph Operations]
-        ANALYTICS[Analytics Service<br/>Real-time Processing<br/>Stream Analytics]
-        ML[ML Service<br/>Model Training<br/>Inference Pipeline]
-        MEMORY[Memory Service<br/>Graph Memory<br/>Context Management]
+
+    subgraph core["Application Services"]
+        MEMORY["Memory Service\nGraph Operations\nContext Management"]
+        ANALYTICS["Analytics Engine\nReal-time Processing\nTelemetry"]
+        COLLAB["Collaboration\nReal-time Editing\nAudit Logging"]
+        EMBEDDINGS["Embedding Service\nsentence-transformers\nVector Search"]
     end
-    
-    subgraph "Data Services"
-        GRAPH_SVC[Graph Service<br/>Kuzu Interface<br/>Query Optimization]
-        DB_SVC[Database Service<br/>PostgreSQL Interface<br/>Connection Pooling]
-        CACHE_SVC[Cache Service<br/>Redis Interface<br/>Distributed Cache]
-        VECTOR_SVC[Vector Service<br/>Embeddings<br/>Similarity Search]
+
+    subgraph acceleration["Codon Acceleration Layer — Optional"]
+        BRIDGE["Python-Codon Bridge\nAutomatic Fallback"]
+        KERNELS["Graph Kernels\nCentrality · Community\nPath Analysis"]
+        DATAOPS["Data Processing\nVector Ops · Hashing\nSimilarity"]
+        FALLBACK["NetworkX/NumPy\nPure Python Fallback"]
     end
-    
-    subgraph "Infrastructure Services"
-        CONFIG[Config Service<br/>Environment Management<br/>Secret Handling]
-        MONITOR[Monitoring Service<br/>Health Checks<br/>Metrics Collection]
-        BACKUP[Backup Service<br/>Data Protection<br/>Disaster Recovery]
-        SECURITY[Security Service<br/>Encryption<br/>Audit Logging]
+
+    subgraph data["Data Layer"]
+        KUZU[("Kuzu GraphDB\nProperty Graphs\nCypher Queries")]
+        PG[("PostgreSQL\nRelational Data\nUser Accounts")]
+        REDIS[("Redis\nSession Cache\nPub/Sub")]
     end
-    
-    WEB --> GATEWAY
-    IDE --> GATEWAY
-    CLI --> GATEWAY
-    
-    GATEWAY --> AUTH
-    GATEWAY --> RATE
-    AUTH --> BACKEND
-    
-    BACKEND --> ANALYTICS
-    BACKEND --> ML
-    BACKEND --> MEMORY
-    
-    ANALYTICS --> GRAPH_SVC
-    ML --> VECTOR_SVC
-    MEMORY --> CACHE_SVC
-    BACKEND --> DB_SVC
-    
-    GRAPH_SVC --> CONFIG
-    DB_SVC --> MONITOR
-    CACHE_SVC --> BACKUP
-    VECTOR_SVC --> SECURITY
-    
-    style WEB fill:#4caf50,color:#000
-    style GATEWAY fill:#2196f3,color:#fff
-    style ANALYTICS fill:#ff9800,color:#000
-    style GRAPH_SVC fill:#9c27b0,color:#fff
+
+    subgraph monitoring["Observability"]
+        PROM["Prometheus\nMetrics Collection"]
+        GRAFANA["Grafana\nDashboards"]
+        HEALTH["Health Checks\n/health Endpoint"]
+        ALERTS["Alert Engine\nCorrelation\nEscalation"]
+    end
+
+    VSCODE & CURSOR & WINDSURF -->|MCP Protocol| MCP
+    DASHBOARD -->|HTTP/WS| REST
+
+    MCP --> AUTH
+    REST --> AUTH
+    AUTH --> RATE
+    RATE --> MEMORY
+    RATE --> ANALYTICS
+    WS --> COLLAB
+
+    MEMORY --> KUZU
+    MEMORY --> BRIDGE
+    ANALYTICS --> KUZU
+    ANALYTICS --> REDIS
+    EMBEDDINGS --> KUZU
+    COLLAB --> PG
+
+    BRIDGE --> KERNELS
+    BRIDGE --> DATAOPS
+    BRIDGE -.->|if unavailable| FALLBACK
+
+    PROM --> GRAFANA
+    HEALTH --> PROM
+    ALERTS --> PROM
+
+    style clients fill:#e3f2fd,stroke:#1565c0
+    style gateway fill:#fff3e0,stroke:#e65100
+    style core fill:#e8f5e9,stroke:#2e7d32
+    style acceleration fill:#fce4ec,stroke:#c62828
+    style data fill:#f3e5f5,stroke:#6a1b9a
+    style monitoring fill:#fff8e1,stroke:#f57f17
 ```
 
-### Service Communication Patterns
+### Key Components
+
+| Component | Implementation | Location |
+|-----------|---------------|----------|
+| API Gateway | FastAPI 0.115 + Uvicorn | `server/main.py` |
+| Authentication | JWT with EdDSA/Ed25519, SSO (SAML/OIDC), MFA (TOTP) | `server/auth_jwt.py`, `server/auth/` |
+| Graph Database | Kuzu 0.10 with Cypher queries, HNSW vector indexes | `server/graph_database.py` |
+| Analytics | Real-time telemetry with WebSocket/SSE streaming | `server/analytics/` |
+| Embeddings | sentence-transformers for semantic vector search | `server/main.py` (vector search endpoints) |
+| Codon Bridge | Optional native compilation with Python fallback | `codon/bridge/` |
+| Dashboard | Streamlit with ECharts and Plotly visualizations | `dashboard/` |
+| Monitoring | Prometheus metrics + Grafana + alert correlation | `server/monitoring/` |
+
+---
+
+## Request Flow
+
+This sequence diagram shows how an MCP request flows from an IDE plugin through authentication, caching, graph queries, and optional Codon acceleration.
 
 ```mermaid
 sequenceDiagram
-    participant Client as Client Application
-    participant Gateway as API Gateway
-    participant Auth as Auth Service
-    participant Backend as Backend Service
-    participant Analytics as Analytics Service
-    participant DB as Database Services
+    participant IDE as IDE Plugin
+    participant GW as FastAPI Gateway
+    participant AUTH as JWT Auth
+    participant MEM as Memory Service
+    participant BRIDGE as Codon Bridge
+    participant KUZU as Kuzu GraphDB
+    participant REDIS as Redis Cache
 
-    Note over Client, DB: Service Communication Flow
+    IDE->>GW: MCP Request (tool call)
+    GW->>AUTH: Validate JWT Token
+    AUTH-->>GW: User Context
 
-    Client->>Gateway: HTTP/WebSocket Request
-    Gateway->>Auth: Validate Token
-    Auth-->>Gateway: User Context
-    Gateway->>Backend: Authenticated Request
-    
-    Backend->>Analytics: Process Data Request
-    Analytics->>DB: Query Data
-    DB-->>Analytics: Data Results
-    Analytics-->>Backend: Processed Results
-    
-    Backend-->>Gateway: Response
-    Gateway-->>Client: Final Response
-    
-    Note over Analytics, DB: Async Processing
-    Analytics->>DB: Background Tasks
-    DB->>Analytics: Change Notifications
-    Analytics->>Gateway: WebSocket Updates
-    Gateway->>Client: Real-time Updates
+    GW->>REDIS: Check Cache
+    alt Cache Hit
+        REDIS-->>GW: Cached Result
+        GW-->>IDE: Response
+    else Cache Miss
+        GW->>MEM: Process Request
+        MEM->>KUZU: Cypher Query
+        KUZU-->>MEM: Graph Results
+
+        opt Graph Size >= 100 nodes
+            MEM->>BRIDGE: Route to Codon
+            BRIDGE-->>MEM: Accelerated Results
+        end
+
+        MEM-->>GW: Processed Results
+        GW->>REDIS: Update Cache
+        GW-->>IDE: Response
+    end
 ```
 
-## 💾 Data Architecture
+---
 
-### Data Flow Architecture
+## Data Flow
+
+Telemetry events from IDE interactions are ingested, validated, embedded, and stored across three databases. Data is accessed via Cypher queries, vector search, or real-time streaming.
+
+```mermaid
+flowchart LR
+    subgraph sources["Event Sources"]
+        FILE_EVT["file_open\nfile_save"]
+        SYMBOL["symbol_index"]
+        TEST["test_run"]
+        CHAT["user_chat"]
+        SYS["system_metrics"]
+    end
+
+    subgraph ingestion["Telemetry Ingestion"]
+        INGEST["FastAPI\nEvent Endpoint\n/api/telemetry"]
+        VALIDATE["Pydantic\nValidation"]
+        EMBED["sentence-transformers\nEmbedding Generation"]
+    end
+
+    subgraph storage["Storage"]
+        KUZU_STORE[("Kuzu GraphDB\nTelemetryEvent nodes\nVector indexes (HNSW)")]
+        PG_STORE[("PostgreSQL\nUser accounts\nSession data")]
+        REDIS_STORE[("Redis\nHot cache\nReal-time state")]
+    end
+
+    subgraph access["Data Access"]
+        CYPHER["Cypher Queries\nGraph traversal"]
+        VECTOR_SEARCH["Vector Search\nSemantic similarity"]
+        STREAM["WebSocket / SSE\nLive streaming"]
+    end
+
+    FILE_EVT & SYMBOL & TEST & CHAT & SYS --> INGEST
+    INGEST --> VALIDATE --> EMBED
+    EMBED --> KUZU_STORE
+    VALIDATE --> PG_STORE
+    VALIDATE --> REDIS_STORE
+
+    KUZU_STORE --> CYPHER
+    KUZU_STORE --> VECTOR_SEARCH
+    REDIS_STORE --> STREAM
+
+    style sources fill:#e8f5e9,stroke:#2e7d32
+    style ingestion fill:#fff3e0,stroke:#e65100
+    style storage fill:#f3e5f5,stroke:#6a1b9a
+    style access fill:#e3f2fd,stroke:#1565c0
+```
+
+### Database Configuration
+
+| Database | Purpose | Key Settings |
+|----------|---------|-------------|
+| Kuzu GraphDB | Graph storage, vector search | Buffer pool: 1GB, max threads: 8, auto-checkpoint: 64MB |
+| PostgreSQL | User accounts, sessions, relational data | Connection pool: 5 base / 10 max |
+| Redis | Session cache, pub/sub, real-time state | Default config, used for hot data |
+
+---
+
+## Codon Acceleration
+
+GraphMemory-IDE uses a hybrid architecture where compute-heavy graph algorithms can optionally run as native-compiled [Codon](https://github.com/exaloop/codon) modules for 10-100x speedups. The bridge layer handles data conversion and automatic fallback.
+
+```mermaid
+flowchart LR
+    subgraph cpython["CPython Runtime"]
+        FASTAPI["FastAPI\nServer"]
+        ANALYTICS["Analytics\nEngine"]
+        NETWORKX["NetworkX\nPure Python"]
+        NUMPY["NumPy\nFallback"]
+    end
+
+    subgraph bridge["codon/bridge/"]
+        GRAPH_BRIDGE["graph_bridge.py\n- Graph size check\n- Adjacency conversion\n- Result mapping"]
+        DATA_BRIDGE["data_bridge.py\n- Vector conversion\n- Hash delegation"]
+    end
+
+    subgraph codon_native["Codon Native — Compiled .so/.dylib"]
+        CENTRALITY["centrality.codon\nBetweenness\nCloseness\nDegree\nPageRank"]
+        COMMUNITY["community.codon\nLabel Propagation\nLouvain Phase 1\nModularity"]
+        PATHS["path_analysis.codon\nBFS · Dijkstra\nDiameter\nAvg Path Length"]
+        SIMILARITY["similarity.codon\nCosine Similarity\nBatch Cosine\nTop-K Similar"]
+        VECTOR["vector_ops.codon\nNormalize\nDot Product\nPairwise Distance"]
+        HASH["hash_utils.codon\nFNV-1a Hash\nConsistent Hash"]
+    end
+
+    FASTAPI --> GRAPH_BRIDGE
+    ANALYTICS --> DATA_BRIDGE
+
+    GRAPH_BRIDGE -->|graph >= 100 nodes| CENTRALITY
+    GRAPH_BRIDGE -->|graph >= 100 nodes| COMMUNITY
+    GRAPH_BRIDGE -->|graph >= 100 nodes| PATHS
+
+    DATA_BRIDGE --> SIMILARITY
+    DATA_BRIDGE --> VECTOR
+    DATA_BRIDGE --> HASH
+
+    GRAPH_BRIDGE -.->|graph < 100 nodes\nor Codon unavailable| NETWORKX
+    DATA_BRIDGE -.->|Codon unavailable| NUMPY
+
+    style cpython fill:#e3f2fd,stroke:#1565c0
+    style bridge fill:#fff3e0,stroke:#e65100
+    style codon_native fill:#fce4ec,stroke:#c62828
+```
+
+### Routing Rules
+
+- **Codon path**: Used when `CODON_ENABLED=true`, compiled `.so`/`.dylib` files exist, and graph size >= `CODON_MIN_GRAPH_SIZE` (default: 100 nodes)
+- **Fallback path**: NetworkX/NumPy used automatically when Codon is unavailable or for small graphs where conversion overhead exceeds the speedup
+- **Data boundary**: Codon receives typed arrays only (`List[int]`, `List[Tuple[int, int, float]]`, `List[float]`). The bridge handles Python object to typed array conversion in both directions.
+
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CODON_ENABLED` | `true` | Master switch for Codon acceleration |
+| `CODON_LIB_PATH` | `./codon/lib/` | Directory containing compiled `.so`/`.dylib` files |
+| `CODON_FALLBACK` | `true` | Fall back to Python if Codon unavailable |
+| `CODON_MIN_GRAPH_SIZE` | `100` | Minimum node count to route through Codon |
+
+Build Codon modules: `./scripts/build_codon.sh`
+
+---
+
+## Production Deployment
+
+The production Docker Compose configuration (`docker/production/docker-compose.prod.yml`) runs 7+ services across 4 isolated network subnets with resource limits.
 
 ```mermaid
 flowchart TB
-    subgraph "Data Sources"
-        USER_INPUT[User Input<br/>Interactive Commands<br/>File Uploads]
-        API_DATA[API Data<br/>External Integrations<br/>Webhook Payloads]
-        SYSTEM_DATA[System Data<br/>Performance Metrics<br/>Audit Logs]
+    INTERNET((Internet))
+
+    subgraph frontend_net["Frontend Network — 172.20.0.0/24"]
+        NGINX["Nginx\nReverse Proxy\nTLS Termination\nPorts 80, 443"]
+        FASTAPI["FastAPI\nBackend Service\nPort 8000"]
+        STREAMLIT["Streamlit\nDashboard\nPort 8501"]
     end
-    
-    subgraph "Data Ingestion"
-        STREAM_PROCESSOR[Stream Processor<br/>Real-time Ingestion<br/>Event Processing]
-        BATCH_PROCESSOR[Batch Processor<br/>Bulk Data Loading<br/>ETL Pipeline]
-        VALIDATION[Data Validation<br/>Schema Validation<br/>Quality Checks]
+
+    subgraph backend_net["Backend Network — 172.20.1.0/24"]
+        ANALYTICS_SVC["Analytics\nEngine\nPort 8002"]
     end
-    
-    subgraph "Data Storage"
-        GRAPH_DB[Graph Database<br/>Kuzu GraphDB<br/>Property Graphs]
-        RELATIONAL_DB[Relational Database<br/>PostgreSQL<br/>Structured Data]
-        VECTOR_DB[Vector Database<br/>Embeddings<br/>Similarity Search]
-        CACHE_STORE[Cache Store<br/>Redis<br/>Hot Data]
+
+    subgraph db_net["Database Network — 172.20.2.0/24"]
+        POSTGRES[("PostgreSQL\nPort 5432\n1G / 1 CPU")]
+        REDIS_SVC[("Redis\nPort 6379\n768M / 0.5 CPU")]
     end
-    
-    subgraph "Data Processing"
-        ANALYTICS_ENGINE[Analytics Engine<br/>Graph Analytics<br/>Centrality Measures]
-        ML_PIPELINE[ML Pipeline<br/>Feature Engineering<br/>Model Training]
-        AGGREGATION[Data Aggregation<br/>Summary Statistics<br/>Time Series]
+
+    subgraph mon_net["Monitoring Network — 172.20.3.0/24"]
+        PROMETHEUS_SVC["Prometheus\nPort 9090"]
+        GRAFANA_SVC["Grafana\nPort 3000"]
     end
-    
-    subgraph "Data Access"
-        QUERY_ENGINE[Query Engine<br/>Graph Queries<br/>SQL Interface]
-        API_LAYER[API Layer<br/>RESTful APIs<br/>GraphQL]
-        REAL_TIME[Real-time Stream<br/>WebSocket<br/>Server-sent Events]
-    end
-    
-    USER_INPUT --> STREAM_PROCESSOR
-    API_DATA --> BATCH_PROCESSOR
-    SYSTEM_DATA --> VALIDATION
-    
-    STREAM_PROCESSOR --> GRAPH_DB
-    BATCH_PROCESSOR --> RELATIONAL_DB
-    VALIDATION --> VECTOR_DB
-    STREAM_PROCESSOR --> CACHE_STORE
-    
-    GRAPH_DB --> ANALYTICS_ENGINE
-    RELATIONAL_DB --> ML_PIPELINE
-    VECTOR_DB --> AGGREGATION
-    CACHE_STORE --> ANALYTICS_ENGINE
-    
-    ANALYTICS_ENGINE --> QUERY_ENGINE
-    ML_PIPELINE --> API_LAYER
-    AGGREGATION --> REAL_TIME
-    
-    style USER_INPUT fill:#4caf50,color:#000
-    style GRAPH_DB fill:#9c27b0,color:#fff
-    style ANALYTICS_ENGINE fill:#ff9800,color:#000
-    style QUERY_ENGINE fill:#2196f3,color:#fff
+
+    INTERNET --> NGINX
+    NGINX --> FASTAPI
+    NGINX --> STREAMLIT
+    FASTAPI --> ANALYTICS_SVC
+    FASTAPI --> POSTGRES
+    FASTAPI --> REDIS_SVC
+    ANALYTICS_SVC --> POSTGRES
+    STREAMLIT --> FASTAPI
+    PROMETHEUS_SVC --> FASTAPI
+    PROMETHEUS_SVC --> ANALYTICS_SVC
+    GRAFANA_SVC --> PROMETHEUS_SVC
+
+    style frontend_net fill:#e3f2fd,stroke:#1565c0
+    style backend_net fill:#e8f5e9,stroke:#2e7d32
+    style db_net fill:#f3e5f5,stroke:#6a1b9a
+    style mon_net fill:#fff8e1,stroke:#f57f17
 ```
 
-### Database Schema Architecture
+### Resource Limits
 
-```mermaid
-erDiagram
-    NODES {
-        string id PK
-        string type
-        json properties
-        timestamp created_at
-        timestamp updated_at
-        string[] tags
-    }
-    
-    RELATIONSHIPS {
-        string id PK
-        string source_id FK
-        string target_id FK
-        string type
-        json properties
-        float weight
-        timestamp created_at
-    }
-    
-    USERS {
-        uuid id PK
-        string username UK
-        string email UK
-        string password_hash
-        json preferences
-        timestamp created_at
-        boolean is_active
-    }
-    
-    SESSIONS {
-        uuid id PK
-        uuid user_id FK
-        string session_token
-        json session_data
-        timestamp created_at
-        timestamp expires_at
-        boolean is_active
-    }
-    
-    ANALYTICS {
-        uuid id PK
-        string metric_name
-        json metric_value
-        string[] dimensions
-        timestamp timestamp
-        string source
-    }
-    
-    AUDIT_LOGS {
-        uuid id PK
-        uuid user_id FK
-        string action
-        json payload
-        string ip_address
-        timestamp timestamp
-        string result
-    }
-    
-    NODES ||--o{ RELATIONSHIPS : "source"
-    NODES ||--o{ RELATIONSHIPS : "target"
-    USERS ||--o{ SESSIONS : "has"
-    USERS ||--o{ AUDIT_LOGS : "performs"
-    NODES ||--o{ ANALYTICS : "generates"
-```
+| Service | Memory | CPU |
+|---------|--------|-----|
+| FastAPI | 2G | 2.0 |
+| Streamlit | 1.5G | 1.5 |
+| Analytics | 2G | 2.0 |
+| PostgreSQL | 1G | 1.0 |
+| Redis | 768M | 0.5 |
 
-## 🚀 Deployment Architecture
+### Development Environment
 
-### Container Architecture
+For local development, `docker/docker-compose.yml` provides a minimal 2-service setup:
+- **mcp-server**: FastAPI + Kuzu (ports 8080, 50051) with security hardening (read-only, seccomp, non-root)
+- **kestra**: Workflow orchestration (port 8081)
+
+---
+
+## Security Architecture
+
+Requests pass through five security layers: perimeter protection, authentication, application-level enforcement, data protection, and CI/CD scanning.
 
 ```mermaid
 flowchart TB
-    subgraph "Container Registry"
-        BASE_IMAGES[Base Images<br/>Python 3.11-slim<br/>Alpine Linux]
-        APP_IMAGES[Application Images<br/>Multi-stage builds<br/>Security scanning]
-        CACHE_IMAGES[Cached Layers<br/>Dependency layers<br/>Base configurations]
+    REQUEST["Incoming Request"]
+
+    subgraph perimeter["Perimeter"]
+        NGINX_TLS["Nginx + TLS 1.3\nTermination"]
+        RATE_LIMIT["Rate Limiter\n60/min · 1000/hr"]
     end
-    
-    subgraph "Build Pipeline"
-        SOURCE_CODE[Source Code<br/>Git Repository<br/>Version Control]
-        BUILD_STAGE[Build Stage<br/>Dependencies<br/>Compilation]
-        TEST_STAGE[Test Stage<br/>Unit Tests<br/>Integration Tests]
-        SECURITY_SCAN[Security Scan<br/>Vulnerability Assessment<br/>License Check]
-        IMAGE_PUSH[Image Push<br/>Tagged Images<br/>Registry Upload]
+
+    subgraph auth_layer["Authentication"]
+        JWT["JWT Validation\nEdDSA/Ed25519\n30-day key rotation"]
+        MFA["MFA / TOTP\nBackup Codes"]
+        SSO["SSO\nSAML 2.0 · OAuth2/OIDC"]
     end
-    
-    subgraph "Kubernetes Deployment"
-        DEPLOYMENTS[Deployments<br/>Application Pods<br/>Rolling Updates]
-        STATEFULSETS[StatefulSets<br/>Database Pods<br/>Persistent Storage]
-        SERVICES[Services<br/>Load Balancing<br/>Service Discovery]
-        INGRESS[Ingress<br/>External Access<br/>TLS Termination]
+
+    subgraph app_security["Application Security"]
+        MIDDLEWARE["Security Middleware\n6-layer protection"]
+        RBAC["Role-Based\nAccess Control"]
+        INPUT_VAL["Input Validation\nPydantic Models"]
     end
-    
-    subgraph "Runtime Environment"
-        POD_SECURITY[Pod Security<br/>Non-root Containers<br/>Security Contexts]
-        RESOURCE_LIMITS[Resource Limits<br/>CPU/Memory Quotas<br/>QoS Classes]
-        HEALTH_CHECKS[Health Checks<br/>Liveness Probes<br/>Readiness Probes]
-        MONITORING[Monitoring<br/>Metrics Collection<br/>Log Aggregation]
+
+    subgraph data_security["Data Protection"]
+        ENCRYPT_REST["Encryption at Rest\nDatabase-level"]
+        ENCRYPT_TRANSIT["mTLS\nService-to-Service"]
+        AUDIT["Audit Logging\n90-day retention"]
     end
-    
-    BASE_IMAGES --> BUILD_STAGE
-    SOURCE_CODE --> BUILD_STAGE
-    BUILD_STAGE --> TEST_STAGE
-    TEST_STAGE --> SECURITY_SCAN
-    SECURITY_SCAN --> IMAGE_PUSH
-    IMAGE_PUSH --> APP_IMAGES
-    
-    APP_IMAGES --> DEPLOYMENTS
-    APP_IMAGES --> STATEFULSETS
-    DEPLOYMENTS --> SERVICES
-    SERVICES --> INGRESS
-    
-    DEPLOYMENTS --> POD_SECURITY
-    STATEFULSETS --> RESOURCE_LIMITS
-    SERVICES --> HEALTH_CHECKS
-    INGRESS --> MONITORING
-    
-    style BASE_IMAGES fill:#4caf50,color:#000
-    style SECURITY_SCAN fill:#ff5722,color:#fff
-    style STATEFULSETS fill:#9c27b0,color:#fff
-    style MONITORING fill:#2196f3,color:#fff
+
+    subgraph scanning["CI/CD Security"]
+        TRIVY["Trivy\nContainer Scanning"]
+        BANDIT["Bandit\nPython SAST"]
+        SEMGREP["Semgrep\nStatic Analysis"]
+    end
+
+    REQUEST --> NGINX_TLS --> RATE_LIMIT
+    RATE_LIMIT --> JWT
+    JWT --> MFA
+    JWT --> SSO
+    MFA --> MIDDLEWARE
+    SSO --> MIDDLEWARE
+    MIDDLEWARE --> RBAC --> INPUT_VAL
+    INPUT_VAL --> ENCRYPT_REST
+    INPUT_VAL --> ENCRYPT_TRANSIT
+    MIDDLEWARE --> AUDIT
+
+    TRIVY ~~~ BANDIT ~~~ SEMGREP
+
+    style perimeter fill:#ffebee,stroke:#c62828
+    style auth_layer fill:#fff3e0,stroke:#e65100
+    style app_security fill:#e8f5e9,stroke:#2e7d32
+    style data_security fill:#e3f2fd,stroke:#1565c0
+    style scanning fill:#f3e5f5,stroke:#6a1b9a
 ```
 
-### Infrastructure Layers
+### Security Configuration
 
-```mermaid
-flowchart TB
-    subgraph "Cloud Infrastructure"
-        CLOUD_PROVIDER[Cloud Provider<br/>AWS/GCP/Azure<br/>Multi-region]
-        COMPUTE[Compute Resources<br/>VM Instances<br/>Auto-scaling Groups]
-        NETWORK[Network Infrastructure<br/>VPC/Subnets<br/>Load Balancers]
-        STORAGE[Storage Infrastructure<br/>Block Storage<br/>Object Storage]
-    end
-    
-    subgraph "Container Orchestration"
-        K8S_CONTROL[Kubernetes Control Plane<br/>API Server<br/>etcd Cluster]
-        K8S_NODES[Kubernetes Nodes<br/>Worker Nodes<br/>Container Runtime]
-        K8S_NETWORK[Kubernetes Networking<br/>CNI Plugin<br/>Service Mesh]
-        K8S_STORAGE[Kubernetes Storage<br/>CSI Driver<br/>Persistent Volumes]
-    end
-    
-    subgraph "Application Platform"
-        RUNTIME[Container Runtime<br/>containerd<br/>OCI Compliant]
-        SCHEDULER[Scheduler<br/>Pod Placement<br/>Resource Allocation]
-        SERVICE_DISCOVERY[Service Discovery<br/>CoreDNS<br/>Service Registry]
-        CONFIG_MGMT[Configuration Management<br/>ConfigMaps<br/>Secrets]
-    end
-    
-    subgraph "Observability Platform"
-        METRICS[Metrics Platform<br/>Prometheus<br/>Time Series DB]
-        LOGGING[Logging Platform<br/>Centralized Logs<br/>Log Aggregation]
-        TRACING[Distributed Tracing<br/>Request Tracking<br/>Performance Analysis]
-        ALERTING[Alerting Platform<br/>Alert Manager<br/>Notification System]
-    end
-    
-    CLOUD_PROVIDER --> COMPUTE
-    COMPUTE --> NETWORK
-    NETWORK --> STORAGE
-    
-    STORAGE --> K8S_CONTROL
-    K8S_CONTROL --> K8S_NODES
-    K8S_NODES --> K8S_NETWORK
-    K8S_NETWORK --> K8S_STORAGE
-    
-    K8S_STORAGE --> RUNTIME
-    RUNTIME --> SCHEDULER
-    SCHEDULER --> SERVICE_DISCOVERY
-    SERVICE_DISCOVERY --> CONFIG_MGMT
-    
-    CONFIG_MGMT --> METRICS
-    METRICS --> LOGGING
-    LOGGING --> TRACING
-    TRACING --> ALERTING
-    
-    style CLOUD_PROVIDER fill:#ff9800,color:#000
-    style K8S_CONTROL fill:#326ce5,color:#fff
-    style RUNTIME fill:#4caf50,color:#000
-    style METRICS fill:#e6522c,color:#fff
-```
+| Setting | Value |
+|---------|-------|
+| JWT Algorithm | EdDSA (Ed25519) |
+| Key Rotation | 30 days |
+| Password Requirements | 12+ chars, uppercase, lowercase, numbers, special |
+| Rate Limiting | 60/min, 1000/hr burst |
+| API Key Rotation | 90-day cycle |
+| Audit Log Retention | 90 days |
+| Container Security | Non-root, read-only filesystem, seccomp profiles |
 
-## 🔐 Security Architecture
+### Security Files
 
-### Defense in Depth
-
-```mermaid
-flowchart TB
-    subgraph "Perimeter Security"
-        FIREWALL[Firewall<br/>Network Access Control<br/>Port Filtering]
-        DDoS[DDoS Protection<br/>Rate Limiting<br/>Traffic Shaping]
-        GEO_BLOCKING[Geo Blocking<br/>Country Restrictions<br/>IP Allowlists]
-    end
-    
-    subgraph "Application Security"
-        WAF[Web Application Firewall<br/>OWASP Top 10<br/>Custom Rules]
-        API_SECURITY[API Security<br/>Authentication<br/>Authorization]
-        INPUT_VALIDATION[Input Validation<br/>Schema Validation<br/>Sanitization]
-    end
-    
-    subgraph "Infrastructure Security"
-        CONTAINER_SECURITY[Container Security<br/>Image Scanning<br/>Runtime Protection]
-        K8S_SECURITY[Kubernetes Security<br/>RBAC<br/>Network Policies]
-        SECRET_MGMT[Secret Management<br/>Encryption<br/>Rotation]
-    end
-    
-    subgraph "Data Security"
-        ENCRYPTION_TRANSIT[Encryption in Transit<br/>TLS 1.3<br/>mTLS]
-        ENCRYPTION_REST[Encryption at Rest<br/>Database Encryption<br/>Storage Encryption]
-        DATA_CLASSIFICATION[Data Classification<br/>PII Protection<br/>Data Loss Prevention]
-    end
-    
-    subgraph "Monitoring & Response"
-        SECURITY_MONITORING[Security Monitoring<br/>SIEM<br/>Threat Detection]
-        INCIDENT_RESPONSE[Incident Response<br/>Automated Response<br/>Forensics]
-        COMPLIANCE[Compliance<br/>Audit Logging<br/>Regulatory Requirements]
-    end
-    
-    FIREWALL --> WAF
-    DDoS --> API_SECURITY
-    GEO_BLOCKING --> INPUT_VALIDATION
-    
-    WAF --> CONTAINER_SECURITY
-    API_SECURITY --> K8S_SECURITY
-    INPUT_VALIDATION --> SECRET_MGMT
-    
-    CONTAINER_SECURITY --> ENCRYPTION_TRANSIT
-    K8S_SECURITY --> ENCRYPTION_REST
-    SECRET_MGMT --> DATA_CLASSIFICATION
-    
-    ENCRYPTION_TRANSIT --> SECURITY_MONITORING
-    ENCRYPTION_REST --> INCIDENT_RESPONSE
-    DATA_CLASSIFICATION --> COMPLIANCE
-    
-    style FIREWALL fill:#f44336,color:#fff
-    style CONTAINER_SECURITY fill:#ff5722,color:#fff
-    style ENCRYPTION_TRANSIT fill:#4caf50,color:#000
-    style SECURITY_MONITORING fill:#2196f3,color:#fff
-```
-
-## 🔗 Integration Architecture
-
-### External Integrations
-
-```mermaid
-flowchart TB
-    subgraph "Client Integrations"
-        IDE_EXTENSIONS[IDE Extensions<br/>VSCode, Cursor, Windsurf<br/>Language Server Protocol]
-        CLI_TOOLS[CLI Tools<br/>Python SDK<br/>REST API Client]
-        WEB_UI[Web Interface<br/>Browser-based<br/>WebSocket Client]
-    end
-    
-    subgraph "Third-party APIs"
-        CLOUD_SERVICES[Cloud Services<br/>AWS/GCP/Azure APIs<br/>Infrastructure Management]
-        ML_SERVICES[ML Services<br/>OpenAI API<br/>Hugging Face]
-        MONITORING_SERVICES[Monitoring Services<br/>DataDog<br/>New Relic]
-    end
-    
-    subgraph "Data Integrations"
-        DATABASE_CONNECTORS[Database Connectors<br/>PostgreSQL<br/>MySQL, MongoDB]
-        FILE_SYSTEMS[File Systems<br/>Local Storage<br/>S3, GCS, Azure Blob]
-        MESSAGE_QUEUES[Message Queues<br/>Redis Pub/Sub<br/>Apache Kafka]
-    end
-    
-    subgraph "Integration Patterns"
-        API_GATEWAY[API Gateway<br/>Request Routing<br/>Protocol Translation]
-        EVENT_DRIVEN[Event-driven<br/>Webhook Handlers<br/>Async Processing]
-        BATCH_INTEGRATION[Batch Integration<br/>Scheduled Jobs<br/>ETL Pipelines]
-    end
-    
-    IDE_EXTENSIONS --> API_GATEWAY
-    CLI_TOOLS --> API_GATEWAY
-    WEB_UI --> EVENT_DRIVEN
-    
-    CLOUD_SERVICES --> EVENT_DRIVEN
-    ML_SERVICES --> API_GATEWAY
-    MONITORING_SERVICES --> BATCH_INTEGRATION
-    
-    DATABASE_CONNECTORS --> BATCH_INTEGRATION
-    FILE_SYSTEMS --> API_GATEWAY
-    MESSAGE_QUEUES --> EVENT_DRIVEN
-    
-    style IDE_EXTENSIONS fill:#4caf50,color:#000
-    style CLOUD_SERVICES fill:#ff9800,color:#000
-    style API_GATEWAY fill:#2196f3,color:#fff
-    style EVENT_DRIVEN fill:#9c27b0,color:#fff
-```
-
-This comprehensive architecture overview provides a complete understanding of GraphMemory-IDE's design, from high-level system organization to detailed component interactions and deployment patterns. 
+| File | Purpose |
+|------|---------|
+| `server/auth_jwt.py` | JWT token creation and validation |
+| `server/auth/sso_manager.py` | SAML 2.0 and OAuth2/OIDC integration |
+| `server/auth/mfa_manager.py` | TOTP multi-factor authentication |
+| `server/security/` | Security middleware and utilities |
+| `scripts/security/` | Key rotation and secrets management scripts |
+| `.bandit` | Python security linting configuration |
+| `.semgrep.yml` | Static analysis rules |
