@@ -5,11 +5,18 @@ These tests cover format_bytes, format_percentage, and get_severity_color.
 Functions that call datetime.now() (like format_duration) are not tested here.
 """
 
-import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'dashboard', 'utils'))
+import sys
 
-from formatting import format_bytes, format_percentage, get_severity_color
+# Make the repo root importable so dashboard.utils.formatting (a stdlib-only
+# module) resolves under pytest regardless of import mode / cwd.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from dashboard.utils.formatting import (
+    format_bytes,
+    format_percentage,
+    get_severity_color,
+)
 
 
 class TestFormatBytes:
