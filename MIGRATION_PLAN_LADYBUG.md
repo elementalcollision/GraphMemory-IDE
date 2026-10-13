@@ -440,7 +440,21 @@ Discovered during Phase 4; promoted to a dedicated future phase on operator dire
 - `test_realtime_performance_monitoring.py` 2 → 3: the +1 is a **timing-sensitive test** (~60s runtime benchmark) colliding with the 60s per-test timeout under full-suite load — passes in isolation. Not migration-related.
 - Remaining failures are the previously triaged pre-existing categories (§Phase 4 triage).
 
-### Phase 8: Uplift Opportunities (Post-Migration — Optional)
+### Phase 8: Uplift Opportunities (Post-Migration) — ✅ COMPLETED 2026-10-13 (partial: high-value subset; rest deferred with rationale)
+
+| # | Uplift | Status |
+|---|--------|--------|
+| 8.1 | **AsyncConnection + pool fix** — `GraphConnectionPool.get_connection()` busy-wait (100ms `time.sleep` polling) replaced with `threading.Condition`; `GraphDatabaseManager.get_async_connection()` added, backed by LadybugDB's built-in `AsyncConnection` (bundled connection pool + thread pool, event-loop-native) with query-timeout wiring and close handling | ✅ Implemented & verified (single + 5 concurrent async queries) |
+| 8.2 | **Native JSON type** — **DEFERRED**: probed live; LadybugDB 0.21.2's `JSON` type has **no JSON functions** (`json_extract` etc. absent from `show_functions()`), **no dot-path access** (`e.data.action` → Binder exception), and **no validation** (invalid JSON accepted). Current `STRING` + `json.dumps`/`json.loads` (fixed in Phase 7) provides strictly more capability. Revisit on a LadybugDB upgrade. | ⏸ Deferred (verified rationale) |
+| 8.3 | **Parquet/Arrow storage** — deferred: no current cold-data use case | ⏸ Deferred |
+| 8.4 | **DataFrame interop** — deferred: `GraphQueryEngine._process_row` is generic and serves the API layer; `get_as_df()` remains available to future analytics work | ⏸ Deferred |
+| 8.5 | **`read_only` wiring** — `GraphDatabaseConfig.read_only` → `lb.Database(..., read_only=...)` in both `GraphDatabaseManager` and `main.py setup_database`; settings read from `LADYBUG_READ_ONLY`; **schema init skipped in read-only mode** (DDL is a write op — found by verification probe) | ✅ Implemented & verified (writes rejected, reads OK on read-only DB) |
+| 8.6 | **`debug_enable_multi_writes`** — not enabled by default (still under validation upstream); available via `CALL` if concurrent-write workloads need it | 📝 Documented only |
+| 8.7 | **UDFs** — deferred: no current consumer | ⏸ Deferred |
+| 8.8 | **PyG integration** — deferred: no current consumer | ⏸ Deferred |
+| 8.9 | **`aioredis` → `redis.asyncio`** — both consumers (`server/security/rate_limiter.py`, `server/monitoring/ai_performance_optimizer.py`) migrated via `from redis import asyncio as aioredis` (API-identical: `from_url`, `Redis`); auth install-hint strings updated; `aioredis` removed from `requirements.in` and the regenerated lockfile | ✅ Implemented & verified |
+
+**Phase 8 verification:** dedicated functional script (all passed): Condition-pool acquire/return, AsyncConnection single + concurrent queries, read-only open with write rejection/read success, redis.asyncio API shape. Live server re-check 4/4 (ingest 200, list round-trip, status incl. `read_only`, health). All touched files compile; targeted pytest unchanged from the pre-existing triage (the one failure is a known pre-existing `test_main.py` broken mock).
 
 These are LadybugDB features not available in Kuzu 0.10.0 that could improve the codebase:
 

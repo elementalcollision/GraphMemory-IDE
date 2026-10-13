@@ -50,7 +50,7 @@ class AuthenticationIntegration:
         """Initialize all authentication components."""
         if not DEPENDENCIES_AVAILABLE:
             logger.warning("Authentication integration skipped - missing dependencies")
-            logger.info("Please install: pip install aioredis pyotp qrcode[pil] PyJWT python-multipart email-validator")
+            logger.info("Please install: pip install redis pyotp qrcode[pil] PyJWT python-multipart email-validator")
             return False
         
         try:
@@ -252,7 +252,7 @@ def get_auth_integration_health() -> dict:
                 "rate_limiting": "available"
             },
             "required_dependencies": [
-                "aioredis", "pyotp", "qrcode[pil]", "PyJWT", 
+                "redis", "pyotp", "qrcode[pil]", "PyJWT", 
                 "python-multipart", "email-validator"
             ]
         }

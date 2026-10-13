@@ -65,7 +65,6 @@ python-multipart
 
 # SSO and MFA dependencies (previously hand-appended to requirements.txt;
 # declared here so pip-compile regeneration keeps them)
-aioredis
 pyotp
 qrcode[pil]
 PyJWT

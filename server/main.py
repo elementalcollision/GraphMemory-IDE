@@ -111,7 +111,11 @@ def setup_database(app: FastAPI, settings: Settings) -> None:
     _P(ladybug_db_path).parent.mkdir(parents=True, exist_ok=True)
     
     try:
-        app.state.ladybug_db = lb.Database(ladybug_db_path)  # type: ignore
+        # Phase 8.5: LadybugDB supports read_only at the Database ctor
+        app.state.ladybug_db = lb.Database(
+            ladybug_db_path,
+            read_only=settings.database.LADYBUG_READ_ONLY,
+        )  # type: ignore
         app.state.ladybug_conn = lb.Connection(app.state.ladybug_db)  # type: ignore
         logger.info(f"LadybugDB database initialized at: {ladybug_db_path}")
     except Exception as e:

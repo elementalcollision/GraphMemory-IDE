@@ -10,8 +10,6 @@ aiohappyeyeballs==2.7.1
     # via aiohttp
 aiohttp==3.14.5
     # via -r requirements.in
-aioredis==2.0.1
-    # via -r requirements.in
 aiosignal==1.4.0
     # via aiohttp
 alembic==1.16.1
@@ -27,8 +25,6 @@ anyio==4.9.0
     #   httpx
     #   sse-starlette
     #   starlette
-async-timeout==5.0.1
-    # via aioredis
 asyncio-pool==0.6.0
     # via -r requirements.in
 asyncpg==0.30.0
@@ -489,7 +485,6 @@ trio-websocket==0.12.2
 typing-extensions==4.13.2
     # via
     #   aiohttp
-    #   aioredis
     #   aiosignal
     #   alembic
     #   anyio

@@ -43,6 +43,7 @@ class GraphDatabaseConfig:
     connection_pool_size: int = 10
     connection_timeout: int = 30
     query_timeout: int = 60
+    read_only: bool = False
     enable_monitoring: bool = True
 
 @dataclass
@@ -63,6 +64,9 @@ class GraphConnectionPool:
         self._connections: List['lb.Connection'] = []
         self._available_connections: List['lb.Connection'] = []
         self._lock = threading.Lock()
+        # Condition variable for pool availability (Phase 8.1: replaces a
+        # 100ms busy-wait polling loop that burned CPU under contention)
+        self._available = threading.Condition(self._lock)
         self._metrics = MetricsCollector()
         self._initialize_pool()
     
@@ -88,15 +92,15 @@ class GraphConnectionPool:
     def get_connection(self) -> None:
         """Get connection from pool with automatic return"""
         connection = None
-        start_time = time.time()
         
         try:
-            # Wait for available connection
+            # Wait for an available connection. Condition-based blocking
+            # (replaces the former 100ms busy-wait polling loop).
             timeout = self.config.connection_timeout
-            while not self._available_connections and (time.time() - start_time) < timeout:
-                time.sleep(0.1)
-            
-            with self._lock:
+            with self._available:
+                if not self._available_connections:
+                    self._available.wait(timeout=timeout)
+                
                 if not self._available_connections:
                     raise ConnectionError("No available graph connections in pool")
                 
@@ -107,13 +111,14 @@ class GraphConnectionPool:
             
         finally:
             if connection:
-                with self._lock:
+                with self._available:
                     self._available_connections.append(connection)
                     self._metrics.increment('graph_connections_returned')
+                    self._available.notify()
     
     def close_all(self) -> None:
         """Close all connections in pool"""
-        with self._lock:
+        with self._available:
             for conn in self._connections:
                 try:
                     conn.close()
@@ -122,6 +127,7 @@ class GraphConnectionPool:
             
             self._connections.clear()
             self._available_connections.clear()
+            self._available.notify_all()
             logger.info("Graph connection pool closed")
 
 class GraphSchemaManager:
@@ -457,6 +463,7 @@ class GraphDatabaseManager:
     def __init__(self, config: Optional[GraphDatabaseConfig] = None) -> None:
         self.config = config or GraphDatabaseConfig()
         self.database: Optional['lb.Database'] = None
+        self.async_connection: Optional['lb.AsyncConnection'] = None
         self.connection_pool: Optional[GraphConnectionPool] = None
         self.schema_manager: Optional[GraphSchemaManager] = None
         self.query_engine: Optional[GraphQueryEngine] = None
@@ -484,7 +491,10 @@ class GraphDatabaseManager:
                 max_num_threads=self.config.max_num_threads,
                 compression=self.config.compression,
                 auto_checkpoint=self.config.auto_checkpoint,
-                checkpoint_threshold=self.config.checkpoint_threshold
+                checkpoint_threshold=self.config.checkpoint_threshold,
+                # Phase 8.5: LadybugDB supports read_only at the Database ctor
+                # (Kuzu needed a separate read-only open mode)
+                read_only=self.config.read_only
             )
             
             # Initialize connection pool
@@ -495,8 +505,11 @@ class GraphDatabaseManager:
             self.query_engine = GraphQueryEngine(self.connection_pool, self.config)
             self.health_checker = GraphHealthChecker(self.connection_pool)
             
-            # Initialize schema
-            if not self.schema_manager.initialize_schema():
+            # Initialize schema (skipped in read-only mode: DDL is a write op
+            # and LadybugDB rejects writes on a read_only Database)
+            if self.config.read_only:
+                logger.info("Read-only mode: skipping schema initialization")
+            elif not self.schema_manager.initialize_schema():
                 logger.error("Failed to initialize graph database schema")
                 return False
             
@@ -510,8 +523,33 @@ class GraphDatabaseManager:
             self._metrics.increment('graph_database_initialization_errors')
             return False
     
+    def get_async_connection(self) -> "lb.AsyncConnection":
+        """Return the shared LadybugDB AsyncConnection (lazy-init).
+
+        LadybugDB's AsyncConnection bundles a connection pool and a thread
+        pool internally (``max_concurrent_queries``) and executes queries on
+        the running event loop — the async-native alternative to the sync
+        GraphConnectionPool for FastAPI handlers.
+        """
+        if self.async_connection is None:
+            if self.database is None:
+                raise RuntimeError("Graph database not initialized")
+            self.async_connection = lb.AsyncConnection(
+                self.database,
+                max_concurrent_queries=self.config.connection_pool_size,
+            )
+            self.async_connection.set_query_timeout(self.config.query_timeout * 1000)
+        return self.async_connection
+    
     async def close(self) -> None:
         """Close graph database manager"""
+        if self.async_connection:
+            try:
+                self.async_connection.close()
+            except Exception as e:
+                logger.warning(f"Error closing async connection: {e}")
+            self.async_connection = None
+        
         if self.connection_pool:
             self.connection_pool.close_all()
         
@@ -542,6 +580,7 @@ async def get_graph_database() -> GraphDatabaseManager:
             buffer_pool_size=getattr(settings, 'GRAPH_BUFFER_POOL_SIZE', 1024*1024*1024),
             max_num_threads=getattr(settings, 'GRAPH_MAX_THREADS', 8),
             connection_pool_size=getattr(settings, 'GRAPH_CONNECTION_POOL_SIZE', 10),
+            read_only=getattr(getattr(settings, 'database', None), 'LADYBUG_READ_ONLY', False),
             enable_monitoring=getattr(settings, 'GRAPH_ENABLE_MONITORING', True)
         )
         

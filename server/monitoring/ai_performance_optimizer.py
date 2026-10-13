@@ -39,7 +39,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import numpy as np
 from decimal import Decimal
-import aioredis
+from redis import asyncio as aioredis  # Phase 8.9: aioredis is deprecated; redis.asyncio is API-identical
 import asyncpg
 from sklearn.ensemble import IsolationForest, RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
