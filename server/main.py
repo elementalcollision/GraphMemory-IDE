@@ -104,8 +104,11 @@ def create_application() -> FastAPI:
 
 def setup_database(app: FastAPI, settings: Settings) -> None:
     """Initialize database connections"""
-    # Initialize LadybugDB DB connection
+    # Initialize LadybugDB connection
+    from pathlib import Path as _P
     ladybug_db_path = settings.database.LADYBUG_DB_PATH
+    # LadybugDB does not create parent directories (Kuzu did) — ensure they exist
+    _P(ladybug_db_path).parent.mkdir(parents=True, exist_ok=True)
     
     try:
         app.state.ladybug_db = lb.Database(ladybug_db_path)  # type: ignore
@@ -297,7 +300,10 @@ async def ingest_telemetry(
             "timestamp": event.timestamp,
             "user_id": event.user_id,
             "session_id": event.session_id,
-            "data": str(event.data),  # Serialize dict to string for storage
+            # Serialise as real JSON — the /telemetry/list reader does
+            # json.loads(); str(dict) produces a Python repr with single
+            # quotes that json.loads cannot parse (pre-existing bug, fixed).
+            "data": json.dumps(event.data),
         }
         app.state.ladybug_conn.execute(query, params)
         
