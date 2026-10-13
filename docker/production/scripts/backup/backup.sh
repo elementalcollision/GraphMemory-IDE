@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # GraphMemory-IDE Database Backup Script
-# This script provides comprehensive backup functionality for PostgreSQL and Kuzu databases
+# This script provides comprehensive backup functionality for PostgreSQL and LadybugDB databases
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -37,9 +37,9 @@ error_exit() {
 # Create backup directory structure
 create_backup_dirs() {
     log "Creating backup directory structure..."
-    mkdir -p "${BACKUP_DIR}"/{postgresql,kuzu,logs,temp}
+    mkdir -p "${BACKUP_DIR}"/{postgresql,ladybug,logs,temp}
     mkdir -p "${BACKUP_DIR}/postgresql"/{full,incremental,schema}
-    mkdir -p "${BACKUP_DIR}/kuzu"/{full,incremental}
+    mkdir -p "${BACKUP_DIR}/ladybug"/{full,incremental}
 }
 
 # Check database connectivity
@@ -126,29 +126,29 @@ postgres_incremental_backup() {
     log "WAL archiving setup completed"
 }
 
-# Kuzu database backup
-kuzu_backup() {
-    local kuzu_backup_dir="${BACKUP_DIR}/kuzu/full/kuzu_${DATE}"
-    local kuzu_data_dir="/kuzu/data"
+# LadybugDB database backup
+ladybug_backup() {
+    local ladybug_backup_dir="${BACKUP_DIR}/ladybug/full/ladybug_${DATE}"
+    local ladybug_data_dir="/ladybug/data"
     
-    log "Starting Kuzu database backup..."
+    log "Starting LadybugDB database backup..."
     
-    mkdir -p "$kuzu_backup_dir"
+    mkdir -p "$ladybug_backup_dir"
     
-    # Copy Kuzu database files
-    if [ -d "$kuzu_data_dir" ]; then
-        if tar -czf "${kuzu_backup_dir}.tar.gz" -C "$(dirname "$kuzu_data_dir")" "$(basename "$kuzu_data_dir")"; then
+    # Copy LadybugDB database files
+    if [ -d "$ladybug_data_dir" ]; then
+        if tar -czf "${ladybug_backup_dir}.tar.gz" -C "$(dirname "$ladybug_data_dir")" "$(basename "$ladybug_data_dir")"; then
             
             # Calculate checksums
-            sha256sum "${kuzu_backup_dir}.tar.gz" > "${kuzu_backup_dir}.tar.gz.sha256"
+            sha256sum "${ladybug_backup_dir}.tar.gz" > "${ladybug_backup_dir}.tar.gz.sha256"
             
-            log "Kuzu backup completed: ${kuzu_backup_dir}.tar.gz"
+            log "LadybugDB backup completed: ${ladybug_backup_dir}.tar.gz"
             return 0
         else
-            error_exit "Kuzu backup failed"
+            error_exit "LadybugDB backup failed"
         fi
     else
-        log "WARNING: Kuzu data directory not found, skipping Kuzu backup"
+        log "WARNING: LadybugDB data directory not found, skipping LadybugDB backup"
     fi
 }
 
@@ -163,8 +163,8 @@ s3_upload() {
                 --exclude "*" --include "*.gz" --include "*.sha256" \
                 --region "$S3_REGION"
             
-            # Upload Kuzu backups
-            aws s3 sync "${BACKUP_DIR}/kuzu" "s3://${S3_BUCKET}/kuzu/" \
+            # Upload LadybugDB backups
+            aws s3 sync "${BACKUP_DIR}/ladybug" "s3://${S3_BUCKET}/ladybug/" \
                 --exclude "*" --include "*.tar.gz" --include "*.sha256" \
                 --region "$S3_REGION"
             
@@ -183,9 +183,9 @@ cleanup_old_backups() {
     
     # Clean local backups
     find "${BACKUP_DIR}/postgresql" -name "*.gz" -mtime +$RETENTION_DAYS -delete
-    find "${BACKUP_DIR}/kuzu" -name "*.tar.gz" -mtime +$RETENTION_DAYS -delete
+    find "${BACKUP_DIR}/ladybug" -name "*.tar.gz" -mtime +$RETENTION_DAYS -delete
     find "${BACKUP_DIR}/postgresql" -name "*.sha256" -mtime +$RETENTION_DAYS -delete
-    find "${BACKUP_DIR}/kuzu" -name "*.sha256" -mtime +$RETENTION_DAYS -delete
+    find "${BACKUP_DIR}/ladybug" -name "*.sha256" -mtime +$RETENTION_DAYS -delete
     
     # Clean S3 backups if enabled
     if [ "$S3_BACKUP_ENABLED" = "true" ] && [ -n "$S3_BUCKET" ] && command -v aws >/dev/null 2>&1; then
@@ -218,8 +218,8 @@ verify_backups() {
         fi
     done
     
-    # Verify Kuzu backups
-    for backup_file in "${BACKUP_DIR}/kuzu/full"/*.tar.gz; do
+    # Verify LadybugDB backups
+    for backup_file in "${BACKUP_DIR}/ladybug/full"/*.tar.gz; do
         if [ -f "$backup_file" ]; then
             if [ -f "${backup_file}.sha256" ]; then
                 if sha256sum -c "${backup_file}.sha256" > /dev/null 2>&1; then
@@ -255,8 +255,8 @@ generate_report() {
         echo "PostgreSQL Backups:"
         ls -lh "${BACKUP_DIR}/postgresql/full"/*.gz 2>/dev/null | tail -5 || echo "No PostgreSQL backups found"
         echo ""
-        echo "Kuzu Backups:"
-        ls -lh "${BACKUP_DIR}/kuzu/full"/*.tar.gz 2>/dev/null | tail -5 || echo "No Kuzu backups found"
+        echo "LadybugDB Backups:"
+        ls -lh "${BACKUP_DIR}/ladybug/full"/*.tar.gz 2>/dev/null | tail -5 || echo "No LadybugDB backups found"
         echo ""
         echo "Disk Usage:"
         du -sh "${BACKUP_DIR}"/* 2>/dev/null || echo "No backup data"
@@ -281,7 +281,7 @@ main() {
             check_db_connection
             postgres_full_backup
             postgres_schema_backup
-            kuzu_backup
+            ladybug_backup
             verify_backups
             s3_upload
             cleanup_old_backups

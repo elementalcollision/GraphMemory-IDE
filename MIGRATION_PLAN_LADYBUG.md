@@ -316,16 +316,25 @@ Every `MetricsCollector()` instantiation (`server/monitoring/metrics.py`) regist
 - **Lockfile regenerated under Python 3.12** (Homebrew), not the original 3.13: production Docker images run Python 3.11/3.12, so 3.12 matches deployment; compiling under the local 3.14 failed because the resolver built pandas 2.1.4 from sdist (no cp314 wheel; Cython-0.29 build incompatible with 3.14). The 3.12 lockfile resolves cleanly (full `pip install --dry-run -r requirements.txt` passes).
 - **Pre-existing lockfile hygiene defect exposed:** the old `requirements.txt` had hand-appended dependency blocks (SSO/MFA, visualisation) never declared in `requirements.in`. Regeneration silently dropped them. Codebase-wide import check confirmed 6 are genuinely used — now **properly declared** in `requirements.in`: `aioredis`, `pyotp`, `qrcode[pil]`, `PyJWT`, `plotly`, `websockets`. `email-validator` confirmed unused (correctly dropped). Note: `aioredis` is a deprecated package (superseded by redis.asyncio) — flagged for a future cleanup task, not migration scope.
 
-### Phase 3: Docker / Infra (Day 2)
+### Phase 3: Docker / Infra (Day 2) — ✅ COMPLETED 2026-10-13
 
-| # | Task | Files | Risk | Verification |
-|---|------|-------|------|-------------|
-| 3.1 | Rename env vars: `KUZU_DB_PATH` → `LADYBUG_DB_PATH` in all Dockerfiles, compose files, entrypoint scripts | `docker/mcp-server/Dockerfile`, `docker/docker-compose.yml`, `docker/production/docker-compose*.yml`, `deploy/scripts/production_deploy.sh` | Medium | Env vars resolve |
-| 3.2 | Rename Docker volumes: `kuzu-data` → `ladybug-data` in compose files and `backup-volumes.sh` | `docker/docker-compose.yml`, `docker/production/docker-compose*.yml`, `docker/backup-volumes.sh` | Medium | Volumes create |
-| 3.3 | Update entrypoint scripts: `/app/data/kuzu` → `/app/data/ladybug`, service check `"kuzu"` → `"ladybug"` | `docker/production/scripts/analytics-entrypoint.sh`, `streamlit-entrypoint.sh`, `fastapi-entrypoint.sh` | Medium | Entrypoint runs |
-| 3.4 | Update backup/restore scripts: paths, function names (`restore_kuzu()` → `restore_ladybug()`), S3 keys | `docker/production/scripts/backup/backup.sh`, `restore.sh` | Medium | Backup script runs |
-| 3.5 | Update k8s manifests: env vars, volume mounts, volume names | `kubernetes/manifests/deployments.yaml`, `statefulsets.yaml`, `configmaps-secrets.yaml` | Medium | kubectl apply dry-run |
-| 3.6 | Update DigitalOcean deploy config | `deploy/digitalocean/env_config.py`, `app.yaml`, `staging-app.yaml` | Low | Config valid |
+| # | Task | Status |
+|---|------|--------|
+| 3.1 | Env var renames (`KUZU_DB_PATH`→`LADYBUG_DB_PATH`, `KUZU_DATABASE_PATH`→`LADYBUG_DATABASE_PATH`, `KUZU_READ_ONLY`→`LADYBUG_READ_ONLY`) across Dockerfiles, compose files, entrypoints, deploy scripts, k8s | ✅ 17 files |
+| 3.2 | Volume renames `kuzu-data`/`kuzu_data` → `ladybug-data`/`ladybug_data` (compose files, `backup-volumes.sh`, `resource-monitor.sh`, `validate-docs.sh`) | ✅ |
+| 3.3 | Entrypoint scripts: `/app/data/kuzu` → `/app/data/ladybug`; dependency check `kuzu` → `ladybug` | ✅ |
+| 3.4 | Backup/restore scripts: `restore_kuzu()` → `restore_ladybug()`, S3 keys `kuzu/` → `ladybug/`, `backup-kuzu` subcommand → `backup-ladybug` | ✅ |
+| 3.5 | k8s `deployments.yaml` env + path | ✅ |
+| 3.6 | DigitalOcean deploy config (`env_config.py`, `app.yaml`, `staging-app.yaml`) | ✅ |
+| 3.7 | **NEW:** standalone `kuzu` server service in `docker/production/docker-compose.yml` re-pointed to the official **LadybugDB api-server image** (`ghcr.io/ladybugdb/api-server:latest`, `MODE=READ_WRITE`, data mount at `/database`, HTTP healthcheck) | ✅ — **note:** validate/pin the image tag on first deployment; the app itself embeds LadybugDB in-process, this sidecar is for external/admin access |
+
+**Phase 3 verification:** 9 shell scripts pass `bash -n` (`scripts/deploy-secure.sh` fails on a **pre-existing** syntax error at line 315 — same failure at HEAD, unrelated to the rename; flagged §3.14). All 3 compose files pass `docker compose config` (OrbStack). k8s `deployments.yaml` (8 docs) and DO app yamls parse as valid YAML. `env_config.py` compiles. Residual kuzu refs: only `tests/` (Phase 4) and the intentional `init_db.py` env fallback.
+
+**Operator note:** this system runs **OrbStack**, not Docker Desktop — all `docker`/`docker compose` CLI validation was run against OrbStack successfully.
+
+### 3.14 Pre-Existing Defect #2 (Flagged)
+
+`scripts/deploy-secure.sh` fails `bash -n` with a syntax error at line 315 (`syntax error near unexpected token '('`) — verified identical failure on the pre-migration version at HEAD. The Phase 3 rename inside it (3 env-var lines) is clean. Recommend a separate remediation task to repair the script's quoting.
 
 ### Phase 4: Tests (Day 2)
 
@@ -381,6 +390,7 @@ These are LadybugDB features not available in Kuzu 0.10.0 that could improve the
 | 8.6 | **`debug_enable_multi_writes`** — Enable MVCC for concurrent write workloads | Concurrent writers (was `enable_concurrent_writes` in Kuzu) | Low (CALL setting) |
 | 8.7 | **UDFs** — Register Python UDFs for custom analytics (centrality, similarity) | Move graph algorithms into the query engine | Medium |
 | 8.8 | **Torch Geometric integration** — LadybugDB ships `torch_geometric_feature_store.py` / `graph_store.py` | Direct PyG integration for GNN workloads | Medium |
+| 8.9 | **`aioredis` → `redis.asyncio`** — replace the deprecated `aioredis` package (declared in Phase 2) with `redis.asyncio` across `server/security/rate_limiter.py`, `server/monitoring/ai_performance_optimizer.py`, and `requirements.in` | Removes a deprecated dependency; modern async Redis client | Low |
 
 ---
 

@@ -137,22 +137,26 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  # Kuzu graph database
-  kuzu:
-    image: kuzu/kuzu:latest
-    container_name: graphmemory-kuzu
+  # LadybugDB graph database (LadybugDB successor) — official api-server image.
+  # NOTE: the app embeds LadybugDB in-process; this sidecar serves external/
+  #  admin access. Mount the data dir at /database; db file defaults to
+  #  database.lbdb (override with LBUG_FILE). Validate image tag on first
+  #  deployment and pin a version in production.
+  ladybug:
+    image: ghcr.io/ladybugdb/api-server:latest
+    container_name: graphmemory-ladybug
     restart: unless-stopped
+    environment:
+      - MODE=READ_WRITE
     
     volumes:
-      - kuzu_data:/kuzu/data
-      - ./kuzu/config:/kuzu/config:ro
-      - ./kuzu/init:/kuzu/init:ro
+      - ladybug_data:/database
     
     networks:
       - graphmemory_network
     
     healthcheck:
-      test: ["CMD-SHELL", "test -f /kuzu/data/.healthy || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8000/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -208,12 +212,12 @@ volumes:
       o: bind
       device: ${DATA_DIR:-./data}/redis
   
-  kuzu_data:
+  ladybug_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${DATA_DIR:-./data}/kuzu
+      device: ${DATA_DIR:-./data}/ladybug
 
 networks:
   graphmemory_network:

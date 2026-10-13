@@ -130,7 +130,7 @@ algorithm = "HS256"
 
 [database]
 redis_url = "redis://graphmemory-redis:6379"
-kuzu_path = "/app/data/kuzu"
+ladybug_path = "/app/data/ladybug"
 sqlite_path = "/app/data/analytics.db"
 EOF
 fi

@@ -30,7 +30,7 @@ class EnvironmentConfig:
     cors_origins: List[str] = field(default_factory=list)
     rate_limit_per_minute: int = 60
     cache_ttl: int = 300
-    kuzu_database_path: str = "/tmp/kuzu_db"
+    ladybug_database_path: str = "/tmp/ladybug_db"
     max_workers: int = 4
     timeout_seconds: int = 30
     
@@ -48,7 +48,7 @@ class EnvironmentConfig:
                 cors_origins=["https://graphmemory-ide.com"],
                 rate_limit_per_minute=1000,
                 cache_ttl=600,
-                kuzu_database_path="/tmp/kuzu_db",
+                ladybug_database_path="/tmp/ladybug_db",
                 max_workers=8,
                 timeout_seconds=60
             ),
@@ -62,7 +62,7 @@ class EnvironmentConfig:
                 cors_origins=["https://staging.graphmemory-ide.com"],
                 rate_limit_per_minute=500,
                 cache_ttl=300,
-                kuzu_database_path="/tmp/kuzu_staging_db",
+                ladybug_database_path="/tmp/ladybug_staging_db",
                 max_workers=4,
                 timeout_seconds=45
             ),
@@ -76,7 +76,7 @@ class EnvironmentConfig:
                 cors_origins=["http://localhost:3000", "http://localhost:8080"],
                 rate_limit_per_minute=100,
                 cache_ttl=60,
-                kuzu_database_path="./dev_kuzu_db",
+                ladybug_database_path="./dev_ladybug_db",
                 max_workers=2,
                 timeout_seconds=30
             ),
@@ -90,7 +90,7 @@ class EnvironmentConfig:
                 cors_origins=["http://testserver"],
                 rate_limit_per_minute=1000,
                 cache_ttl=30,
-                kuzu_database_path="./test_kuzu_db",
+                ladybug_database_path="./test_ladybug_db",
                 max_workers=1,
                 timeout_seconds=10
             )
@@ -148,7 +148,7 @@ class EnvironmentConfig:
             "cors_origins": self.cors_origins,
             "rate_limit_per_minute": self.rate_limit_per_minute,
             "cache_ttl": self.cache_ttl,
-            "kuzu_database_path": self.kuzu_database_path,
+            "ladybug_database_path": self.ladybug_database_path,
             "max_workers": self.max_workers,
             "timeout_seconds": self.timeout_seconds
         }
@@ -194,9 +194,9 @@ class CloudEnvironmentManager:
         """Get CORS origins for current environment."""
         return self.config.cors_origins
     
-    def get_kuzu_path(self) -> str:
-        """Get Kuzu database path for current environment."""
-        return self.config.kuzu_database_path
+    def get_ladybug_path(self) -> str:
+        """Get LadybugDB database path for current environment."""
+        return self.config.ladybug_database_path
     
     def get_rate_limit(self) -> int:
         """Get rate limit for current environment."""
@@ -219,7 +219,7 @@ class CloudEnvironmentManager:
             "max_retries": 3 if self.is_production() else 1,
             "check_database": True,
             "check_redis": True,
-            "check_kuzu": True
+            "check_ladybug": True
         }
     
     def get_deployment_config(self) -> Dict[str, Any]:

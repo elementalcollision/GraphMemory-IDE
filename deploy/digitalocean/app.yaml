@@ -17,8 +17,8 @@ services:
       - key: DATABASE_URL
         scope: RUN_TIME
         type: SECRET
-      - key: KUZU_DATABASE_PATH
-        value: /tmp/kuzu_db
+      - key: LADYBUG_DATABASE_PATH
+        value: /tmp/ladybug_db
       - key: REDIS_URL
         scope: RUN_TIME
         type: SECRET

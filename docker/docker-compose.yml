@@ -7,8 +7,8 @@ services:
       - "8080:8080"
       - "50051:50051"
     environment:
-      - KUZU_DB_PATH=/database
-      - KUZU_READ_ONLY=${KUZU_READ_ONLY:-false}
+      - LADYBUG_DB_PATH=/database
+      - LADYBUG_READ_ONLY=${LADYBUG_READ_ONLY:-false}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
       - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
       - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
@@ -16,7 +16,7 @@ services:
       - MTLS_ENABLED=${MTLS_ENABLED:-false}
       - MTLS_PORT=50051
     volumes:
-      - kuzu-data:/database:ro  # Read-only database mount
+      - ladybug-data:/database:ro  # Read-only database mount
       - mcp-logs:/var/log/mcp   # Writable logs volume
       - mcp-tmp:/tmp/mcp        # Writable temp volume
     networks:
@@ -63,8 +63,8 @@ services:
       - "8080:8080"
       - "50051:50051"
     environment:
-      - KUZU_DB_PATH=/database
-      - KUZU_READ_ONLY=${KUZU_READ_ONLY:-false}
+      - LADYBUG_DB_PATH=/database
+      - LADYBUG_READ_ONLY=${LADYBUG_READ_ONLY:-false}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
       - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
       - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
@@ -74,7 +74,7 @@ services:
       - CODON_ENABLED=true
       - CODON_LIB_PATH=/app/codon/lib/
     volumes:
-      - kuzu-data:/database:ro
+      - ladybug-data:/database:ro
       - mcp-logs:/var/log/mcp
       - mcp-tmp:/tmp/mcp
     networks:
@@ -157,7 +157,7 @@ networks:
         - subnet: 172.20.0.0/16
 
 volumes:
-  kuzu-data:
+  ladybug-data:
     driver: local
   kestra-data:
     driver: local

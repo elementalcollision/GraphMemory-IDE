@@ -265,7 +265,7 @@ main() {
     # Set default environment variables
     export JWT_ENABLED="${JWT_ENABLED:-true}"
     export MTLS_ENABLED="${MTLS_ENABLED:-false}"
-    export KUZU_READ_ONLY="${KUZU_READ_ONLY:-false}"
+    export LADYBUG_READ_ONLY="${LADYBUG_READ_ONLY:-false}"
     
     # Generate secure JWT secret if not provided
     if [ -z "$JWT_SECRET_KEY" ]; then
@@ -276,7 +276,7 @@ main() {
     echo "Configuration:"
     echo "  JWT_ENABLED: $JWT_ENABLED"
     echo "  MTLS_ENABLED: $MTLS_ENABLED"
-    echo "  KUZU_READ_ONLY: $KUZU_READ_ONLY"
+    echo "  LADYBUG_READ_ONLY: $LADYBUG_READ_ONLY"
     echo ""
     
     # Execute deployment steps
@@ -321,7 +321,7 @@ case "${1:-deploy}" in
         echo "Environment variables:"
         echo "  MTLS_ENABLED=true     - Enable mTLS"
         echo "  JWT_SECRET_KEY=...    - Set JWT secret"
-        echo "  KUZU_READ_ONLY=true   - Enable read-only mode"
+        echo "  LADYBUG_READ_ONLY=true   - Enable read-only mode"
         ;;
     *)
         echo "Unknown command: $1"
