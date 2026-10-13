@@ -444,20 +444,20 @@ export async function health({ chalk, execSync, fetch }) {
   let output = '';
   output += chalk.cyan('Performing quick health check...') + '\n';
   let mcpOk = false;
-  let kuzuOk = false;
+  let ladybugOk = false;
   try {
     const res = await fetch('http://localhost:8080/health');
     if (res.ok) mcpOk = true;
   } catch (e) {}
   try {
     const ps = execSync('docker ps --format "{{.Names}}"', { encoding: 'utf-8' });
-    if (ps.includes('kuzu')) kuzuOk = true;
+    if (ps.includes('lbug')) ladybugOk = true;
   } catch (e) {}
-  if (mcpOk && kuzuOk) {
+  if (mcpOk && ladybugOk) {
     output += chalk.green('All core services appear healthy.') + '\n';
   } else {
     if (!mcpOk) output += chalk.red('MCP server is not healthy.') + '\n';
-    if (!kuzuOk) output += chalk.red('Kuzu DB container is not running.') + '\n';
+    if (!ladybugOk) output += chalk.red('LadybugDB container is not running.') + '\n';
   }
   return output;
 }

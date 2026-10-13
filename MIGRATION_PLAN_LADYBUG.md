@@ -373,25 +373,27 @@ Every `MetricsCollector()` instantiation (`server/monitoring/metrics.py`) regist
 
 **Verified green against real LadybugDB:** the migrated fixture chain (`ladybug_db`/`ladybug_connection`) works end-to-end; `test_database_integration.py` LadybugDB tests pass (5 passed / 11 PG skips); the in-process suite boots the full FastAPI app with `LadybugDB database initialized at: ./data/ladybug.lbdb`. Follow-up task added: rewrite `tests/test_main.py` mock strategy (see §3.16).
 
-### 3.15 Test-Suite Rehabilitation Backlog (Flagged — out of migration scope)
+### 3.15 Test-Suite Rehabilitation — Phase 9 (operator-approved future phase)
 
-Discovered during Phase 4; recommend a dedicated remediation pass:
+Discovered during Phase 4; promoted to a dedicated future phase on operator direction (2026-10-13):
 1. `tests/test_main.py` — rewrite mock targets from `server.main.conn` (never existed) to the `app.state` architecture (21 tests).
-2. Missing fixtures: `http_client`, `analytics_engine`, `multi_database_setup`, `docker_client`, `performance_data` (32 tests).
-3. `streamlit==1.22.0` pin (constrained by the resolver) lacks `streamlit.testing.v1` — bump when constraints allow.
-4. Live-service-dependent suites (smoke/scenarios/load/cloud) need a service-orchestration layer (docker compose test profile) to be meaningful.
+2. Author the missing fixtures: `http_client`, `analytics_engine`, `multi_database_setup`, `docker_client`, `performance_data` (32 tests).
+3. `streamlit==1.22.0` pin upgrade (resolver-constrained) to a version with `streamlit.testing.v1`.
+4. Service-orchestration layer (docker compose test profile) for the live-service-dependent suites (smoke/scenarios/load/cloud).
 
 ### 3.16 Follow-up task (operator-approved)
 
 `scripts/deploy-secure.sh` syntax repair + `bash -n` CI lint gate — see §3.14.
 
-### Phase 5: CLI Tooling (Day 3)
+### Phase 5: CLI Tooling (Day 3) — ✅ COMPLETED 2026-10-13
 
-| # | Task | Files | Risk | Verification |
-|---|------|-------|------|-------------|
-| 5.1 | Swap CLI binary path: `this.kuzuPath` → `this.lbugPath` (default `'lbug'`), all `_executeKuzuCommand` → `_executeLbugCommand` | `cli/update/database-migrator.mjs` | Medium | CLI runs |
-| 5.2 | Update backup dir paths: `./backups/kuzu` → `./backups/ladybug`, `./temp/kuzu-migration` → `./temp/ladybug-migration` | `cli/update/database-migrator.mjs` | Low | — |
-| 5.3 | Update `cli/commands.mjs` and `cli/index.test.mjs` references | `cli/commands.mjs`, `cli/index.test.mjs` | Low | CLI tests pass |
+| # | Task | Status |
+|---|------|--------|
+| 5.1 | `DatabaseMigrator`: `kuzuPath` → `lbugPath` (default binary `'lbug'`), `_executeKuzuCommand` → `_executeLbugCommand` | ✅ |
+| 5.2 | Backup/temp/data paths: `./backups/ladybug`, `./temp/ladybug-migration`, `./data/ladybug` | ✅ |
+| 5.3 | `cli/commands.mjs` container health checks target the `ladybug` service; `cli/index.test.mjs` mocks/expectations updated (3 message regexes aligned to the new "LadybugDB container…" text) | ✅ |
+
+**Phase 5 verification:** all 3 files parse under `node --check`; live `lbug 0.21.2` CLI confirmed to support `EXPORT DATABASE` / `IMPORT DATABASE` (the migrator's core commands). CLI test suite: **9 failed / 16 passed — identical to the pre-change baseline** (9 failures pre-date the migration: upgrade/diagnostics/edge-case tests; the `ide-plugins/*.ts` vitest failures are also identical pre/post — those TS files aren't configured for the vitest runner). **Zero migration regressions.**
 
 ### Phase 6: Documentation (Day 3)
 

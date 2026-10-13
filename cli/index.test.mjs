@@ -107,7 +107,7 @@ describe('graphmemory CLI commands', () => {
     it('reports all healthy', async () => {
       const deps = makeDeps({
         spawnSync: vi.fn(() => ({ status: 0 })),
-        execSync: vi.fn(() => 'kuzu'),
+        execSync: vi.fn(() => 'lbug'),
         fetch: vi.fn(async (url) => ({ ok: true })),
       });
       const out = await diagnostics(deps);
@@ -118,23 +118,23 @@ describe('graphmemory CLI commands', () => {
   describe('health', () => {
     it('reports unhealthy MCP', async () => {
       const deps = makeDeps({
-        execSync: vi.fn(() => 'kuzu'),
+        execSync: vi.fn(() => 'lbug'),
         fetch: vi.fn(async (url) => ({ ok: false })),
       });
       const out = await health(deps);
       expect(out).toMatch(/mcp server is not healthy/i);
     });
-    it('reports unhealthy Kuzu', async () => {
+    it('reports unhealthy LadybugDB', async () => {
       const deps = makeDeps({
         execSync: vi.fn(() => ''),
         fetch: vi.fn(async (url) => ({ ok: true })),
       });
       const out = await health(deps);
-      expect(out).toMatch(/kuzu db container is not running/i);
+      expect(out).toMatch(/ladybugdb container is not running/i);
     });
     it('reports all healthy', async () => {
       const deps = makeDeps({
-        execSync: vi.fn(() => 'kuzu'),
+        execSync: vi.fn(() => 'lbug'),
         fetch: vi.fn(async (url) => ({ ok: true })),
       });
       const out = await health(deps);
@@ -182,7 +182,7 @@ describe('edge cases', () => {
   it('diagnostics: fetch returns malformed response', async () => {
     const deps = makeDeps({
       spawnSync: vi.fn(() => ({ status: 0 })),
-      execSync: vi.fn(() => 'kuzu'),
+      execSync: vi.fn(() => 'lbug'),
       fetch: vi.fn(async () => ({})),
     });
     const out = await diagnostics(deps);
@@ -200,7 +200,7 @@ describe('edge cases', () => {
   it('diagnostics: spawnSync returns undefined', async () => {
     const deps = makeDeps({
       spawnSync: vi.fn(() => undefined),
-      execSync: vi.fn(() => 'kuzu'),
+      execSync: vi.fn(() => 'lbug'),
       fetch: vi.fn(async () => ({ ok: true })),
     });
     const out = await diagnostics(deps);
@@ -208,7 +208,7 @@ describe('edge cases', () => {
   });
   it('health: fetch throws', async () => {
     const deps = makeDeps({
-      execSync: vi.fn(() => 'kuzu'),
+      execSync: vi.fn(() => 'lbug'),
       fetch: vi.fn(async () => { throw new Error('fail'); }),
     });
     const out = await health(deps);
@@ -220,11 +220,11 @@ describe('edge cases', () => {
       fetch: vi.fn(async () => ({ ok: true })),
     });
     const out = await health(deps);
-    expect(out).toMatch(/kuzu db container is not running/i);
+    expect(out).toMatch(/ladybugdb container is not running/i);
   });
   it('health: fetch returns non-object', async () => {
     const deps = makeDeps({
-      execSync: vi.fn(() => 'kuzu'),
+      execSync: vi.fn(() => 'lbug'),
       fetch: vi.fn(async () => 42),
     });
     const out = await health(deps);
@@ -251,6 +251,6 @@ describe('cover missed lines in health', () => {
       fetch: vi.fn(async () => ({ ok: true })),
     });
     const out = await health(deps);
-    expect(out).toMatch(/kuzu db container is not running/i);
+    expect(out).toMatch(/ladybugdb container is not running/i);
   });
 }); 

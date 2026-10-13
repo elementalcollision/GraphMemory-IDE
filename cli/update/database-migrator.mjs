@@ -5,8 +5,8 @@ import { constants } from 'node:fs';
 import chalk from 'chalk';
 
 /**
- * DatabaseMigrator - Kuzu database migration with backup/restore
- * Implements native Kuzu EXPORT/IMPORT commands for schema migration
+ * DatabaseMigrator - LadybugDB database migration with backup/restore
+ * Implements native LadybugDB EXPORT/IMPORT commands for schema migration
  * Features:
  * - Atomic database export/import operations
  * - Timestamped backups with metadata
@@ -17,10 +17,10 @@ import chalk from 'chalk';
  */
 export class DatabaseMigrator {
   constructor(options = {}) {
-    this.kuzuPath = options.kuzuPath || 'kuzu';
-    this.databasePath = options.databasePath || './data/kuzu';
-    this.backupDir = options.backupDir || './backups/kuzu';
-    this.tempDir = options.tempDir || './temp/kuzu-migration';
+    this.lbugPath = options.lbugPath || 'lbug';
+    this.databasePath = options.databasePath || './data/ladybug';
+    this.backupDir = options.backupDir || './backups/ladybug';
+    this.tempDir = options.tempDir || './temp/ladybug-migration';
     this.timeout = options.timeout || 300000; // 5 minutes
     this.verbose = options.verbose || false;
     this.maxBackups = options.maxBackups || 10;
@@ -46,7 +46,7 @@ export class DatabaseMigrator {
       
       await this._ensureDirectory(backupPath);
       
-      // Export database using Kuzu native command
+      // Export database using LadybugDB native command
       const exportResult = await this._exportDatabase(backupPath, options);
       
       // Create backup metadata
@@ -290,12 +290,12 @@ export class DatabaseMigrator {
   }
 
   /**
-   * Export database using Kuzu native command
+   * Export database using LadybugDB native command
    * @private
    */
   async _exportDatabase(exportPath, options = {}) {
     const exportCmd = [
-      this.kuzuPath,
+      this.lbugPath,
       this.databasePath,
       '-c',
       `EXPORT DATABASE '${exportPath}';`
@@ -303,16 +303,16 @@ export class DatabaseMigrator {
     
     this._log(`Exporting database to: ${exportPath}`);
     
-    return await this._executeKuzuCommand(exportCmd, 'export');
+    return await this._executeLbugCommand(exportCmd, 'export');
   }
 
   /**
-   * Import database using Kuzu native command
+   * Import database using LadybugDB native command
    * @private
    */
   async _importDatabase(importPath) {
     const importCmd = [
-      this.kuzuPath,
+      this.lbugPath,
       this.databasePath,
       '-c',
       `IMPORT DATABASE '${importPath}';`
@@ -320,14 +320,14 @@ export class DatabaseMigrator {
     
     this._log(`Importing database from: ${importPath}`);
     
-    return await this._executeKuzuCommand(importCmd, 'import');
+    return await this._executeLbugCommand(importCmd, 'import');
   }
 
   /**
-   * Execute Kuzu command with timeout and error handling
+   * Execute LadybugDB command with timeout and error handling
    * @private
    */
-  async _executeKuzuCommand(cmd, operation) {
+  async _executeLbugCommand(cmd, operation) {
     return new Promise((resolve, reject) => {
       this._log(`Executing ${operation}: ${cmd.join(' ')}`);
       
