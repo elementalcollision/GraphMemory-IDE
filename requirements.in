@@ -1,7 +1,7 @@
 # Core server
 fastapi
 uvicorn
-kuzu
+ladybug
 
 # Database
 asyncpg
@@ -53,3 +53,16 @@ requests
 # Embeddings for Top-K endpoint
 sentence-transformers
 python-multipart
+
+# SSO and MFA dependencies (previously hand-appended to requirements.txt;
+# declared here so pip-compile regeneration keeps them)
+aioredis
+pyotp
+qrcode[pil]
+PyJWT
+
+# Analytics and visualisation
+plotly
+
+# Real-time WebSocket support (server realtime + test fixtures)
+websockets

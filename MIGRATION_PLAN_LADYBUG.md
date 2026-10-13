@@ -302,15 +302,19 @@ Every `MetricsCollector()` instantiation (`server/monitoring/metrics.py`) regist
 
 **Phase 1 verification:** 28 files compile clean; residual `kuzu` in `server/*.py` = only the intentional deprecated `KUZU_DB_PATH` env fallback in `init_db.py`. Functional verification against live LadybugDB: `GraphDatabaseManager.initialize()` (all 8 schema tables), parameterised INSERT/MATCH via `QueryEngine`, `GraphHealthChecker` (pool/access/schema-integrity healthy), clean close, singleton init — **all passed**. `init_db.py` verified with both `LADYBUG_DB_PATH` and fallback `KUZU_DB_PATH`. Pre-existing `MetricsCollector` duplicate-registration defect flagged (§3.13) — out of migration scope.
 
-### Phase 2: Dependency Manifests (Day 1)
+### Phase 2: Dependency Manifests (Day 1) — ✅ COMPLETED 2026-10-13
 
-| # | Task | Files | Risk | Verification |
-|---|------|-------|------|-------------|
-| 2.1 | `requirements.in`: replace `kuzu` with `ladybug` | `requirements.in:4` | Low | — |
-| 2.2 | `requirements.txt`: regenerate via `pip-compile requirements.in` | `requirements.txt` | Low | `ladybug==0.21.2` present, `kuzu==` absent |
-| 2.3 | `Dockerfile.analytics`: replace `kuzu==0.10.0` with `ladybug==0.21.2` | `docker/production/Dockerfile.analytics:81` | Low | Docker build succeeds |
-| 2.4 | `package.json`: replace keyword `"kuzu"` with `"ladybug"` | `package.json:21` | Trivial | — |
-| 2.5 | `mypy.ini`: update any kuzu-specific ignores/type refs | `mypy.ini` | Trivial | — |
+| # | Task | Files | Status |
+|---|------|-------|--------|
+| 2.1 | `requirements.in`: `kuzu` → `ladybug` | `requirements.in:4` | ✅ |
+| 2.2 | `requirements.txt`: **fully regenerated** via `pip-compile` (operator-approved) | `requirements.txt` | ✅ `ladybug==0.21.2`, `kuzu` absent, full dry-run resolution passes |
+| 2.3 | `Dockerfile.analytics`: `kuzu==0.10.0` → `ladybug==0.21.2` | `docker/production/Dockerfile.analytics:81` | ✅ |
+| 2.4 | `package.json`: keyword `"kuzu"` → `"ladybug"` | `package.json:21` | ✅ |
+| 2.5 | `mypy.ini`: `[mypy-kuzu.*]` → `[mypy-ladybug.*]` | `mypy.ini:113` | ✅ |
+
+**Phase 2 findings/notes:**
+- **Lockfile regenerated under Python 3.12** (Homebrew), not the original 3.13: production Docker images run Python 3.11/3.12, so 3.12 matches deployment; compiling under the local 3.14 failed because the resolver built pandas 2.1.4 from sdist (no cp314 wheel; Cython-0.29 build incompatible with 3.14). The 3.12 lockfile resolves cleanly (full `pip install --dry-run -r requirements.txt` passes).
+- **Pre-existing lockfile hygiene defect exposed:** the old `requirements.txt` had hand-appended dependency blocks (SSO/MFA, visualisation) never declared in `requirements.in`. Regeneration silently dropped them. Codebase-wide import check confirmed 6 are genuinely used — now **properly declared** in `requirements.in`: `aioredis`, `pyotp`, `qrcode[pil]`, `PyJWT`, `plotly`, `websockets`. `email-validator` confirmed unused (correctly dropped). Note: `aioredis` is a deprecated package (superseded by redis.asyncio) — flagged for a future cleanup task, not migration scope.
 
 ### Phase 3: Docker / Infra (Day 2)
 

@@ -78,7 +78,7 @@ RUN --mount=type=cache,target=/tmp/.uv-cache \
     numpy==2.2.6 \
     pandas==2.2.3 \
     scikit-learn==1.6.1 \
-    kuzu==0.10.0 \
+    ladybug==0.21.2 \
     redis==6.2.0 \
     aiosqlite==0.21.0 \
     pydantic==2.11.5 \
