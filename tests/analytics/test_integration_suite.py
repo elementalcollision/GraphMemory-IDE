@@ -9,7 +9,7 @@ import time
 import json
 from typing import Dict, Any, List
 from unittest.mock import Mock, patch
-import kuzu
+import ladybug as lb
 
 # Import analytics components
 from server.analytics.engine import AnalyticsEngine
@@ -29,7 +29,7 @@ class TestAnalyticsIntegration:
     @pytest.fixture
     async def analytics_engine(self) -> None:
         """Create analytics engine for testing"""
-        # Mock Kuzu connection for testing
+        # Mock LadybugDB connection for testing
         mock_conn = Mock()
         mock_conn.execute.return_value = []
         
@@ -424,7 +424,7 @@ class TestErrorHandling:
     async def test_database_connection_error_handling(self, analytics_engine) -> None:
         """Test handling of database connection errors"""
         # Mock database connection failure
-        analytics_engine.kuzu_conn.execute.side_effect = Exception("Database connection failed")
+        analytics_engine.ladybug_conn.execute.side_effect = Exception("Database connection failed")
         
         # Should return empty graph data as fallback
         graph_data = await analytics_engine.get_graph_data()

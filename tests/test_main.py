@@ -276,13 +276,13 @@ def test_topk_with_filters() -> None:
         assert data[0]["node"]["snippet"] == "baz"
 
 def test_ingest_telemetry_readonly(monkeypatch: Any) -> None:
-    monkeypatch.setenv("KUZU_READ_ONLY", "true")
+    monkeypatch.setenv("LADYBUG_READ_ONLY", "true")
     response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
     assert response.status_code == 403
     assert "Read-only mode enabled" in response.text
 
 def test_topk_readonly(monkeypatch: Any) -> None:
-    monkeypatch.setenv("KUZU_READ_ONLY", "true")
+    monkeypatch.setenv("LADYBUG_READ_ONLY", "true")
     payload = {
         "query_text": "find foo",
         "k": 2,
@@ -295,7 +295,7 @@ def test_topk_readonly(monkeypatch: Any) -> None:
     assert "Read-only mode enabled" in response.text
 
 def test_ingest_telemetry_not_readonly(monkeypatch: Any) -> None:
-    monkeypatch.setenv("KUZU_READ_ONLY", "false")
+    monkeypatch.setenv("LADYBUG_READ_ONLY", "false")
     with patch("server.main.conn.execute") as mock_execute:
         mock_execute.return_value = None
         response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
@@ -303,7 +303,7 @@ def test_ingest_telemetry_not_readonly(monkeypatch: Any) -> None:
         assert response.json()["status"] == "ok"
 
 def test_topk_not_readonly(monkeypatch: Any) -> None:
-    monkeypatch.setenv("KUZU_READ_ONLY", "false")
+    monkeypatch.setenv("LADYBUG_READ_ONLY", "false")
     mock_embedding = [0.1] * 384
     mock_embedding_obj = MagicMock()
     mock_embedding_obj.tolist.return_value = mock_embedding

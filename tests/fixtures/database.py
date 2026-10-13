@@ -1,6 +1,6 @@
 """
 Database isolation fixtures for GraphMemory-IDE integration testing.
-Provides isolated test databases for Kuzu, Redis, and SQLite with automatic cleanup.
+Provides isolated test databases for LadybugDB, Redis, and SQLite with automatic cleanup.
 """
 
 import asyncio
@@ -15,11 +15,11 @@ from unittest.mock import patch
 import pytest
 import pytest_asyncio
 import redis.asyncio as redis
-import kuzu
+import ladybug as lb
 
 # Test database configuration
 TEST_DB_CONFIG = {
-    "kuzu": {
+    "ladybug": {
         "timeout": 30,
         "buffer_pool_size": 128 * 1024 * 1024,  # 128MB in bytes
         "max_connections": 10,
@@ -36,23 +36,23 @@ TEST_DB_CONFIG = {
     }
 }
 
-# Database isolation fixtures for Kuzu GraphDB
+# Database isolation fixtures for LadybugDB GraphDB
 @pytest.fixture(scope="function")
-def kuzu_test_db_path(temp_dir: Path) -> Path:
-    """Create a temporary Kuzu database path for testing."""
-    db_path = temp_dir / "test_kuzu_db"
-    db_path.mkdir(parents=True, exist_ok=True)
+def ladybug_test_db_path(temp_dir: Path) -> Path:
+    """Create a temporary LadybugDB database path for testing."""
+    # LadybugDB: single database file inside the existing temp dir
+    db_path = temp_dir / "test_ladybug_db.lbdb"
     return db_path
 
 @pytest.fixture(scope="function")
-def kuzu_test_database(kuzu_test_db_path: Path) -> Generator[kuzu.Database, None, None]:
-    """Create an isolated Kuzu database for testing."""
+def ladybug_test_database(ladybug_test_db_path: Path) -> Generator[lb.Database, None, None]:
+    """Create an isolated LadybugDB database for testing."""
     database = None
     try:
-        # Create Kuzu database with test configuration
-        buffer_size = int(TEST_DB_CONFIG["kuzu"]["buffer_pool_size"])
-        database = kuzu.Database(
-            str(kuzu_test_db_path),
+        # Create LadybugDB database with test configuration
+        buffer_size = int(TEST_DB_CONFIG["ladybug"]["buffer_pool_size"])
+        database = lb.Database(
+            str(ladybug_test_db_path),
             buffer_pool_size=buffer_size
         )
         yield database
@@ -65,18 +65,19 @@ def kuzu_test_database(kuzu_test_db_path: Path) -> Generator[kuzu.Database, None
             pass
         
         # Remove database files
-        if kuzu_test_db_path.exists():
-            shutil.rmtree(kuzu_test_db_path, ignore_errors=True)
+        if ladybug_test_db_path.exists():
+            ladybug_test_db_path.unlink(missing_ok=True)
 
 @pytest.fixture(scope="function")
-def kuzu_test_connection(kuzu_test_database: kuzu.Database) -> Generator[kuzu.Connection, None, None]:
-    """Create a Kuzu connection for testing."""
+def ladybug_test_connection(ladybug_test_database: lb.Database) -> Generator[lb.Connection, None, None]:
+    """Create a LadybugDB connection for testing."""
     connection = None
     try:
-        connection = kuzu.Connection(kuzu_test_database)
+        connection = lb.Connection(ladybug_test_database)
+        connection.init_connection()
         
         # Initialize test schema
-        _initialize_kuzu_test_schema(connection)
+        _initialize_ladybug_test_schema(connection)
         
         yield connection
     finally:
@@ -87,8 +88,8 @@ def kuzu_test_connection(kuzu_test_database: kuzu.Database) -> Generator[kuzu.Co
         except Exception:
             pass
 
-def _initialize_kuzu_test_schema(connection: kuzu.Connection) -> None:
-    """Initialize Kuzu database with test schema."""
+def _initialize_ladybug_test_schema(connection: lb.Connection) -> None:
+    """Initialize LadybugDB database with test schema."""
     try:
         # Create Memory nodes
         connection.execute("""
@@ -139,7 +140,7 @@ def _initialize_kuzu_test_schema(connection: kuzu.Connection) -> None:
         connection.execute("CREATE INDEX IF NOT EXISTS idx_entity_type ON Entity(entity_type)")
         
     except Exception as e:
-        print(f"Warning: Could not initialize Kuzu test schema: {e}")
+        print(f"Warning: Could not initialize LadybugDB test schema: {e}")
 
 # Redis test fixtures
 @pytest_asyncio.fixture(scope="function")
@@ -316,10 +317,10 @@ def _initialize_sqlite_test_schema(connection: sqlite3.Connection) -> None:
 
 # Database configuration override fixtures
 @pytest.fixture(scope="function")
-def mock_database_config(kuzu_test_db_path: Path, redis_test_config: dict, sqlite_test_db_path: Path) -> None:
+def mock_database_config(ladybug_test_db_path: Path, redis_test_config: dict, sqlite_test_db_path: Path) -> None:
     """Override database configuration for testing."""
     test_config = {
-        "KUZU_DB_PATH": str(kuzu_test_db_path),
+        "LADYBUG_DB_PATH": str(ladybug_test_db_path),
         "REDIS_HOST": redis_test_config["host"],
         "REDIS_PORT": str(redis_test_config["port"]),
         "REDIS_DB": str(redis_test_config["db"]),
@@ -332,14 +333,14 @@ def mock_database_config(kuzu_test_db_path: Path, redis_test_config: dict, sqlit
 # Combined database fixture for full integration tests
 @pytest_asyncio.fixture(scope="function")
 async def isolated_databases(
-    kuzu_test_connection: kuzu.Connection,
+    ladybug_test_connection: lb.Connection,
     redis_test_client: redis.Redis,
     sqlite_test_connection: sqlite3.Connection,
     mock_database_config: dict
 ) -> None:
     """Provide all isolated databases for comprehensive integration testing."""
     databases = {
-        "kuzu": kuzu_test_connection,
+        "ladybug": ladybug_test_connection,
         "redis": redis_test_client,
         "sqlite": sqlite_test_connection,
         "config": mock_database_config
@@ -356,13 +357,13 @@ async def check_database_health(isolated_databases) -> Dict[str, Union[bool, str
     """Check health of all test databases."""
     health_status: Dict[str, Union[bool, str]] = {}
     
-    # Check Kuzu
+    # Check LadybugDB
     try:
-        kuzu_conn = isolated_databases["kuzu"]
-        result = kuzu_conn.execute("RETURN 1 AS test")
-        health_status["kuzu"] = True
+        ladybug_conn = isolated_databases["ladybug"]
+        result = ladybug_conn.execute("RETURN 1 AS test")
+        health_status["ladybug"] = True
     except Exception as e:
-        health_status["kuzu"] = f"Error: {e}"
+        health_status["ladybug"] = f"Error: {e}"
     
     # Check Redis
     try:

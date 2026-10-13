@@ -21,7 +21,16 @@ streamlit-echarts
 
 # Testing
 pytest
+pytest-asyncio
+pytest-timeout
 pytest-cov
+httpx-sse
+memory-profiler
+databases
+aiohttp
+aiofiles
+selenium
+asyncio-pool
 
 # Security testing
 docker

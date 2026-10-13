@@ -23,7 +23,7 @@ from tests.utils.test_helpers import ExecutionTimer, MemoryProfiler
 
 # Performance benchmarks from research
 PERFORMANCE_BENCHMARKS = {
-    "kuzu": {
+    "ladybug": {
         "max_query_time": 500,  # ms for complex graph queries
         "max_connection_time": 100,  # ms for connection establishment
         "concurrent_connections": 50,  # simultaneous connections
@@ -332,10 +332,10 @@ class DatabasePerformanceTester:
     async def _perform_database_operation(self, db_type: str, conn: Dict[str, Any]) -> Dict[str, Any]:
         """Perform database-specific operation for testing."""
         try:
-            if db_type == "kuzu":
-                kuzu_conn = conn["connection"]
+            if db_type == "ladybug":
+                ladybug_conn = conn["connection"]
                 # Complex graph query for performance testing
-                result = kuzu_conn.execute("""
+                result = ladybug_conn.execute("""
                     MATCH (u:TestUser)
                     OPTIONAL MATCH (u)-[:TEST_BELONGS_TO]->(m:TestMemory)
                     RETURN u.id as user_id, u.name as user_name, count(m) as memory_count
@@ -375,7 +375,7 @@ class DatabasePerformanceTester:
     
     def _get_query_patterns(self, db_type: str) -> Dict[str, Dict[str, Any]]:
         """Get database-specific query patterns for performance testing."""
-        if db_type == "kuzu":
+        if db_type == "ladybug":
             return {
                 "simple_count": {
                     "iterations": 50,
@@ -426,18 +426,18 @@ class DatabasePerformanceTester:
     async def _execute_query_pattern(self, db_type: str, conn: Dict[str, Any], pattern_name: str, pattern_config: Dict[str, Any]) -> Dict[str, Any]:
         """Execute specific query pattern for performance testing."""
         try:
-            if db_type == "kuzu":
-                kuzu_conn = conn["connection"]
+            if db_type == "ladybug":
+                ladybug_conn = conn["connection"]
                 if pattern_name == "simple_count":
-                    result = kuzu_conn.execute("MATCH (n) RETURN count(n) as total_nodes")
+                    result = ladybug_conn.execute("MATCH (n) RETURN count(n) as total_nodes")
                 elif pattern_name == "complex_join":
-                    result = kuzu_conn.execute("""
+                    result = ladybug_conn.execute("""
                         MATCH (u:TestUser)-[r:TEST_BELONGS_TO]->(m:TestMemory)
                         RETURN u.name, m.type, count(*) as relationship_count
                         ORDER BY relationship_count DESC
                     """)
                 elif pattern_name == "path_traversal":
-                    result = kuzu_conn.execute("""
+                    result = ladybug_conn.execute("""
                         MATCH (u:TestUser)-[:TEST_BELONGS_TO*1..3]->(m:TestMemory)
                         RETURN u.name, collect(m.content) as connected_memories
                     """)
@@ -635,14 +635,14 @@ async def test_database_specific_performance_patterns(multi_database_setup) -> N
         
         try:
             # Test specific performance pattern
-            if pool_type == "kuzu":
+            if pool_type == "ladybug":
                 # Test graph traversal performance
                 start_time = time.time()
                 result = await DatabasePerformanceTester(pool_manager, performance_monitor)._perform_database_operation(pool_type, conn)
                 execution_time = (time.time() - start_time) * 1000
                 
-                assert result["success"], f"Kuzu operation failed: {result.get('error')}"
-                assert execution_time < benchmark["max_query_time"], f"Kuzu query took {execution_time:.1f}ms, expected < {benchmark['max_query_time']}ms"
+                assert result["success"], f"LadybugDB operation failed: {result.get('error')}"
+                assert execution_time < benchmark["max_query_time"], f"LadybugDB query took {execution_time:.1f}ms, expected < {benchmark['max_query_time']}ms"
                 
             elif pool_type == "redis":
                 # Test Redis pipeline performance

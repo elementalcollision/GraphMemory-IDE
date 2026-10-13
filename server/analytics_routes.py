@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List, Union
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Depends, Query, Body, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
-import ladybug
+import ladybug as lb
 import redis.asyncio as redis
 
 from .analytics.models import (

@@ -1,7 +1,7 @@
 """
 Integration Tests for Multi-Database System
 
-Tests the integration between PostgreSQL, Kuzu graph database, and synchronization:
+Tests the integration between PostgreSQL, LadybugDB graph database, and synchronization:
 - Database connectivity and health checks
 - Schema creation and validation
 - Data synchronization between systems
@@ -31,6 +31,15 @@ from tests.fixtures.database_fixtures import (
 
 logger = logging.getLogger(__name__)
 
+# LadybugDB availability checked at import time — the old code read
+# `pytest.ladybug_available` at class definition, which runs BEFORE
+# pytest_configure() could set it (pre-existing AttributeError; fixed).
+try:
+    import ladybug as lb  # noqa: F401
+    LADYBUG_AVAILABLE = True
+except ImportError:
+    LADYBUG_AVAILABLE = False
+
 @pytest.mark.asyncio
 class TestDatabaseIntegration:
     """Integration tests for multi-database system"""
@@ -53,7 +62,7 @@ class TestDatabaseIntegration:
         # Check if all required tables exist
         expected_tables = [
             'users', 'user_sessions', 'telemetry_events',
-            'analytics_queries', 'kuzu_queries', 'collaboration_sessions',
+            'analytics_queries', 'ladybug_queries', 'collaboration_sessions',
             'collaboration_participants', 'system_metrics', 'api_request_logs'
         ]
         
@@ -91,9 +100,9 @@ class TestDatabaseIntegration:
         
         logger.info(f"Found {index_count} indexes in PostgreSQL")
     
-    @pytest.mark.skipif(not pytest.kuzu_available, reason="Kuzu not available")
-    async def test_kuzu_connectivity(self) -> None:
-        """Test Kuzu graph database connectivity"""
+    @pytest.mark.skipif(not LADYBUG_AVAILABLE, reason="LadybugDB not available")
+    async def test_ladybug_connectivity(self) -> None:
+        """Test LadybugDB graph database connectivity"""
         try:
             from server.graph_database import get_graph_database
             
@@ -105,14 +114,14 @@ class TestDatabaseIntegration:
             result = graph_db.query_engine.execute_query("MATCH (n) RETURN count(n) as node_count")
             assert result.success
             
-            logger.info("Kuzu graph database connected successfully")
+            logger.info("LadybugDB graph database connected successfully")
             
         except ImportError:
-            pytest.skip("Kuzu dependencies not available")
+            pytest.skip("LadybugDB dependencies not available")
     
-    @pytest.mark.skipif(not pytest.kuzu_available, reason="Kuzu not available")
-    async def test_kuzu_schema_creation(self) -> None:
-        """Test Kuzu graph database schema creation"""
+    @pytest.mark.skipif(not LADYBUG_AVAILABLE, reason="LadybugDB not available")
+    async def test_ladybug_schema_creation(self) -> None:
+        """Test LadybugDB graph database schema creation"""
         try:
             from server.graph_database import get_graph_database
             
@@ -132,10 +141,10 @@ class TestDatabaseIntegration:
             missing_tables = expected_tables - found_tables
             assert len(missing_tables) == 0, f"Missing tables: {missing_tables}"
             
-            logger.info("Kuzu schema validation passed")
+            logger.info("LadybugDB schema validation passed")
             
         except ImportError:
-            pytest.skip("Kuzu dependencies not available")
+            pytest.skip("LadybugDB dependencies not available")
     
     async def test_data_insertion_postgresql(self, async_session: AsyncSession, sample_users: List[Dict]) -> None:
         """Test data insertion into PostgreSQL"""
@@ -156,9 +165,9 @@ class TestDatabaseIntegration:
         
         logger.info(f"Inserted {len(sample_users)} users into PostgreSQL")
     
-    @pytest.mark.skipif(not pytest.kuzu_available, reason="Kuzu not available")
-    async def test_data_insertion_kuzu(self) -> None:
-        """Test data insertion into Kuzu graph database"""
+    @pytest.mark.skipif(not LADYBUG_AVAILABLE, reason="LadybugDB not available")
+    async def test_data_insertion_ladybug(self) -> None:
+        """Test data insertion into LadybugDB graph database"""
         try:
             from server.graph_database import get_graph_database
             
@@ -190,14 +199,14 @@ class TestDatabaseIntegration:
             assert verify_result.success
             assert verify_result.row_count == 1
             
-            logger.info("Successfully inserted and verified user in Kuzu")
+            logger.info("Successfully inserted and verified user in LadybugDB")
             
         except ImportError:
-            pytest.skip("Kuzu dependencies not available")
+            pytest.skip("LadybugDB dependencies not available")
     
-    @pytest.mark.skipif(not pytest.kuzu_available, reason="Kuzu not available")
+    @pytest.mark.skipif(not LADYBUG_AVAILABLE, reason="LadybugDB not available")
     async def test_database_synchronization(self, async_session: AsyncSession) -> None:
-        """Test data synchronization between PostgreSQL and Kuzu"""
+        """Test data synchronization between PostgreSQL and LadybugDB"""
         try:
             from server.database_sync import get_database_synchronizer
             from server.database_models import User
@@ -224,7 +233,7 @@ class TestDatabaseIntegration:
             # Wait for sync to process
             await asyncio.sleep(2)
             
-            # Check if user was synced to Kuzu
+            # Check if user was synced to LadybugDB
             from server.graph_database import get_graph_database
             graph_db = await get_graph_database()
             
@@ -518,9 +527,9 @@ class TestDatabaseHealth:
         
         logger.info(f"PostgreSQL health check passed: {table_count} tables, {connection_count} connections")
     
-    @pytest.mark.skipif(not pytest.kuzu_available, reason="Kuzu not available")
-    async def test_kuzu_health_check(self) -> None:
-        """Test Kuzu graph database health check"""
+    @pytest.mark.skipif(not LADYBUG_AVAILABLE, reason="LadybugDB not available")
+    async def test_ladybug_health_check(self) -> None:
+        """Test LadybugDB graph database health check"""
         try:
             from server.graph_database import get_graph_database
             
@@ -537,10 +546,10 @@ class TestDatabaseHealth:
             for check_name, check_result in health_status["checks"].items():
                 assert check_result["healthy"], f"Health check failed: {check_name}"
             
-            logger.info("Kuzu health check passed")
+            logger.info("LadybugDB health check passed")
             
         except ImportError:
-            pytest.skip("Kuzu dependencies not available")
+            pytest.skip("LadybugDB dependencies not available")
     
     async def test_system_resource_monitoring(self) -> None:
         """Test system resource monitoring capabilities"""
@@ -572,12 +581,12 @@ class TestDatabaseHealth:
 # Pytest configuration and fixtures
 def pytest_configure(config) -> None:
     """Configure pytest for database integration tests"""
-    # Check if Kuzu is available
+    # Check if LadybugDB is available
     try:
-        import kuzu
-        pytest.kuzu_available = True
+        import ladybug as lb
+        pytest.ladybug_available = LADYBUG_AVAILABLE
     except ImportError:
-        pytest.kuzu_available = False
+        pytest.ladybug_available = False
     
     # Set up logging
     logging.basicConfig(

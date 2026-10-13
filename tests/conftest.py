@@ -11,7 +11,7 @@ Based on industry best practices from:
 
 Features:
 - Function-level fixture scoping for maximum test isolation
-- Real database testing with Kuzu integration
+- Real database testing with LadybugDB integration
 - DigitalOcean cloud testing support
 - Performance-optimized async patterns
 - Realistic data factories for testing
@@ -25,7 +25,7 @@ from typing import AsyncGenerator, Dict, Any, Optional, Generator
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-import kuzu
+import ladybug as lb
 
 # Add project root to Python path for imports
 project_root = Path(__file__).parent.parent
@@ -44,42 +44,47 @@ from server.analytics.models import (
 )
 
 # Test database configuration
-TEST_DATABASE_PATH = os.getenv("TEST_KUZU_DB_PATH", "./test_data")
+# LadybugDB stores a single database FILE; only its parent dir must exist
+TEST_DATABASE_PATH = os.getenv("TEST_LADYBUG_DB_PATH", "./test_data/ladybug_test.lbdb")
 CLOUD_TEST_ENABLED = os.getenv("CLOUD_TEST_ENABLED", "false").lower() == "true"
 DIGITALOCEAN_TEST_ENDPOINT = os.getenv("DIGITALOCEAN_TEST_ENDPOINT")
 
 
 @pytest_asyncio.fixture(scope="function")
-async def kuzu_db() -> AsyncGenerator[kuzu.Database, None]:
+async def ladybug_db() -> AsyncGenerator[lb.Database, None]:
     """
-    Create Kuzu database instance with function-level scoping.
+    Create LadybugDB database instance with function-level scoping.
     
     Based on best practices for test isolation.
     Each test gets a fresh database that's cleaned up after.
     """
-    # Ensure test directory exists
-    os.makedirs(TEST_DATABASE_PATH, exist_ok=True)
+    # Ensure the parent directory of the database file exists
+    os.makedirs(os.path.dirname(TEST_DATABASE_PATH) or ".", exist_ok=True)
     
     # Create database
-    db = kuzu.Database(TEST_DATABASE_PATH)
+    db = lb.Database(TEST_DATABASE_PATH)
     
     yield db
     
-    # Cleanup - remove test database files
+    # Cleanup - remove test database file and its directory
     db.close()
     import shutil
-    if os.path.exists(TEST_DATABASE_PATH):
-        shutil.rmtree(TEST_DATABASE_PATH, ignore_errors=True)
+    from pathlib import Path as _P
+    _P(TEST_DATABASE_PATH).unlink(missing_ok=True)
+    test_dir = _P(TEST_DATABASE_PATH).parent
+    if test_dir.exists():
+        shutil.rmtree(test_dir, ignore_errors=True)
 
 
 @pytest_asyncio.fixture(scope="function")
-async def kuzu_connection(kuzu_db: kuzu.Database) -> AsyncGenerator[kuzu.Connection, None]:
+async def ladybug_connection(ladybug_db: lb.Database) -> AsyncGenerator[lb.Connection, None]:
     """
-    Provide Kuzu database connection.
+    Provide LadybugDB database connection.
     
     Creates connection to test database with proper cleanup.
     """
-    conn = kuzu.Connection(kuzu_db)
+    conn = lb.Connection(ladybug_db)
+    conn.init_connection()
     
     # Initialize basic schema for testing
     try:
@@ -101,7 +106,7 @@ async def kuzu_connection(kuzu_db: kuzu.Database) -> AsyncGenerator[kuzu.Connect
 
 
 @pytest_asyncio.fixture(scope="function") 
-async def async_client(kuzu_connection: kuzu.Connection) -> AsyncGenerator[AsyncClient, None]:
+async def async_client(ladybug_connection: lb.Connection) -> AsyncGenerator[AsyncClient, None]:
     """
     Provide FastAPI test client with database override.
     
@@ -109,8 +114,8 @@ async def async_client(kuzu_connection: kuzu.Connection) -> AsyncGenerator[Async
     Uses HTTPX AsyncClient for authentic async testing.
     """
     # Override the database connection in the app
-    original_conn = getattr(app.state, 'kuzu_connection', None)
-    app.state.kuzu_connection = kuzu_connection
+    original_conn = getattr(app.state, 'ladybug_connection', None)
+    app.state.ladybug_connection = ladybug_connection
     
     # Create async client with ASGI transport
     async with AsyncClient(
@@ -121,11 +126,11 @@ async def async_client(kuzu_connection: kuzu.Connection) -> AsyncGenerator[Async
     
     # Restore original connection
     if original_conn:
-        app.state.kuzu_connection = original_conn
+        app.state.ladybug_connection = original_conn
 
 
 @pytest_asyncio.fixture(scope="function")
-async def sample_memory_data(kuzu_connection: kuzu.Connection) -> Dict[str, Any]:
+async def sample_memory_data(ladybug_connection: lb.Connection) -> Dict[str, Any]:
     """
     Create sample memory data for testing.
     
@@ -155,7 +160,7 @@ async def sample_memory_data(kuzu_connection: kuzu.Connection) -> Dict[str, Any]
     
     # Insert nodes
     for node in sample_nodes:
-        kuzu_connection.execute(
+        ladybug_connection.execute(
             "CREATE (n:MemoryNode {id: $id, type: $type, content: $content, metadata: $metadata})",
             node
         )
@@ -177,7 +182,7 @@ async def sample_memory_data(kuzu_connection: kuzu.Connection) -> Dict[str, Any]
     ]
     
     for rel in relationships:
-        kuzu_connection.execute(
+        ladybug_connection.execute(
             "MATCH (a:MemoryNode {id: $from_id}), (b:MemoryNode {id: $to_id}) CREATE (a)-[:RELATES {strength: $strength, relation_type: $relation_type}]->(b)",
             rel
         )
@@ -258,21 +263,21 @@ async def performance_tracker() -> PerformanceTracker:
 
 
 # Database health check utilities  
-async def check_kuzu_health(connection: kuzu.Connection) -> bool:
-    """Check if Kuzu database is accessible and responsive."""
+async def check_ladybug_health(connection: lb.Connection) -> bool:
+    """Check if LadybugDB database is accessible and responsive."""
     try:
         result = connection.execute("RETURN 1 AS test")
-        # Kuzu returns a QueryResult object, check if we got results
+        # LadybugDB returns a QueryResult object, check if we got results
         return result is not None and len(list(result)) > 0
     except Exception:
         return False
 
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
-async def ensure_database_health(kuzu_connection: kuzu.Connection) -> None:
+async def ensure_database_health(ladybug_connection: lb.Connection) -> None:
     """Ensure database is healthy before each test."""
-    if not await check_kuzu_health(kuzu_connection):
-        pytest.fail("Kuzu database health check failed")
+    if not await check_ladybug_health(ladybug_connection):
+        pytest.fail("LadybugDB database health check failed")
 
 
 # Realistic data factories based on research patterns
@@ -281,14 +286,14 @@ class ProjectDataFactory:
     
     @staticmethod
     def create_realistic_dataset(
-        connection: kuzu.Connection,
+        connection: lb.Connection,
         size: str = "small"
     ) -> Dict[str, Any]:
         """
         Create realistic project dataset for testing.
         
         Args:
-            connection: Kuzu database connection
+            connection: LadybugDB database connection
             size: Dataset size - "small", "medium", "large", "enterprise"
         
         Returns:

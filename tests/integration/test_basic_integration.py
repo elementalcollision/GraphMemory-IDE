@@ -116,7 +116,7 @@ def test_database_isolation(isolated_databases, check_database_health) -> None:
     health_status = check_database_health
     
     for db_name, status in health_status.items():
-        if db_name in ["kuzu", "redis", "sqlite"]:
+        if db_name in ["ladybug", "redis", "sqlite"]:
             assert status is True or isinstance(status, str)  # True or error message
 
 

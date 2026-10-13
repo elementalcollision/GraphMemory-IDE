@@ -16,15 +16,19 @@ from datetime import datetime, timezone
 # Add parent directories to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import ladybug
+import ladybug as lb
 
-# Import analytics engine components
-from analytics.engine import AnalyticsEngine
-from analytics.models import (
+# Import analytics engine components.
+# NOTE: previously imported as top-level `analytics.*` via a sys.path hack,
+# which loaded this package twice (server.analytics.* AND analytics.*) and
+# double-registered its module-level prometheus collectors — crashing any
+# process that imported both paths. Import the canonical package instead.
+from server.analytics.engine import AnalyticsEngine
+from server.analytics.models import (
     AnalyticsRequest, AnalyticsType, GraphMetrics,
     CentralityRequest, CentralityType
 )
-from analytics.performance_monitor import performance_monitor
+from server.analytics.performance_monitor import performance_monitor
 
 logger = logging.getLogger(__name__)
 
