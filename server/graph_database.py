@@ -1,7 +1,7 @@
 """
 Graph Database Integration Module
 
-Provides production-ready integration with Kuzu graph database including:
+Provides production-ready integration with LadybugDB graph database including:
 - Connection management with pooling
 - Schema initialization and validation
 - Graph data operations
@@ -21,10 +21,10 @@ import threading
 from datetime import datetime, timezone
 
 try:
-    import kuzu
+    import ladybug as lb
 except ImportError:
-    kuzu = None
-    logging.warning("Kuzu not installed. Graph database features disabled.")
+    lb = None
+    logging.warning("LadybugDB not installed. Graph database features disabled.")
 
 from server.core.config import get_settings
 from server.monitoring.metrics import MetricsCollector
@@ -33,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class GraphDatabaseConfig:
-    """Configuration for Kuzu graph database"""
-    database_path: str = "./data/kuzu_graph"
+    """Configuration for LadybugDB graph database"""
+    database_path: str = "./data/ladybug_graph.lbdb"
     buffer_pool_size: int = 1024 * 1024 * 1024  # 1GB
     max_num_threads: int = 8
     compression: bool = True
@@ -55,13 +55,13 @@ class GraphQueryResult:
     row_count: int = 0
     
 class GraphConnectionPool:
-    """Thread-safe connection pool for Kuzu database"""
+    """Thread-safe connection pool for LadybugDB database"""
     
-    def __init__(self, database: 'kuzu.Database', config: GraphDatabaseConfig) -> None:
+    def __init__(self, database: 'lb.Database', config: GraphDatabaseConfig) -> None:
         self.database = database
         self.config = config
-        self._connections: List['kuzu.Connection'] = []
-        self._available_connections: List['kuzu.Connection'] = []
+        self._connections: List['lb.Connection'] = []
+        self._available_connections: List['lb.Connection'] = []
         self._lock = threading.Lock()
         self._metrics = MetricsCollector()
         self._initialize_pool()
@@ -72,7 +72,11 @@ class GraphConnectionPool:
         
         for i in range(self.config.connection_pool_size):
             try:
-                conn = kuzu.Connection(self.database, num_threads=2)
+                # LadybugDB: Connection(db, num_threads=N) is not supported.
+                # Use Connection(db) + init_connection() + set_max_threads_for_exec(N).
+                conn = lb.Connection(self.database)
+                conn.init_connection()
+                conn.set_max_threads_for_exec(2)
                 self._connections.append(conn)
                 self._available_connections.append(conn)
                 logger.debug(f"Created graph connection {i+1}/{self.config.connection_pool_size}")
@@ -240,13 +244,20 @@ class GraphSchemaManager:
             return False
     
     def _create_indexes(self) -> None:
-        """Create indexes for better query performance"""
-        index_queries = [
-            "CREATE INDEX IF NOT EXISTS user_email_idx ON User(email)",
-            "CREATE INDEX IF NOT EXISTS project_owner_idx ON Project(owner_id)",
-            "CREATE INDEX IF NOT EXISTS memory_type_idx ON Memory(memory_type)",
-            "CREATE INDEX IF NOT EXISTS memory_source_idx ON Memory(source_table, source_id)",
-        ]
+        """Create indexes for better query performance.
+
+        LadybugDB 0.21.x notes (LadybugDB -> LadybugDB migration):
+        - HASH/ART indexes are only supported on PRIMARY KEYS, and a PK hash
+          index is created automatically on every node table
+          (`enable_default_hash_index=true` by default), so no manual PK
+          indexes are needed.
+        - Secondary-property indexes (e.g. on User(email)) are NOT supported.
+          LadybugDB maintains automatic zone maps (min/max pruning) on all
+          columns, which serve the same filter workloads.
+        - Index DDL (if ever needed) is now:
+          CREATE INDEX <name> FOR (<alias>:<Table>) ON (<alias>.<property>)
+        """
+        index_queries: List[str] = []
         
         try:
             with self.connection_pool.get_connection() as conn:
@@ -445,7 +456,7 @@ class GraphDatabaseManager:
     
     def __init__(self, config: Optional[GraphDatabaseConfig] = None) -> None:
         self.config = config or GraphDatabaseConfig()
-        self.database: Optional['kuzu.Database'] = None
+        self.database: Optional['lb.Database'] = None
         self.connection_pool: Optional[GraphConnectionPool] = None
         self.schema_manager: Optional[GraphSchemaManager] = None
         self.query_engine: Optional[GraphQueryEngine] = None
@@ -455,8 +466,8 @@ class GraphDatabaseManager:
     
     async def initialize(self) -> bool:
         """Initialize graph database manager"""
-        if kuzu is None:
-            logger.error("Kuzu not available. Cannot initialize graph database.")
+        if lb is None:
+            logger.error("LadybugDB not available. Cannot initialize graph database.")
             return False
         
         try:
@@ -467,7 +478,7 @@ class GraphDatabaseManager:
             db_path.parent.mkdir(parents=True, exist_ok=True)
             
             # Initialize database
-            self.database = kuzu.Database(
+            self.database = lb.Database(
                 database_path=str(db_path),
                 buffer_pool_size=self.config.buffer_pool_size,
                 max_num_threads=self.config.max_num_threads,
@@ -527,7 +538,7 @@ async def get_graph_database() -> GraphDatabaseManager:
     if _graph_db_manager is None:
         settings = get_settings()
         config = GraphDatabaseConfig(
-            database_path=getattr(settings, 'GRAPH_DATABASE_PATH', './data/kuzu_graph'),
+            database_path=getattr(settings, 'GRAPH_DATABASE_PATH', './data/ladybug_graph'),
             buffer_pool_size=getattr(settings, 'GRAPH_BUFFER_POOL_SIZE', 1024*1024*1024),
             max_num_threads=getattr(settings, 'GRAPH_MAX_THREADS', 8),
             connection_pool_size=getattr(settings, 'GRAPH_CONNECTION_POOL_SIZE', 10),

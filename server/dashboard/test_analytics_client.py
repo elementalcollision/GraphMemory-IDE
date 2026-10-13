@@ -44,7 +44,7 @@ class TestAnalyticsEngineClient:
             pass
     
     def test_client_initialization(self) -> None:
-        """Test client initialization without Kuzu connection"""
+        """Test client initialization without LadybugDB connection"""
         assert self.client is not None
         assert not self.client.initialized
         assert not self.client._connection_healthy

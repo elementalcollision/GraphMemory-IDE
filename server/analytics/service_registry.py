@@ -19,7 +19,7 @@ class ServiceType(str, Enum):
     """Types of analytics services"""
     ANALYTICS_ENGINE = "analytics_engine"
     STREAMING_ANALYTICS = "streaming_analytics"
-    KUZU_DATABASE = "kuzu_database"
+    LADYBUG_DATABASE = "ladybug_database"
     REDIS_CACHE = "redis_cache"
     DRAGONFLY_STREAM = "dragonfly_stream"
     DASHBOARD_API = "dashboard_api"
@@ -501,16 +501,16 @@ async def _register_core_services(registry: AnalyticsServiceRegistry) -> None:
             service_type=ServiceType.ANALYTICS_ENGINE,
             endpoint_url="http://localhost:8000/analytics",
             health_check_url="http://localhost:8000/analytics/health",
-            dependencies=["kuzu_database", "redis_cache"],
+            dependencies=["ladybug_database", "redis_cache"],
             capabilities=["query_analytics", "graph_analytics", "temporal_analytics"],
             tags=["analytics", "core"]
         )
         
-        # Register Kuzu Database
+        # Register LadybugDB Database
         await registry.register_service(
-            service_id="kuzu_database",
-            service_name="Kuzu GraphDB",
-            service_type=ServiceType.KUZU_DATABASE,
+            service_id="ladybug_database",
+            service_name="LadybugDB",
+            service_type=ServiceType.LADYBUG_DATABASE,
             endpoint_url="http://localhost:8080",
             capabilities=["graph_storage", "cypher_queries", "graph_analytics"],
             tags=["database", "graph"]

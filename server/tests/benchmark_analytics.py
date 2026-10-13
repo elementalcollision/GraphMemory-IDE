@@ -23,7 +23,7 @@ try:
 except ImportError:
     PSUTIL_AVAILABLE = False
 
-from server.analytics.kuzu_analytics import KuzuAnalyticsEngine, GraphAnalyticsType
+from server.analytics.ladybug_analytics import LadybugAnalyticsEngine, GraphAnalyticsType
 from server.analytics.gateway import AnalyticsGateway
 from server.analytics.service_registry import AnalyticsServiceRegistry, ServiceEndpoint, ServiceType, ServiceHealth
 
@@ -54,7 +54,7 @@ class AnalyticsBenchmark:
         self.results: List[BenchmarkResult] = []
         # Properly type these attributes as Optional initially
         self.mock_connection: Optional[Mock] = None
-        self.analytics_engine: Optional[KuzuAnalyticsEngine] = None
+        self.analytics_engine: Optional[LadybugAnalyticsEngine] = None
         self.gateway: Optional[AnalyticsGateway] = None
         self.service_registry: Optional[AnalyticsServiceRegistry] = None
     
@@ -62,7 +62,7 @@ class AnalyticsBenchmark:
         """Setup benchmark environment"""
         print("Setting up benchmark environment...")
         
-        # Setup mock Kuzu connection
+        # Setup mock LadybugDB connection
         self.mock_connection = Mock()
         mock_result = Mock()
         mock_result.get_column_names.return_value = ["entity_id", "score"]
@@ -71,7 +71,7 @@ class AnalyticsBenchmark:
         self.mock_connection.execute.return_value = mock_result
         
         # Setup analytics engine
-        self.analytics_engine = KuzuAnalyticsEngine(self.mock_connection)
+        self.analytics_engine = LadybugAnalyticsEngine(self.mock_connection)
         
         # Setup service registry
         self.service_registry = AnalyticsServiceRegistry()

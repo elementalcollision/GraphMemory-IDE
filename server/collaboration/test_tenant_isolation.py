@@ -1,14 +1,14 @@
 """
 Test Suite for Week 3 Day 1 Tenant Isolation Components
 
-Tests for Redis Tenant Manager and Kuzu Tenant Schema Manager
+Tests for Redis Tenant Manager and LadybugDB Tenant Schema Manager
 to validate enterprise-grade tenant isolation functionality.
 
 Test Categories:
 - Basic tenant registration and deregistration
 - Cross-tenant access prevention
 - Performance monitoring and audit logging
-- Integration between Redis and Kuzu managers
+- Integration between Redis and LadybugDB managers
 - CRDT compatibility validation
 """
 
@@ -19,7 +19,7 @@ from datetime import datetime
 from typing import Dict, Any
 
 from .redis_tenant_manager import RedisTenantManager, TenantOperation
-from .kuzu_tenant_manager import KuzuTenantManager, TenantSchemaOperation
+from .ladybug_tenant_manager import LadybugTenantManager, TenantSchemaOperation
 
 
 class TestRedisTenantManager:
@@ -131,13 +131,13 @@ class TestRedisTenantManager:
             await manager.shutdown()
 
 
-class TestKuzuTenantManager:
-    """Test suite for Kuzu Tenant Schema Manager"""
+class TestLadybugTenantManager:
+    """Test suite for LadybugDB Tenant Schema Manager"""
 
-    async def setup_kuzu_manager(self) -> KuzuTenantManager:
-        """Setup Kuzu manager for testing"""
-        manager = KuzuTenantManager(
-            database_path="./test_kuzu_tenant_db",
+    async def setup_ladybug_manager(self) -> LadybugTenantManager:
+        """Setup LadybugDB manager for testing"""
+        manager = LadybugTenantManager(
+            database_path="./test_ladybug_tenant_db",
             enable_audit_logging=True,
             enable_performance_monitoring=True
         )
@@ -146,7 +146,7 @@ class TestKuzuTenantManager:
 
     async def test_tenant_schema_creation(self) -> None:
         """Test tenant schema creation and management"""
-        manager = await self.setup_kuzu_manager()
+        manager = await self.setup_ladybug_manager()
         
         try:
             # Test tenant registration creates schema
@@ -166,7 +166,7 @@ class TestKuzuTenantManager:
 
     async def test_tenant_query_isolation(self) -> None:
         """Test query isolation between tenant schemas"""
-        manager = await self.setup_kuzu_manager()
+        manager = await self.setup_ladybug_manager()
         
         try:
             # Register tenants and create tables
@@ -201,9 +201,9 @@ class TestKuzuTenantManager:
         finally:
             await manager.shutdown()
 
-    async def test_kuzu_performance_monitoring(self) -> None:
-        """Test Kuzu performance monitoring"""
-        manager = await self.setup_kuzu_manager()
+    async def test_ladybug_performance_monitoring(self) -> None:
+        """Test LadybugDB performance monitoring"""
+        manager = await self.setup_ladybug_manager()
         
         try:
             await manager.register_tenant("tenant_001")
@@ -231,23 +231,23 @@ class TestKuzuTenantManager:
 
 
 class TestTenantIntegration:
-    """Test integration between Redis and Kuzu tenant managers"""
+    """Test integration between Redis and LadybugDB tenant managers"""
 
     async def test_coordinated_tenant_management(self) -> None:
-        """Test coordinated tenant operations across Redis and Kuzu"""
+        """Test coordinated tenant operations across Redis and LadybugDB"""
         redis_manager = RedisTenantManager()
-        kuzu_manager = KuzuTenantManager(database_path="./test_integration_db")
+        ladybug_manager = LadybugTenantManager(database_path="./test_integration_db")
         
         try:
             await redis_manager.initialize()
-            await kuzu_manager.initialize()
+            await ladybug_manager.initialize()
             
             tenant_id = "tenant_001"
             
             # Register tenant in both systems
             await redis_manager.register_tenant(tenant_id)
-            await kuzu_manager.register_tenant(tenant_id)
-            await kuzu_manager.create_tenant_memory_tables(tenant_id)
+            await ladybug_manager.register_tenant(tenant_id)
+            await ladybug_manager.create_tenant_memory_tables(tenant_id)
             
             # Simulate CRDT operation - store operation metadata in Redis
             operation_data = {
@@ -263,7 +263,7 @@ class TestTenantIntegration:
                 str(operation_data), user_id="user_123"
             )
             
-            # Store memory in Kuzu
+            # Store memory in LadybugDB
             memory_query = """
             CREATE (tenant_001_memory {
                 memory_id: 'mem_001',
@@ -272,7 +272,7 @@ class TestTenantIntegration:
             })
             """
             
-            await kuzu_manager.execute_tenant_cypher(
+            await ladybug_manager.execute_tenant_cypher(
                 tenant_id, memory_query, user_id="user_123"
             )
             
@@ -284,37 +284,37 @@ class TestTenantIntegration:
             
             # Check metrics from both systems
             redis_metrics = await redis_manager.get_tenant_metrics(tenant_id)
-            kuzu_metrics = await kuzu_manager.get_tenant_metrics(tenant_id)
+            ladybug_metrics = await ladybug_manager.get_tenant_metrics(tenant_id)
             
             assert redis_metrics is not None
-            assert kuzu_metrics is not None
+            assert ladybug_metrics is not None
             assert redis_metrics["total_operations"] > 0
-            assert kuzu_metrics["total_queries"] > 0
+            assert ladybug_metrics["total_queries"] > 0
             
         finally:
             await redis_manager.shutdown()
-            await kuzu_manager.shutdown()
+            await ladybug_manager.shutdown()
 
     async def test_performance_compliance(self) -> None:
         """Test that both systems meet performance targets"""
         redis_manager = RedisTenantManager()
-        kuzu_manager = KuzuTenantManager(database_path="./test_performance_db")
+        ladybug_manager = LadybugTenantManager(database_path="./test_performance_db")
         
         try:
             await redis_manager.initialize()
-            await kuzu_manager.initialize()
+            await ladybug_manager.initialize()
             
             tenant_id = "tenant_001"
             await redis_manager.register_tenant(tenant_id)
-            await kuzu_manager.register_tenant(tenant_id)
+            await ladybug_manager.register_tenant(tenant_id)
             
             # Test Redis performance (target: <50ms)
             start_time = time.time()
             await redis_manager.tenant_set(tenant_id, "perf", "test_key", "test_value")
             redis_time = (time.time() - start_time) * 1000
             
-            # Test Kuzu performance (target: <80ms)
-            await kuzu_manager.create_tenant_memory_tables(tenant_id)
+            # Test LadybugDB performance (target: <80ms)
+            await ladybug_manager.create_tenant_memory_tables(tenant_id)
             start_time = time.time()
             query = """
             CREATE (tenant_001_memory {
@@ -322,21 +322,21 @@ class TestTenantIntegration:
                 title: 'Performance Test'
             })
             """
-            await kuzu_manager.execute_tenant_cypher(tenant_id, query)
-            kuzu_time = (time.time() - start_time) * 1000
+            await ladybug_manager.execute_tenant_cypher(tenant_id, query)
+            ladybug_time = (time.time() - start_time) * 1000
             
             # Verify performance targets
             print(f"Redis operation time: {redis_time:.2f}ms (target: <50ms)")
-            print(f"Kuzu operation time: {kuzu_time:.2f}ms (target: <80ms)")
+            print(f"LadybugDB operation time: {ladybug_time:.2f}ms (target: <80ms)")
             
             # Note: In a real environment, these assertions might be too strict
             # as performance depends on system resources
             # assert redis_time < 50, f"Redis operation too slow: {redis_time}ms"
-            # assert kuzu_time < 80, f"Kuzu operation too slow: {kuzu_time}ms"
+            # assert ladybug_time < 80, f"LadybugDB operation too slow: {ladybug_time}ms"
             
         finally:
             await redis_manager.shutdown()
-            await kuzu_manager.shutdown()
+            await ladybug_manager.shutdown()
 
 
 # Test runner for manual execution
@@ -365,22 +365,22 @@ async def run_all_tests() -> None:
     except Exception as e:
         print(f"✗ Redis test failed: {e}")
     
-    # Kuzu tests
-    print("\n2. Testing Kuzu Tenant Manager...")
-    kuzu_test = TestKuzuTenantManager()
+    # LadybugDB tests
+    print("\n2. Testing LadybugDB Tenant Manager...")
+    ladybug_test = TestLadybugTenantManager()
     
     try:
-        await kuzu_test.test_tenant_schema_creation()
+        await ladybug_test.test_tenant_schema_creation()
         print("✓ Schema creation test passed")
         
-        await kuzu_test.test_tenant_query_isolation()
+        await ladybug_test.test_tenant_query_isolation()
         print("✓ Query isolation test passed")
         
-        await kuzu_test.test_kuzu_performance_monitoring()
-        print("✓ Kuzu performance monitoring test passed")
+        await ladybug_test.test_ladybug_performance_monitoring()
+        print("✓ LadybugDB performance monitoring test passed")
         
     except Exception as e:
-        print(f"✗ Kuzu test failed: {e}")
+        print(f"✗ LadybugDB test failed: {e}")
     
     # Integration tests
     print("\n3. Testing Integration...")

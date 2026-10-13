@@ -224,15 +224,15 @@ class MetricsCollector:
             logger.error(f"Error collecting PostgreSQL metrics: {e}")
             return None
     
-    async def collect_kuzu_metrics(self) -> Optional[DatabaseMetrics]:
-        """Collect Kuzu graph database metrics"""
+    async def collect_ladybug_metrics(self) -> Optional[DatabaseMetrics]:
+        """Collect LadybugDB graph database metrics"""
         try:
-            # Try to import Kuzu dependencies - if not available, return None
+            # Try to import LadybugDB dependencies - if not available, return None
             try:
                 # Mock graph database for now since actual import might not be available
                 graph_db = None
             except ImportError:
-                logger.warning("Kuzu dependencies not available")
+                logger.warning("LadybugDB dependencies not available")
                 return None
             
             if graph_db is None:
@@ -248,7 +248,7 @@ class MetricsCollector:
                     error_rate=0.0,
                     throughput=50.0,
                     timestamp=datetime.now(timezone.utc),
-                    database_type='kuzu',
+                    database_type='ladybug',
                     additional_metrics={
                         'node_count': 1000,
                         'available_connections': 7,
@@ -257,17 +257,17 @@ class MetricsCollector:
                 )
                 
                 # Store metrics
-                if 'kuzu' not in self._database_metrics:
-                    self._database_metrics['kuzu'] = []
+                if 'ladybug' not in self._database_metrics:
+                    self._database_metrics['ladybug'] = []
                 
-                self._database_metrics['kuzu'].append(metrics)
-                if len(self._database_metrics['kuzu']) > self._max_history:
-                    self._database_metrics['kuzu'] = self._database_metrics['kuzu'][-self._max_history:]
+                self._database_metrics['ladybug'].append(metrics)
+                if len(self._database_metrics['ladybug']) > self._max_history:
+                    self._database_metrics['ladybug'] = self._database_metrics['ladybug'][-self._max_history:]
                 
                 return metrics
             
         except Exception as e:
-            logger.error(f"Error collecting Kuzu metrics: {e}")
+            logger.error(f"Error collecting LadybugDB metrics: {e}")
             return None
     
     def get_recent_system_metrics(self, limit: int = 100) -> List[SystemMetrics]:
@@ -499,7 +499,7 @@ class HealthMonitor:
     def _register_default_checks(self) -> None:
         """Register default health checks"""
         self.registry.register("postgresql", self._check_postgresql_health, 30)
-        self.registry.register("kuzu", self._check_kuzu_health, 30)
+        self.registry.register("ladybug", self._check_ladybug_health, 30)
         self.registry.register("system", self._check_system_health, 15)
         self.registry.register("synchronization", self._check_sync_health, 60)
     
@@ -594,9 +594,9 @@ class HealthMonitor:
                 if pg_metrics:
                     await self.alert_manager.check_thresholds(pg_metrics)
                 
-                kuzu_metrics = await self.metrics_collector.collect_kuzu_metrics()
-                if kuzu_metrics:
-                    await self.alert_manager.check_thresholds(kuzu_metrics)
+                ladybug_metrics = await self.metrics_collector.collect_ladybug_metrics()
+                if ladybug_metrics:
+                    await self.alert_manager.check_thresholds(ladybug_metrics)
                 
                 # Wait before next collection
                 await asyncio.sleep(30)  # Collect metrics every 30 seconds
@@ -629,23 +629,23 @@ class HealthMonitor:
                 error=str(e)
             )
     
-    async def _check_kuzu_health(self) -> HealthCheck:
-        """Check Kuzu graph database health"""
+    async def _check_ladybug_health(self) -> HealthCheck:
+        """Check LadybugDB graph database health"""
         try:
             # Mock health check for now since dependencies might not be available
             return HealthCheck(
-                name="kuzu",
+                name="ladybug",
                 status=HealthStatus.HEALTHY,
-                message="Kuzu graph database is healthy",
+                message="LadybugDB graph database is healthy",
                 timestamp=datetime.now(timezone.utc),
                 response_time=0.03
             )
                 
         except Exception as e:
             return HealthCheck(
-                name="kuzu",
+                name="ladybug",
                 status=HealthStatus.CRITICAL,
-                message=f"Kuzu health check failed: {str(e)}",
+                message=f"LadybugDB health check failed: {str(e)}",
                 timestamp=datetime.now(timezone.utc),
                 response_time=0.0,
                 error=str(e)

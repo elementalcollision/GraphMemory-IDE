@@ -153,9 +153,9 @@ class AnalyticsQuery(BaseModel):
     )
 
 
-class KuzuQuery(BaseModel):
-    """Kuzu graph database query tracking"""
-    __tablename__ = "kuzu_queries"
+class LadybugQuery(BaseModel):
+    """LadybugDB graph database query tracking"""
+    __tablename__ = "ladybug_queries"
     
     cypher_query: Mapped[str] = mapped_column(Text(), nullable=False)
     user_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
@@ -175,10 +175,10 @@ class KuzuQuery(BaseModel):
     status: Mapped[str] = mapped_column(String(20), default="completed", nullable=False)
     
     __table_args__ = (
-        Index("idx_kuzu_user_created", "user_id", "created_at"),
-        Index("idx_kuzu_readonly_created", "is_read_only", "created_at"),
-        Index("idx_kuzu_status_created", "status", "created_at"),
-        CheckConstraint("status IN ('pending', 'completed', 'failed', 'timeout')", name="ck_kuzu_status"),
+        Index("idx_ladybug_user_created", "user_id", "created_at"),
+        Index("idx_ladybug_readonly_created", "is_read_only", "created_at"),
+        Index("idx_ladybug_status_created", "status", "created_at"),
+        CheckConstraint("status IN ('pending', 'completed', 'failed', 'timeout')", name="ck_ladybug_status"),
     )
 
 
@@ -407,7 +407,7 @@ __all__ = [
     "UserSession",
     "TelemetryEvent",
     "AnalyticsQuery",
-    "KuzuQuery",
+    "LadybugQuery",
     "CollaborationSession",
     "CollaborationParticipant",
     "SystemMetrics",

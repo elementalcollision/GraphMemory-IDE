@@ -254,6 +254,24 @@ The `database-migrator.mjs` uses `this.kuzuPath` (defaults to `'kuzu'`) for CLI 
 
 ---
 
+### 3.10 CamelCase Result Iteration Not Supported (Breaking — discovered in Phase 1)
+
+`main.py` used `result.hasNext()` / `result.getNext()` (lines 379-380, 450-451, 514-515) — a Kuzu-era API variant. LadybugDB 0.21.2's `QueryResult` only exposes **snake_case** `has_next()` / `get_next()`. All camelCase calls converted. ✅ Fixed in Phase 1.
+
+### 3.11 `list_cosine_similarity` Renamed (Breaking — discovered in Phase 1)
+
+The vector-similarity endpoint (`main.py` Top-K search) used Kuzu's `list_cosine_similarity()`. In LadybugDB 0.21.2 the function is **`array_cosine_similarity`** (verified via `CALL show_functions()`). ✅ Fixed in Phase 1.
+
+### 3.12 Parent Directory Must Exist (Minor — discovered in Phase 1)
+
+Kuzu auto-created the database directory; LadybugDB raises `IO exception: Cannot open file` if the parent directory is missing. `graph_database.py` already guarded (`db_path.parent.mkdir(...)`); `init_db.py` needed an explicit `mkdir` — added. ✅ Fixed in Phase 1.
+
+### 3.13 Pre-Existing Defect (Not a Migration Regression — Flagged)
+
+Every `MetricsCollector()` instantiation (`server/monitoring/metrics.py`) registers duplicate collectors into the global prometheus `REGISTRY`; `graph_database.py` creates several instances, so the second raises `Duplicated timeseries in CollectorRegistry`. This defect predates the migration (same behaviour with Kuzu). **Recommend a follow-up task** (out of migration scope): make `MetricsCollector` use `create_custom_registry()` or guard against re-registration.
+
+---
+
 ## 4. Execution Phases
 
 ### Phase 0: Pre-Flight (Day 0 — no code changes) — ✅ COMPLETED 2026-10-13
@@ -265,19 +283,24 @@ The `database-migrator.mjs` uses `this.kuzuPath` (defaults to `'kuzu'`) for CLI 
 | 0.3 | Install `lbug` CLI via `brew install ladybug`, verify `lbug :memory:` interactive shell | Operator | CLI confirmed | ✅ `lbug 0.21.2` installed via Homebrew; non-interactive query execution verified. |
 | 0.4 | Create a feature branch: `feature/ladybug-migration` | Operator | Branch created | ✅ Branch created from `main`. |
 
-### Phase 1: Core Python Source (Day 1)
+### Phase 1: Core Python Source (Day 1) — ✅ COMPLETED 2026-10-13
 
-| # | Task | Files | Risk | Verification |
-|---|------|-------|------|-------------|
-| 1.1 | Swap `import kuzu` → `import ladybug as lb` in all 11 Python source files | See §2.1 | Low | `python -c "import server.graph_database"` imports clean |
-| 1.2 | Fix Connection constructor: `kuzu.Connection(db, num_threads=N)` → `lb.Connection(db)` + `conn.init_connection()` + `conn.set_max_threads_for_exec(N)` | `graph_database.py:75`, `main.py:112` | Low | Manual review |
-| 1.3 | Rename config fields: `KUZU_DB_PATH` → `LADYBUG_DB_PATH`, `KUZU_READ_ONLY` → `LADYBUG_READ_ONLY` in `server/core/config.py` | `config.py:108-109` | Low | Config loads |
-| 1.4 | Update `graph_database.py` default paths: `./data/kuzu_graph` → `./data/ladybug_graph.lbdb` | `graph_database.py:37,530` | Low | Path correct |
-| 1.5 | Rename classes/vars: `KuzuAnalyticsEngine` → `LadybugAnalyticsEngine`, `KuzuBackupManager` → `LadybugBackupManager`, `kuzu_connection` → `ladybug_connection`, etc. | `kuzu_analytics.py`, `kuzu_backup.py`, `analytics_routes.py`, `engine.py`, `analytics_client.py` | Medium | All imports resolve |
-| 1.6 | Update `init_db.py`: swap import, var names, print messages | `init_db.py` | Low | Script runs |
-| 1.7 | Update health endpoint response: `"kuzu_path"` → `"ladybug_path"`, `"read_only"` stays | `main.py:562-563` | Low | API response correct |
-| 1.9 | **Fix index DDL:** replace the 4 secondary-index queries in `_create_indexes()` — new syntax `CREATE INDEX name FOR (a:Table) ON (a.pk)`; drop unsupported secondary-property indexes (zone maps replace them) | `graph_database.py:242-260` | Medium | No parser errors in logs |
-| 1.10 | Consider wiring `read_only` into `Database()` constructor (new LadybugDB feature) | `graph_database.py:470-477` | Low | Optional uplift |
+| # | Task | Files | Risk | Status |
+|---|------|-------|------|--------|
+| 1.1 | Swap `import kuzu` → `import ladybug as lb` in all Python source files | §2.1 | Low | ✅ All `server/` source migrated |
+| 1.2 | Fix Connection constructor: `Connection(db, num_threads=N)` → `Connection(db)` + `init_connection()` + `set_max_threads_for_exec(N)` | `graph_database.py`, `main.py` | Low | ✅ Fixed |
+| 1.3 | Rename config fields: `KUZU_DB_PATH` → `LADYBUG_DB_PATH`, `KUZU_READ_ONLY` → `LADYBUG_READ_ONLY` | `config.py` | Low | ✅ Done (defaults `./data/ladybug.lbdb`) |
+| 1.4 | Update `graph_database.py` default paths | `graph_database.py` | Low | ✅ `./data/ladybug_graph.lbdb` |
+| 1.5 | Rename classes/vars: `KuzuAnalyticsEngine` → `LadybugAnalyticsEngine`, `KuzuBackupManager` → `LadybugBackupManager`, `kuzu_connection` → `ladybug_connection`, `KuzuQuery` → `LadybugQuery` (table `ladybug_queries`), `KuzuTenantManager` → `LadybugTenantManager`, etc. | 28 files | Medium | ✅ All renamed; files `kuzu_analytics.py` → `ladybug_analytics.py`, `kuzu_backup.py` → `ladybug_backup.py`, `kuzu_tenant_manager.py` → `ladybug_tenant_manager.py` (git mv) |
+| 1.6 | Update `init_db.py` | `init_db.py` | Low | ✅ Rewritten; `KUZU_DB_PATH` env kept as deprecated fallback |
+| 1.7 | Update health endpoint response: `"kuzu_path"` → `"ladybug_path"` | `main.py` | Low | ✅ Done |
+| 1.9 | **Fix index DDL** (Phase 0 finding §3.6): `_create_indexes()` now documents the PK-only/zone-map model; unsupported secondary-index queries removed | `graph_database.py` | Medium | ✅ Done — verified no parser errors |
+| 1.10 | Wire `read_only` — deferred to Phase 8 (uplift) as no current consumer requires it | `graph_database.py` | Low | ⏸ Deferred to Phase 8 |
+| 1.11 | **NEW (§3.10):** camelCase `hasNext()`/`getNext()` → `has_next()`/`get_next()` in `main.py` (3 endpoints) | `main.py` | High | ✅ Fixed — would have crashed at runtime |
+| 1.12 | **NEW (§3.11):** `list_cosine_similarity` → `array_cosine_similarity` in vector-search endpoint | `main.py` | High | ✅ Fixed — would have crashed at runtime |
+| 1.13 | **NEW (§3.12):** `init_db.py` parent-directory `mkdir` (LadybugDB does not auto-create) | `init_db.py` | Medium | ✅ Fixed |
+
+**Phase 1 verification:** 28 files compile clean; residual `kuzu` in `server/*.py` = only the intentional deprecated `KUZU_DB_PATH` env fallback in `init_db.py`. Functional verification against live LadybugDB: `GraphDatabaseManager.initialize()` (all 8 schema tables), parameterised INSERT/MATCH via `QueryEngine`, `GraphHealthChecker` (pool/access/schema-integrity healthy), clean close, singleton init — **all passed**. `init_db.py` verified with both `LADYBUG_DB_PATH` and fallback `KUZU_DB_PATH`. Pre-existing `MetricsCollector` duplicate-registration defect flagged (§3.13) — out of migration scope.
 
 ### Phase 2: Dependency Manifests (Day 1)
 

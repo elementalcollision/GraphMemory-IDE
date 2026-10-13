@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List, Union
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Depends, Query, Body, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
-import kuzu
+import ladybug
 import redis.asyncio as redis
 
 from .analytics.models import (
@@ -41,7 +41,7 @@ realtime_analytics: Optional[RealtimeAnalytics] = None
 
 # Global variables for analytics engine state
 analytics_engine_initialized = False
-kuzu_connection = None
+ladybug_connection = None
 redis_client = None
 analytics_cache = {}
 service_start_time = time.time()
@@ -60,15 +60,15 @@ def get_realtime_analytics() -> RealtimeAnalytics:
         raise HTTPException(status_code=503, detail="Real-time analytics not initialized")
     return realtime_analytics
 
-async def initialize_analytics_engine(kuzu_conn, redis_url: str) -> None:
+async def initialize_analytics_engine(ladybug_conn, redis_url: str) -> None:
     """Initialize the analytics engine"""
-    global analytics_engine, analytics_engine_initialized, kuzu_connection
+    global analytics_engine, analytics_engine_initialized, ladybug_connection
     
     try:
         logger.info("Initializing analytics engine...")
         
-        kuzu_connection = kuzu_conn
-        analytics_engine = AnalyticsEngine(kuzu_conn, redis_url)
+        ladybug_connection = ladybug_conn
+        analytics_engine = AnalyticsEngine(ladybug_conn, redis_url)
         
         # Initialize the engine
         success = await analytics_engine.initialize()

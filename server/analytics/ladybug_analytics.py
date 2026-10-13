@@ -1,8 +1,8 @@
 """
-Kuzu GraphDB Analytics Engine for GraphMemory-IDE
+LadybugDB Analytics Engine for GraphMemory-IDE
 
 This module provides optimized graph analytics queries, advanced graph algorithms,
-and specialized analytics operations for the Kuzu GraphDB integration.
+and specialized analytics operations for the LadybugDB integration.
 """
 
 import logging
@@ -46,14 +46,14 @@ class GraphMetrics:
     timestamp: str
 
 
-class KuzuAnalyticsEngine:
+class LadybugAnalyticsEngine:
     """
-    Advanced analytics engine for Kuzu GraphDB with optimized graph algorithms
+    Advanced analytics engine for LadybugDB with optimized graph algorithms
     and specialized analytics operations for memory graphs.
     """
 
-    def __init__(self, kuzu_connection: Any) -> None:
-        self.connection = kuzu_connection
+    def __init__(self, ladybug_connection: Any) -> None:
+        self.connection = ladybug_connection
         self.query_cache: Dict[str, Tuple[Dict[str, Any], float]] = {}
         self.cache_ttl = 600  # 10 minutes for graph analytics
 
@@ -70,7 +70,7 @@ class KuzuAnalyticsEngine:
         self.last_metrics_update: Optional[datetime] = None
         self.metrics_cache_ttl = 300  # 5 minutes
 
-        logger.info("Kuzu Analytics Engine initialized")
+        logger.info("LadybugDB Analytics Engine initialized")
 
     async def execute_graph_analytics(
         self,

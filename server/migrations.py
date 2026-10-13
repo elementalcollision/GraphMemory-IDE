@@ -170,7 +170,7 @@ class MigrationManager:
             CREATE INDEX IF NOT EXISTS idx_analytics_type_created ON analytics_queries(query_type, created_at)
             """,
             """
-            CREATE TABLE IF NOT EXISTS kuzu_queries (
+            CREATE TABLE IF NOT EXISTS ladybug_queries (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 cypher_query TEXT NOT NULL,
                 user_id UUID REFERENCES users(id),
@@ -184,7 +184,7 @@ class MigrationManager:
                 status VARCHAR(20) DEFAULT 'completed',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                CONSTRAINT ck_kuzu_status CHECK (status IN ('pending', 'completed', 'failed', 'timeout'))
+                CONSTRAINT ck_ladybug_status CHECK (status IN ('pending', 'completed', 'failed', 'timeout'))
             )
             """,
             """
@@ -249,7 +249,7 @@ class MigrationManager:
         tables_to_drop = [
             "api_request_logs",
             "system_metrics", 
-            "kuzu_queries",
+            "ladybug_queries",
             "analytics_queries",
             "telemetry_events",
             "user_sessions",

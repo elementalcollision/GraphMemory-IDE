@@ -525,7 +525,7 @@ class AnalyticsHealthChecker:
             return {
                 "healthy": True,
                 "status": "operational",
-                "database_type": "kuzu"
+                "database_type": "ladybug"
             }
         except Exception as e:
             return {

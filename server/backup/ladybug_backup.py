@@ -1,7 +1,7 @@
 """
-Kuzu Graph Database Backup and Recovery Manager
+LadybugDB Graph Database Backup and Recovery Manager
 
-Implements backup strategies for Kuzu embedded graph database including:
+Implements backup strategies for LadybugDB embedded graph database including:
 - File-system level backups of database directory
 - Export/import using supported data formats (JSON, Parquet, CSV)
 - Database integrity validation
@@ -25,8 +25,8 @@ import aiofiles
 logger = logging.getLogger(__name__)
 
 
-class KuzuBackupType(Enum):
-    """Types of Kuzu backups"""
+class LadybugBackupType(Enum):
+    """Types of LadybugDB backups"""
     FILESYSTEM = "filesystem"
     EXPORT_JSON = "export_json"
     EXPORT_PARQUET = "export_parquet"
@@ -34,8 +34,8 @@ class KuzuBackupType(Enum):
     FULL_BACKUP = "full_backup"
 
 
-class KuzuBackupStatus(Enum):
-    """Kuzu backup operation status"""
+class LadybugBackupStatus(Enum):
+    """LadybugDB backup operation status"""
     PENDING = "pending"
     RUNNING = "running"
     SUCCESS = "success"
@@ -44,15 +44,15 @@ class KuzuBackupStatus(Enum):
 
 
 @dataclass
-class KuzuBackupMetadata:
-    """Metadata for Kuzu backup operations"""
+class LadybugBackupMetadata:
+    """Metadata for LadybugDB backup operations"""
     backup_id: str
-    backup_type: KuzuBackupType
+    backup_type: LadybugBackupType
     timestamp: datetime
     database_path: str
     size_bytes: int
     duration_seconds: float
-    status: KuzuBackupStatus
+    status: LadybugBackupStatus
     node_tables: Optional[List[str]] = None
     relationship_tables: Optional[List[str]] = None
     storage_location: Optional[str] = None
@@ -61,9 +61,9 @@ class KuzuBackupMetadata:
     export_format: Optional[str] = None
 
 
-class KuzuBackupManager:
+class LadybugBackupManager:
     """
-    Kuzu graph database backup and recovery manager
+    LadybugDB graph database backup and recovery manager
     """
     
     def __init__(self, 
@@ -79,23 +79,23 @@ class KuzuBackupManager:
         
         # Validate database path exists
         if not self.database_path.exists():
-            logger.warning(f"Kuzu database path does not exist: {self.database_path}")
+            logger.warning(f"LadybugDB database path does not exist: {self.database_path}")
     
     async def create_filesystem_backup(self, 
                                      backup_name: Optional[str] = None,
-                                     compress: bool = True) -> KuzuBackupMetadata:
+                                     compress: bool = True) -> LadybugBackupMetadata:
         """
-        Create a filesystem-level backup of the entire Kuzu database directory
+        Create a filesystem-level backup of the entire LadybugDB database directory
         """
         start_time = datetime.utcnow()
-        backup_id = backup_name or f"kuzu_fs_backup_{start_time.strftime('%Y%m%d_%H%M%S')}"
+        backup_id = backup_name or f"ladybug_fs_backup_{start_time.strftime('%Y%m%d_%H%M%S')}"
         
-        logger.info(f"Starting Kuzu filesystem backup: {backup_id}")
+        logger.info(f"Starting LadybugDB filesystem backup: {backup_id}")
         
         try:
             # Record backup start metrics
             if self.metrics:
-                self.metrics.record_backup_started(KuzuBackupType.FILESYSTEM.value)
+                self.metrics.record_backup_started(LadybugBackupType.FILESYSTEM.value)
             
             # Create backup directory
             backup_dir = self.backup_storage_path / backup_id
@@ -151,14 +151,14 @@ class KuzuBackupManager:
             
             # Create metadata
             duration = (datetime.utcnow() - start_time).total_seconds()
-            metadata = KuzuBackupMetadata(
+            metadata = LadybugBackupMetadata(
                 backup_id=backup_id,
-                backup_type=KuzuBackupType.FILESYSTEM,
+                backup_type=LadybugBackupType.FILESYSTEM,
                 timestamp=start_time,
                 database_path=str(self.database_path),
                 size_bytes=backup_size,
                 duration_seconds=duration,
-                status=KuzuBackupStatus.SUCCESS,
+                status=LadybugBackupStatus.SUCCESS,
                 node_tables=node_tables,
                 relationship_tables=relationship_tables,
                 storage_location=str(backup_dir),
@@ -171,12 +171,12 @@ class KuzuBackupManager:
             # Record success metrics
             if self.metrics:
                 self.metrics.record_backup_completed(
-                    KuzuBackupType.FILESYSTEM.value,
+                    LadybugBackupType.FILESYSTEM.value,
                     duration,
                     backup_size
                 )
             
-            logger.info(f"Kuzu filesystem backup completed successfully: {backup_id}")
+            logger.info(f"LadybugDB filesystem backup completed successfully: {backup_id}")
             return metadata
             
         except Exception as e:
@@ -185,17 +185,17 @@ class KuzuBackupManager:
             
             # Record failure metrics
             if self.metrics:
-                self.metrics.record_backup_failed(KuzuBackupType.FILESYSTEM.value, error_msg)
+                self.metrics.record_backup_failed(LadybugBackupType.FILESYSTEM.value, error_msg)
             
             # Create failure metadata
-            metadata = KuzuBackupMetadata(
+            metadata = LadybugBackupMetadata(
                 backup_id=backup_id,
-                backup_type=KuzuBackupType.FILESYSTEM,
+                backup_type=LadybugBackupType.FILESYSTEM,
                 timestamp=start_time,
                 database_path=str(self.database_path),
                 size_bytes=0,
                 duration_seconds=duration,
-                status=KuzuBackupStatus.FAILED,
+                status=LadybugBackupStatus.FAILED,
                 error_message=error_msg
             )
             
@@ -204,18 +204,18 @@ class KuzuBackupManager:
     
     async def export_to_format(self, 
                              export_format: str = "json",
-                             backup_name: Optional[str] = None) -> KuzuBackupMetadata:
+                             backup_name: Optional[str] = None) -> LadybugBackupMetadata:
         """
-        Export Kuzu database to specified format (JSON, Parquet, CSV)
-        Note: This requires an active Kuzu connection and is a placeholder for implementation
+        Export LadybugDB database to specified format (JSON, Parquet, CSV)
+        Note: This requires an active LadybugDB connection and is a placeholder for implementation
         """
         start_time = datetime.utcnow()
-        backup_id = backup_name or f"kuzu_export_{export_format}_{start_time.strftime('%Y%m%d_%H%M%S')}"
+        backup_id = backup_name or f"ladybug_export_{export_format}_{start_time.strftime('%Y%m%d_%H%M%S')}"
         
-        logger.info(f"Starting Kuzu export backup ({export_format}): {backup_id}")
+        logger.info(f"Starting LadybugDB export backup ({export_format}): {backup_id}")
         
         try:
-            backup_type = getattr(KuzuBackupType, f"EXPORT_{export_format.upper()}", KuzuBackupType.EXPORT_JSON)
+            backup_type = getattr(LadybugBackupType, f"EXPORT_{export_format.upper()}", LadybugBackupType.EXPORT_JSON)
             
             if self.metrics:
                 self.metrics.record_backup_started(backup_type.value)
@@ -224,9 +224,9 @@ class KuzuBackupManager:
             backup_dir = self.backup_storage_path / backup_id
             backup_dir.mkdir(exist_ok=True)
             
-            # TODO: Implement actual Kuzu export functionality
+            # TODO: Implement actual LadybugDB export functionality
             # This would require:
-            # 1. Connect to Kuzu database
+            # 1. Connect to LadybugDB database
             # 2. Query all node and relationship tables
             # 3. Export data to specified format
             # 4. Save exported files
@@ -237,14 +237,14 @@ class KuzuBackupManager:
                 "backup_id": backup_id,
                 "timestamp": start_time.isoformat(),
                 "format": export_format,
-                "note": "Kuzu export functionality requires implementation with actual Kuzu connection"
+                "note": "LadybugDB export functionality requires implementation with actual LadybugDB connection"
             }
             
             async with aiofiles.open(export_file, 'w') as f:
                 if export_format == "json":
                     await f.write(json.dumps(placeholder_data, indent=2))
                 else:
-                    await f.write(f"# Kuzu {export_format.upper()} export placeholder\n")
+                    await f.write(f"# LadybugDB {export_format.upper()} export placeholder\n")
                     await f.write(f"# {json.dumps(placeholder_data)}\n")
             
             backup_size = export_file.stat().st_size
@@ -252,14 +252,14 @@ class KuzuBackupManager:
             
             # Create metadata
             duration = (datetime.utcnow() - start_time).total_seconds()
-            metadata = KuzuBackupMetadata(
+            metadata = LadybugBackupMetadata(
                 backup_id=backup_id,
                 backup_type=backup_type,
                 timestamp=start_time,
                 database_path=str(self.database_path),
                 size_bytes=backup_size,
                 duration_seconds=duration,
-                status=KuzuBackupStatus.SUCCESS,
+                status=LadybugBackupStatus.SUCCESS,
                 storage_location=str(backup_dir),
                 checksum=checksum,
                 export_format=export_format
@@ -276,26 +276,26 @@ class KuzuBackupManager:
                     backup_size
                 )
             
-            logger.info(f"Kuzu export backup completed: {backup_id}")
+            logger.info(f"LadybugDB export backup completed: {backup_id}")
             return metadata
             
         except Exception as e:
             duration = (datetime.utcnow() - start_time).total_seconds()
             error_msg = str(e)
             
-            backup_type = getattr(KuzuBackupType, f"EXPORT_{export_format.upper()}", KuzuBackupType.EXPORT_JSON)
+            backup_type = getattr(LadybugBackupType, f"EXPORT_{export_format.upper()}", LadybugBackupType.EXPORT_JSON)
             
             if self.metrics:
                 self.metrics.record_backup_failed(backup_type.value, error_msg)
             
-            metadata = KuzuBackupMetadata(
+            metadata = LadybugBackupMetadata(
                 backup_id=backup_id,
                 backup_type=backup_type,
                 timestamp=start_time,
                 database_path=str(self.database_path),
                 size_bytes=0,
                 duration_seconds=duration,
-                status=KuzuBackupStatus.FAILED,
+                status=LadybugBackupStatus.FAILED,
                 error_message=error_msg
             )
             
@@ -306,9 +306,9 @@ class KuzuBackupManager:
                                     backup_id: str, 
                                     target_path: Optional[str] = None) -> bool:
         """
-        Restore Kuzu database from filesystem backup
+        Restore LadybugDB database from filesystem backup
         """
-        logger.info(f"Starting Kuzu filesystem restore from backup: {backup_id}")
+        logger.info(f"Starting LadybugDB filesystem restore from backup: {backup_id}")
         
         try:
             backup_dir = self.backup_storage_path / backup_id
@@ -359,18 +359,18 @@ class KuzuBackupManager:
                 else:
                     raise FileNotFoundError("No valid backup data found in backup directory")
             
-            logger.info(f"Kuzu filesystem restore completed: {backup_id}")
+            logger.info(f"LadybugDB filesystem restore completed: {backup_id}")
             return True
             
         except Exception as e:
-            logger.error(f"Kuzu filesystem restore failed: {e}")
+            logger.error(f"LadybugDB filesystem restore failed: {e}")
             return False
     
     async def validate_backup(self, backup_id: str) -> Dict[str, Any]:
         """
         Validate backup integrity and consistency
         """
-        logger.info(f"Validating Kuzu backup: {backup_id}")
+        logger.info(f"Validating LadybugDB backup: {backup_id}")
         
         validation_results: Dict[str, Any] = {
             "backup_id": backup_id,
@@ -481,11 +481,11 @@ class KuzuBackupManager:
                     validation_results["errors"].append("Export file missing")
                     validation_results["is_valid"] = False
             
-            logger.info(f"Kuzu backup validation completed: {backup_id}")
+            logger.info(f"LadybugDB backup validation completed: {backup_id}")
             return validation_results
             
         except Exception as e:
-            logger.error(f"Kuzu backup validation failed: {e}")
+            logger.error(f"LadybugDB backup validation failed: {e}")
             validation_results["is_valid"] = False
             validation_results["errors"].append(str(e))
             return validation_results
@@ -512,7 +512,7 @@ class KuzuBackupManager:
                             # Remove backup directory
                             shutil.rmtree(backup_dir)
                             removed_backups.append(backup_dir.name)
-                            logger.info(f"Removed old Kuzu backup: {backup_dir.name}")
+                            logger.info(f"Removed old LadybugDB backup: {backup_dir.name}")
             
             if self.metrics:
                 self.metrics.record_backup_cleanup(len(removed_backups))
@@ -520,16 +520,16 @@ class KuzuBackupManager:
             return removed_backups
             
         except Exception as e:
-            logger.error(f"Kuzu backup cleanup failed: {e}")
+            logger.error(f"LadybugDB backup cleanup failed: {e}")
             return removed_backups
     
     async def _get_schema_info(self) -> tuple[Optional[List[str]], Optional[List[str]]]:
         """
-        Get schema information from Kuzu database
-        TODO: Implement when Kuzu connection is available
+        Get schema information from LadybugDB database
+        TODO: Implement when LadybugDB connection is available
         """
         try:
-            # Placeholder for actual Kuzu schema query
+            # Placeholder for actual LadybugDB schema query
             # This would require connecting to the database and querying:
             # - Node table names
             # - Relationship table names
@@ -539,7 +539,7 @@ class KuzuBackupManager:
             return None, None
             
         except Exception as e:
-            logger.warning(f"Failed to get Kuzu schema info: {e}")
+            logger.warning(f"Failed to get LadybugDB schema info: {e}")
             return None, None
     
     async def _calculate_checksum(self, file_path: Path) -> str:
@@ -571,7 +571,7 @@ class KuzuBackupManager:
         combined_checksums = "\n".join(checksums)
         return hashlib.sha256(combined_checksums.encode()).hexdigest()
     
-    async def _save_backup_metadata(self, metadata: KuzuBackupMetadata) -> None:
+    async def _save_backup_metadata(self, metadata: LadybugBackupMetadata) -> None:
         """Save backup metadata to file"""
         backup_dir = self.backup_storage_path / metadata.backup_id
         metadata_file = backup_dir / "metadata.json"

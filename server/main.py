@@ -10,7 +10,7 @@ import logging
 from typing import Any, List, Optional, Dict
 from datetime import timedelta
 
-import kuzu
+import ladybug as lb
 from fastapi import FastAPI, HTTPException, Query, Body, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
@@ -104,15 +104,15 @@ def create_application() -> FastAPI:
 
 def setup_database(app: FastAPI, settings: Settings) -> None:
     """Initialize database connections"""
-    # Initialize Kuzu DB connection
-    kuzu_db_path = settings.database.KUZU_DB_PATH
+    # Initialize LadybugDB DB connection
+    ladybug_db_path = settings.database.LADYBUG_DB_PATH
     
     try:
-        app.state.kuzu_db = kuzu.Database(kuzu_db_path)  # type: ignore
-        app.state.kuzu_conn = kuzu.Connection(app.state.kuzu_db)  # type: ignore
-        logger.info(f"Kuzu database initialized at: {kuzu_db_path}")
+        app.state.ladybug_db = lb.Database(ladybug_db_path)  # type: ignore
+        app.state.ladybug_conn = lb.Connection(app.state.ladybug_db)  # type: ignore
+        logger.info(f"LadybugDB database initialized at: {ladybug_db_path}")
     except Exception as e:
-        logger.error(f"Failed to initialize Kuzu database: {e}")
+        logger.error(f"Failed to initialize LadybugDB database: {e}")
         raise
 
 
@@ -153,7 +153,7 @@ def create_lifespan(settings: Settings):
 
         try:
             await initialize_analytics_engine(
-                kuzu_conn=app.state.kuzu_conn,
+                ladybug_conn=app.state.ladybug_conn,
                 redis_url=settings.database.REDIS_URL
             )
             logger.info("Analytics engine initialized")
@@ -230,7 +230,7 @@ class TopKQueryRequest(BaseModel):
 def enforce_read_only() -> None:
     """Enforce read-only mode if enabled"""
     settings = get_settings()
-    if settings.database.KUZU_READ_ONLY:
+    if settings.database.LADYBUG_READ_ONLY:
         raise HTTPException(status_code=403, detail="Read-only mode enabled.")
 
 
@@ -279,7 +279,7 @@ async def ingest_telemetry(
 ) -> Dict[str, Any]:
     """
     Ingest a telemetry event from an IDE plugin.
-    Validates and stores the event in the Kuzu database.
+    Validates and stores the event in the LadybugDB database.
     
     Authentication: Optional (respects JWT_ENABLED setting)
     - If JWT_ENABLED=false: No authentication required
@@ -299,7 +299,7 @@ async def ingest_telemetry(
             "session_id": event.session_id,
             "data": str(event.data),  # Serialize dict to string for storage
         }
-        app.state.kuzu_conn.execute(query, params)
+        app.state.ladybug_conn.execute(query, params)
         
         processing_time = (time.time() - start_time) * 1000  # Convert to milliseconds
         
@@ -373,11 +373,11 @@ async def list_telemetry_events(
             "RETURN e.event_type, e.timestamp, e.user_id, e.session_id, e.data "
             f"SKIP {offset} LIMIT {limit}"
         )
-        result = app.state.kuzu_conn.execute(query)
+        result = app.state.ladybug_conn.execute(query)
         
         events = []
-        while result.hasNext():
-            row = result.getNext()
+        while result.has_next():
+            row = result.get_next()
             events.append({
                 "event_type": row[0],
                 "timestamp": row[1],
@@ -444,11 +444,11 @@ async def query_telemetry_events(
             f"LIMIT {limit}"
         )
         
-        result = app.state.kuzu_conn.execute(query, params)
+        result = app.state.ladybug_conn.execute(query, params)
         
         events = []
-        while result.hasNext():
-            row = result.getNext()
+        while result.has_next():
+            row = result.get_next()
             events.append({
                 "event_type": row[0],
                 "timestamp": row[1],
@@ -493,12 +493,12 @@ async def topk_query(
         model = SentenceTransformer('all-MiniLM-L6-v2')
         query_embedding = model.encode([req.query_text])[0].tolist()
         
-        # Build Kuzu query for vector similarity search
+        # Build LadybugDB query for vector similarity search
         query = f"""
         MATCH (n:{req.table})
         WHERE n.{req.embedding_field} IS NOT NULL
         RETURN n, 
-               list_cosine_similarity(n.{req.embedding_field}, $query_embedding) AS similarity
+               array_cosine_similarity(n.{req.embedding_field}, $query_embedding) AS similarity
         ORDER BY similarity DESC
         LIMIT $k
         """
@@ -508,11 +508,11 @@ async def topk_query(
             "k": req.k
         }
         
-        result = app.state.kuzu_conn.execute(query, params)
+        result = app.state.ladybug_conn.execute(query, params)
         
         results = []
-        while result.hasNext():
-            row = result.getNext()
+        while result.has_next():
+            row = result.get_next()
             node_data = row[0]
             similarity = row[1]
             
@@ -560,8 +560,8 @@ async def get_application_status() -> Dict[str, Any]:
             "jwt_auth": settings.ENABLE_JWT_AUTH,
         },
         "database": {
-            "kuzu_path": settings.database.KUZU_DB_PATH,
-            "read_only": settings.database.KUZU_READ_ONLY,
+            "ladybug_path": settings.database.LADYBUG_DB_PATH,
+            "read_only": settings.database.LADYBUG_READ_ONLY,
         },
         "security": {
             "cors_enabled": bool(settings.get_cors_origins()),

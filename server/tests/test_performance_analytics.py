@@ -20,7 +20,7 @@ from typing import Dict, List, Any, Tuple
 from unittest.mock import Mock, AsyncMock, patch
 from dataclasses import dataclass
 
-from server.analytics.kuzu_analytics import KuzuAnalyticsEngine, GraphAnalyticsType
+from server.analytics.ladybug_analytics import LadybugAnalyticsEngine, GraphAnalyticsType
 from server.analytics.gateway import AnalyticsGateway, GatewayRequest, GatewayResponse
 from server.analytics.service_registry import AnalyticsServiceRegistry, ServiceEndpoint, ServiceType, ServiceHealth
 
@@ -129,7 +129,7 @@ class TestAnalyticsPerformance:
     
     @pytest.fixture
     def mock_connection(self) -> None:
-        """Mock Kuzu database connection for performance testing"""
+        """Mock LadybugDB database connection for performance testing"""
         mock_conn = Mock()
         mock_result = Mock()
         mock_result.get_column_names.return_value = ["entity_id", "centrality_score"]
@@ -143,7 +143,7 @@ class TestAnalyticsPerformance:
     @pytest.fixture
     def analytics_engine(self, mock_connection) -> None:
         """Create analytics engine for performance testing"""
-        return KuzuAnalyticsEngine(mock_connection)
+        return LadybugAnalyticsEngine(mock_connection)
     
     @pytest.fixture
     def performance_suite(self) -> None:
@@ -465,7 +465,7 @@ class TestMemoryAndResourceUsage:
         mock_result.get_next.return_value = [42]
         mock_conn.execute.return_value = mock_result
         
-        analytics_engine = KuzuAnalyticsEngine(mock_conn)
+        analytics_engine = LadybugAnalyticsEngine(mock_conn)
         
         # Run many operations
         for i in range(100):
@@ -507,7 +507,7 @@ class TestMemoryAndResourceUsage:
         mock_result.get_next.return_value = ["test_entity"]
         mock_conn.execute.return_value = mock_result
         
-        analytics_engine = KuzuAnalyticsEngine(mock_conn)
+        analytics_engine = LadybugAnalyticsEngine(mock_conn)
         initial_cache_size = len(analytics_engine.query_cache)
         
         # Fill cache with many different queries

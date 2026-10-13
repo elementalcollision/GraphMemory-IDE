@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 # Add parent directories to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import kuzu
+import ladybug
 
 # Import analytics engine components
 from analytics.engine import AnalyticsEngine
@@ -35,8 +35,8 @@ class AnalyticsEngineClient:
     Provides methods to collect real-time analytics data for dashboard streaming.
     """
     
-    def __init__(self, kuzu_connection: Optional[kuzu.Connection] = None, redis_url: str = "redis://localhost:6379") -> None:
-        self.kuzu_conn = kuzu_connection
+    def __init__(self, ladybug_connection: Optional[lb.Connection] = None, redis_url: str = "redis://localhost:6379") -> None:
+        self.ladybug_conn = ladybug_connection
         self.redis_url = redis_url
         self.analytics_engine: Optional[AnalyticsEngine] = None
         self.initialized = False
@@ -52,14 +52,14 @@ class AnalyticsEngineClient:
     async def initialize(self) -> bool:
         """Initialize the analytics engine client"""
         try:
-            if not self.kuzu_conn:
+            if not self.ladybug_conn:
                 # Try to get connection from main app or create a new one
                 # For now, we'll handle this gracefully
-                logger.warning("No Kuzu connection provided, some features may be limited")
+                logger.warning("No LadybugDB connection provided, some features may be limited")
                 return False
             
             # Initialize analytics engine
-            self.analytics_engine = AnalyticsEngine(self.kuzu_conn, self.redis_url)
+            self.analytics_engine = AnalyticsEngine(self.ladybug_conn, self.redis_url)
             await self.analytics_engine.initialize()
             
             self.initialized = True
@@ -419,12 +419,12 @@ def get_analytics_client() -> AnalyticsEngineClient:
     return _analytics_client_instance
 
 
-async def initialize_analytics_client(kuzu_connection: Optional[kuzu.Connection] = None) -> bool:
+async def initialize_analytics_client(ladybug_connection: Optional[lb.Connection] = None) -> bool:
     """Initialize the global analytics client instance"""
     client = get_analytics_client()
     
-    if kuzu_connection:
-        client.kuzu_conn = kuzu_connection
+    if ladybug_connection:
+        client.ladybug_conn = ladybug_connection
     
     return await client.initialize()
 

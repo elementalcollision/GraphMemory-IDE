@@ -16,17 +16,17 @@ from typing import Dict, Any, List
 from datetime import datetime, timezone
 
 # Import the modules we're testing
-from server.analytics.kuzu_analytics import KuzuAnalyticsEngine, GraphAnalyticsType, GraphMetrics
+from server.analytics.ladybug_analytics import LadybugAnalyticsEngine, GraphAnalyticsType, GraphMetrics
 from server.analytics.gateway import AnalyticsGateway, GatewayRequest, GatewayResponse
 from server.analytics.service_registry import AnalyticsServiceRegistry, ServiceEndpoint, ServiceType, ServiceHealth
 
 
-class TestKuzuAnalyticsEngine:
-    """Test suite for KuzuAnalyticsEngine"""
+class TestLadybugAnalyticsEngine:
+    """Test suite for LadybugAnalyticsEngine"""
     
     @pytest.fixture
     def mock_connection(self) -> None:
-        """Mock Kuzu database connection"""
+        """Mock LadybugDB database connection"""
         mock_conn = Mock()
         mock_result = Mock()
         mock_result.get_column_names.return_value = ["count"]
@@ -38,7 +38,7 @@ class TestKuzuAnalyticsEngine:
     @pytest.fixture
     def analytics_engine(self, mock_connection) -> None:
         """Create analytics engine with mocked connection"""
-        return KuzuAnalyticsEngine(mock_connection)
+        return LadybugAnalyticsEngine(mock_connection)
     
     @pytest.mark.asyncio
     async def test_execute_graph_analytics_centrality(self, analytics_engine) -> None:
@@ -431,7 +431,7 @@ class TestEndToEndIntegration:
         mock_connection.execute.return_value = mock_result
         
         # Create analytics engine
-        analytics_engine = KuzuAnalyticsEngine(mock_connection)
+        analytics_engine = LadybugAnalyticsEngine(mock_connection)
         
         # Test analytics execution
         result = await analytics_engine.execute_graph_analytics(
@@ -450,7 +450,7 @@ class TestEndToEndIntegration:
         mock_connection = Mock()
         mock_connection.execute.side_effect = Exception("Database connection failed")
         
-        analytics_engine = KuzuAnalyticsEngine(mock_connection)
+        analytics_engine = LadybugAnalyticsEngine(mock_connection)
         
         # Should handle database errors gracefully
         with pytest.raises(Exception):

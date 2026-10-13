@@ -8,7 +8,7 @@ import asyncio
 import logging
 import time
 from typing import Dict, List, Any, Optional, Union
-import kuzu
+import ladybug as lb
 import numpy as np
 
 from .models import (
@@ -38,8 +38,8 @@ class AnalyticsEngine:
     Enhanced with Phase 3 capabilities for production deployment.
     """
     
-    def __init__(self, kuzu_connection: kuzu.Connection, redis_url: str = "redis://localhost:6379") -> None:
-        self.kuzu_conn = kuzu_connection
+    def __init__(self, ladybug_connection: lb.Connection, redis_url: str = "redis://localhost:6379") -> None:
+        self.ladybug_conn = ladybug_connection
         self.cache = AnalyticsCache(redis_url)
         self.realtime = RealtimeAnalytics()
         
@@ -66,8 +66,10 @@ class AnalyticsEngine:
         try:
             logger.info("Initializing analytics engine...")
             
-            # Initialize database connection
-            await self.kuzu_conn.connect()
+            # Initialize database connection (idempotent; execute() also
+            # initialises lazily, but make it explicit at engine startup)
+            if hasattr(self.ladybug_conn, 'init_connection'):
+                self.ladybug_conn.init_connection()
             
             # Initialize core components
             await self.cache.connect()
@@ -98,12 +100,12 @@ class AnalyticsEngine:
         logger.info("Analytics engine shutdown complete")
     
     async def get_graph_data(self, filters: Optional[Dict[str, Any]] = None) -> Dict[str, List[Dict]]:
-        """Retrieve graph data from Kuzu database with performance monitoring"""
+        """Retrieve graph data from LadybugDB database with performance monitoring"""
         with self.performance_monitor.monitor_graph_operation("data_retrieval", 0):
             try:
                 # Get nodes
                 node_query = "MATCH (n) RETURN n"
-                node_result = self.kuzu_conn.execute(node_query)
+                node_result = self.ladybug_conn.execute(node_query)
                 
                 nodes = []
                 # Handle both QueryResult objects and list results
@@ -123,7 +125,7 @@ class AnalyticsEngine:
                 
                 # Get edges/relationships
                 edge_query = "MATCH (a)-[r]->(b) RETURN a, r, b"
-                edge_result = self.kuzu_conn.execute(edge_query)
+                edge_result = self.ladybug_conn.execute(edge_query)
                 
                 edges = []
                 # Handle both QueryResult objects and list results
