@@ -4,11 +4,11 @@
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/elementalcollision/GraphMemory-IDE/actions/workflows/ci.yml/badge.svg)](https://github.com/elementalcollision/GraphMemory-IDE/actions/workflows/ci.yml)
 
-An AI-assisted, long-term memory system for IDEs, powered by [Kuzu](https://kuzudb.com/) graph database. GraphMemory-IDE is an MCP (Model Context Protocol) server that provides semantic vector search, graph-based knowledge storage, and real-time analytics. It integrates with VSCode, Cursor, and Windsurf through dedicated IDE plugins.
+An AI-assisted, long-term memory system for IDEs, powered by [LadybugDB](https://ladybugdb.com/) graph database. GraphMemory-IDE is an MCP (Model Context Protocol) server that provides semantic vector search, graph-based knowledge storage, and real-time analytics. It integrates with VSCode, Cursor, and Windsurf through dedicated IDE plugins.
 
 ## Features
 
-- **Graph-based memory storage** — Kuzu native graph database with semantic vector search (HNSW indexes, sentence-transformers embeddings)
+- **Graph-based memory storage** — LadybugDB native graph database with semantic vector search (HNSW indexes, sentence-transformers embeddings)
 - **Codon-accelerated graph algorithms** — Optional native compilation via [Codon](https://github.com/exaloop/codon) for 10-100x speedups on centrality, community detection, path analysis, and similarity computations, with automatic Python/NetworkX fallback
 - **FastAPI backend** — Async API with JWT authentication (EdDSA/Ed25519), rate limiting, and security middleware
 - **Real-time analytics** — WebSocket and SSE streaming for live telemetry dashboards
@@ -52,7 +52,7 @@ streamlit run streamlit_app.py
 | `JWT_SECRET_KEY` | (required) | Secret key for JWT token signing |
 | `DATABASE_URL` | `sqlite:///./graphmemory.db` | PostgreSQL connection string |
 | `REDIS_URL` | `redis://localhost:6379` | Redis connection for caching |
-| `KUZU_DB_PATH` | `./data/kuzu` | Path to Kuzu graph database |
+| `LADYBUG_DB_PATH` | `./data/ladybug.lbdb` | Path to LadybugDB graph database |
 | `CODON_ENABLED` | `true` | Enable Codon acceleration |
 | `CODON_LIB_PATH` | `./codon/lib/` | Path to compiled Codon libraries |
 | `CODON_MIN_GRAPH_SIZE` | `100` | Minimum graph size for Codon routing |
@@ -73,7 +73,7 @@ IDE Plugins (VSCode/Cursor/Windsurf)
         |
    ┌────┴────┐
    v         v
-Kuzu DB   Redis Cache
+LadybugDB DB   Redis Cache
 (graphs)  (sessions)
    |
    v
@@ -113,7 +113,7 @@ GraphMemory-IDE/
 │   ├── monitoring/        # Health checks, metrics, alerting
 │   ├── security/          # Security middleware
 │   ├── streaming/         # WebSocket/SSE streaming
-│   └── graph_database.py  # Kuzu DB integration
+│   └── graph_database.py  # LadybugDB DB integration
 ├── dashboard/             # Streamlit UI
 ├── frontend/              # TypeScript/React frontend
 ├── codon/                 # Codon acceleration layer

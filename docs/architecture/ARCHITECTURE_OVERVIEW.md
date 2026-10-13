@@ -49,7 +49,7 @@ flowchart TB
     end
 
     subgraph data["Data Layer"]
-        KUZU[("Kuzu GraphDB\nProperty Graphs\nCypher Queries")]
+        LADYBUG[("LadybugDB\nProperty Graphs\nCypher Queries")]
         PG[("PostgreSQL\nRelational Data\nUser Accounts")]
         REDIS[("Redis\nSession Cache\nPub/Sub")]
     end
@@ -71,11 +71,11 @@ flowchart TB
     RATE --> ANALYTICS
     WS --> COLLAB
 
-    MEMORY --> KUZU
+    MEMORY --> LADYBUG
     MEMORY --> BRIDGE
-    ANALYTICS --> KUZU
+    ANALYTICS --> LADYBUG
     ANALYTICS --> REDIS
-    EMBEDDINGS --> KUZU
+    EMBEDDINGS --> LADYBUG
     COLLAB --> PG
 
     BRIDGE --> KERNELS
@@ -100,7 +100,7 @@ flowchart TB
 |-----------|---------------|----------|
 | API Gateway | FastAPI 0.115 + Uvicorn | `server/main.py` |
 | Authentication | JWT with EdDSA/Ed25519, SSO (SAML/OIDC), MFA (TOTP) | `server/auth_jwt.py`, `server/auth/` |
-| Graph Database | Kuzu 0.10 with Cypher queries, HNSW vector indexes | `server/graph_database.py` |
+| Graph Database | LadybugDB 0.21.2 with Cypher queries, automatic PK hash indexes + zone maps, vector similarity via `array_cosine_similarity` | `server/graph_database.py` |
 | Analytics | Real-time telemetry with WebSocket/SSE streaming | `server/analytics/` |
 | Embeddings | sentence-transformers for semantic vector search | `server/main.py` (vector search endpoints) |
 | Codon Bridge | Optional native compilation with Python fallback | `codon/bridge/` |
@@ -120,7 +120,7 @@ sequenceDiagram
     participant AUTH as JWT Auth
     participant MEM as Memory Service
     participant BRIDGE as Codon Bridge
-    participant KUZU as Kuzu GraphDB
+    participant LADYBUG as LadybugDB
     participant REDIS as Redis Cache
 
     IDE->>GW: MCP Request (tool call)
@@ -133,8 +133,8 @@ sequenceDiagram
         GW-->>IDE: Response
     else Cache Miss
         GW->>MEM: Process Request
-        MEM->>KUZU: Cypher Query
-        KUZU-->>MEM: Graph Results
+        MEM->>LADYBUG: Cypher Query
+        LADYBUG-->>MEM: Graph Results
 
         opt Graph Size >= 100 nodes
             MEM->>BRIDGE: Route to Codon
@@ -170,7 +170,7 @@ flowchart LR
     end
 
     subgraph storage["Storage"]
-        KUZU_STORE[("Kuzu GraphDB\nTelemetryEvent nodes\nVector indexes (HNSW)")]
+        LADYBUG_STORE[("LadybugDB\nTelemetryEvent nodes\nVector indexes (HNSW)")]
         PG_STORE[("PostgreSQL\nUser accounts\nSession data")]
         REDIS_STORE[("Redis\nHot cache\nReal-time state")]
     end
@@ -183,12 +183,12 @@ flowchart LR
 
     FILE_EVT & SYMBOL & TEST & CHAT & SYS --> INGEST
     INGEST --> VALIDATE --> EMBED
-    EMBED --> KUZU_STORE
+    EMBED --> LADYBUG_STORE
     VALIDATE --> PG_STORE
     VALIDATE --> REDIS_STORE
 
-    KUZU_STORE --> CYPHER
-    KUZU_STORE --> VECTOR_SEARCH
+    LADYBUG_STORE --> CYPHER
+    LADYBUG_STORE --> VECTOR_SEARCH
     REDIS_STORE --> STREAM
 
     style sources fill:#e8f5e9,stroke:#2e7d32
@@ -201,7 +201,7 @@ flowchart LR
 
 | Database | Purpose | Key Settings |
 |----------|---------|-------------|
-| Kuzu GraphDB | Graph storage, vector search | Buffer pool: 1GB, max threads: 8, auto-checkpoint: 64MB |
+| LadybugDB | Graph storage, vector search | Buffer pool: 1GB, max threads: 8, auto-checkpoint: 64MB |
 | PostgreSQL | User accounts, sessions, relational data | Connection pool: 5 base / 10 max |
 | Redis | Session cache, pub/sub, real-time state | Default config, used for hot data |
 
@@ -331,7 +331,7 @@ flowchart TB
 ### Development Environment
 
 For local development, `docker/docker-compose.yml` provides a minimal 2-service setup:
-- **mcp-server**: FastAPI + Kuzu (ports 8080, 50051) with security hardening (read-only, seccomp, non-root)
+- **mcp-server**: FastAPI + LadybugDB (ports 8080, 50051) with security hardening (read-only, seccomp, non-root)
 - **kestra**: Workflow orchestration (port 8081)
 
 ---

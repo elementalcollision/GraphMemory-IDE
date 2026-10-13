@@ -81,7 +81,7 @@ graph TB
     end
 
     subgraph "Data Layer"
-        KUZU[Kuzu GraphDB]
+        LADYBUG[LadybugDB]
         STATE[Session State]
         CACHE[Redis Cache]
     end
@@ -106,7 +106,7 @@ graph TB
     CC --> LB
     
     SM --> STATE
-    STATE --> KUZU
+    STATE --> LADYBUG
     STATE --> CACHE
 ```
 
@@ -389,7 +389,7 @@ graph TB
 - **Analytics Engine** - Performance analytics and optimization
 - **[Enterprise Alerting (Step 8)](PROJECT_STATUS_DASHBOARD.md#enterprise-alerting-platform-step-8)** - Alert management system
 - **[MCP Server](server/)** - Model Context Protocol implementation
-- **[Graph Database](server/models/)** - Kuzu GraphDB integration
+- **[Graph Database](server/models/)** - LadybugDB integration
 
 ### **Development Lifecycle**
 - **[Development Setup](CONTRIBUTING.md#development-setup)** - Local development environment
@@ -728,7 +728,7 @@ graph LR
   - [ ] Final performance validation and documentation
 
 #### **Week 3: Enterprise Security Layer Complete** (4,256+ lines) ✅
-- **Day 1**: Redis & Kuzu Tenant Isolation (1,173+ lines) ✅
+- **Day 1**: Redis & LadybugDB Tenant Isolation (1,173+ lines) ✅
 - **Day 2**: Enterprise RBAC and Permissions (1,890+ lines) ✅  
 - **Day 3**: Audit Logging and Compliance (1,910+ lines) ✅
 - Complete SOC2/GDPR compliance with automated validation

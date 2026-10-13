@@ -2,13 +2,13 @@
 
 ## Overview
 
-The MCP (Model Context Protocol) Server is a FastAPI-based service that provides AI memory capabilities for IDEs. It uses Kuzu GraphDB for persistent storage and offers telemetry ingestion, querying, vector-based semantic search, and JWT-based authentication.
+The MCP (Model Context Protocol) Server is a FastAPI-based service that provides AI memory capabilities for IDEs. It uses LadybugDB for persistent storage and offers telemetry ingestion, querying, vector-based semantic search, and JWT-based authentication.
 
 ## Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   IDE Plugin   │───▶│   MCP Server    │───▶│   Kuzu GraphDB  │
+│   IDE Plugin   │───▶│   MCP Server    │───▶│   LadybugDB  │
 │                 │    │   (FastAPI)     │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
@@ -193,8 +193,8 @@ Retrieve top-K relevant nodes/snippets using vector search.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `KUZU_DB_PATH` | `./data` | Path to Kuzu database files |
-| `KUZU_READ_ONLY` | `false` | Enable read-only mode |
+| `LADYBUG_DB_PATH` | `./data` | Path to LadybugDB database files |
+| `LADYBUG_READ_ONLY` | `false` | Enable read-only mode |
 | `JWT_SECRET_KEY` | `your-secret-key-change-in-production` | JWT token signing key |
 | `JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
 | `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Token expiration time in minutes |
@@ -225,14 +225,14 @@ export JWT_ENABLED="false"
 
 ### Read-Only Mode
 
-When `KUZU_READ_ONLY=true`:
+When `LADYBUG_READ_ONLY=true`:
 - All write endpoints return HTTP 403 Forbidden
 - Read endpoints continue to function normally
 - Useful for maintenance, backups, or production safety
 
 ```bash
 # Enable read-only mode
-export KUZU_READ_ONLY=true
+export LADYBUG_READ_ONLY=true
 docker compose up -d
 ```
 
@@ -266,7 +266,7 @@ CALL CREATE_VECTOR_INDEX('Node', 'node_embedding_idx', 'embedding');
 
 2. **Start Database:**
    ```bash
-   # Ensure Kuzu database directory exists
+   # Ensure LadybugDB database directory exists
    mkdir -p data
    ```
 
@@ -323,10 +323,10 @@ services:
       - "8080:8080"
       - "50051:50051"
     environment:
-      - KUZU_DB_PATH=/database
-      - KUZU_READ_ONLY=false
+      - LADYBUG_DB_PATH=/database
+      - LADYBUG_READ_ONLY=false
     volumes:
-      - kuzu-data:/database
+      - ladybug-data:/database
     networks:
       - memory-net
 ```
@@ -413,14 +413,14 @@ Currently, the server operates without authentication. For production:
    # Check database path permissions
    ls -la /database
    
-   # Verify Kuzu installation
-   python -c "import kuzu; print('Kuzu OK')"
+   # Verify LadybugDB installation
+   python -c "import ladybug; print('LadybugDB OK')"
    ```
 
 2. **Vector Search Failures:**
    ```bash
    # Check VECTOR extension
-   # In Kuzu console:
+   # In LadybugDB console:
    INSTALL VECTOR;
    LOAD VECTOR;
    ```
@@ -450,7 +450,7 @@ logging.basicConfig(level=logging.DEBUG)
 curl -w "@curl-format.txt" -s -o /dev/null http://localhost:8080/telemetry/list
 
 # Database query performance
-# Monitor Kuzu query execution times
+# Monitor LadybugDB query execution times
 ```
 
 ## API Client Examples

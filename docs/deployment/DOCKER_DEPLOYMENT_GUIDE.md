@@ -21,7 +21,7 @@
 This guide provides comprehensive instructions for deploying GraphMemory-IDE using Docker containers. The containerized deployment includes:
 
 - **Multi-Service Architecture**: Separate containers for each service component
-- **Database Persistence**: Kuzu graph database, PostgreSQL, and Redis with persistent volumes
+- **Database Persistence**: LadybugDB graph database, PostgreSQL, and Redis with persistent volumes
 - **Scalable Design**: Horizontal scaling support for API and dashboard services
 - **Production Ready**: Security, monitoring, and backup configurations
 - **Development Support**: Local development environment with hot-reload
@@ -31,7 +31,7 @@ This guide provides comprehensive instructions for deploying GraphMemory-IDE usi
 - **Dashboard**: Streamlit-based interactive dashboard
 - **Frontend**: Next.js frontend application
 - **PostgreSQL**: Primary relational database
-- **Kuzu Database**: Graph database for entity relationships
+- **LadybugDB Database**: Graph database for entity relationships
 - **Redis**: Caching and session storage
 - **Nginx**: Reverse proxy and load balancer
 - **Monitoring**: Prometheus, Grafana, and logging services
@@ -134,7 +134,7 @@ graph TD
     C[Dashboard] --> B
     B --> D[PostgreSQL]
     B --> E[Redis]
-    B --> F[Kuzu Database]
+    B --> F[LadybugDB Database]
     G[Nginx] --> A
     G --> B
     G --> C
@@ -152,7 +152,7 @@ graph TD
 ```
 graphmemory-data/
 ├── postgresql/          # PostgreSQL data
-├── kuzu/               # Kuzu graph database
+├── ladybug/               # LadybugDB graph database
 ├── redis/              # Redis persistence
 ├── logs/               # Application logs
 ├── backups/            # Database backups
@@ -214,7 +214,7 @@ COPY scripts/ ./scripts/
 COPY .env.docker .env
 
 # Create directories
-RUN mkdir -p /app/data/kuzu /app/logs /app/backups
+RUN mkdir -p /app/data/ladybug /app/logs /app/backups
 
 # Set permissions
 RUN useradd -m -u 1000 appuser && \
@@ -366,25 +366,25 @@ postgresql:
   restart: unless-stopped
 ```
 
-### Kuzu Database Configuration
+### LadybugDB Database Configuration
 ```yaml
-# Kuzu as a volume-mounted service
-kuzu-init:
+# LadybugDB as a volume-mounted service
+ladybug-init:
   image: alpine:latest
-  container_name: graphmemory-kuzu-init
+  container_name: graphmemory-ladybug-init
   volumes:
-    - kuzu_data:/data/kuzu
-    - ./scripts/init_kuzu.sh:/init_kuzu.sh:ro
+    - ladybug_data:/data/ladybug
+    - ./scripts/init_ladybug.sh:/init_ladybug.sh:ro
   command: >
     sh -c "
-    if [ ! -f /data/kuzu/.initialized ]; then
-      echo 'Initializing Kuzu database...'
-      mkdir -p /data/kuzu
-      chmod 755 /data/kuzu
-      touch /data/kuzu/.initialized
-      echo 'Kuzu database initialized'
+    if [ ! -f /data/ladybug/.initialized ]; then
+      echo 'Initializing LadybugDB database...'
+      mkdir -p /data/ladybug
+      chmod 755 /data/ladybug
+      touch /data/ladybug/.initialized
+      echo 'LadybugDB database initialized'
     else
-      echo 'Kuzu database already initialized'
+      echo 'LadybugDB database already initialized'
     fi
     "
   networks:
@@ -482,18 +482,18 @@ services:
       retries: 3
     restart: unless-stopped
 
-  kuzu-init:
+  ladybug-init:
     image: alpine:latest
-    container_name: graphmemory-kuzu-init
+    container_name: graphmemory-ladybug-init
     volumes:
-      - kuzu_data:/data/kuzu
+      - ladybug_data:/data/ladybug
     command: >
       sh -c "
-      mkdir -p /data/kuzu
-      chmod 755 /data/kuzu
-      if [ ! -f /data/kuzu/.initialized ]; then
-        touch /data/kuzu/.initialized
-        echo 'Kuzu database initialized'
+      mkdir -p /data/ladybug
+      chmod 755 /data/ladybug
+      if [ ! -f /data/ladybug/.initialized ]; then
+        touch /data/ladybug/.initialized
+        echo 'LadybugDB database initialized'
       fi
       "
 
@@ -506,11 +506,11 @@ services:
     environment:
       - DATABASE_URL=postgresql://graphmemory:${POSTGRES_PASSWORD:-changeme}@postgresql:5432/graphmemory
       - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379/0
-      - KUZU_DATABASE_PATH=/app/data/kuzu
+      - LADYBUG_DATABASE_PATH=/app/data/ladybug
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-this}
       - ENVIRONMENT=${ENVIRONMENT:-production}
     volumes:
-      - kuzu_data:/app/data/kuzu
+      - ladybug_data:/app/data/ladybug
       - app_logs:/app/logs
       - app_backups:/app/backups
     networks:
@@ -523,7 +523,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      kuzu-init:
+      ladybug-init:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -643,7 +643,7 @@ volumes:
     driver: local
   redis_data:
     driver: local
-  kuzu_data:
+  ladybug_data:
     driver: local
   app_logs:
     driver: local
@@ -676,7 +676,7 @@ REDIS_PASSWORD=secure_redis_password_here
 # Database URLs
 DATABASE_URL=postgresql://graphmemory:${POSTGRES_PASSWORD}@postgresql:5432/graphmemory
 REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
-KUZU_DATABASE_PATH=/app/data/kuzu
+LADYBUG_DATABASE_PATH=/app/data/ladybug
 
 # API Configuration
 API_HOST=0.0.0.0
@@ -1088,9 +1088,9 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 docker compose exec -T postgresql pg_dump -U graphmemory graphmemory > \
     "${BACKUP_DIR}/postgresql_${TIMESTAMP}.sql"
 
-# Kuzu backup (copy entire directory)
-docker compose exec -T api tar -czf "/app/backups/kuzu_${TIMESTAMP}.tar.gz" \
-    -C /app/data kuzu/
+# LadybugDB backup (copy entire directory)
+docker compose exec -T api tar -czf "/app/backups/ladybug_${TIMESTAMP}.tar.gz" \
+    -C /app/data ladybug/
 
 # Redis backup
 docker compose exec -T redis redis-cli --rdb "/data/dump_${TIMESTAMP}.rdb"
@@ -1125,12 +1125,12 @@ docker run -d \
 docker compose exec -T postgresql psql -U graphmemory -d graphmemory < \
     backups/postgresql_20240107_020000.sql
 
-# Restore Kuzu
-docker compose down kuzu-init
-docker volume rm graphmemory_kuzu_data
-docker volume create graphmemory_kuzu_data
+# Restore LadybugDB
+docker compose down ladybug-init
+docker volume rm graphmemory_ladybug_data
+docker volume create graphmemory_ladybug_data
 docker compose run --rm -v $(pwd)/backups:/backups api \
-    tar -xzf /backups/kuzu_20240107_020000.tar.gz -C /app/data/
+    tar -xzf /backups/ladybug_20240107_020000.tar.gz -C /app/data/
 
 # Restore Redis
 docker compose exec redis redis-cli FLUSHALL

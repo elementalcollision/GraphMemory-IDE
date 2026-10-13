@@ -27,7 +27,7 @@ GraphMemory-IDE provides a powerful plugin system that allows developers to exte
 
 ### Plugin Capabilities
 
-- **Memory System Access**: Full access to the Kuzu graph database
+- **Memory System Access**: Full access to the LadybugDB graph database
 - **MCP Protocol**: Integration with Model Context Protocol
 - **Event System**: Subscribe to and emit system events
 - **Configuration Management**: Plugin-specific configuration

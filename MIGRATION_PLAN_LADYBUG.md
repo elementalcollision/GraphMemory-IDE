@@ -395,14 +395,22 @@ Discovered during Phase 4; promoted to a dedicated future phase on operator dire
 
 **Phase 5 verification:** all 3 files parse under `node --check`; live `lbug 0.21.2` CLI confirmed to support `EXPORT DATABASE` / `IMPORT DATABASE` (the migrator's core commands). CLI test suite: **9 failed / 16 passed — identical to the pre-change baseline** (9 failures pre-date the migration: upgrade/diagnostics/edge-case tests; the `ide-plugins/*.ts` vitest failures are also identical pre/post — those TS files aren't configured for the vitest runner). **Zero migration regressions.**
 
-### Phase 6: Documentation (Day 3)
+### Phase 6: Documentation (Day 3) — ✅ COMPLETED 2026-10-13
 
-| # | Task | Files | Risk |
-|---|------|-------|------|
-| 6.1 | Update README.md: project description, architecture refs, setup instructions | `README.md` | Low |
-| 6.2 | Update all docs/ files: replace "Kuzu" → "LadybugDB", update code examples, update env var docs | 20+ doc files (see §2.6) | Low (mechanical) |
-| 6.3 | Add migration guide: `docs/migration/KUZU_TO_LADYBUG.md` documenting the data migration procedure for deployed instances | New file | Low |
-| 6.4 | Update `docs/conf.py` if it references kuzu | `docs/conf.py` | Trivial |
+| # | Task | Status |
+|---|------|--------|
+| 6.1 | README.md updated (project description, LadybugDB link, env-var table with correct default `./data/ladybug.lbdb`) | ✅ |
+| 6.2 | All 23 doc files swept: prose, code examples, env vars, module paths, volume names, version pins (`Kuzu 0.10` → `LadybugDB 0.21.2`), install commands (`pip install ladybug`, `brew install ladybug`, image `ghcr.io/ladybugdb/api-server:latest`) | ✅ |
+| 6.3 | Created `docs/migration/KUZU_TO_LADYBUG.md` — operational migration guide for deployed instances (backup, Kuzu export → LadybugDB import, env-var table, volume migration, API-difference table, rollback procedure) | ✅ |
+| 6.4 | `docs/conf.py` swept and compiles | ✅ |
+
+**Doc-specific API remediations (verified against live LadybugDB):**
+- `PERFORMANCE_TUNING.md` example: fixed stale Kuzu kwarg `enable_compression` → `compression`; replaced 3 unsupported secondary-index examples with the PK/zone-map note; added `init_connection()`.
+- `graph-operations.md`: replaced old openCypher `CREATE INDEX ON :Memory(type)` and FULLTEXT examples — **FULLTEXT indexes do not exist in LadybugDB 0.21.2** (verified: `Index type FULLTEXT does not exist`); documented string-function alternative.
+- `ARCHITECTURE_OVERVIEW.md`: removed the unverified "HNSW vector indexes" claim (LadybugDB 0.21.2 exposes `array_cosine_similarity`/`array_distance`/`array_squared_distance`; HNSW status unverified) — replaced with accurate index/similarity description.
+- Version/dependency pins updated across docs.
+
+**Verification:** `docs/conf.py` compiles; swept code examples re-checked for coherence; residual `kuzu` refs in `README.md`/`docs/` = only the two intentional migration-history artifacts (`docs/migration/KUZU_TO_LADYBUG.md`, `docs/migration/phase0_smoke_test.py`), which document the old names by design.
 
 ### Phase 7: Data Migration & Integration Testing (Day 4)
 

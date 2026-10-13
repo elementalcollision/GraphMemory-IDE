@@ -42,9 +42,9 @@ GRAPHMEMORY_ENV=production
 LOG_LEVEL=info
 
 # Database Configuration
-KUZU_DB_PATH=/data/kuzu
-KUZU_BUFFER_POOL_SIZE=4GB
-KUZU_MAX_CONNECTIONS=100
+LADYBUG_DB_PATH=/data/ladybug
+LADYBUG_BUFFER_POOL_SIZE=4GB
+LADYBUG_MAX_CONNECTIONS=100
 
 # MCP Server Configuration
 MCP_PORT=8080
@@ -353,7 +353,7 @@ groups:
           description: "{{ $labels.job }} service is down"
 
       - alert: DatabaseConnectionFailure
-        expr: kuzu_connection_errors_total > 10
+        expr: ladybug_connection_errors_total > 10
         for: 2m
         labels:
           severity: critical
@@ -567,11 +567,11 @@ create_backup() {
     
     log "Creating backup: $BACKUP_NAME"
     
-    # Backup Kuzu database
-    log "Backing up Kuzu database..."
-    docker-compose exec -T mcp-server kuzu-export \
-        --database /app/data/kuzu \
-        --output "$backup_path/kuzu_export"
+    # Backup LadybugDB database
+    log "Backing up LadybugDB database..."
+    docker-compose exec -T mcp-server ladybug-export \
+        --database /app/data/ladybug \
+        --output "$backup_path/ladybug_export"
     
     # Backup Kestra data
     log "Backing up Kestra data..."
@@ -709,12 +709,12 @@ restore_from_backup() {
     log "Restoring configuration..."
     cp -r "$RECOVERY_DIR"/*/config/* ./
     
-    # Restore Kuzu database
-    log "Restoring Kuzu database..."
-    rm -rf ./data/kuzu
-    mkdir -p ./data/kuzu
-    kuzu-import --database ./data/kuzu \
-        --input "$RECOVERY_DIR"/*/kuzu_export
+    # Restore LadybugDB database
+    log "Restoring LadybugDB database..."
+    rm -rf ./data/ladybug
+    mkdir -p ./data/ladybug
+    ladybug-import --database ./data/ladybug \
+        --input "$RECOVERY_DIR"/*/ladybug_export
     
     # Restore Kestra data
     log "Restoring Kestra data..."
@@ -756,28 +756,28 @@ main "$@"
 #!/bin/bash
 # scripts/recover-database.sh
 
-recover_kuzu_database() {
+recover_ladybug_database() {
     local backup_path="$1"
     
-    log "Recovering Kuzu database from: $backup_path"
+    log "Recovering LadybugDB database from: $backup_path"
     
     # Stop MCP server
     docker-compose stop mcp-server
     
     # Backup current database
-    if [ -d "./data/kuzu" ]; then
-        mv ./data/kuzu "./data/kuzu.backup.$(date +%s)"
+    if [ -d "./data/ladybug" ]; then
+        mv ./data/ladybug "./data/ladybug.backup.$(date +%s)"
     fi
     
     # Restore from backup
-    mkdir -p ./data/kuzu
-    kuzu-import --database ./data/kuzu --input "$backup_path"
+    mkdir -p ./data/ladybug
+    ladybug-import --database ./data/ladybug --input "$backup_path"
     
     # Start MCP server
     docker-compose start mcp-server
     
     # Verify database integrity
-    docker-compose exec mcp-server kuzu-verify --database /app/data/kuzu
+    docker-compose exec mcp-server ladybug-verify --database /app/data/ladybug
     
     log "Database recovery completed"
 }
@@ -840,8 +840,8 @@ EOF
 optimize_database() {
     log "Optimizing database configuration..."
     
-    # Kuzu optimization
-    cat > ./config/kuzu.conf << EOF
+    # LadybugDB optimization
+    cat > ./config/ladybug.conf << EOF
 buffer_pool_size=4GB
 max_connections=100
 checkpoint_frequency=300
@@ -913,7 +913,7 @@ monitor_performance() {
     
     # Database metrics
     local db_connections
-    db_connections=$(docker-compose exec -T mcp-server kuzu-stats --connections)
+    db_connections=$(docker-compose exec -T mcp-server ladybug-stats --connections)
     
     # Generate report
     cat > "$output_file" << EOF
@@ -1071,8 +1071,8 @@ perform_maintenance() {
     
     # Database maintenance
     log "Performing database maintenance..."
-    docker-compose exec mcp-server kuzu-vacuum --database /app/data/kuzu
-    docker-compose exec mcp-server kuzu-analyze --database /app/data/kuzu
+    docker-compose exec mcp-server ladybug-vacuum --database /app/data/ladybug
+    docker-compose exec mcp-server ladybug-analyze --database /app/data/ladybug
     
     # Security updates
     log "Checking security updates..."
@@ -1099,16 +1099,16 @@ maintain_database() {
     log "Starting database maintenance..."
     
     # Vacuum database
-    docker-compose exec mcp-server kuzu-vacuum --database /app/data/kuzu
+    docker-compose exec mcp-server ladybug-vacuum --database /app/data/ladybug
     
     # Update statistics
-    docker-compose exec mcp-server kuzu-analyze --database /app/data/kuzu
+    docker-compose exec mcp-server ladybug-analyze --database /app/data/ladybug
     
     # Check integrity
-    docker-compose exec mcp-server kuzu-verify --database /app/data/kuzu
+    docker-compose exec mcp-server ladybug-verify --database /app/data/ladybug
     
     # Optimize indexes
-    docker-compose exec mcp-server kuzu-reindex --database /app/data/kuzu
+    docker-compose exec mcp-server ladybug-reindex --database /app/data/ladybug
     
     log "Database maintenance completed"
 }
@@ -1134,7 +1134,7 @@ docker-compose restart mcp-server
 
 ```bash
 # Check database status
-docker-compose exec mcp-server kuzu-status --database /app/data/kuzu
+docker-compose exec mcp-server ladybug-status --database /app/data/ladybug
 
 # Reset connections
 docker-compose restart mcp-server

@@ -11,7 +11,7 @@ graph TB
     subgraph "Performance Layers"
         APP[Application Layer<br/>FastAPI + Analytics]
         CACHE[Caching Layer<br/>Redis Multi-tier]
-        DB[Database Layer<br/>Kuzu + Vector Store]
+        DB[Database Layer<br/>LadybugDB + Vector Store]
         INFRA[Infrastructure Layer<br/>Container + Network]
     end
     
@@ -178,27 +178,30 @@ class PerformanceCache:
 
 ## 🗄️ Database Performance Optimization
 
-### Kuzu Database Tuning
+### LadybugDB Database Tuning
 
 ```python
-# Optimized Kuzu configuration
-import kuzu
+# Optimized LadybugDB configuration
+import ladybug as lb
 
 def create_optimized_database(db_path: str):
     # Performance-optimized database creation
-    db = kuzu.Database(
+    db = lb.Database(
         db_path,
         buffer_pool_size=1024 * 1024 * 1024,  # 1GB buffer pool
         max_num_threads=8,  # Use all CPU cores
-        enable_compression=True
+        compression=True
     )
     
-    conn = kuzu.Connection(db)
+    conn = lb.Connection(db)
+    conn.init_connection()
     
-    # Create performance indexes
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_memory_created_at ON Memory(created_at)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_memory_type ON Memory(type)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_memory_tags ON Memory(tags)")
+    # NOTE (LadybugDB 0.21.x): HASH/ART indexes are only supported on PRIMARY
+    # KEYS, and a PK hash index is created automatically on every node table.
+    # Secondary-property indexes (e.g. on Memory(type)) are NOT supported —
+    # LadybugDB maintains automatic zone maps (min/max pruning) on all columns,
+    # which serve the same filter workloads. If a manual index is ever needed:
+    #   CREATE INDEX <name> FOR (<alias>:<Table>) ON (<alias>.<pk_property>);
     
     return db, conn
 ```
@@ -560,8 +563,8 @@ export MAX_REQUESTS=10000
 export MAX_REQUESTS_JITTER=1000
 
 # Database optimization
-export KUZU_BUFFER_POOL_SIZE=2147483648  # 2GB
-export KUZU_MAX_THREADS=8
+export LADYBUG_BUFFER_POOL_SIZE=2147483648  # 2GB
+export LADYBUG_MAX_THREADS=8
 
 # Cache configuration
 export REDIS_MAX_CONNECTIONS=100

@@ -49,7 +49,7 @@ graph TB
     end
     
     subgraph "Data Layer"
-        KUZU[(Kuzu Graph DB)]
+        LADYBUG[(LadybugDB Graph DB)]
         CACHE[(Redis Cache)]
         FILES[(File Storage)]
     end
@@ -65,17 +65,17 @@ graph TB
     VALID --> SEARCH
     VALID --> SYNC
     
-    MEMORY --> KUZU
-    GRAPH --> KUZU
+    MEMORY --> LADYBUG
+    GRAPH --> LADYBUG
     SEARCH --> CACHE
     SYNC --> FILES
     
-    KUZU --> CACHE
+    LADYBUG --> CACHE
     
     style CLI fill:#00bf7d,color:#000000
     style AUTH fill:#0073e6,color:#ffffff
     style MEMORY fill:#2546f0,color:#ffffff
-    style KUZU fill:#5928ed,color:#ffffff
+    style LADYBUG fill:#5928ed,color:#ffffff
 ```
 
 ### Request Flow
@@ -913,7 +913,7 @@ API_PORT=8080
 API_DEBUG=false
 
 # Database
-DATABASE_URL=kuzu://localhost:7687
+DATABASE_URL=ladybug://localhost:7687
 REDIS_URL=redis://localhost:6379
 
 # Security

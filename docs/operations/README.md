@@ -234,7 +234,7 @@ graph TB
     end
     
     subgraph "Data Containers"
-        KuzuContainer[Kuzu Database Container]
+        LadybugDBContainer[LadybugDB Database Container]
         RedisContainer[Redis Cache Container]
         VectorContainer[Vector Store Container]
     end
@@ -259,7 +259,7 @@ graph TB
     Pods --> MLContainer
     Pods --> WorkerContainer
     
-    Pods --> KuzuContainer
+    Pods --> LadybugDBContainer
     Pods --> RedisContainer
     Pods --> VectorContainer
     

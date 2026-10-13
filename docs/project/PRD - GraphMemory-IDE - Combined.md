@@ -20,13 +20,13 @@ Project Code-Name: “GraphMemory-IDE”
 
 **1\. Executive Summary & Purpose**
 
-**Objective:** To create an AI-assisted development environment by providing every supported IDE (Cursor, Windsurf, Qodo, Zed) with an on-device, long-term “AI memory” layer. This system will be powered by Kuzu GraphDB and exposed through a Model Context Protocol (MCP)-compliant server. The core purpose is to enable AI agents, code-completion engines, and chat copilots to query rich, cross-file context with high performance.
+**Objective:** To create an AI-assisted development environment by providing every supported IDE (Cursor, Windsurf, Qodo, Zed) with an on-device, long-term “AI memory” layer. This system will be powered by LadybugDB and exposed through a Model Context Protocol (MCP)-compliant server. The core purpose is to enable AI agents, code-completion engines, and chat copilots to query rich, cross-file context with high performance.
 
 ### ---
 
 **2\. Background**
 
-The foundation for this project includes an existing Kuzu MCP server, available via Docker or Node, providing a starting point for the storage and query layer. We will leverage **OrbStack** as a lightweight, Docker-compatible engine for development and CI/headless operations. **Kestra** will serve as our declarative workflow engine for CI/CD. The **Model Context Protocol (MCP)** provides official Python and TypeScript SDKs, facilitating client and server implementation.
+The foundation for this project includes an existing LadybugDB MCP server, available via Docker or Node, providing a starting point for the storage and query layer. We will leverage **OrbStack** as a lightweight, Docker-compatible engine for development and CI/headless operations. **Kestra** will serve as our declarative workflow engine for CI/CD. The **Model Context Protocol (MCP)** provides official Python and TypeScript SDKs, facilitating client and server implementation.
 
 ### ---
 
@@ -48,24 +48,24 @@ The foundation for this project includes an existing Kuzu MCP server, available 
 
 | In-scope | Out-of-scope / Future |
 | :---- | :---- |
-| Local Kuzu DB container & MCP server | Cloud-sync of memory graphs |
+| Local LadybugDB DB container & MCP server | Cloud-sync of memory graphs |
 | IDE plugins (Cursor, Windsurf, Qodo, Zed) | Non-desktop IDEs (e.g., Codespaces) |
 | Kestra-based build / test / publish | Large-scale analytics on memory data |
 | npx-driven installer & updater | Alternative graph engines |
 | GitHub repository analysis & pattern ingestion |  |
-| Local Docker-based Kuzu instance management |  |
+| Local Docker-based LadybugDB instance management |  |
 
 ### ---
 
 **5\. System Architecture**
 
-The system enables IDE plugins to communicate with a local MCP server via gRPC or HTTP/SSE, which in turn interacts with a Kuzu GraphDB instance. CI/CD and updates are handled by Kestra/OrbStack and NPX, respectively.
+The system enables IDE plugins to communicate with a local MCP server via gRPC or HTTP/SSE, which in turn interacts with a LadybugDB instance. CI/CD and updates are handled by Kestra/OrbStack and NPX, respectively.
 
 Code snippet
 
 graph TD  
     A\[IDE Plugin (TS/Rust)\] \--\>|gRPC / MCP (HTTP/SSE)| B\[MCP Server (Python 3.11+)\]  
-    B \--\>|libkuzu / Cypher/Tools| C\[(Kuzu DB)\]  
+    B \--\>|libladybug / Cypher/Tools| C\[(LadybugDB DB)\]  
     subgraph OrbStack Docker Network  
         B  
         C  
@@ -78,7 +78,7 @@ graph TD
 
 1. **IDE Plugins** (TypeScript/Rust)  
 2. **MCP Server** (Python 3.11+)  
-3. **Kuzu DB Container** (Docker)  
+3. **LadybugDB DB Container** (Docker)  
 4. **OrbStack CI/CD Pipeline**  
 5. **NPX Update System**
 
@@ -88,9 +88,9 @@ graph TD
 
 | ID | Description |
 | :---- | :---- |
-| FR-1 | The system SHALL ingest IDE telemetry (file open/save, symbol index, test runs, user chat) into Kuzu via the MCP resources endpoint. |
+| FR-1 | The system SHALL ingest IDE telemetry (file open/save, symbol index, test runs, user chat) into LadybugDB via the MCP resources endpoint. |
 | FR-2 | The IDE plugin SHALL request top-K relevant nodes/snippets via MCP tools/query. |
-| FR-3 | The system SHALL support read-only mode toggled with KUZU\_READ\_ONLY=true. |
+| FR-3 | The system SHALL support read-only mode toggled with LADYBUG\_READ\_ONLY=true. |
 | FR-4 | An npx CLI (@graphmemory/cli) SHALL perform install/upgrade/diagnostics on all supported OSes. |
 | FR-5 | The build pipeline SHALL run unit, integration and e2e suites inside OrbStack. |
 | FR-6 | The system SHALL clone and analyze GitHub repositories. |
@@ -152,8 +152,8 @@ YAML
 version: '3.9' \# Using newer version from PRD2
 
 services:  
-  kuzu-db:  
-    image: kuzudb/kuzu:0.10 \# Using newer version from PRD2 \[cite: 48\]  
+  ladybug-db:  
+    image: ladybugdb/ladybug:0.10 \# Using newer version from PRD2 \[cite: 48\]  
     volumes:  
       \- ./data:/database \# Using path from PRD2 \[cite: 48\]  
     networks:  
@@ -165,9 +165,9 @@ services:
       \- "8080:8080" \# Using port from PRD2 \[cite: 48\]  
       \- "50051:50051" \# Adding gRPC port from PRD1 \[cite: 7\]  
     environment:  
-      \- KUZU\_DB\_PATH=/database \# Using var from PRD2 \[cite: 48\]  
+      \- LADYBUG\_DB\_PATH=/database \# Using var from PRD2 \[cite: 48\]  
     depends\_on:  
-      \- kuzu-db \[cite: 7, 48\]  
+      \- ladybug-db \[cite: 7, 48\]  
     networks:  
       \- memory-net \[cite: 7, 48\]
 
@@ -180,9 +180,9 @@ networks:
 graphmemory/  
 ├─  .kestra/                 \# Kestra flows \[cite: 47\]  
 ├─  docker/                  \# Dockerfiles & compose \[cite: 47\]  
-│    ├─  kuzu/ \[cite: 47\]  
+│    ├─  ladybug/ \[cite: 47\]  
 │    └─  mcp-server/ \[cite: 47\]  
-├─  server/                  \# Forked kuzu-mcp-server \+ patches \[cite: 47\]  
+├─  server/                  \# Forked ladybug-mcp-server \+ patches \[cite: 47\]  
 ├─  plugins/ \[cite: 47\]  
 │    ├─  cursor/ \[cite: 47\]  
 │    ├─  windsurf/ \[cite: 47\]  
@@ -199,7 +199,7 @@ Kestra flows, triggered on PR and main merges, will manage the CI/CD process wit
 | :---- | :---- | :---- | :---- |
 | Lint & Unit Tests | graphmemory.tests | python:3.11 | Pytest with coverage gate ≥ 90% (PRD1 suggests 70%) |
 | Build Images | graphmemory.build | Docker-in-Docker | Multi-arch buildx |
-| Integration Tests | graphmemory.it | compose up | Runs against Kuzu MCP container |
+| Integration Tests | graphmemory.it | compose up | Runs against LadybugDB MCP container |
 | Publish | graphmemory.publish | node:20 | npm publish & docker push |
 | Release Docs | graphmemory.docs | mkdocs | Auto-deploy GitHub Pages |
 
@@ -210,7 +210,7 @@ Kestra flows, triggered on PR and main merges, will manage the CI/CD process wit
   Python  
   \# test\_integration.py  
   async def test\_code\_ingestion():  
-      async with AsyncKuzuClient("localhost:50051") as client: \# \[cite: 8\]  
+      async with AsyncLadybugDBClient("localhost:50051") as client: \# \[cite: 8\]  
           response \= await client.ingest\_repo("https://github.com/example/repo") \# \[cite: 8\]  
           assert response.entity\_count \> 0 \# \[cite: 8\]
 
@@ -233,9 +233,9 @@ Users will update using npx @graphmemory/cli@latest upgrade.
 **Update Flow:**
 
 1. Run npx @graphmemory/cli@latest upgrade.  
-2. The CLI pulls the newest Docker images (docker pull kuzudb/mcp-server:latest).  
+2. The CLI pulls the newest Docker images (docker pull ladybugdb/mcp-server:latest).  
 3. Re-creates containers via docker compose up \-d \--pull always.  
-4. Migrates Kuzu schema if necessary.  
+4. Migrates LadybugDB schema if necessary.  
 5. The CLI itself can be updated via npm install \-g @graphmemory/cli.
 
 **Features:** Differential updates, Rollback capability, Signature verification.
@@ -250,7 +250,7 @@ Users will update using npx @graphmemory/cli@latest upgrade.
    TypeScript  
    // auth.ts  
    const jwt \= await ide.auth.getSessionToken(); // \[cite: 10\]  
-   const client \= new KuzuClient({ // \[cite: 10\]  
+   const client \= new LadybugDBClient({ // \[cite: 10\]  
        endpoint: "localhost:50051", // \[cite: 10\]  
        metadata: new Metadata({ 'authorization': \`Bearer ${jwt}\` }) // \[cite: 10\]  
    });
@@ -288,11 +288,11 @@ A comprehensive testing pyramid will be implemented:
 
 | Dependency/Risk | Mitigation |
 | :---- | :---- |
-| Kuzu 0.10+ compatibility |  |
+| LadybugDB 0.21+ compatibility |  |
 | IDE API stability (Cursor/Windsurf/Qodo/Zed) |  |
 | OrbStack performance & CLI changes | Pin OrbStack version in CI; weekly smoke tests |
 | Breaking MCP spec changes | Track spec repo; adapter layer & integration tests |
-| Vector search missing in Kuzu | Store embeddings as node attrs; fall back to disk-ANN plugin |
+| Vector search missing in LadybugDB | Store embeddings as node attrs; fall back to disk-ANN plugin |
 | General DB Issues | Fallback SQLite storage; Circuit breaker pattern for DB queries |
 | Deployment Issues | Canary releases via NPX |
 
@@ -306,7 +306,7 @@ Bash
 
 brew install orbstack     \# installs orb \+ docker CLI \[cite: 46\]  
 brew install kestra-io/tap/kestra \# \[cite: 46\]  
-brew install kuzu \# \[cite: 46\]  
+brew install ladybug \# \[cite: 46\]  
 npm install \-g npx \# \[cite: 46\]  
 python \-m pip install mcp \# \[cite: 46\]
 
@@ -315,7 +315,7 @@ python \-m pip install mcp \# \[cite: 46\]
 Bash
 
 \# Clone repositories (adjust paths as needed) \[cite: 46\]  
-git clone https://github.com/kuzudb/kuzu-mcp-server.git \# \[cite: 46\]  
+git clone https://github.com/ladybugdb/ladybug-mcp-server.git \# \[cite: 46\]  
 git clone https://github.com/graphmemory/ide-plugins.git \# \[cite: 46\]
 
 \# Spin up everything \[cite: 63\]  
@@ -333,7 +333,7 @@ npx @graphmemory/cli@latest upgrade \# \[cite: 63\]
 **16\. Open Questions**
 
 * What are the minimum OS versions to support for each IDE?  
-* What are the licensing implications for distributing Kuzu binaries with plugins?  
+* What are the licensing implications for distributing LadybugDB binaries with plugins?  
 * Will future cloud-sync require GDPR/DPA review?
 
 ### ---

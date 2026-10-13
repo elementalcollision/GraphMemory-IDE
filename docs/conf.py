@@ -76,7 +76,7 @@ autodoc_default_options = {
 
 # Mock imports for modules that might not be available during documentation build
 autodoc_mock_imports = [
-    'kuzu',
+    'lbug',
     'redis',
     'prometheus_client',
     'dramatiq',

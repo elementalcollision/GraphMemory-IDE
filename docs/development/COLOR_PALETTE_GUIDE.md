@@ -67,13 +67,13 @@ The following documentation files have been updated to use the standardized colo
 graph TB
     subgraph "Core Components"
         MCP[MCP Server]
-        KUZU[(Kuzu GraphDB)]
+        LADYBUG[(LadybugDB)]
         AUTH[Authentication]
         ALERTS[Alert System]
     end
     
     style MCP fill:#0073e6,color:#ffffff
-    style KUZU fill:#2546f0,color:#ffffff
+    style LADYBUG fill:#2546f0,color:#ffffff
     style AUTH fill:#00b4c5,color:#000000
     style ALERTS fill:#5928ed,color:#ffffff
 ```
