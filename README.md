@@ -32,7 +32,6 @@ docker compose up -d
 
 Services will be available at:
 - MCP Server: http://localhost:8080/docs
-- Kestra (workflow orchestration): http://localhost:8081
 
 ### Local Development
 
