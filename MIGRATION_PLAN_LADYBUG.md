@@ -375,11 +375,27 @@ Every `MetricsCollector()` instantiation (`server/monitoring/metrics.py`) regist
 
 ### 3.15 Test-Suite Rehabilitation — Phase 9 (operator-approved future phase)
 
-Discovered during Phase 4; promoted to a dedicated future phase on operator direction (2026-10-13):
-1. `tests/test_main.py` — rewrite mock targets from `server.main.conn` (never existed) to the `app.state` architecture (21 tests).
-2. Author the missing fixtures: `http_client`, `analytics_engine`, `multi_database_setup`, `docker_client`, `performance_data` (32 tests).
-3. `streamlit==1.22.0` pin upgrade (resolver-constrained) to a version with `streamlit.testing.v1`.
-4. Service-orchestration layer (docker compose test profile) for the live-service-dependent suites (smoke/scenarios/load/cloud).
+**✅ COMPLETED 2026-10-13** — see the Phase 9 section below for the full record.
+
+### Phase 9: Test-Suite Rehabilitation — ✅ COMPLETED 2026-10-13
+
+| # | Task | Status |
+|---|------|--------|
+| 9.1 | `tests/test_main.py` rewrite | ✅ **21/21 passing** (was 21/21 failing since inception) — rewritten against the current app contract: correct mock seam (`app.state.ladybug_conn` via `patch.object`), current response shapes (`status: "success"`), valid `EventType` enum values, JSON-string mock rows, read-only via settings-object patch (the historical env-var monkeypatch never worked: pydantic reads `DB_`-prefixed envs from a cached singleton), trusted-host 400 fix (`base_url="http://localhost"`), rate-limit burst 429 fix (`_get_client_ip` patch to the whitelisted IP) |
+| 9.2 | Author missing fixtures | ✅ `http_client`, `analytics_engine`+`sample_graph_data` (relocated to module level — they were class-scoped and invisible across classes), `multi_database_setup` (real Ladybug pool; redis/sqlite best-effort), `docker_client`, `kestra_container`, `performance_data`, plus discovered `auth_headers`; `sample_memory_data` extended 3→10 nodes |
+| 9.3 | Streamlit pin upgrade | ✅ `streamlit>=1.30` floor → **1.56.0**; `streamlit.testing.v1.AppTest` imports; e2e guard no longer skips |
+| 9.4 | Service-orchestration layer | ✅ `docker/docker-compose.test.yml` (Postgres 16 + Redis 7, ephemeral tmpfs, healthchecks) + `scripts/init_test_db.py` (schema init); **proven live under OrbStack**: PG-integration suite **15 passed / 1 skipped against real Postgres** (was 5 passed / 11 skipped-or-errored) |
+
+**Pre-existing defects found & fixed by Phase 9 (all would fail identically pre-migration):**
+- **6 incompatible FK columns** in the ORM: `user_id`/`invited_by_user_id`/`accepted_by_user_id` typed `VARCHAR(255)` while referencing the **UUID** `users.id` — those 4 tables could never be `CREATE`d in PostgreSQL (found by the orchestration bring-up).
+- **6 dangling `back_populates` inverses** — 6 models referenced `User.email_verification_tokens`, `.onboarding_progress`, `.workspace_setups`, `.onboarding_preferences`, `.sent_invitations`, `.accepted_invitations` that were never declared on `User`; any mapper use raised `has no property …`. Inverse relationships added.
+- Stale test code: `role=`/`event_data=`/`timestamp=`/`ip_address=` kwargs on models that never had those fields; an import of the never-existing `server.core.database`; `asyncio.to_thread(lambda: async_fn)` producing never-awaited coroutines; sessions closed before spawned tasks ran; `async_client`/`http_client` fixtures overriding a non-existent `ladybug_connection` attribute and sending a `testserver` Host header (trusted-host 400); `project_data_factory` re-using colliding PKs across datasets; `/telemetry/list`-style assertions against endpoints' actual contracts.
+- `database_fixtures.async_session` teardown: `TRUNCATE ... RESTART IDENTITY CASCADE` of all app tables between committed tests (unique-constraint collisions across the suite).
+
+**Phase 9 remaining residue (documented, deeper rehabilitation):**
+- `tests/integration/test_basic_integration.py` requests a further fixture vocabulary never authored (`mcp_client`, `mock_email_service`, `alert_system`, `dashboard_real_time_flow` services) — 8-9 tests; each needs a service-client/mocks work package.
+- 16 analytics-suite tests fail on three deeper cause classes: engine status-dict shape drift, sync/await mismatches (`analyze_centrality` etc.), and another module-level prometheus double-registration (`analytics_graph_nodes_total`).
+- Live-server-dependent suites (smoke/scenarios/load/cloud) remain service-dependent by design — they now have the compose test profile to run against.
 
 ### 3.16 Follow-up task (operator-approved)
 

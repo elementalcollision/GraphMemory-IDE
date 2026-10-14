@@ -60,6 +60,16 @@ async def async_session(postgres_engine) -> AsyncSession:
         yield session
         await session.rollback()
 
+    # Tests commit their inserts; truncate all public tables between tests so
+    # unique constraints (users.email etc.) do not collide across the suite
+    from sqlalchemy import text as _text
+    from server.database_models import Base
+    table_list = ", ".join(f'"{t.name}"' for t in reversed(Base.metadata.sorted_tables))
+    async with postgres_engine.begin() as conn:
+        await conn.execute(_text(
+            f"TRUNCATE TABLE {table_list} RESTART IDENTITY CASCADE"
+        ))
+
 
 @pytest.fixture
 def sample_users() -> List[Dict[str, Any]]:

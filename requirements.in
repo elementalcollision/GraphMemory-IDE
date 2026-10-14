@@ -16,7 +16,7 @@ redis
 
 # Dashboard and real-time streaming
 sse-starlette
-streamlit
+streamlit>=1.30
 streamlit-echarts
 
 # Testing

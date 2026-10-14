@@ -113,16 +113,20 @@ async def async_client(ladybug_connection: lb.Connection) -> AsyncGenerator[Asyn
     Based on FastAPI official docs and TestDriven.io patterns.
     Uses HTTPX AsyncClient for authentic async testing.
     """
-    # Override the database connection in the app
-    original_conn = getattr(app.state, 'ladybug_connection', None)
-    app.state.ladybug_connection = ladybug_connection
+    # Phase 9: override the attribute handlers actually use — this
+    # previously set a non-existent 'ladybug_connection' attr (no-op) and
+    # used base_url 'testserver', which the trusted-host middleware rejects.
+    original_conn = getattr(app.state, 'ladybug_conn', None)
+    app.state.ladybug_conn = ladybug_connection
     
     # Create async client with ASGI transport
     async with AsyncClient(
         transport=ASGITransport(app=app),
-        base_url="http://testserver"
+        base_url="http://localhost"
     ) as client:
         yield client
+    
+    app.state.ladybug_conn = original_conn
     
     # Restore original connection
     if original_conn:
@@ -157,6 +161,17 @@ async def sample_memory_data(ladybug_connection: lb.Connection) -> Dict[str, Any
             "metadata": '{"domain": "algorithms", "difficulty": "advanced"}'
         }
     ]
+    
+    # Phase 9: extend to 10 nodes — consumers (e.g. phase1
+    # test_sample_data_creation) assert len(nodes) >= 10 but only 3 were
+    # ever provided.
+    for i in range(4, 11):
+        sample_nodes.append({
+            "id": f"node_{i:03d}",
+            "type": ["function", "class", "concept", "file"][i % 4],
+            "content": f"Sample memory node {i} for testing",
+            "metadata": f'{{"test_id": {i}, "synthetic": true}}'
+        })
     
     # Insert nodes
     for node in sample_nodes:
@@ -308,11 +323,16 @@ class ProjectDataFactory:
         
         config = size_configs.get(size, size_configs["small"])
         
-        # Create nodes with realistic content
+        # Create nodes with realistic content.
+        # Phase 9: ids are unique per call — creating two datasets (e.g.
+        # "small" then "medium") in one function-scoped DB previously
+        # collided on the PRIMARY KEY.
+        import uuid as _uuid
+        id_prefix = f"test_node_{_uuid.uuid4().hex[:6]}"
         created_nodes = []
         for i in range(config["nodes"]):
             node_data = {
-                "id": f"test_node_{i:06d}",
+                "id": f"{id_prefix}_{i:06d}",
                 "type": ["function", "class", "concept", "file"][i % 4],
                 "content": f"Test content for node {i}",
                 "metadata": f'{{"test_id": {i}, "batch": "{size}", "synthetic": true}}'
@@ -378,3 +398,127 @@ def monitor_memory_usage() -> None:
     
     if peak > 100:  # 100MB threshold
         print(f"\n⚠️  High memory usage detected: {peak:.2f}MB peak") 
+
+# ---------------------------------------------------------------------------
+# Phase 9 fixtures: previously-missing test infrastructure (32 tests errored)
+# ---------------------------------------------------------------------------
+
+@pytest_asyncio.fixture(scope="function")
+async def http_client(ladybug_connection: lb.Connection) -> AsyncGenerator[AsyncClient, None]:
+    """
+    HTTPX async client over the FastAPI app with the test LadybugDB connection.
+
+    Requested by tests/integration/test_basic_integration.py since inception
+    but never existed. Overrides `app.state.ladybug_conn` — the attribute the
+    handlers actually use (the older `async_client` fixture overrode a
+    non-existent `ladybug_connection` attribute, a no-op).
+    """
+    original_conn = getattr(app.state, "ladybug_conn", None)
+    app.state.ladybug_conn = ladybug_connection
+
+    # NOTE: base_url must be an allowed host — the trusted-host middleware
+    # rejects the default "testserver" Host header with 400
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://localhost",
+    ) as client:
+        yield client
+
+    app.state.ladybug_conn = original_conn
+
+
+@pytest.fixture(scope="session")
+def docker_client():
+    """Docker (OrbStack) client for container-security tests; skips if unavailable."""
+    try:
+        import docker
+    except ImportError:
+        pytest.skip("docker package not installed")
+    try:
+        client = docker.from_env()
+        client.ping()
+        return client
+    except Exception as e:  # noqa: BLE001 - any daemon failure -> skip
+        pytest.skip(f"Docker/OrbStack not reachable: {e}")
+
+
+@pytest.fixture(scope="session")
+def kestra_container(docker_client):
+    """Locate the running kestra container; skips when the stack is not up."""
+    try:
+        containers = docker_client.containers.list(filters={"name": "kestra"})
+    except Exception as e:  # noqa: BLE001
+        pytest.skip(f"Cannot list containers: {e}")
+    if not containers:
+        pytest.skip("No running kestra container (start the compose stack first)")
+    return containers[0]
+
+
+@pytest.fixture
+def performance_data() -> Dict[str, Any]:
+    """1000-node dataset for insertion-performance tests (previously missing)."""
+    return {
+        "nodes": [
+            {
+                "id": f"perf_node_{i:06d}",
+                "content": f"Performance test node {i}: " + "lorem ipsum graph memory " * 5,
+                "timestamp": 1700000000 + i,
+            }
+            for i in range(1000)
+        ]
+    }
+
+
+@pytest_asyncio.fixture(scope="function")
+async def multi_database_setup(tmp_path):
+    """
+    Multi-database pool setup for performance/cross-database tests
+    (previously missing — 9 tests errored on it).
+
+    A real LadybugDB pool is always provided; redis/sqlite pools are
+    best-effort (skipped with a warning when the services are unreachable).
+    """
+    from tests.fixtures.advanced_database_fixtures import DatabaseConnectionPoolManager
+    from tests.integration.test_database_performance import PERFORMANCE_BENCHMARKS
+
+    pool_manager = DatabaseConnectionPoolManager()
+    ladybug_pool = await pool_manager.setup_ladybug_pool(min_size=2, max_size=5)
+
+    for setup, name in (
+        (pool_manager.setup_redis_cluster_pool, "redis"),
+        (pool_manager.setup_sqlite_wal_pool, "sqlite"),
+    ):
+        try:
+            await setup(pool_size=3)
+        except Exception as e:  # noqa: BLE001 - optional backend
+            print(f"multi_database_setup: {name} pool unavailable: {e}")
+
+    yield {
+        "pool_manager": pool_manager,
+        "ladybug_pool": ladybug_pool,
+        "performance_benchmarks": PERFORMANCE_BENCHMARKS,
+    }
+
+    # Best-effort cleanup of pool connections
+    for pool in list(pool_manager.pools.values()):
+        for conn_entry in pool.get("connections", []):
+            try:
+                conn_entry.get("connection") and conn_entry["connection"].close()
+            except Exception:
+                pass
+            try:
+                conn_entry.get("database") and conn_entry["database"].close()
+            except Exception:
+                pass
+
+
+@pytest.fixture
+def auth_headers() -> Dict[str, str]:
+    """Bearer JWT headers for authenticated endpoints (Phase 9: previously
+    missing — requested by test_basic_integration.test_authentication_flow)."""
+    try:
+        from server.auth_jwt import create_access_token
+        token = create_access_token({"sub": "test-user"})
+        return {"Authorization": f"Bearer {token}"}
+    except Exception as e:  # noqa: BLE001
+        pytest.skip(f"Cannot create JWT for tests: {e}")

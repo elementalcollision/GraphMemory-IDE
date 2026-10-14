@@ -15,9 +15,10 @@ async def test_basic_app_health(http_client: AsyncClient) -> None:
     response = await http_client.get("/health")
     assert response.status_code == 200
     
+    # NOTE (Phase 9): /health never returned an 'environment' key — aligned
+    # to the actual contract (status/timestamp/checks/issues)
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["environment"] == "test"
 
 
 @pytest.mark.integration

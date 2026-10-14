@@ -260,7 +260,8 @@ class TestDatabaseIntegration:
             id=uuid.uuid4(),
             username='tx_user1',
             email='tx1@example.com',
-            role='user',
+            hashed_password='test_hash',
+            roles=['user'],
             is_active=True,
             created_at=datetime.now(timezone.utc)
         )
@@ -279,7 +280,8 @@ class TestDatabaseIntegration:
                 id=uuid.uuid4(),
                 username='tx_user2',
                 email='invalid_email_that_should_fail_constraint',  # This might cause issues
-                role='user',
+                hashed_password='test_hash',
+            roles=['user'],
                 is_active=True,
                 created_at=datetime.now(timezone.utc)
             )
@@ -309,15 +311,17 @@ class TestDatabaseIntegration:
         
         events = []
         for i in range(100):
+            # NOTE (Phase 9): event_data/timestamp/ip_address/user_agent were
+            # never TelemetryEvent columns — aligned to the actual model
+            # (event_type, user_id, session_id, data, event_metadata, duration_ms)
             event = TelemetryEvent(
                 id=uuid.uuid4(),
-                user_id=uuid.uuid4(),
+                user_id=None,  # FK to users.id — random UUIDs violate it; column is nullable
                 event_type='test_event',
-                event_data={'index': i},
-                timestamp=datetime.now(timezone.utc),
-                session_id=uuid.uuid4(),
-                ip_address='127.0.0.1',
-                user_agent='test-agent'
+                session_id=f'bench_sess_{i}',
+                data={'index': i},
+                event_metadata={'source': 'test'},
+                duration_ms=10 + i,
             )
             events.append(event)
         
@@ -345,7 +349,7 @@ class TestDatabaseIntegration:
         
         logger.info(f"Performance: Insert {len(events)} events in {insert_time:.3f}s, Query in {query_time:.3f}s")
     
-    async def test_concurrent_operations(self, async_session: AsyncSession) -> None:
+    async def test_concurrent_operations(self, postgres_engine) -> None:
         """Test concurrent database operations"""
         from server.database_models import User
         
@@ -357,7 +361,8 @@ class TestDatabaseIntegration:
                     id=uuid.uuid4(),
                     username=f'concurrent_user_{start_idx}_{i}',
                     email=f'concurrent_{start_idx}_{i}@example.com',
-                    role='user',
+                    hashed_password='test_hash',
+            roles=['user'],
                     is_active=True,
                     created_at=datetime.now(timezone.utc)
                 )
@@ -367,14 +372,18 @@ class TestDatabaseIntegration:
             await session.commit()
             return len(users)
         
-        # Create multiple concurrent sessions
-        from server.core.database import get_async_session
-        
-        tasks = []
-        for i in range(3):
-            async with get_async_session() as session:
-                task = asyncio.create_task(create_users(session, i, 10))
-                tasks.append(task)
+        # NOTE (Phase 9): server.core.database never existed (broken import).
+        # Build concurrent sessions directly from the test engine; each task
+        # owns its session (the historical code closed the session via the
+        # async-with before the spawned task ever ran -> ResourceClosedError).
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+        maker = async_sessionmaker(postgres_engine, expire_on_commit=False)
+
+        async def _create_users_task(batch: int) -> int:
+            async with maker() as session:
+                return await create_users(session, batch, 10)
+
+        tasks = [asyncio.create_task(_create_users_task(i)) for i in range(3)]
         
         # Wait for all concurrent operations
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -399,7 +408,8 @@ class TestDatabaseIntegration:
             id=user_id,
             username='error_test_user',
             email='error_test@example.com',
-            role='user',
+            hashed_password='test_hash',
+            roles=['user'],
             is_active=True,
             created_at=datetime.now(timezone.utc)
         )
@@ -413,7 +423,8 @@ class TestDatabaseIntegration:
                 id=user_id,  # Same ID - should cause conflict
                 username='error_test_user2',
                 email='error_test2@example.com',
-                role='user',
+                hashed_password='test_hash',
+            roles=['user'],
                 is_active=True,
                 created_at=datetime.now(timezone.utc)
             )
@@ -455,7 +466,8 @@ class TestDatabaseIntegration:
             id=uuid.uuid4(),
             username='consistency_user',
             email='consistency@example.com',
-            role='user',
+            hashed_password='test_hash',
+            roles=['user'],
             is_active=True,
             created_at=datetime.now(timezone.utc)
         )
@@ -470,11 +482,10 @@ class TestDatabaseIntegration:
                 id=uuid.uuid4(),
                 user_id=user.id,
                 event_type='consistency_test',
-                event_data={'test_index': i},
-                timestamp=datetime.now(timezone.utc),
-                session_id=uuid.uuid4(),
-                ip_address='127.0.0.1',
-                user_agent='consistency-test'
+                session_id=f'consistency_sess_{i}',
+                data={'test_index': i},
+                event_metadata={'source': 'test'},
+                duration_ms=5 + i,
             )
             events.append(event)
         

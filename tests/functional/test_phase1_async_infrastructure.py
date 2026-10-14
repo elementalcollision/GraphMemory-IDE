@@ -314,15 +314,28 @@ class TestPerformanceValidation:
                 performance_tracker.record_error(str(e))
                 return {"operation_id": operation_id, "error": str(e)}
         
+        # Phase 9: the operations reference a TestNode table that was never
+        # created — every operation errored with 'Table TestNode does not exist'
+        ladybug_connection.execute("""
+            CREATE NODE TABLE IF NOT EXISTS TestNode(
+                id STRING,
+                value INT64,
+                updated BOOL,
+                PRIMARY KEY(id)
+            )
+        """)
+
         # Execute operations concurrently (simulated)
         # Note: LadybugDB connections are not thread-safe, so we simulate concurrency
         operations_count = 10
         results = []
         
+        # Phase 9: the historical asyncio.to_thread(lambda: database_operation(i))
+        # returned a never-awaited coroutine (TypeError: argument of type
+        # 'coroutine' is not iterable). LadybugDB's sync execute() releases the
+        # GIL internally, so sequential awaits preserve the simulation intent.
         for i in range(operations_count):
-            result = await asyncio.create_task(
-                asyncio.to_thread(lambda: database_operation(i))
-            )
+            result = await database_operation(i)
             results.append(result)
         
         # Validate results
