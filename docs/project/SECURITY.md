@@ -86,7 +86,6 @@ USER mcpuser
 
 **Configuration:**
 - MCP Server: UID 1000 (mcpuser)
-- Kestra: UID 1001 (non-root)
 - No root privileges in containers
 - Eliminates privilege escalation risks
 
@@ -155,7 +154,6 @@ deploy:
 
 **Resource Limits:**
 - **MCP Server**: 1GB RAM, 0.5 CPU cores
-- **Kestra**: 2GB RAM, 1.0 CPU cores
 - **Prevents**: Resource exhaustion attacks
 - **Monitoring**: Real-time resource tracking
 
@@ -319,13 +317,11 @@ Minimal port exposure:
 ports:
   - "8080:8080"    # HTTP API
   - "50051:50051"  # mTLS API (optional)
-  - "8081:8080"    # Kestra UI
 ```
 
 **Port Security:**
 - **HTTP API (8080)**: JWT authentication
 - **mTLS API (50051)**: Mutual TLS authentication
-- **Kestra UI (8081)**: Internal workflow management
 - **No SSH**: No remote shell access
 
 ## Security Monitoring

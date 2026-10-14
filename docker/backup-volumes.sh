@@ -120,7 +120,7 @@ clean_backups() {
 show_volume_info() {
     echo -e "${YELLOW}Volume Information:${NC}"
     
-    for volume in docker_ladybug-data docker_kestra-data; do
+    for volume in docker_ladybug-data; do
         if docker volume inspect "$volume" >/dev/null 2>&1; then
             echo "Volume: $volume"
             docker volume inspect "$volume" --format "  Mountpoint: {{.Mountpoint}}"
@@ -144,7 +144,6 @@ case "${1:-help}" in
     backup)
         echo "Starting backup of all volumes..."
         backup_volume "docker_ladybug-data"
-        backup_volume "docker_kestra-data"
         echo -e "${GREEN}All backups completed!${NC}"
         ;;
     
@@ -152,9 +151,6 @@ case "${1:-help}" in
         backup_volume "docker_ladybug-data"
         ;;
     
-    backup-kestra)
-        backup_volume "docker_kestra-data"
-        ;;
     
     restore)
         if [ -z "$2" ] || [ -z "$3" ]; then
@@ -183,9 +179,7 @@ case "${1:-help}" in
         echo "Usage: $0 <command> [options]"
         echo
         echo "Commands:"
-        echo "  backup           - Backup all volumes (ladybug-data and kestra-data)"
         echo "  backup-ladybug      - Backup only ladybug-data volume"
-        echo "  backup-kestra    - Backup only kestra-data volume"
         echo "  restore <vol> <file> - Restore volume from backup file"
         echo "  list             - List all available backups"
         echo "  clean [days]     - Clean backups older than N days (default: 7)"

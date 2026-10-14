@@ -56,7 +56,6 @@ npm test
 
 **Verify Installation:**
 - MCP Server: http://localhost:8080/docs
-- Kestra CI/CD: http://localhost:8081
 - All tests passing
 
 ## 🛠️ Development Environment Setup
