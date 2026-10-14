@@ -336,7 +336,9 @@ Every `MetricsCollector()` instantiation (`server/monitoring/metrics.py`) regist
 
 `scripts/deploy-secure.sh` fails `bash -n` with a syntax error at line 315 (`syntax error near unexpected token '('`) — verified identical failure on the pre-migration version at HEAD. The Phase 3 rename inside it (3 env-var lines) is clean.
 
-**Follow-up repair task (operator-approved 2026-10-13):** repair the quoting/syntax defect in `scripts/deploy-secure.sh` (line ~315, help-text block) and add `bash -n scripts/*.sh` to the CI lint gate so shell scripts cannot land broken. Tracked as a separate remediation task outside the migration phases.
+**Follow-up repair task (operator-approved 2026-10-13) — ✅ COMPLETED 2026-10-13:**
+- Root cause located (not the line-315 help text the parser blamed, but line 15): the `SCRIPT_DIR` idiom had mangled quoting — `"$(cd "$(dirname "${BASH_SOURCE[0]}\\"))"" && pwd)"` with unbalanced parentheses — shifting the syntax error to the distant `case` statement. Restored to the canonical `SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"`. Verified: `bash -n` clean and the `help` path executes correctly at runtime.
+- **CI gate added** (`.github/workflows/ci.yml`, "Lint shell scripts" step): a hard `bash -n` pass over every `*.sh` under `scripts/ docker/ deploy/ monitoring/` — any syntax error fails the build with a `::error` annotation. Verified locally: all 14 shell scripts pass; ci.yml remains valid YAML. Shell scripts can no longer land broken.
 
 ### Phase 4: Tests (Day 2) — ✅ COMPLETED 2026-10-13
 

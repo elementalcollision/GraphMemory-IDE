@@ -12,7 +12,11 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}\"))" && pwd)"
+# NOTE (§3.14 repair): this line had mangled quoting
+# ("${BASH_SOURCE[0]\\"))"" — unbalanced parens) that made the whole script
+# fail `bash -n` with a syntax error reported far away at the case statement.
+# Restored to the canonical idiom.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 CERT_DIR="$PROJECT_ROOT/certs"
 DOCKER_DIR="$PROJECT_ROOT/docker"
