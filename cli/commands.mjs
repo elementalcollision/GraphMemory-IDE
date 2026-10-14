@@ -177,13 +177,6 @@ async function getUpdatePlan(options) {
         size: '245MB',
         changes: ['Security updates', 'Performance improvements', 'Bug fixes']
       },
-      {
-        name: 'graphmemory/kestra',
-        currentTag: '0.15.0',
-        tag: '0.16.0',
-        size: '180MB',
-        changes: ['New workflow features', 'UI improvements']
-      }
     ],
     schemaChanges: [
       {
@@ -194,7 +187,7 @@ async function getUpdatePlan(options) {
       }
     ],
     schemaVersion: '1.1.0',
-    services: ['mcp-server', 'kestra'],
+    services: ['mcp-server'],
     releaseNotes: 'https://github.com/graphmemory/releases/v1.1.0',
     securityUpdates: true,
     breakingChanges: false

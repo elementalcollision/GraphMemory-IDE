@@ -45,8 +45,6 @@ locust
 # Observability
 prometheus-client
 
-# Workflow orchestration (if Python client needed)
-kestra
 
 # Linting and formatting (optional, for best practice)
 black

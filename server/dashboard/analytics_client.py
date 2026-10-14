@@ -8,13 +8,8 @@ enabling real-time data collection for the dashboard SSE streams.
 import asyncio
 import logging
 import time
-import sys
-import os
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
-
-# Add parent directories to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import ladybug as lb
 

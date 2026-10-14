@@ -52,11 +52,6 @@ MCP_HOST=0.0.0.0
 MCP_MAX_CONNECTIONS=1000
 MCP_TIMEOUT=30000
 
-# Kestra Configuration
-KESTRA_PORT=8081
-KESTRA_DB_URL=jdbc:postgresql://postgres:5432/kestra
-KESTRA_STORAGE_TYPE=local
-KESTRA_STORAGE_LOCAL_BASE_PATH=/data/kestra
 
 # Security Configuration
 MTLS_ENABLED=true
@@ -189,24 +184,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  kestra:
-    image: kestra/kestra:latest
-    ports:
-      - "8081:8081"
-    environment:
-      - KESTRA_CONFIGURATION_PATH=/app/kestra.yml
-    volumes:
-      - ./kestra.yml:/app/kestra.yml:ro
-      - ./data/kestra:/app/data
-      - ./logs/kestra:/app/logs
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp:noexec,nosuid,size=200m
-    cap_drop:
-      - ALL
     cap_add:
       - NET_BIND_SERVICE
     deploy:
@@ -262,7 +239,6 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - mcp-server
-      - kestra
     restart: unless-stopped
 
 volumes:
@@ -302,12 +278,6 @@ scrape_configs:
       - targets: ['mcp-server:8080']
     metrics_path: '/metrics'
     scrape_interval: 10s
-
-  - job_name: 'graphmemory-kestra'
-    static_configs:
-      - targets: ['kestra:8081']
-    metrics_path: '/metrics'
-    scrape_interval: 30s
 
   - job_name: 'node-exporter'
     static_configs:
@@ -506,10 +476,6 @@ main() {
         ((failed_checks++))
     fi
     
-    if ! check_service_health "Kestra" "http://localhost:8081/health"; then
-        ((failed_checks++))
-    fi
-    
     # Check system resources
     if ! check_disk_space 90; then
         ((failed_checks++))
@@ -573,16 +539,11 @@ create_backup() {
         --database /app/data/ladybug \
         --output "$backup_path/ladybug_export"
     
-    # Backup Kestra data
-    log "Backing up Kestra data..."
-    cp -r ./data/kestra "$backup_path/kestra_data"
-    
     # Backup configuration files
     log "Backing up configuration..."
     tar -czf "$backup_path/config.tar.gz" \
         docker-compose.yml \
         .env \
-        kestra.yml \
         nginx/ \
         monitoring/
     
@@ -600,7 +561,6 @@ create_backup() {
     "version": "$(git rev-parse HEAD 2>/dev/null || echo 'unknown')",
     "services": [
         "mcp-server",
-        "kestra",
         "prometheus",
         "grafana"
     ],
@@ -715,11 +675,6 @@ restore_from_backup() {
     mkdir -p ./data/ladybug
     ladybug-import --database ./data/ladybug \
         --input "$RECOVERY_DIR"/*/ladybug_export
-    
-    # Restore Kestra data
-    log "Restoring Kestra data..."
-    rm -rf ./data/kestra
-    cp -r "$RECOVERY_DIR"/*/kestra_data ./data/kestra
     
     # Restore SSL certificates
     if [ -d "$RECOVERY_DIR"/*/ssl_certs ]; then
@@ -871,15 +826,6 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-
-  kestra:
-    environment:
-      - JAVA_OPTS="-Xmx4g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-    deploy:
-      resources:
-        limits:
-          memory: 6G
-          cpus: '2.0'
 ```
 
 ### Performance Monitoring
@@ -1176,12 +1122,6 @@ analyze_logs() {
             sort | uniq -c | sort -nr
             ;;
             
-        "kestra")
-            docker-compose logs --since="$time_range" kestra | \
-            grep -E "(ERROR|WARN)" | \
-            awk '{print $1, $2, $NF}' | \
-            sort | uniq -c | sort -nr
-            ;;
             
         "system")
             journalctl --since="$time_range" --priority=err | \
