@@ -119,7 +119,6 @@ echo "-----------------------"
 check_file "requirements.txt" "Python Requirements (locked)"
 check_file "requirements.in" "Python Requirements (direct)"
 check_file "package.json" "Node.js Package Config"
-check_file "kestra.yml" "Kestra Configuration"
 
 echo
 
@@ -139,7 +138,6 @@ echo "---------------------------"
 # Check if services are running
 check_service "http://localhost:8080/docs" "MCP Server (Swagger UI)"
 check_service "http://localhost:8080/openapi.json" "MCP Server (OpenAPI)"
-check_service "http://localhost:8081/" "Kestra CI/CD"
 
 echo
 
@@ -176,11 +174,6 @@ if command -v docker >/dev/null 2>&1; then
         echo -e "${YELLOW}⚠${NC} LadybugDB data volume not found (may not be created yet)"
     fi
     
-    if docker volume ls | grep -q "docker_kestra-data"; then
-        echo -e "${GREEN}✓${NC} Kestra data volume exists"
-    else
-        echo -e "${YELLOW}⚠${NC} Kestra data volume not found (may not be created yet)"
-    fi
     
 else
     echo -e "${RED}✗${NC} Docker is not installed"

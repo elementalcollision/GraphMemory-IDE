@@ -65,7 +65,7 @@ echo -e "${BLUE}📊 Container Resource Usage${NC}"
 echo "=============================="
 
 # Check if containers are running
-CONTAINERS=$(docker ps --format "{{.Names}}" | grep -E "(mcp-server|kestra)" || true)
+CONTAINERS=$(docker ps --format "{{.Names}}" | grep -E "(mcp-server)" || true)
 
 if [ -z "$CONTAINERS" ]; then
     echo -e "${YELLOW}⚠️  No GraphMemory-IDE containers running${NC}"
@@ -75,7 +75,7 @@ else
     while IFS= read -r line; do
         if [[ "$line" == *"CONTAINER"* ]]; then
             echo -e "${BLUE}$line${NC}"
-        elif [[ "$line" == *"mcp-server"* ]] || [[ "$line" == *"kestra"* ]]; then
+        elif [[ "$line" == *"mcp-server"* ]]; then
             # Extract memory percentage
             MEM_PERC=$(echo "$line" | awk '{print $4}' | sed 's/%//')
             CPU_PERC=$(echo "$line" | awk '{print $2}' | sed 's/%//')
@@ -174,7 +174,7 @@ docker volume ls --format "table {{.Driver}}\t{{.Name}}\t{{.Size}}" | \
 while IFS= read -r line; do
     if [[ "$line" == *"DRIVER"* ]]; then
         echo -e "${BLUE}$line${NC}"
-    elif [[ "$line" == *"ladybug-data"* ]] || [[ "$line" == *"kestra-data"* ]] || [[ "$line" == *"mcp-"* ]]; then
+    elif [[ "$line" == *"ladybug-data"* ]] || [[ "$line" == *"mcp-"* ]]; then
         echo -e "${GREEN}$line${NC}"
     else
         echo "$line"
@@ -202,13 +202,6 @@ if command_exists openssl; then
     else
         echo -e "  ${YELLOW}⚠️  MCP Server (mTLS:50051) - Not accessible (may be disabled)${NC}"
     fi
-fi
-
-if curl -s --max-time 5 http://localhost:8081/ >/dev/null; then
-    echo -e "  ${GREEN}✅ Kestra (HTTP:8081) - Accessible${NC}"
-else
-    echo -e "  ${RED}❌ Kestra (HTTP:8081) - Not accessible${NC}"
-    log_message "ALERT: Kestra endpoint not accessible"
 fi
 
 echo ""

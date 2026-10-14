@@ -51,7 +51,6 @@ npx @graphmemory/cli health
 
 3. **Access Web Interface**:
    - **API Documentation**: http://localhost:8080/docs
-   - **Kestra CI/CD**: http://localhost:8081
 
 4. **Test API Connection**:
    ```bash

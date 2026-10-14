@@ -442,18 +442,6 @@ def docker_client():
         pytest.skip(f"Docker/OrbStack not reachable: {e}")
 
 
-@pytest.fixture(scope="session")
-def kestra_container(docker_client):
-    """Locate the running kestra container; skips when the stack is not up."""
-    try:
-        containers = docker_client.containers.list(filters={"name": "kestra"})
-    except Exception as e:  # noqa: BLE001
-        pytest.skip(f"Cannot list containers: {e}")
-    if not containers:
-        pytest.skip("No running kestra container (start the compose stack first)")
-    return containers[0]
-
-
 @pytest.fixture
 def performance_data() -> Dict[str, Any]:
     """1000-node dataset for insertion-performance tests (previously missing)."""

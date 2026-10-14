@@ -237,10 +237,6 @@ codon/lib/*.so
 codon/lib/*.dylib
 !codon/lib/.gitkeep
 
-# Kestra
-.kestra/data/
-.kestra/logs/
-.kestra/plugins/
 
 # IDE and Editor files
 .vscode/

@@ -146,7 +146,6 @@ validate_security() {
     
     # Get container names
     MCP_CONTAINER=$(docker ps --format "{{.Names}}" | grep mcp-server | head -1)
-    KESTRA_CONTAINER=$(docker ps --format "{{.Names}}" | grep kestra | head -1)
     
     if [ -z "$MCP_CONTAINER" ]; then
         echo -e "${RED}❌ MCP server container not found${NC}"
@@ -243,7 +242,6 @@ display_summary() {
     echo "🌐 Endpoints:"
     echo "   - HTTP API: http://localhost:8080"
     echo "   - API Docs: http://localhost:8080/docs"
-    echo "   - Kestra UI: http://localhost:8081"
     if [ "$MTLS_ENABLED" = "true" ]; then
         echo "   - mTLS API: https://localhost:50051 (requires client certificate)"
     fi

@@ -16,8 +16,6 @@ alembic==1.16.1
     # via -r requirements.in
 altair==4.2.2
     # via streamlit
-amazon-ion==0.13.0
-    # via kestra
 annotated-types==0.7.0
     # via pydantic
 anyio==4.9.0
@@ -177,8 +175,6 @@ jsonschema==4.24.0
     # via altair
 jsonschema-specifications==2025.4.1
     # via jsonschema
-kestra==0.22.0
-    # via -r requirements.in
 ladybug==0.21.2
     # via -r requirements.in
 locust==2.37.5
@@ -342,7 +338,6 @@ pytest-timeout==2.4.0
 python-dateutil==2.9.0.post0
     # via
     #   ghp-import
-    #   kestra
     #   pandas
 python-engineio==4.12.1
     # via python-socketio
@@ -381,7 +376,6 @@ requests==2.32.3
     #   -r requirements.in
     #   docker
     #   huggingface-hub
-    #   kestra
     #   locust
     #   mkdocs-material
     #   python-socketio

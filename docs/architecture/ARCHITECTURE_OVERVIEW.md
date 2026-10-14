@@ -332,7 +332,6 @@ flowchart TB
 
 For local development, `docker/docker-compose.yml` provides a minimal 2-service setup:
 - **mcp-server**: FastAPI + LadybugDB (ports 8080, 50051) with security hardening (read-only, seccomp, non-root)
-- **kestra**: Workflow orchestration (port 8081)
 
 ---
 
