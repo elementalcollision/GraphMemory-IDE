@@ -55,11 +55,11 @@ cd dashboard && streamlit run streamlit_app.py
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DB_LADYBUG_DB_PATH` | `./data/ladybug.lbdb` | Path to the LadybugDB graph database file (a single `.lbdb` file; the parent directory must exist — the app creates it) |
-| `DB_LADYBUG_READ_ONLY` | `false` | Open the graph database read-only (writes rejected at the DB layer; schema init skipped) |
-| `JWT_SECRET_KEY` | (auto-generated) | Secret key for JWT token signing; set explicitly in production |
-| `DB_DATABASE_URL` | `postgresql://user:password@localhost:5432/graphmemory_dev` | PostgreSQL connection string (relational + telemetry storage) |
-| `DB_REDIS_URL` | `redis://localhost:6379/0` | Redis connection for caching (falls back to in-memory cache when unreachable) |
+| `DB_LADYBUG_DB_PATH` | `./data/ladybug.lbdb` | Path to the graph database (single `.lbdb` file; parent dir is auto-created) |
+| `DB_LADYBUG_READ_ONLY` | `false` | Open the graph database read-only (writes rejected; schema init skipped) |
+| `JWT_SECRET_KEY` | auto-generated | JWT signing key — set explicitly in production |
+| `DB_DATABASE_URL` | `postgresql://…/graphmemory_dev` | PostgreSQL connection string (relational + telemetry store) |
+| `DB_REDIS_URL` | `redis://localhost:6379/0` | Redis for caching (in-memory fallback when unreachable) |
 | `CODON_ENABLED` | `true` | Enable Codon acceleration |
 | `CODON_LIB_PATH` | `./codon/lib/` | Path to compiled Codon libraries |
 | `CODON_MIN_GRAPH_SIZE` | `100` | Minimum graph size for Codon routing |
@@ -70,32 +70,65 @@ cd dashboard && streamlit run streamlit_app.py
 
 GraphMemory-IDE uses a hybrid architecture where I/O-bound code (FastAPI, database clients, WebSocket) runs in CPython, while compute-heavy graph algorithms can optionally run as native-compiled Codon modules.
 
-```
-IDE Plugins (VSCode/Cursor/Windsurf)
-        |
-        v
-  FastAPI Server (CPython)
-   ├── JWT Auth (EdDSA) + Security Middleware (TrustedHost / rate limit)
-   ├── MCP Protocol Handler
-   ├── Telemetry Ingestion + Query (/telemetry/*)
-   ├── Top-K Vector Search (/tools/topk)
-   ├── Analytics Engine (/api/v1/analytics/*)
-   └── Dashboard Routes + SSE (/dashboard/*)
-        |
-   ┌────┴─────────┐
-   v              v
-LadybugDB      PostgreSQL + Redis
-(embedded      (relational store,
- graph DB,      sessions, cache)
- sync engine)
-   |
-   v
-Codon Bridge (optional)
- ├── Graph Kernels (.so/.dylib)
- └── Python/NetworkX fallback
+```mermaid
+flowchart TB
+    IDE["IDE Plugins<br/>(VSCode · Cursor · Windsurf)"]
+
+    subgraph SERVER["FastAPI Server (CPython)"]
+        direction TB
+        AUTH["JWT Auth (EdDSA) +<br/>Security Middleware"]
+        MCP["MCP Protocol Handler"]
+        TEL["Telemetry Ingestion & Query<br/>(/telemetry/*)"]
+        TOPK["Top-K Vector Search<br/>(/tools/topk)"]
+        ANA["Analytics Engine<br/>(/api/v1/analytics/*)"]
+        DASH["Dashboard Routes + SSE<br/>(/dashboard/*)"]
+    end
+
+    LB["LadybugDB<br/>(embedded graph DB,<br/>in-process, Cypher)"]
+    PG["PostgreSQL<br/>(relational store,<br/>telemetry, sessions)"]
+    RD["Redis<br/>(cache, pub/sub)"]
+    CODON["Codon Bridge (optional)<br/>Graph Kernels (.so/.dylib)<br/>NetworkX fallback"]
+
+    IDE --> SERVER
+    SERVER --> LB
+    SERVER --> PG
+    SERVER --> RD
+    LB --> CODON
 ```
 
-**Graph database layer** (`server/graph_database.py`): an embedded LadybugDB instance opened in-process — no separate DB server. It provides a thread-safe connection pool (Condition-variable based), LadybugDB's native `AsyncConnection` for async handlers (`GraphDatabaseManager.get_async_connection()`), schema management (User / Project / Memory node tables and OWNS / COLLABORATES / CONTAINS / RELATES_TO / ACCESSED_BY relationship tables), a query engine with parameterised Cypher execution and Prometheus instrumentation, and health checks (`CALL show_tables()` schema-integrity validation). A `read_only` mode opens the database for read-only workloads (e.g. analytics replicas).
+**Graph database layer** (`server/graph_database.py`): an embedded LadybugDB instance opened in-process — no separate DB server. It provides a thread-safe connection pool (Condition-variable based), LadybugDB's native `AsyncConnection` for async handlers (`GraphDatabaseManager.get_async_connection()`), schema management, a query engine with parameterised Cypher execution and Prometheus instrumentation, and health checks (`CALL show_tables()` schema-integrity validation). A `read_only` mode opens the database for read-only workloads (e.g. analytics replicas).
+
+The default graph schema (node and relationship tables):
+
+```mermaid
+erDiagram
+    User ||--o{ Project : "OWNS"
+    User ||--o{ Project : "COLLABORATES"
+    Project ||--o{ Memory : "CONTAINS"
+    Memory |o--o{ Memory : "RELATES_TO"
+    Memory }o--|| User : "ACCESSED_BY"
+
+    User {
+        string id PK
+        string username
+        string email
+        timestamp created_at
+        map properties
+    }
+    Project {
+        string id PK
+        string name
+        string owner_id
+        string status
+    }
+    Memory {
+        string id PK
+        string content
+        string memory_type
+        double embeddings
+        map metadata
+    }
+```
 
 See [Architecture Overview](docs/architecture/ARCHITECTURE_OVERVIEW.md) for detailed system design.
 
