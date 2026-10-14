@@ -104,9 +104,9 @@ class DatabaseSettings(BaseModel):
     DATABASE_POOL_TIMEOUT: int = 30
     DATABASE_POOL_RECYCLE: int = 3600
     
-    # Kuzu Graph Database
-    KUZU_DB_PATH: str = "./data/kuzu"
-    KUZU_READ_ONLY: bool = False
+    # LadybugDB Graph Database (LadybugDB successor)
+    LADYBUG_DB_PATH: str = "./data/ladybug.lbdb"
+    LADYBUG_READ_ONLY: bool = False
     
     # Redis Configuration
     REDIS_URL: str = "redis://localhost:6379/0"

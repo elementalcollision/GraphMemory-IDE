@@ -109,8 +109,8 @@ Create `.env` file for development:
 
 ```bash
 # Database Configuration
-KUZU_DB_PATH=./server/data
-KUZU_READ_ONLY=false
+LADYBUG_DB_PATH=./server/data
+LADYBUG_READ_ONLY=false
 
 # JWT Configuration
 JWT_SECRET_KEY=dev-secret-key-change-in-production
@@ -196,15 +196,15 @@ services:
       - PYTHONPATH=/app
     command: python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m uvicorn server.main:app --host 0.0.0.0 --port 8080 --reload
 
-  kuzu-db:
-    image: kuzudb/kuzu:latest
+  ladybug-db:
+    image: ladybugdb/ladybug:latest
     volumes:
-      - kuzu-dev-data:/data
+      - ladybug-dev-data:/data
     environment:
-      - KUZU_DEBUG=true
+      - LADYBUG_DEBUG=true
 
 volumes:
-  kuzu-dev-data:
+  ladybug-dev-data:
 ```
 
 #### Development Commands
@@ -242,7 +242,7 @@ graph TB
     end
     
     subgraph "Data Layer"
-        KUZU[(Kuzu GraphDB)]
+        LADYBUG[(LadybugDB)]
         VECTOR[Vector Search<br/>Sentence Transformers]
         STORAGE[File Storage]
     end
@@ -259,17 +259,17 @@ graph TB
     
     MCP --> AUTH
     MCP --> API
-    API --> KUZU
+    API --> LADYBUG
     API --> VECTOR
     API --> STORAGE
     
     DOCKER --> MCP
-    DOCKER --> KUZU
-    VOLUMES --> KUZU
+    DOCKER --> LADYBUG
+    VOLUMES --> LADYBUG
     NETWORK --> MCP
     
     style MCP fill:#e1f5fe
-    style KUZU fill:#f3e5f5
+    style LADYBUG fill:#f3e5f5
     style CLI fill:#e8f5e8
     style DEV fill:#fff3e0
 ```
@@ -282,7 +282,7 @@ graph TB
 - **Responsibilities**:
   - REST API endpoints for telemetry and vector search
   - JWT authentication and authorization
-  - Kuzu database integration
+  - LadybugDB database integration
   - Vector search with sentence transformers
   - Request validation and error handling
 
@@ -363,7 +363,7 @@ GraphMemory-IDE/
 | `server/auth.py` | Authentication | JWT token creation/validation |
 | `server/models.py` | Data models | Pydantic schemas for API |
 | `server/mtls_config.py` | mTLS setup | SSL context, certificate validation |
-| `server/init_db.py` | Database setup | Kuzu initialization, schema creation |
+| `server/init_db.py` | Database setup | LadybugDB initialization, schema creation |
 
 #### CLI Components
 
@@ -373,7 +373,7 @@ GraphMemory-IDE/
 | `cli/commands.mjs` | Command logic | Install, upgrade, diagnostics, health |
 | `cli/update/signature-verifier.mjs` | Security | Cosign signature verification |
 | `cli/update/state-manager.mjs` | State management | Atomic operations, file locking |
-| `cli/update/database-migrator.mjs` | DB migration | Kuzu export/import, backups |
+| `cli/update/database-migrator.mjs` | DB migration | LadybugDB export/import, backups |
 | `cli/update/container-updater.mjs` | Container updates | Blue-Green deployment |
 | `cli/update/update-flow.mjs` | Update orchestration | Complete update workflow |
 
@@ -802,11 +802,11 @@ docker inspect docker-mcp-server-1
 
 ```bash
 # Check volume contents
-docker volume inspect docker_kuzu-data
-docker run --rm -v docker_kuzu-data:/data alpine ls -la /data
+docker volume inspect docker_ladybug-data
+docker run --rm -v docker_ladybug-data:/data alpine ls -la /data
 
 # Backup volume for debugging
-docker run --rm -v docker_kuzu-data:/data -v $(pwd):/backup alpine tar czf /backup/debug-backup.tar.gz -C /data .
+docker run --rm -v docker_ladybug-data:/data -v $(pwd):/backup alpine tar czf /backup/debug-backup.tar.gz -C /data .
 ```
 
 ### Common Debugging Scenarios
@@ -819,7 +819,7 @@ docker run --rm -v docker_kuzu-data:/data -v $(pwd):/backup alpine tar czf /back
 async def startup_event():
     try:
         # Test database connection
-        conn = kuzu.Connection(database)
+        conn = lb.Connection(database)
         result = conn.execute("RETURN 'Database connected' AS status")
         logger.info(f"Database status: {result.get_next()[0]}")
     except Exception as e:
@@ -1107,17 +1107,17 @@ async def ingest_telemetry(
 
 ```python
 # Use connection pooling
-import kuzu
+import ladybug as lb
 
 class DatabaseManager:
     def __init__(self, db_path: str):
-        self.database = kuzu.Database(db_path)
+        self.database = lb.Database(db_path)
         self.connection_pool = []
     
     def get_connection(self):
         if self.connection_pool:
             return self.connection_pool.pop()
-        return kuzu.Connection(self.database)
+        return lb.Connection(self.database)
     
     def return_connection(self, conn):
         self.connection_pool.append(conn)
@@ -1172,8 +1172,8 @@ class TelemetryService:
 from pydantic import BaseSettings
 
 class Settings(BaseSettings):
-    kuzu_db_path: str = "./data"
-    kuzu_read_only: bool = False
+    ladybug_db_path: str = "./data"
+    ladybug_read_only: bool = False
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30

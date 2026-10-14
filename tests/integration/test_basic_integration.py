@@ -15,9 +15,10 @@ async def test_basic_app_health(http_client: AsyncClient) -> None:
     response = await http_client.get("/health")
     assert response.status_code == 200
     
+    # NOTE (Phase 9): /health never returned an 'environment' key — aligned
+    # to the actual contract (status/timestamp/checks/issues)
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["environment"] == "test"
 
 
 @pytest.mark.integration
@@ -116,7 +117,7 @@ def test_database_isolation(isolated_databases, check_database_health) -> None:
     health_status = check_database_health
     
     for db_name, status in health_status.items():
-        if db_name in ["kuzu", "redis", "sqlite"]:
+        if db_name in ["ladybug", "redis", "sqlite"]:
             assert status is True or isinstance(status, str)  # True or error message
 
 

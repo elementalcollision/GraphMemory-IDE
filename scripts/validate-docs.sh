@@ -170,10 +170,10 @@ if command -v docker >/dev/null 2>&1; then
     fi
     
     # Check if volumes exist
-    if docker volume ls | grep -q "docker_kuzu-data"; then
-        echo -e "${GREEN}✓${NC} Kuzu data volume exists"
+    if docker volume ls | grep -q "docker_ladybug-data"; then
+        echo -e "${GREEN}✓${NC} LadybugDB data volume exists"
     else
-        echo -e "${YELLOW}⚠${NC} Kuzu data volume not found (may not be created yet)"
+        echo -e "${YELLOW}⚠${NC} LadybugDB data volume not found (may not be created yet)"
     fi
     
     if docker volume ls | grep -q "docker_kestra-data"; then
@@ -206,10 +206,10 @@ fi
 
 # Check if requirements are installed (if venv is activated)
 if [ -n "$VIRTUAL_ENV" ]; then
-    if python -c "import kuzu" 2>/dev/null; then
-        echo -e "${GREEN}✓${NC} Kuzu package is installed"
+    if python -c "import ladybug" 2>/dev/null; then
+        echo -e "${GREEN}✓${NC} LadybugDB package is installed"
     else
-        echo -e "${RED}✗${NC} Kuzu package is not installed"
+        echo -e "${RED}✗${NC} LadybugDB package is not installed"
     fi
     
     if python -c "import fastapi" 2>/dev/null; then

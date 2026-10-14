@@ -34,8 +34,8 @@ flowchart TD
     PARSER --> PLANNER[Query Planner]
     PLANNER --> OPTIMIZER[Query Optimizer]
     OPTIMIZER --> EXECUTOR[Query Executor]
-    EXECUTOR --> KUZU[(Kuzu Database)]
-    KUZU --> RESULTS[Results]
+    EXECUTOR --> LADYBUG[(LadybugDB Database)]
+    LADYBUG --> RESULTS[Results]
     
     subgraph "Query Processing"
         PARSER --> SYNTAX[Syntax Analysis]
@@ -251,10 +251,13 @@ flowchart TD
 #### 1. Use Indexes Effectively
 
 ```cypher
-// Create indexes for frequently queried properties
-CREATE INDEX ON :Memory(type);
-CREATE INDEX ON :Memory(created_at);
-CREATE FULLTEXT INDEX memory_content FOR (m:Memory) ON EACH [m.content];
+// LadybugDB 0.21.x: secondary-property and FULLTEXT indexes are NOT supported.
+// Primary-key hash indexes are created automatically on every node table, and
+// automatic zone maps (min/max pruning) accelerate filters on all other
+// properties. Manual PK index DDL, if ever needed:
+CREATE INDEX idx_memory_pk FOR (m:Memory) ON (m.id);
+// For full-text matching, use string functions in the WHERE clause instead:
+MATCH (m:Memory) WHERE m.content CONTAINS 'search_term' RETURN m;
 ```
 
 #### 2. Optimize Query Structure
@@ -614,7 +617,7 @@ MATCH (m:Memory)-[:BUILDS_ON]-(target)   -- Undirected
 
 For advanced graph operations:
 1. Check the [API Guide](../API_GUIDE.md) for query syntax reference
-2. Review [Kuzu documentation](https://kuzudb.com/docs/) for advanced features
+2. Review [LadybugDB documentation](https://ladybugdb.com/docs/) for advanced features
 3. Ask questions in [GitHub Discussions](https://github.com/elementalcollision/GraphMemory-IDE/discussions)
 
 ## 📚 Additional Resources

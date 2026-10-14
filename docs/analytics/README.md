@@ -42,7 +42,7 @@ graph TB
     end
     
     subgraph "Data Layer"
-        KuzuDB[(Kuzu Graph DB)]
+        LadybugDB[(LadybugDB Graph DB)]
         RedisCache[(Redis Cache)]
         Prometheus[(Prometheus Metrics)]
     end
@@ -70,7 +70,7 @@ graph TB
     GraphAlgo --> CuGraph
     MLAnalytics --> NetworkX
     
-    Engine --> KuzuDB
+    Engine --> LadybugDB
     Cache --> RedisCache
     Monitor --> Prometheus
     
@@ -541,7 +541,7 @@ from server.analytics.engine import AnalyticsEngine
 from server.analytics.models import CentralityRequest, CentralityType
 
 # Initialize engine with GPU acceleration
-engine = AnalyticsEngine(kuzu_conn, redis_url)
+engine = AnalyticsEngine(ladybug_conn, redis_url)
 await engine.initialize()
 
 # Create centrality request
@@ -656,7 +656,7 @@ The Analytics Integration Layer provides a comprehensive, scalable analytics pla
             ┌────────────────────┼────────────────────┐
             │                    │                    │
    ┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐
-   │ Analytics       │  │ Service         │  │ Kuzu GraphDB    │
+   │ Analytics       │  │ Service         │  │ LadybugDB    │
    │ Engine          │  │ Registry        │  │ Integration     │
    └─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
@@ -684,12 +684,12 @@ asyncio.run(initialize_service_registry())
 
 ```python
 import asyncio
-from server.analytics.kuzu_analytics import KuzuAnalyticsEngine, GraphAnalyticsType
+from server.analytics.ladybug_analytics import LadybugDBAnalyticsEngine, GraphAnalyticsType
 from server.analytics.gateway import get_analytics_gateway
 
 async def main():
     # Initialize analytics engine
-    engine = KuzuAnalyticsEngine(kuzu_connection)
+    engine = LadybugDBAnalyticsEngine(ladybug_connection)
     
     # Execute centrality analysis
     result = await engine.execute_graph_analytics(
@@ -711,7 +711,7 @@ asyncio.run(main())
 
 ### Analytics Engine
 
-#### KuzuAnalyticsEngine
+#### LadybugDBAnalyticsEngine
 
 The core analytics engine providing graph algorithms and analysis capabilities.
 
@@ -948,8 +948,8 @@ REGISTRY_HEALTH_CHECK_INTERVAL=30    # Health check interval in seconds
 REGISTRY_CACHE_TTL=60               # Discovery cache TTL
 
 # Database Configuration
-KUZU_DATABASE_PATH=/data/kuzu        # Kuzu database path
-KUZU_BUFFER_SIZE=1024               # Buffer size in MB
+LADYBUG_DATABASE_PATH=/data/ladybug        # LadybugDB database path
+LADYBUG_BUFFER_SIZE=1024               # Buffer size in MB
 ```
 
 ### Configuration File
@@ -1197,13 +1197,13 @@ services:
       - ANALYTICS_CACHE_TTL=600
       - GATEWAY_WORKERS=4
     depends_on:
-      - kuzu-db
+      - ladybug-db
       - redis
       
-  kuzu-db:
-    image: kuzudb/kuzu:latest
+  ladybug-db:
+    image: ladybugdb/ladybug:latest
     volumes:
-      - kuzu_data:/var/lib/kuzu
+      - ladybug_data:/var/lib/ladybug
       
   redis:
     image: redis:7-alpine
@@ -1211,7 +1211,7 @@ services:
       - "6379:6379"
       
 volumes:
-  kuzu_data:
+  ladybug_data:
 ```
 
 ### Kubernetes Deployment
@@ -1266,7 +1266,7 @@ spec:
 ### Production Checklist
 
 - [ ] **Environment Configuration**: All environment variables set
-- [ ] **Database Setup**: Kuzu database initialized and accessible
+- [ ] **Database Setup**: LadybugDB database initialized and accessible
 - [ ] **Cache Configuration**: Redis/memory cache configured
 - [ ] **Monitoring Setup**: Metrics collection and alerting configured
 - [ ] **Load Testing**: Performance validated under expected load

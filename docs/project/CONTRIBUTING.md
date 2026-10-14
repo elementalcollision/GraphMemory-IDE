@@ -84,7 +84,7 @@ Then create a Pull Request on GitHub with:
 
 ### 🔧 Core Development
 - **API Endpoints**: Enhance MCP server functionality
-- **Database Operations**: Improve Kuzu GraphDB integration
+- **Database Operations**: Improve LadybugDB integration
 - **Vector Search**: Optimize semantic search capabilities
 - **Performance**: Improve query performance and caching
 

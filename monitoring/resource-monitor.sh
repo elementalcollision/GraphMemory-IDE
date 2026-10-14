@@ -174,7 +174,7 @@ docker volume ls --format "table {{.Driver}}\t{{.Name}}\t{{.Size}}" | \
 while IFS= read -r line; do
     if [[ "$line" == *"DRIVER"* ]]; then
         echo -e "${BLUE}$line${NC}"
-    elif [[ "$line" == *"kuzu-data"* ]] || [[ "$line" == *"kestra-data"* ]] || [[ "$line" == *"mcp-"* ]]; then
+    elif [[ "$line" == *"ladybug-data"* ]] || [[ "$line" == *"kestra-data"* ]] || [[ "$line" == *"mcp-"* ]]; then
         echo -e "${GREEN}$line${NC}"
     else
         echo "$line"

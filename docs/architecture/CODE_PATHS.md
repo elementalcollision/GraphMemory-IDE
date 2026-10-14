@@ -37,7 +37,7 @@ graph TB
     end
     
     subgraph "Storage Layer"
-        KUZU[(Kuzu GraphDB<br/>Relationships)]
+        LADYBUG[(LadybugDB<br/>Relationships)]
         VECTOR[(Vector Store<br/>Embeddings)]
         CACHE[(Redis Cache<br/>Performance)]
         SQLITE[(SQLite<br/>Alert/Incident Data)]
@@ -61,18 +61,18 @@ graph TB
     BUSINESS --> ALERTS
     
     EMBED --> VECTOR
-    SEARCH --> KUZU
+    SEARCH --> LADYBUG
     SEARCH --> VECTOR
-    ANALYTICS --> KUZU
+    ANALYTICS --> LADYBUG
     ALERTS --> SQLITE
     
     BUSINESS --> CACHE
-    CACHE --> KUZU
+    CACHE --> LADYBUG
     
     style MCP fill:#0073e6,color:#ffffff
     style ALERTS fill:#2546f0,color:#ffffff
     style ANALYTICS fill:#00bf7d,color:#000000
-    style KUZU fill:#5928ed,color:#ffffff
+    style LADYBUG fill:#5928ed,color:#ffffff
 ```
 
 ## 📁 Directory Structure & Code Organization
@@ -138,7 +138,7 @@ sequenceDiagram
     participant Models as models.py
     participant Embed as Embedding Service
     participant DB as database.py
-    participant Kuzu as Kuzu GraphDB
+    participant LadybugDB as LadybugDB
     participant Vector as Vector Store
     participant Cache as Redis Cache
     
@@ -153,11 +153,11 @@ sequenceDiagram
     Embed->>Embed: SentenceTransformer.encode()
     Embed->>Routes: embedding_vector
     
-    Routes->>DB: get_kuzu_connection()
-    DB->>Routes: kuzu_connection
+    Routes->>DB: get_ladybug_connection()
+    DB->>Routes: ladybug_connection
     
-    Routes->>Kuzu: CREATE (m:Memory {properties})
-    Kuzu->>Routes: memory_node_id
+    Routes->>LadybugDB: CREATE (m:Memory {properties})
+    LadybugDB->>Routes: memory_node_id
     
     Routes->>Vector: store_embedding(id, vector)
     Vector->>Routes: success
@@ -176,7 +176,7 @@ sequenceDiagram
     participant Routes as routes/search.py
     participant Embed as Embedding Service
     participant Vector as Vector Store
-    participant Kuzu as Kuzu GraphDB
+    participant LadybugDB as LadybugDB
     participant Cache as Redis Cache
     participant Rank as Ranking Engine
     
@@ -193,8 +193,8 @@ sequenceDiagram
         Routes->>Vector: similarity_search(query_vector, k=10)
         Vector->>Routes: candidate_ids
         
-        Routes->>Kuzu: MATCH (m:Memory) WHERE m.id IN candidates
-        Kuzu->>Routes: memory_data
+        Routes->>LadybugDB: MATCH (m:Memory) WHERE m.id IN candidates
+        LadybugDB->>Routes: memory_data
         
         Routes->>Rank: rank_results(query, memories)
         Rank->>Routes: ranked_results
@@ -388,7 +388,7 @@ graph TB
     subgraph "Cache Layers"
         L1[L1: Memory Cache<br/>Local Variables]
         L2[L2: Redis Cache<br/>Shared Memory]
-        L3[L3: Database Cache<br/>Kuzu Internal]
+        L3[L3: Database Cache<br/>LadybugDB Internal]
     end
     
     subgraph "Cache Invalidation"

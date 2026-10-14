@@ -487,7 +487,7 @@ MTLS_ENABLED=true ./scripts/deploy-secure.sh
 export JWT_SECRET_KEY=$(openssl rand -hex 32)
 export JWT_ENABLED=true
 export MTLS_ENABLED=true
-export KUZU_READ_ONLY=false
+export LADYBUG_READ_ONLY=false
 export MTLS_PORT=50051
 export JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```

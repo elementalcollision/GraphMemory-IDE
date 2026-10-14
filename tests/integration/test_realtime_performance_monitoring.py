@@ -353,7 +353,7 @@ class RealTimePerformanceMonitor:
         """Monitor database performance across all databases"""
         logger.info("Starting database performance monitoring")
         
-        db_components = ["kuzu_db", "redis_cache", "sqlite_db"]
+        db_components = ["ladybug_db", "redis_cache", "sqlite_db"]
         
         for component in db_components:
             metrics.component_latencies[component] = []
@@ -378,7 +378,7 @@ class RealTimePerformanceMonitor:
                         
                         # Check database-specific thresholds
                         db_threshold = {
-                            "kuzu_db": 0.5,      # 500ms threshold for Kuzu
+                            "ladybug_db": 0.5,      # 500ms threshold for LadybugDB
                             "redis_cache": 0.05,  # 50ms threshold for Redis
                             "sqlite_db": 0.2     # 200ms threshold for SQLite
                         }

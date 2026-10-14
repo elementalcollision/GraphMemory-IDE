@@ -863,7 +863,7 @@ class TracingMiddleware:
 from typing import Dict, Any
 import asyncio
 import time
-import kuzu
+import ladybug as lb
 import redis
 from enum import Enum
 
@@ -893,8 +893,8 @@ class HealthChecker:
         """Check database connectivity"""
         try:
             start_time = time.time()
-            db = kuzu.Database("/app/data/kuzu")
-            conn = kuzu.Connection(db)
+            db = lb.Database("/app/data/ladybug")
+            conn = lb.Connection(db)
             
             # Simple query to test connectivity
             result = conn.execute("MATCH (n) RETURN count(n) LIMIT 1")

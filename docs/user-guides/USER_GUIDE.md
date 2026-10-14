@@ -78,7 +78,7 @@ Captures development events like:
 - Error occurrences and resolutions
 - Testing and debugging sessions
 
-#### 2. Graph Database (Kuzu)
+#### 2. Graph Database (LadybugDB)
 Stores relationships between:
 - Code files and functions
 - Developers and their work

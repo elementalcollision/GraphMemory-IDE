@@ -31,11 +31,26 @@ def get_sse_manager() -> DashboardSSEManager:
     if sse_manager is None:
         # Initialize with analytics engine if available
         try:
+            import ladybug as _lb
+            from pathlib import Path as _P
             from ..analytics.engine import AnalyticsEngine
-            analytics_engine = AnalyticsEngine()
+            from ..core.config import get_settings
+
+            # Build a dedicated LadybugDB connection for the dashboard engine
+            # (mirrors server.main.setup_database; previously this called
+            # AnalyticsEngine() with no args, which always raised TypeError —
+            # pre-existing bug that crashed app startup).
+            db_path = get_settings().database.LADYBUG_DB_PATH
+            _P(db_path).parent.mkdir(parents=True, exist_ok=True)
+            db = _lb.Database(db_path)
+            conn = _lb.Connection(db)
+            conn.init_connection()
+            analytics_engine = AnalyticsEngine(conn)
             sse_manager = DashboardSSEManager(analytics_engine)
-        except ImportError:
-            logger.warning("Analytics engine not available, using mock data")
+        except Exception as e:
+            # Broadened from ImportError: any engine/construction failure falls
+            # back to mock data instead of crashing startup.
+            logger.warning(f"Analytics engine not available, using mock data: {e}")
             sse_manager = DashboardSSEManager()
     return sse_manager
 

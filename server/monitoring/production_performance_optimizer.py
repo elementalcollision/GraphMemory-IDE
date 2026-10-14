@@ -396,7 +396,7 @@ class ProductionPerformanceOptimizer:
             metrics["tenant_isolation_overhead"] = 5.5 + np.random.normal(0, 1.5)
             
             # Database metrics
-            metrics["kuzu_query_latency"] = 45 + np.random.normal(0, 15)
+            metrics["ladybug_query_latency"] = 45 + np.random.normal(0, 15)
             metrics["redis_operation_latency"] = 2.1 + np.random.normal(0, 0.5)
             
             # Error metrics

@@ -187,12 +187,12 @@ class ServiceStatus(BaseModel):
                     "requests_per_second": 25.3,
                     "average_response_time_ms": 120.5
                 },
-                "dependencies": ["kuzu_db", "redis"]
+                "dependencies": ["ladybug_db", "redis"]
             }
         }
 
-class KuzuQueryRequest(BaseModel):
-    """Kuzu GraphDB query request model"""
+class LadybugQueryRequest(BaseModel):
+    """LadybugDB query request model"""
     cypher_query: str = Field(..., description="Cypher query to execute")
     parameters: Dict[str, Any] = Field(default_factory=dict, description="Query parameters")
     read_only: bool = Field(True, description="Whether this is a read-only query")
@@ -242,8 +242,8 @@ class KuzuQueryRequest(BaseModel):
             }
         }
 
-class KuzuQueryResult(BaseModel):
-    """Kuzu GraphDB query result model"""
+class LadybugQueryResult(BaseModel):
+    """LadybugDB query result model"""
     query_id: str = Field(..., description="Unique query identifier")
     cypher_query: str = Field(..., description="Executed Cypher query")
     execution_time_ms: float = Field(..., description="Query execution time")

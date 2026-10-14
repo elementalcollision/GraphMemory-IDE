@@ -39,7 +39,7 @@ USER mcpuser
 EXPOSE 8080 50051
 
 # Environment variables
-ENV KUZU_DB_PATH=/database
+ENV LADYBUG_DB_PATH=/database
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 

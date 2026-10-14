@@ -17,7 +17,7 @@ import logging
 # Import our models and configuration
 from server.database_models import (
     User, UserSession, TelemetryEvent, AnalyticsQuery, 
-    KuzuQuery, CollaborationSession, CollaborationParticipant,
+    LadybugQuery, CollaborationSession, CollaborationParticipant,
     SystemMetrics, APIRequestLog
 )
 from server.core.config import get_settings
@@ -212,7 +212,7 @@ class DataSeeder:
                 logger.info(f"Created {len(events_to_create)} telemetry events")
 
     async def seed_sample_queries(self, users: List[User], count: int = 50) -> None:
-        """Seed sample analytics and Kuzu queries"""
+        """Seed sample analytics and LadybugDB queries"""
         query_types = [
             "entity_analytics", "user_behavior", "performance_metrics",
             "collaboration_stats", "usage_patterns", "error_analysis"
@@ -263,19 +263,19 @@ class DataSeeder:
                     session.add_all(analytics_to_create)
                     logger.info(f"Created {len(analytics_to_create)} analytics queries")
             
-            # Kuzu queries
-            kuzu_result = await session.execute(
-                select(func.count(KuzuQuery.id))
+            # LadybugDB queries
+            ladybug_result = await session.execute(
+                select(func.count(LadybugQuery.id))
             )
-            existing_kuzu = kuzu_result.scalar()
+            existing_ladybug = ladybug_result.scalar()
             
-            if existing_kuzu < count // 2:
-                kuzu_to_create = []
-                for i in range((count // 2) - existing_kuzu):
+            if existing_ladybug < count // 2:
+                ladybug_to_create = []
+                for i in range((count // 2) - existing_ladybug):
                     user = users[i % len(users)] if users else None
                     cypher_query = cypher_queries[i % len(cypher_queries)]
                     
-                    query = KuzuQuery(
+                    query = LadybugQuery(
                         cypher_query=cypher_query,
                         user_id=user.id if user else None,
                         parameters={"limit": 100, "offset": 0},
@@ -290,11 +290,11 @@ class DataSeeder:
                         },
                         status="completed"
                     )
-                    kuzu_to_create.append(query)
+                    ladybug_to_create.append(query)
                 
-                if kuzu_to_create:
-                    session.add_all(kuzu_to_create)
-                    logger.info(f"Created {len(kuzu_to_create)} Kuzu queries")
+                if ladybug_to_create:
+                    session.add_all(ladybug_to_create)
+                    logger.info(f"Created {len(ladybug_to_create)} LadybugDB queries")
             
             await session.commit()
 

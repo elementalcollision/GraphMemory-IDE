@@ -1,7 +1,7 @@
 # Core server
 fastapi
 uvicorn
-kuzu
+ladybug
 
 # Database
 asyncpg
@@ -16,12 +16,21 @@ redis
 
 # Dashboard and real-time streaming
 sse-starlette
-streamlit
+streamlit>=1.30
 streamlit-echarts
 
 # Testing
 pytest
+pytest-asyncio
+pytest-timeout
 pytest-cov
+httpx-sse
+memory-profiler
+databases
+aiohttp
+aiofiles
+selenium
+asyncio-pool
 
 # Security testing
 docker
@@ -53,3 +62,15 @@ requests
 # Embeddings for Top-K endpoint
 sentence-transformers
 python-multipart
+
+# SSO and MFA dependencies (previously hand-appended to requirements.txt;
+# declared here so pip-compile regeneration keeps them)
+pyotp
+qrcode[pil]
+PyJWT
+
+# Analytics and visualisation
+plotly
+
+# Real-time WebSocket support (server realtime + test fixtures)
+websockets

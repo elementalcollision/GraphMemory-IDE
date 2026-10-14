@@ -42,7 +42,7 @@ try:
 except ImportError as e:
     # Handle missing dependencies gracefully
     print(f"Warning: Some authentication dependencies are missing: {e}")
-    print("Please install required packages: pip install aioredis pyotp qrcode[pil] PyJWT")
+    print("Please install required packages: pip install redis pyotp qrcode[pil] PyJWT")
     
     # Create stub classes to prevent import errors
     class _SSOManagerStub:
@@ -112,7 +112,7 @@ except ImportError as e:
         return {
             "status": "unavailable",
             "message": "Authentication features require additional dependencies",
-            "required_packages": ["aioredis", "pyotp", "qrcode[pil]", "PyJWT"]
+            "required_packages": ["redis", "pyotp", "qrcode[pil]", "PyJWT"]
         }
 
 

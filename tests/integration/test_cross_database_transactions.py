@@ -71,7 +71,7 @@ class CrossDatabaseIntegrationTester:
         # Test 2: Transaction rollback scenarios
         print(f"  ⏪ Testing transaction rollback scenarios...")
         
-        for scenario in ["kuzu_failure", "redis_failure", "sqlite_failure"]:
+        for scenario in ["ladybug_failure", "redis_failure", "sqlite_failure"]:
             rollback_result = await self._test_transaction_rollback(scenario)
             rollback_tests.append(rollback_result)
             
@@ -274,10 +274,10 @@ class CrossDatabaseIntegrationTester:
                 )
                 user_data["db_user_id"] = db_user["id"] if db_user else None
                 
-            elif pool_type == "kuzu":
-                # Create user node in Kuzu
-                kuzu_conn = conn["connection"]
-                kuzu_conn.execute(
+            elif pool_type == "ladybug":
+                # Create user node in LadybugDB
+                ladybug_conn = conn["connection"]
+                ladybug_conn.execute(
                     "CREATE (u:TestUser {id: $id, name: $name, email: $email})",
                     {"id": user_data.get("db_user_id", 999), "name": user_data["name"], "email": user_data["email"]}
                 )
@@ -317,10 +317,10 @@ class CrossDatabaseIntegrationTester:
                     )
                     consistency_check["database_states"]["sqlite"] = user_data is not None
                     
-                elif pool_type == "kuzu" and conn and "connection" in conn:
-                    # Check Kuzu for user node
-                    kuzu_conn = conn["connection"]
-                    result = kuzu_conn.execute(
+                elif pool_type == "ladybug" and conn and "connection" in conn:
+                    # Check LadybugDB for user node
+                    ladybug_conn = conn["connection"]
+                    result = ladybug_conn.execute(
                         "MATCH (u:TestUser) WHERE u.name CONTAINS $user_id RETURN count(u) as user_count",
                         {"user_id": user_id}
                     )
@@ -328,7 +328,7 @@ class CrossDatabaseIntegrationTester:
                     if result:
                         for row in result:
                             user_count = row[0]
-                    consistency_check["database_states"]["kuzu"] = user_count > 0
+                    consistency_check["database_states"]["ladybug"] = user_count > 0
                     
                 elif pool_type == "redis" and conn and "connection" in conn:
                     # Check Redis cache
@@ -363,15 +363,15 @@ class CrossDatabaseIntegrationTester:
                 user_data = await self._create_coordinated_user_data(tx_context)
                 
                 # Simulate failure based on scenario
-                if failure_scenario == "kuzu_failure":
-                    # Force Kuzu error
+                if failure_scenario == "ladybug_failure":
+                    # Force LadybugDB error
                     connections = tx_context["connections"]
                     for pool_id, conn in connections.items():
                         pool = self.pool_manager.pools[pool_id]
-                        if pool["pool_type"] == "kuzu":
-                            kuzu_conn = conn["connection"]
+                        if pool["pool_type"] == "ladybug":
+                            ladybug_conn = conn["connection"]
                             # Execute invalid query to force error
-                            kuzu_conn.execute("INVALID QUERY SYNTAX")
+                            ladybug_conn.execute("INVALID QUERY SYNTAX")
                             
                 elif failure_scenario == "redis_failure":
                     # Force Redis error
@@ -450,15 +450,15 @@ class CrossDatabaseIntegrationTester:
             # Step 1: Create user in SQLite
             sqlite_pool_id = None
             redis_pool_id = None
-            kuzu_pool_id = None
+            ladybug_pool_id = None
             
             for pool_id, pool in self.pool_manager.pools.items():
                 if pool["pool_type"] == "sqlite":
                     sqlite_pool_id = pool_id
                 elif pool["pool_type"] == "redis":
                     redis_pool_id = pool_id
-                elif pool["pool_type"] == "kuzu":
-                    kuzu_pool_id = pool_id
+                elif pool["pool_type"] == "ladybug":
+                    ladybug_pool_id = pool_id
             
             # SQLite: Create user record
             if sqlite_pool_id:
@@ -474,20 +474,20 @@ class CrossDatabaseIntegrationTester:
                     if sqlite_conn:
                         await self.pool_manager.return_connection(sqlite_pool_id, sqlite_conn["id"])
             
-            # Kuzu: Create user node and relationships
-            if kuzu_pool_id:
-                kuzu_conn = await self.pool_manager.get_connection(kuzu_pool_id)
+            # LadybugDB: Create user node and relationships
+            if ladybug_pool_id:
+                ladybug_conn = await self.pool_manager.get_connection(ladybug_pool_id)
                 try:
-                    if kuzu_conn and "connection" in kuzu_conn:
-                        kuzu_connection = kuzu_conn["connection"]
-                        kuzu_connection.execute(
+                    if ladybug_conn and "connection" in ladybug_conn:
+                        ladybug_connection = ladybug_conn["connection"]
+                        ladybug_connection.execute(
                             "CREATE (u:TestUser {id: $id, name: $name, email: $email})",
                             {"id": workflow_id + 2000, "name": f"Workflow User {user_id}", "email": f"{user_id}@example.com"}
                         )
-                        workflow_result["steps_completed"].append("kuzu_node_created")
+                        workflow_result["steps_completed"].append("ladybug_node_created")
                 finally:
-                    if kuzu_conn:
-                        await self.pool_manager.return_connection(kuzu_pool_id, kuzu_conn["id"])
+                    if ladybug_conn:
+                        await self.pool_manager.return_connection(ladybug_pool_id, ladybug_conn["id"])
             
             # Redis: Cache user data
             if redis_pool_id:
@@ -540,9 +540,9 @@ class CrossDatabaseIntegrationTester:
                     )
                     integrity_check["database_checks"]["sqlite"] = user_exists["count"] > 0 if user_exists else False
                     
-                elif pool_type == "kuzu" and conn and "connection" in conn:
-                    kuzu_conn = conn["connection"]
-                    result = kuzu_conn.execute(
+                elif pool_type == "ladybug" and conn and "connection" in conn:
+                    ladybug_conn = conn["connection"]
+                    result = ladybug_conn.execute(
                         "MATCH (u:TestUser) WHERE u.email CONTAINS $user_id RETURN count(u) as count",
                         {"user_id": user_id}
                     )
@@ -550,7 +550,7 @@ class CrossDatabaseIntegrationTester:
                     if result:
                         for row in result:
                             count = row[0]
-                    integrity_check["database_checks"]["kuzu"] = count > 0
+                    integrity_check["database_checks"]["ladybug"] = count > 0
                     
                 elif pool_type == "redis" and conn and "connection" in conn:
                     redis_conn = conn["connection"]
@@ -659,9 +659,9 @@ async def test_cross_database_error_recovery(multi_database_setup) -> None:
         
         try:
             # Test that connection is working
-            if pool_type == "kuzu":
-                kuzu_conn = conn["connection"]
-                result = kuzu_conn.execute("MATCH (n) RETURN count(n) as total")
+            if pool_type == "ladybug":
+                ladybug_conn = conn["connection"]
+                result = ladybug_conn.execute("MATCH (n) RETURN count(n) as total")
                 # Should not error, even if count is 0
                 
             elif pool_type == "redis":

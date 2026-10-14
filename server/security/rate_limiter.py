@@ -22,7 +22,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 from collections import defaultdict
 
-import aioredis
+from redis import asyncio as aioredis  # Phase 8.9: aioredis is deprecated; redis.asyncio is API-identical
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware

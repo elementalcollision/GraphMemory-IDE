@@ -60,7 +60,7 @@ class TestFastAPITenantMiddleware:
         middleware = FastAPITenantMiddleware(
             app=app,
             redis_manager=None,
-            kuzu_manager=None,
+            ladybug_manager=None,
             enable_audit_logging=True,
             cache_ttl_seconds=300,
             max_cache_size=1000

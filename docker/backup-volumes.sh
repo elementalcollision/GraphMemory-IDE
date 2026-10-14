@@ -120,7 +120,7 @@ clean_backups() {
 show_volume_info() {
     echo -e "${YELLOW}Volume Information:${NC}"
     
-    for volume in docker_kuzu-data docker_kestra-data; do
+    for volume in docker_ladybug-data docker_kestra-data; do
         if docker volume inspect "$volume" >/dev/null 2>&1; then
             echo "Volume: $volume"
             docker volume inspect "$volume" --format "  Mountpoint: {{.Mountpoint}}"
@@ -143,13 +143,13 @@ show_volume_info() {
 case "${1:-help}" in
     backup)
         echo "Starting backup of all volumes..."
-        backup_volume "docker_kuzu-data"
+        backup_volume "docker_ladybug-data"
         backup_volume "docker_kestra-data"
         echo -e "${GREEN}All backups completed!${NC}"
         ;;
     
-    backup-kuzu)
-        backup_volume "docker_kuzu-data"
+    backup-ladybug)
+        backup_volume "docker_ladybug-data"
         ;;
     
     backup-kestra)
@@ -159,7 +159,7 @@ case "${1:-help}" in
     restore)
         if [ -z "$2" ] || [ -z "$3" ]; then
             echo "Usage: $0 restore <volume-name> <backup-file>"
-            echo "Example: $0 restore kuzu-data ./backups/kuzu-data_20240527_120000.tar.gz"
+            echo "Example: $0 restore ladybug-data ./backups/ladybug-data_20240527_120000.tar.gz"
             exit 1
         fi
         restore_volume "$2" "$3"
@@ -183,8 +183,8 @@ case "${1:-help}" in
         echo "Usage: $0 <command> [options]"
         echo
         echo "Commands:"
-        echo "  backup           - Backup all volumes (kuzu-data and kestra-data)"
-        echo "  backup-kuzu      - Backup only kuzu-data volume"
+        echo "  backup           - Backup all volumes (ladybug-data and kestra-data)"
+        echo "  backup-ladybug      - Backup only ladybug-data volume"
         echo "  backup-kestra    - Backup only kestra-data volume"
         echo "  restore <vol> <file> - Restore volume from backup file"
         echo "  list             - List all available backups"
@@ -194,7 +194,7 @@ case "${1:-help}" in
         echo
         echo "Examples:"
         echo "  $0 backup                    # Backup all volumes"
-        echo "  $0 restore kuzu-data ./backups/kuzu-data_20240527_120000.tar.gz"
+        echo "  $0 restore ladybug-data ./backups/ladybug-data_20240527_120000.tar.gz"
         echo "  $0 clean 30                  # Clean backups older than 30 days"
         echo
         ;;

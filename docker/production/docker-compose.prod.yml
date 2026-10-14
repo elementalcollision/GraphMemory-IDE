@@ -68,12 +68,12 @@ volumes:
       device: ${GRAPHMEMORY_DATA_PATH:-./data}
 
   # Database volumes
-  kuzu_data:
+  ladybug_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${KUZU_DATA_PATH:-./data/kuzu}
+      device: ${LADYBUG_DATA_PATH:-./data/ladybug}
 
   redis_data:
     driver: local
@@ -176,7 +176,7 @@ services:
       - MAX_REQUESTS=${FASTAPI_MAX_REQUESTS:-1000}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-graphmemory}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-graphmemory}
       - REDIS_URL=redis://redis:6379
-      - KUZU_DATABASE_PATH=/app/data/kuzu
+      - LADYBUG_DATABASE_PATH=/app/data/ladybug
       - ANALYTICS_SERVICE_URL=http://analytics:8002
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
@@ -277,7 +277,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - ANALYTICS_MAX_MEMORY_MB=${ANALYTICS_MAX_MEMORY_MB:-1024}
       - REDIS_URL=redis://redis:6379
-      - KUZU_DATABASE_PATH=/app/data/kuzu
+      - LADYBUG_DATABASE_PATH=/app/data/ladybug
       - SQLITE_DATABASE_PATH=/app/data/analytics.db
     volumes:
       - graphmemory_data:/app/data

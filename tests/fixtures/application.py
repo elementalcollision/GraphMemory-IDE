@@ -122,8 +122,8 @@ def mcp_server_app(base_app: FastAPI, isolated_databases) -> FastAPI:
         }
     
     # Override database dependencies with test databases
-    def get_test_kuzu_connection() -> Any:
-        return isolated_databases["kuzu"]
+    def get_test_ladybug_connection() -> Any:
+        return isolated_databases["ladybug"]
     
     def get_test_redis_client() -> Any:
         return isolated_databases["redis"]
@@ -134,7 +134,7 @@ def mcp_server_app(base_app: FastAPI, isolated_databases) -> FastAPI:
     # Add dependency overrides
     base_app.dependency_overrides.update({
         # These would map to actual dependency functions in production
-        "get_kuzu_connection": get_test_kuzu_connection,
+        "get_ladybug_connection": get_test_ladybug_connection,
         "get_redis_client": get_test_redis_client,
         "get_sqlite_connection": get_test_sqlite_connection,
     })

@@ -177,11 +177,11 @@ graph TD
 
 ### 2.1 Database Optimization
 
-Configure Kuzu for production performance:
+Configure LadybugDB for production performance:
 
 ```yaml
 # config/database.yml
-kuzu:
+ladybug:
   performance:
     # Memory configuration
     buffer_pool_size: "8GB"
@@ -617,10 +617,10 @@ backup_database() {
     # Create backup directory
     mkdir -p "${BACKUP_DIR}/${DATE}"
     
-    # Backup Kuzu database
-    kuzu_backup \
-        --source-path "/data/kuzu" \
-        --backup-path "${BACKUP_DIR}/${DATE}/kuzu_backup" \
+    # Backup LadybugDB database
+    ladybug_backup \
+        --source-path "/data/ladybug" \
+        --backup-path "${BACKUP_DIR}/${DATE}/ladybug_backup" \
         --compression gzip
     
     # Backup configuration
@@ -932,8 +932,8 @@ server:
   keepalive: 2
 
 database:
-  kuzu:
-    path: "/data/kuzu"
+  ladybug:
+    path: "/data/ladybug"
     buffer_pool_size: "8GB"
     num_threads: 16
     checkpoint_frequency: 300
@@ -1101,7 +1101,7 @@ Your production system is ready for enterprise use:
 # Solution: Adjust buffer pool size
 # Edit config/production.yml
 database:
-  kuzu:
+  ladybug:
     buffer_pool_size: "4GB"  # Reduce if needed
     max_memory_usage: "8GB"
 ```

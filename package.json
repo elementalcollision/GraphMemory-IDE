@@ -18,7 +18,7 @@
     "cli",
     "ide",
     "plugin",
-    "kuzu",
+    "ladybug",
     "mcp"
   ],
   "author": "GraphMemory Team",

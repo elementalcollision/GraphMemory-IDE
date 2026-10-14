@@ -15,7 +15,7 @@ Key Innovation Features:
 Integration Points:
 - Seamless coordination with Memory CRDT (Component 1) and Relationship OT (Component 3)
 - Redis-based state management and real-time synchronization
-- Kuzu vector index consistency management with existing HNSW infrastructure
+- LadybugDB vector index consistency management with existing HNSW infrastructure
 - Sentence Transformers integration with production-grade error handling
 
 Author: GraphMemory-IDE Team
@@ -1016,14 +1016,14 @@ class LifelongNormalizationStrategy:
 
 class VectorIndexConsistency:
     """
-    Kuzu vector index consistency manager for collaborative embeddings
+    LadybugDB vector index consistency manager for collaborative embeddings
     
     Integrates with existing HNSW indexing infrastructure to maintain
     vector index consistency during collaborative memory editing.
     """
 
-    def __init__(self, kuzu_connection) -> None:
-        self.kuzu_conn = kuzu_connection
+    def __init__(self, ladybug_connection) -> None:
+        self.ladybug_conn = ladybug_connection
         self.index_cache: Dict[str, Dict[str, Any]] = {}
         self.consistency_metrics = {
             'index_updates': 0,
@@ -1033,7 +1033,7 @@ class VectorIndexConsistency:
 
     async def maintain_index_consistency(self, embedding_updates: List[VectorOperation]) -> None:
         """
-        Maintain Kuzu vector index consistency during collaboration
+        Maintain LadybugDB vector index consistency during collaboration
         
         Implements batch index updates with consistency checks and rollback mechanisms.
         """
@@ -1064,7 +1064,7 @@ class VectorIndexConsistency:
             latest_update = max(updates, key=lambda x: x.timestamp)
             
             if latest_update.target_embedding is not None:
-                # Update vector index in Kuzu
+                # Update vector index in LadybugDB
                 embedding_list = latest_update.target_embedding.tolist()
                 
                 # Use parameterized query for safety
@@ -1073,7 +1073,7 @@ class VectorIndexConsistency:
                 SET m.embedding = $embedding, m.updated_at = $timestamp
                 """
                 
-                await self._execute_kuzu_query(update_query, {
+                await self._execute_ladybug_query(update_query, {
                     'memory_id': memory_id,
                     'embedding': embedding_list,
                     'timestamp': latest_update.timestamp.isoformat()
@@ -1100,7 +1100,7 @@ class VectorIndexConsistency:
                 RETURN m.embedding as embedding, m.updated_at as updated_at
                 """
                 
-                result = await self._execute_kuzu_query(check_query, {'memory_id': memory_id})
+                result = await self._execute_ladybug_query(check_query, {'memory_id': memory_id})
                 
                 # Validate consistency
                 if not result or not result.get('embedding'):
@@ -1126,15 +1126,15 @@ class VectorIndexConsistency:
         except Exception as e:
             logger.error(f"Error during rollback: {e}")
 
-    async def _execute_kuzu_query(self, query: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute Kuzu query with error handling"""
+    async def _execute_ladybug_query(self, query: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute LadybugDB query with error handling"""
         try:
-            # This would integrate with actual Kuzu connection
+            # This would integrate with actual LadybugDB connection
             # For now, return mock result
             return {'success': True}
             
         except Exception as e:
-            logger.error(f"Error executing Kuzu query: {e}")
+            logger.error(f"Error executing LadybugDB query: {e}")
             raise
 
     async def coordinate_with_memory_crdt(self, memory_changes: List[Dict[str, Any]]) -> None:
@@ -1178,16 +1178,16 @@ class VectorConsistencyManager:
     """
 
     def __init__(self, redis_client: Redis, sentence_transformer: SentenceTransformer, 
-                 kuzu_connection, memory_crdt_manager: MemoryCRDTManager) -> None:
+                 ladybug_connection, memory_crdt_manager: MemoryCRDTManager) -> None:
         self.redis_client = redis_client
         self.embedding_model = sentence_transformer
-        self.kuzu_conn = kuzu_connection
+        self.ladybug_conn = ladybug_connection
         self.memory_crdt_manager = memory_crdt_manager
         
         # Initialize core components
         self.alignment_engine = EmbeddingAlignmentEngine()
         self.update_coordinator = EmbeddingUpdateCoordinator()
-        self.index_consistency = VectorIndexConsistency(kuzu_connection)
+        self.index_consistency = VectorIndexConsistency(ladybug_connection)
         
         # Active vector documents
         self.vector_documents: Dict[str, VectorCRDTDocument] = {}
@@ -1581,11 +1581,11 @@ async def get_vector_consistency_manager() -> VectorConsistencyManager:
         sentence_transformer = SentenceTransformer("all-MiniLM-L6-v2")
         memory_manager = await get_memory_crdt_manager()
         
-        # Mock Kuzu connection for now
-        kuzu_connection = None
+        # Mock LadybugDB connection for now
+        ladybug_connection = None
         
         _vector_consistency_manager = VectorConsistencyManager(
-            redis_client, sentence_transformer, kuzu_connection, memory_manager
+            redis_client, sentence_transformer, ladybug_connection, memory_manager
         )
     
     return _vector_consistency_manager

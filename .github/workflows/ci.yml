@@ -42,6 +42,21 @@ jobs:
         # Exit-zero treats all errors as warnings
         flake8 server/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
 
+    - name: Lint shell scripts (bash -n gate)
+      # §3.14 follow-up: scripts/deploy-secure.sh shipped broken for its entire
+      # life because no CI gate parsed shell scripts. bash -n is a hard gate:
+      # any shell script with a syntax error fails the build.
+      run: |
+        set -e
+        fail=0
+        while IFS= read -r -d '' script; do
+          if ! bash -n "$script"; then
+            echo "::error file=${script}::bash -n failed"
+            fail=1
+          fi
+        done < <(find scripts docker deploy monitoring -name '*.sh' -print0)
+        exit $fail
+
     - name: Test with pytest
       run: |
         PYTHONPATH=. pytest server/ --maxfail=3 --disable-warnings -v --cov=server --cov-report=xml

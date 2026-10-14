@@ -71,6 +71,15 @@ class User(BaseModel):
     # Relationships
     sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
     analytics_queries = relationship("AnalyticsQuery", back_populates="user", cascade="all, delete-orphan")
+    # Phase 9: inverse relationships that other models referenced via
+    # back_populates but were never declared on User — any mapper use raised
+    # "has no property 'email_verification_tokens'" (pre-existing defect).
+    email_verification_tokens = relationship("EmailVerificationToken", back_populates="user", cascade="all, delete-orphan")
+    onboarding_progress = relationship("UserOnboardingProgress", back_populates="user", cascade="all, delete-orphan")
+    workspace_setups = relationship("WorkspaceSetup", back_populates="user", cascade="all, delete-orphan")
+    onboarding_preferences = relationship("UserOnboardingPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    sent_invitations = relationship("TeamInvitation", foreign_keys="TeamInvitation.invited_by_user_id", back_populates="invited_by")
+    accepted_invitations = relationship("TeamInvitation", foreign_keys="TeamInvitation.accepted_by_user_id", back_populates="accepted_by")
     
     __table_args__ = (
         Index("idx_users_email_active", "email", "is_active"),
@@ -153,9 +162,9 @@ class AnalyticsQuery(BaseModel):
     )
 
 
-class KuzuQuery(BaseModel):
-    """Kuzu graph database query tracking"""
-    __tablename__ = "kuzu_queries"
+class LadybugQuery(BaseModel):
+    """LadybugDB graph database query tracking"""
+    __tablename__ = "ladybug_queries"
     
     cypher_query: Mapped[str] = mapped_column(Text(), nullable=False)
     user_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
@@ -175,10 +184,10 @@ class KuzuQuery(BaseModel):
     status: Mapped[str] = mapped_column(String(20), default="completed", nullable=False)
     
     __table_args__ = (
-        Index("idx_kuzu_user_created", "user_id", "created_at"),
-        Index("idx_kuzu_readonly_created", "is_read_only", "created_at"),
-        Index("idx_kuzu_status_created", "status", "created_at"),
-        CheckConstraint("status IN ('pending', 'completed', 'failed', 'timeout')", name="ck_kuzu_status"),
+        Index("idx_ladybug_user_created", "user_id", "created_at"),
+        Index("idx_ladybug_readonly_created", "is_read_only", "created_at"),
+        Index("idx_ladybug_status_created", "status", "created_at"),
+        CheckConstraint("status IN ('pending', 'completed', 'failed', 'timeout')", name="ck_ladybug_status"),
     )
 
 
@@ -285,7 +294,11 @@ class EmailVerificationToken(BaseModel):
     """Email verification token model"""
     __tablename__ = "email_verification_tokens"
     
-    user_id: Mapped[str] = mapped_column(String(255), ForeignKey("users.id"), nullable=False, index=True)
+    # NOTE (Phase 9): user_id was VARCHAR(255) while referencing the UUID
+    # users.id primary key — an incompatible FK type that made this table
+    # impossible to CREATE in PostgreSQL (pre-existing defect exposed by the
+    # test service-orchestration bring-up). Aligned to UUID(as_uuid=True).
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     token_hash: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -307,7 +320,7 @@ class UserOnboardingProgress(BaseModel):
     """User onboarding progress tracking model"""
     __tablename__ = "user_onboarding_progress"
     
-    user_id: Mapped[str] = mapped_column(String(255), ForeignKey("users.id"), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)  # Phase 9: was VARCHAR(255) - incompatible FK type vs UUID users.id
     step_name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     data: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
@@ -329,7 +342,7 @@ class WorkspaceSetup(BaseModel):
     __tablename__ = "workspace_setup"
     
     tenant_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    user_id: Mapped[str] = mapped_column(String(255), ForeignKey("users.id"), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)  # Phase 9: was VARCHAR(255) - incompatible FK type vs UUID users.id
     setup_completed: Mapped[bool] = mapped_column(Boolean(), default=False, nullable=False)
     setup_data: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -353,14 +366,14 @@ class TeamInvitation(BaseModel):
     __tablename__ = "team_invitations"
     
     tenant_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    invited_by_user_id: Mapped[str] = mapped_column(String(255), ForeignKey("users.id"), nullable=False)
+    invited_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)  # Phase 9: was VARCHAR(255) - incompatible FK type vs UUID users.id
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     role: Mapped[str] = mapped_column(String(50), nullable=False)  # viewer, editor, collaborator, admin
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)  # pending, accepted, expired, revoked
     token_hash: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    accepted_by_user_id: Mapped[Optional[str]] = mapped_column(String(255), ForeignKey("users.id"), nullable=True)
+    accepted_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)  # Phase 9: was VARCHAR(255) - incompatible FK type vs UUID users.id
     personal_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
     
@@ -381,7 +394,7 @@ class UserOnboardingPreferences(BaseModel):
     """User onboarding preferences model"""
     __tablename__ = "user_onboarding_preferences"
     
-    user_id: Mapped[str] = mapped_column(String(255), ForeignKey("users.id"), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)  # Phase 9: was VARCHAR(255) - incompatible FK type vs UUID users.id
     show_tooltips: Mapped[bool] = mapped_column(Boolean(), default=True, nullable=False)
     show_guided_tours: Mapped[bool] = mapped_column(Boolean(), default=True, nullable=False)
     email_notifications_enabled: Mapped[bool] = mapped_column(Boolean(), default=True, nullable=False)
@@ -407,7 +420,7 @@ __all__ = [
     "UserSession",
     "TelemetryEvent",
     "AnalyticsQuery",
-    "KuzuQuery",
+    "LadybugQuery",
     "CollaborationSession",
     "CollaborationParticipant",
     "SystemMetrics",

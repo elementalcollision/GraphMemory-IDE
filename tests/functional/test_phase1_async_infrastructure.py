@@ -10,7 +10,7 @@ Implementation of research-driven functional testing framework based on:
 
 Test Coverage:
 1. Async client setup with proper isolation
-2. Real database testing with Kuzu integration
+2. Real database testing with LadybugDB integration
 3. Performance validation and monitoring  
 4. Cloud deployment testing preparation
 5. Real-world data validation scenarios
@@ -114,14 +114,14 @@ class TestDatabaseIntegration:
     """Test database integration and data validation."""
     
     @pytest.mark.asyncio
-    async def test_kuzu_database_connectivity(self, kuzu_connection) -> None:
-        """Test Kuzu database connectivity and basic operations."""
+    async def test_ladybug_database_connectivity(self, ladybug_connection) -> None:
+        """Test LadybugDB database connectivity and basic operations."""
         
         # Test basic query execution
         try:
-            result = kuzu_connection.execute("RETURN 'connectivity_test' AS test")
+            result = ladybug_connection.execute("RETURN 'connectivity_test' AS test")
             assert result is not None
-            print("✅ Kuzu database connectivity verified")
+            print("✅ LadybugDB database connectivity verified")
         except Exception as e:
             pytest.fail(f"Database connectivity failed: {e}")
     
@@ -140,13 +140,13 @@ class TestDatabaseIntegration:
         print(f"✅ Sample data created with {len(nodes)} nodes")
     
     @pytest.mark.asyncio
-    async def test_data_insertion_performance(self, kuzu_connection, performance_data) -> None:
+    async def test_data_insertion_performance(self, ladybug_connection, performance_data) -> None:
         """Test data insertion performance with larger datasets."""
         
         start_time = time.time()
         
         # Create test table
-        kuzu_connection.execute("""
+        ladybug_connection.execute("""
             CREATE NODE TABLE IF NOT EXISTS TestMemory(
                 id STRING,
                 content STRING,
@@ -157,7 +157,7 @@ class TestDatabaseIntegration:
         
         # Insert performance data
         for node in performance_data["nodes"]:
-            kuzu_connection.execute(
+            ladybug_connection.execute(
                 "CREATE (:TestMemory {id: $id, content: $content, timestamp: $timestamp})",
                 {"id": node["id"], "content": node["content"], "timestamp": node["timestamp"]}
             )
@@ -172,14 +172,14 @@ class TestDatabaseIntegration:
     @pytest.mark.asyncio
     async def test_realistic_dataset_creation(
         self, 
-        kuzu_connection, 
+        ladybug_connection, 
         project_data_factory
     ) -> None:
         """Test realistic dataset creation for different scales."""
         
         # Test small dataset
         small_dataset = project_data_factory.create_realistic_dataset(
-            kuzu_connection, 
+            ladybug_connection, 
             size="small"
         )
         
@@ -193,7 +193,7 @@ class TestDatabaseIntegration:
         # Test medium dataset (performance validation)
         start_time = time.time()
         medium_dataset = project_data_factory.create_realistic_dataset(
-            kuzu_connection,
+            ladybug_connection,
             size="medium"
         )
         creation_time = time.time() - start_time
@@ -249,7 +249,7 @@ class TestPerformanceValidation:
     @pytest.mark.asyncio
     async def test_memory_efficiency(
         self, 
-        kuzu_connection,
+        ladybug_connection,
         project_data_factory
     ) -> None:
         """Test memory efficiency during data operations."""
@@ -264,7 +264,7 @@ class TestPerformanceValidation:
         
         # Create dataset and measure memory growth
         dataset = project_data_factory.create_realistic_dataset(
-            kuzu_connection,
+            ladybug_connection,
             size="medium"
         )
         
@@ -284,7 +284,7 @@ class TestPerformanceValidation:
     @pytest.mark.asyncio
     async def test_concurrent_database_operations(
         self,
-        kuzu_connection,
+        ladybug_connection,
         performance_tracker
     ) -> None:
         """Test concurrent database operations performance."""
@@ -303,7 +303,7 @@ class TestPerformanceValidation:
                 operation = operations[operation_id % len(operations)]
                 params = {"id": f"test_{operation_id}", "value": operation_id}
                 
-                result = kuzu_connection.execute(operation, params)
+                result = ladybug_connection.execute(operation, params)
                 
                 operation_time = (time.time() - start_time) * 1000
                 performance_tracker.record_response_time(operation_time)
@@ -314,15 +314,28 @@ class TestPerformanceValidation:
                 performance_tracker.record_error(str(e))
                 return {"operation_id": operation_id, "error": str(e)}
         
+        # Phase 9: the operations reference a TestNode table that was never
+        # created — every operation errored with 'Table TestNode does not exist'
+        ladybug_connection.execute("""
+            CREATE NODE TABLE IF NOT EXISTS TestNode(
+                id STRING,
+                value INT64,
+                updated BOOL,
+                PRIMARY KEY(id)
+            )
+        """)
+
         # Execute operations concurrently (simulated)
-        # Note: Kuzu connections are not thread-safe, so we simulate concurrency
+        # Note: LadybugDB connections are not thread-safe, so we simulate concurrency
         operations_count = 10
         results = []
         
+        # Phase 9: the historical asyncio.to_thread(lambda: database_operation(i))
+        # returned a never-awaited coroutine (TypeError: argument of type
+        # 'coroutine' is not iterable). LadybugDB's sync execute() releases the
+        # GIL internally, so sequential awaits preserve the simulation intent.
         for i in range(operations_count):
-            result = await asyncio.create_task(
-                asyncio.to_thread(lambda: database_operation(i))
-            )
+            result = await database_operation(i)
             results.append(result)
         
         # Validate results
@@ -517,7 +530,7 @@ class TestRealWorldScenarios:
     @pytest.mark.asyncio
     async def test_production_data_validation(
         self,
-        kuzu_connection,
+        ladybug_connection,
         project_data_factory
     ) -> None:
         """Test with production-like data volumes and patterns."""
@@ -526,7 +539,7 @@ class TestRealWorldScenarios:
         start_time = time.time()
         
         production_dataset = project_data_factory.create_realistic_dataset(
-            kuzu_connection,
+            ladybug_connection,
             size="large"  # 1000 nodes, 1500 relationships
         )
         
@@ -566,7 +579,7 @@ def phase1_summary() -> None:
     print("📊 PHASE 1 FUNCTIONAL TESTING SUMMARY")
     print("="*70)
     print("✅ Async Testing Infrastructure: Implemented")
-    print("✅ Database Integration: Kuzu connectivity verified")
+    print("✅ Database Integration: LadybugDB connectivity verified")
     print("✅ Performance Validation: Benchmarks established")
     print("✅ Cloud Preparation: DigitalOcean compatibility tested")
     print("✅ Real-World Scenarios: Cursor workflow simulation")

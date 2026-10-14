@@ -18,106 +18,133 @@ from prometheus_client import (
 logger = logging.getLogger(__name__)
 
 
+# Shared collector objects, created once per process (see
+# MetricsCollector._setup_metrics). Prometheus collectors are process-global:
+# registering the same metric names twice into one registry raises
+# 'Duplicated timeseries'. The pre-existing code re-registered all collectors
+# on every MetricsCollector() instantiation, so the second instance anywhere in
+# the process crashed (pre-existing defect, fixed as a Phase 4 enabler because
+# it blocked the test suite at conftest import).
+_shared_collectors: Optional[Dict[str, Any]] = None
+
+
+def _get_shared_collectors() -> Dict[str, Any]:
+    """Build the shared collector objects once and register them once."""
+    global _shared_collectors
+    if _shared_collectors is None:
+        registry = REGISTRY
+        _shared_collectors = {
+            # HTTP Request Metrics
+            'http_requests_total': Counter(
+                'http_requests_total',
+                'Total number of HTTP requests',
+                ['method', 'endpoint', 'status_code'],
+                registry=registry,
+            ),
+            'http_request_duration_seconds': Histogram(
+                'http_request_duration_seconds',
+                'HTTP request duration in seconds',
+                ['method', 'endpoint'],
+                registry=registry,
+            ),
+            'http_requests_in_progress': Gauge(
+                'http_requests_in_progress',
+                'Number of HTTP requests currently being processed',
+                registry=registry,
+            ),
+            # Database Metrics
+            'database_queries_total': Counter(
+                'database_queries_total',
+                'Total number of database queries',
+                ['query_type', 'table'],
+                registry=registry,
+            ),
+            'database_query_duration_seconds': Histogram(
+                'database_query_duration_seconds',
+                'Database query duration in seconds',
+                ['query_type'],
+                registry=registry,
+            ),
+            'database_connections_active': Gauge(
+                'database_connections_active',
+                'Number of active database connections',
+                registry=registry,
+            ),
+            # System Resource Metrics
+            'system_cpu_usage_percent': Gauge(
+                'system_cpu_usage_percent',
+                'Current CPU usage percentage',
+                registry=registry,
+            ),
+            'system_memory_usage_bytes': Gauge(
+                'system_memory_usage_bytes',
+                'Current memory usage in bytes',
+                ['type'],  # available, used, total
+                registry=registry,
+            ),
+            'system_disk_usage_bytes': Gauge(
+                'system_disk_usage_bytes',
+                'Current disk usage in bytes',
+                ['mountpoint', 'type'],  # used, total, free
+                registry=registry,
+            ),
+            # Application-specific metrics
+            'collaboration_active_sessions': Gauge(
+                'collaboration_active_sessions',
+                'Number of active collaboration sessions',
+                registry=registry,
+            ),
+            'websocket_connections_active': Gauge(
+                'websocket_connections_active',
+                'Number of active WebSocket connections',
+                registry=registry,
+            ),
+            'graph_operations_total': Counter(
+                'graph_operations_total',
+                'Total number of graph database operations',
+                ['operation_type'],
+                registry=registry,
+            ),
+            # Error Metrics
+            'errors_total': Counter(
+                'errors_total',
+                'Total number of errors',
+                ['error_type', 'component'],
+                registry=registry,
+            ),
+        }
+    return _shared_collectors
+
+
 class MetricsCollector:
-    """Centralized metrics collection for application monitoring"""
+    """Centralized metrics collection for application monitoring.
+
+    All instances share one set of process-global collector objects
+    (Prometheus semantics); creating multiple MetricsCollector objects is
+    safe. The registry of the FIRST instantiation is the one the collectors
+    are registered into (default: the global REGISTRY).
+    """
 
     def __init__(self, registry: Optional[CollectorRegistry] = None) -> None:
         self.registry = registry or REGISTRY
         self._setup_metrics()
 
     def _setup_metrics(self) -> None:
-        """Initialize all Prometheus metrics"""
-        
-        # HTTP Request Metrics
-        self.http_requests_total = Counter(
-            'http_requests_total',
-            'Total number of HTTP requests',
-            ['method', 'endpoint', 'status_code'],
-            registry=self.registry
-        )
-        
-        self.http_request_duration_seconds = Histogram(
-            'http_request_duration_seconds',
-            'HTTP request duration in seconds',
-            ['method', 'endpoint'],
-            registry=self.registry
-        )
-        
-        self.http_requests_in_progress = Gauge(
-            'http_requests_in_progress',
-            'Number of HTTP requests currently being processed',
-            registry=self.registry
-        )
-
-        # Database Metrics
-        self.database_queries_total = Counter(
-            'database_queries_total',
-            'Total number of database queries',
-            ['query_type', 'table'],
-            registry=self.registry
-        )
-        
-        self.database_query_duration_seconds = Histogram(
-            'database_query_duration_seconds',
-            'Database query duration in seconds',
-            ['query_type'],
-            registry=self.registry
-        )
-        
-        self.database_connections_active = Gauge(
-            'database_connections_active',
-            'Number of active database connections',
-            registry=self.registry
-        )
-
-        # System Resource Metrics
-        self.system_cpu_usage_percent = Gauge(
-            'system_cpu_usage_percent',
-            'Current CPU usage percentage',
-            registry=self.registry
-        )
-        
-        self.system_memory_usage_bytes = Gauge(
-            'system_memory_usage_bytes',
-            'Current memory usage in bytes',
-            ['type'],  # available, used, total
-            registry=self.registry
-        )
-        
-        self.system_disk_usage_bytes = Gauge(
-            'system_disk_usage_bytes',
-            'Current disk usage in bytes',
-            ['mountpoint', 'type'],  # used, total, free
-            registry=self.registry
-        )
-
-        # Application-specific metrics
-        self.collaboration_active_sessions = Gauge(
-            'collaboration_active_sessions',
-            'Number of active collaboration sessions',
-            registry=self.registry
-        )
-        
-        self.websocket_connections_active = Gauge(
-            'websocket_connections_active',
-            'Number of active WebSocket connections',
-            registry=self.registry
-        )
-        
-        self.graph_operations_total = Counter(
-            'graph_operations_total',
-            'Total number of graph database operations',
-            ['operation_type'],
-            registry=self.registry
-        )
-
-        # Error Metrics
-        self.errors_total = Counter(
-            'errors_total',
-            'Total number of errors',
-            ['error_type', 'component'],
-            registry=self.registry
-        )
+        """Bind the shared Prometheus collectors to this instance"""
+        c = _get_shared_collectors()
+        self.http_requests_total = c['http_requests_total']
+        self.http_request_duration_seconds = c['http_request_duration_seconds']
+        self.http_requests_in_progress = c['http_requests_in_progress']
+        self.database_queries_total = c['database_queries_total']
+        self.database_query_duration_seconds = c['database_query_duration_seconds']
+        self.database_connections_active = c['database_connections_active']
+        self.system_cpu_usage_percent = c['system_cpu_usage_percent']
+        self.system_memory_usage_bytes = c['system_memory_usage_bytes']
+        self.system_disk_usage_bytes = c['system_disk_usage_bytes']
+        self.collaboration_active_sessions = c['collaboration_active_sessions']
+        self.websocket_connections_active = c['websocket_connections_active']
+        self.graph_operations_total = c['graph_operations_total']
+        self.errors_total = c['errors_total']
 
     def record_http_request(self, method: str, endpoint: str, status_code: int, duration: float) -> None:
         """Record HTTP request metrics"""

@@ -126,7 +126,7 @@ dependencies=(
     "numpy"
     "pandas"
     "sklearn"
-    "kuzu"
+    "ladybug"
     "redis"
     "aiosqlite"
 )
@@ -142,9 +142,9 @@ done
 echo "Initializing analytics data structures..."
 
 # Create database directories if needed
-if [ ! -d "/app/data/kuzu" ]; then
-    mkdir -p /app/data/kuzu
-    echo "Created Kuzu database directory"
+if [ ! -d "/app/data/ladybug" ]; then
+    mkdir -p /app/data/ladybug
+    echo "Created LadybugDB database directory"
 fi
 
 if [ ! -f "/app/data/analytics.db" ]; then

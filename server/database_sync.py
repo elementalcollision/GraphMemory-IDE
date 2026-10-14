@@ -1,7 +1,7 @@
 """
 Database Synchronization Engine
 
-Handles bidirectional synchronization between PostgreSQL and Kuzu graph database:
+Handles bidirectional synchronization between PostgreSQL and LadybugDB graph database:
 - Change Data Capture (CDC) for PostgreSQL
 - Event-driven synchronization
 - Data transformation and mapping
@@ -26,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from server.database_models import (
     User, UserSession, TelemetryEvent, AnalyticsQuery, 
-    KuzuQuery, CollaborationSession, CollaborationParticipant,
+    LadybugQuery, CollaborationSession, CollaborationParticipant,
     SystemMetrics, APIRequestLog
 )
 from server.graph_database import get_graph_database, GraphQueryResult
@@ -78,12 +78,12 @@ class SyncConfiguration:
         if self.tables_to_sync is None:
             self.tables_to_sync = {
                 'users', 'user_sessions', 'telemetry_events',
-                'analytics_queries', 'kuzu_queries', 'collaboration_sessions',
+                'analytics_queries', 'ladybug_queries', 'collaboration_sessions',
                 'collaboration_participants', 'system_metrics', 'api_request_logs'
             }
 
 class DataTransformer:
-    """Transforms data between PostgreSQL and Kuzu formats"""
+    """Transforms data between PostgreSQL and LadybugDB formats"""
     
     def __init__(self) -> None:
         """Initialize data transformer"""
@@ -187,8 +187,8 @@ class DataTransformer:
             }
         return data
     
-    def _transform_kuzu_query(self, data: Dict[str, Any], direction: str) -> Dict[str, Any]:
-        """Transform Kuzu query data"""
+    def _transform_ladybug_query(self, data: Dict[str, Any], direction: str) -> Dict[str, Any]:
+        """Transform LadybugDB query data"""
         if direction == 'to_graph':
             return {
                 'id': str(data.get('id', '')),
@@ -413,7 +413,7 @@ class SyncEventProcessor:
         graph_data = self.transformer.transform_to_graph(event.table_name, event.data)
         
         # Create node in graph database
-        if event.table_name in ['users', 'user_sessions', 'telemetry_events', 'analytics_queries', 'kuzu_queries']:
+        if event.table_name in ['users', 'user_sessions', 'telemetry_events', 'analytics_queries', 'ladybug_queries']:
             node_type = self._get_node_type(event.table_name)
             query = f"""
             CREATE (n:{node_type} {{
@@ -441,7 +441,7 @@ class SyncEventProcessor:
         graph_data = self.transformer.transform_to_graph(event.table_name, event.data)
         
         # Update node in graph database
-        if event.table_name in ['users', 'user_sessions', 'telemetry_events', 'analytics_queries', 'kuzu_queries']:
+        if event.table_name in ['users', 'user_sessions', 'telemetry_events', 'analytics_queries', 'ladybug_queries']:
             node_type = self._get_node_type(event.table_name)
             query = f"""
             MATCH (n:{node_type} {{id: $id}})
@@ -463,7 +463,7 @@ class SyncEventProcessor:
         """Handle delete synchronization event"""
         graph_db = await get_graph_database()
         
-        if event.table_name in ['users', 'user_sessions', 'telemetry_events', 'analytics_queries', 'kuzu_queries']:
+        if event.table_name in ['users', 'user_sessions', 'telemetry_events', 'analytics_queries', 'ladybug_queries']:
             node_type = self._get_node_type(event.table_name)
             query = f"""
             MATCH (n:{node_type} {{id: $id}})
@@ -494,7 +494,7 @@ class SyncEventProcessor:
             'user_sessions': 'UserSession',
             'telemetry_events': 'TelemetryEvent',
             'analytics_queries': 'AnalyticsQuery',
-            'kuzu_queries': 'KuzuQuery'
+            'ladybug_queries': 'LadybugQuery'
         }
         return mapping.get(table_name, 'Unknown')
     

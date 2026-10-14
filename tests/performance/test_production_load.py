@@ -277,14 +277,14 @@ class TestProductionLoadScenarios:
             """Make database request."""
             results = {}
             
-            # Test Kuzu database
-            kuzu_conn = databases.get("kuzu")
-            if kuzu_conn:
+            # Test LadybugDB database
+            ladybug_conn = databases.get("ladybug")
+            if ladybug_conn:
                 try:
-                    result = kuzu_conn.execute("MATCH (n) RETURN count(n) LIMIT 1")
-                    results["kuzu"] = "success"
+                    result = ladybug_conn.execute("MATCH (n) RETURN count(n) LIMIT 1")
+                    results["ladybug"] = "success"
                 except Exception as e:
-                    results["kuzu"] = f"error: {e}"
+                    results["ladybug"] = f"error: {e}"
             
             # Test Redis
             redis_conn = databases.get("redis")

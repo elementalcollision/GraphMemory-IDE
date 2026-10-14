@@ -170,9 +170,9 @@ Let's create a few more memories to see how they connect.
 
 Create a second memory:
 ```
-Content: "Kuzu is the graph database used by GraphMemory-IDE"
+Content: "LadybugDB is the graph database used by GraphMemory-IDE"
 Type: fact
-Tags: graphdb, technical, kuzu
+Tags: graphdb, technical, ladybug
 ```
 
 ### Memory 3: An Insight
@@ -209,7 +209,7 @@ GraphMemory-IDE automatically creates relationships between memories based on sh
 
 ```mermaid
 graph LR
-    M1[GraphMemory-IDE Concept] --> M2[Kuzu Database Fact]
+    M1[GraphMemory-IDE Concept] --> M2[LadybugDB Database Fact]
     M1 --> M3[Organization Insight]
     M3 --> M4[Creation Procedure]
     
@@ -262,7 +262,7 @@ mindmap
     Concept
       GraphMemory-IDE Overview
     Fact
-      Kuzu Database
+      LadybugDB Database
     Insight
       Organization Strategy
     Procedure

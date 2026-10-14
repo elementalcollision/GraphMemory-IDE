@@ -9,7 +9,7 @@ import time
 import json
 from typing import Dict, Any, List
 from unittest.mock import Mock, patch
-import kuzu
+import ladybug as lb
 
 # Import analytics components
 from server.analytics.engine import AnalyticsEngine
@@ -23,40 +23,47 @@ from server.analytics.models import (
     CentralityType, ClusteringType
 )
 
+@pytest.fixture
+async def analytics_engine() -> None:
+    """Create analytics engine for testing.
+
+    NOTE (Phase 9): previously defined INSIDE TestAnalyticsIntegration, so the
+    TestAnalyticsEngine class requesting it raised 'fixture not found' —
+    class-scoped fixtures are not visible across classes. Moved to module
+    level so all classes in this module can use it.
+    """
+    # Mock LadybugDB connection for testing
+    mock_conn = Mock()
+    mock_conn.execute.return_value = []
+    
+    engine = AnalyticsEngine(mock_conn, "redis://localhost:6379")
+    await engine.initialize()
+    yield engine
+    await engine.shutdown()
+
+@pytest.fixture
+def sample_graph_data() -> None:
+    """Sample graph data for testing"""
+    return {
+        "nodes": [
+            {"id": "node1", "type": "user", "name": "Alice"},
+            {"id": "node2", "type": "user", "name": "Bob"},
+            {"id": "node3", "type": "user", "name": "Charlie"},
+            {"id": "node4", "type": "user", "name": "David"},
+            {"id": "node5", "type": "user", "name": "Eve"}
+        ],
+        "edges": [
+            {"source": "node1", "target": "node2", "weight": 1.0},
+            {"source": "node2", "target": "node3", "weight": 1.0},
+            {"source": "node3", "target": "node4", "weight": 1.0},
+            {"source": "node4", "target": "node5", "weight": 1.0},
+            {"source": "node1", "target": "node5", "weight": 1.0}
+        ]
+    }
+
+
 class TestAnalyticsIntegration:
     """Comprehensive integration tests for Analytics Engine Phase 3"""
-    
-    @pytest.fixture
-    async def analytics_engine(self) -> None:
-        """Create analytics engine for testing"""
-        # Mock Kuzu connection for testing
-        mock_conn = Mock()
-        mock_conn.execute.return_value = []
-        
-        engine = AnalyticsEngine(mock_conn, "redis://localhost:6379")
-        await engine.initialize()
-        yield engine
-        await engine.shutdown()
-    
-    @pytest.fixture
-    def sample_graph_data(self) -> None:
-        """Sample graph data for testing"""
-        return {
-            "nodes": [
-                {"id": "node1", "type": "user", "name": "Alice"},
-                {"id": "node2", "type": "user", "name": "Bob"},
-                {"id": "node3", "type": "user", "name": "Charlie"},
-                {"id": "node4", "type": "user", "name": "David"},
-                {"id": "node5", "type": "user", "name": "Eve"}
-            ],
-            "edges": [
-                {"source": "node1", "target": "node2", "weight": 1.0},
-                {"source": "node2", "target": "node3", "weight": 1.0},
-                {"source": "node3", "target": "node4", "weight": 1.0},
-                {"source": "node4", "target": "node5", "weight": 1.0},
-                {"source": "node1", "target": "node5", "weight": 1.0}
-            ]
-        }
 
 class TestGPUAcceleration:
     """Test GPU acceleration functionality"""
@@ -424,7 +431,7 @@ class TestErrorHandling:
     async def test_database_connection_error_handling(self, analytics_engine) -> None:
         """Test handling of database connection errors"""
         # Mock database connection failure
-        analytics_engine.kuzu_conn.execute.side_effect = Exception("Database connection failed")
+        analytics_engine.ladybug_conn.execute.side_effect = Exception("Database connection failed")
         
         # Should return empty graph data as fallback
         graph_data = await analytics_engine.get_graph_data()

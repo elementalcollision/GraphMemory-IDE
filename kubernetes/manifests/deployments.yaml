@@ -470,8 +470,8 @@ spec:
             secretKeyRef:
               name: database-secret
               key: redis-url
-        - name: KUZU_DATABASE_PATH
-          value: "/app/data/kuzu"
+        - name: LADYBUG_DATABASE_PATH
+          value: "/app/data/ladybug"
         
         # Analytics configuration
         - name: PROCESSING_WORKERS

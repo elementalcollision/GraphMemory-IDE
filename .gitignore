@@ -224,9 +224,10 @@ docker-compose.*.yml
 docker/data/
 docker/backups/*.tar.gz
 
-# Kuzu Database files
+# LadybugDB database files (Kuzu successor)
 server/data/
 data/
+*.lbdb
 
 # Auto-generated reports (regenerate via CI)
 reports/

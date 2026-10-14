@@ -318,7 +318,9 @@ rules:
       - pattern: |
           memory_graph.query($USER_INPUT)
       - pattern: |
-          kuzu_connection.execute($DYNAMIC_QUERY)
+          ladybug_connection.execute($DYNAMIC_QUERY)
+      - pattern: |
+          ladybug_conn.execute($DYNAMIC_QUERY)
     message: "Potential graph injection in memory graph queries"
     languages: [python]
     severity: ERROR
@@ -330,7 +332,7 @@ rules:
       impact: HIGH
       likelihood: MEDIUM
       technology:
-        - kuzu
+        - ladybug
         - graph-database
 
   - id: graphmemory-analytics-data-exposure

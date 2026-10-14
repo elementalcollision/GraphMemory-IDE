@@ -53,10 +53,10 @@ except ImportError:
         pass
 
 try:
-    from .kuzu_tenant_manager import KuzuTenantManager
+    from .ladybug_tenant_manager import LadybugTenantManager
 except ImportError:
     # Handle relative imports during development
-    class KuzuTenantManager:
+    class LadybugTenantManager:
         def __init__(self, *args, **kwargs) -> None:
             pass
         
@@ -157,7 +157,7 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
         self,
         app: ASGIApp,
         redis_manager: Optional['RedisTenantManager'] = None,
-        kuzu_manager: Optional['KuzuTenantManager'] = None,
+        ladybug_manager: Optional['LadybugTenantManager'] = None,
         enable_audit_logging: bool = True,
         cache_ttl_seconds: int = 300,  # 5 minutes
         max_cache_size: int = 10000,
@@ -169,7 +169,7 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
         Args:
             app: FastAPI application instance
             redis_manager: Redis tenant manager for caching
-            kuzu_manager: Kuzu tenant manager for data access
+            ladybug_manager: LadybugDB tenant manager for data access
             enable_audit_logging: Enable comprehensive audit logging
             cache_ttl_seconds: Permission cache TTL in seconds
             max_cache_size: Maximum number of cached permissions
@@ -177,7 +177,7 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
         """
         super().__init__(app)
         self.redis_manager = redis_manager
-        self.kuzu_manager = kuzu_manager
+        self.ladybug_manager = ladybug_manager
         self.enable_audit_logging = enable_audit_logging
         self.cache_ttl_seconds = cache_ttl_seconds
         self.max_cache_size = max_cache_size
@@ -385,9 +385,9 @@ class FastAPITenantMiddleware(BaseHTTPMiddleware):
         
         # Lookup from database
         self.cache_misses += 1
-        if self.kuzu_manager:
-            # Query tenant from Kuzu
-            tenant_info = await self.kuzu_manager.get_tenant_info(tenant_id)
+        if self.ladybug_manager:
+            # Query tenant from LadybugDB
+            tenant_info = await self.ladybug_manager.get_tenant_info(tenant_id)
         else:
             # Default tenant info
             tenant_info = {

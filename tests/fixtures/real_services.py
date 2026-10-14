@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional, AsyncGenerator, Union
 
 import pytest
 import httpx
-import kuzu
+import ladybug as lb
 import redis.asyncio as redis
 import sqlite3
 
@@ -53,10 +53,10 @@ class RealAnalyticsEngineFixture:
     
     async def _setup_embedded_engine(self) -> None:
         """Setup embedded analytics engine for testing."""
-        # Create test Kuzu database
-        test_db_path = f"/tmp/test_kuzu_{uuid.uuid4().hex[:8]}"
-        test_db = kuzu.Database(test_db_path)
-        test_conn = kuzu.Connection(test_db)
+        # Create test LadybugDB database
+        test_db_path = f"/tmp/test_ladybug_{uuid.uuid4().hex[:8]}"
+        test_db = lb.Database(test_db_path)
+        test_conn = lb.Connection(test_db)
         
         # Create test engine instance with proper constructor
         self.embedded_engine = AnalyticsEngine(test_conn)
@@ -107,33 +107,33 @@ class RealDatabaseFixture:
     
     def __init__(self) -> None:
         self.test_id = str(uuid.uuid4())[:8]
-        self.kuzu_db = None
-        self.kuzu_conn = None
+        self.ladybug_db = None
+        self.ladybug_conn = None
         self.redis_client = None
         self.sqlite_conn = None
         self.cleanup_tasks = []
     
-    async def setup_kuzu_real_connection(self) -> None:
-        """Setup real Kuzu database with test data isolation."""
-        db_path = Path(f"/tmp/kuzu_integration_test_{self.test_id}")
+    async def setup_ladybug_real_connection(self) -> None:
+        """Setup real LadybugDB database with test data isolation."""
+        db_path = Path(f"/tmp/ladybug_integration_test_{self.test_id}")
         
         try:
             # Create database and connection
-            self.kuzu_db = kuzu.Database(str(db_path))
-            self.kuzu_conn = kuzu.Connection(self.kuzu_db)
+            self.ladybug_db = lb.Database(str(db_path))
+            self.ladybug_conn = lb.Connection(self.ladybug_db)
             
             # Initialize with real schema
-            await self._initialize_kuzu_schema()
+            await self._initialize_ladybug_schema()
             
             # Add cleanup task
             self.cleanup_tasks.append(lambda: shutil.rmtree(db_path, ignore_errors=True))
             
-            return self.kuzu_conn
+            return self.ladybug_conn
             
         except Exception as e:
             if db_path.exists():
                 shutil.rmtree(db_path, ignore_errors=True)
-            raise RuntimeError(f"Failed to setup Kuzu database: {e}")
+            raise RuntimeError(f"Failed to setup LadybugDB database: {e}")
     
     async def setup_redis_real_connection(self) -> None:
         """Setup real Redis with dedicated test database."""
@@ -187,9 +187,9 @@ class RealDatabaseFixture:
                 self.sqlite_conn.close()
             raise RuntimeError(f"Failed to setup SQLite database: {e}")
     
-    async def _initialize_kuzu_schema(self) -> None:
-        """Initialize Kuzu database schema."""
-        if not self.kuzu_conn:
+    async def _initialize_ladybug_schema(self) -> None:
+        """Initialize LadybugDB database schema."""
+        if not self.ladybug_conn:
             return
             
         schema_queries = [
@@ -201,7 +201,7 @@ class RealDatabaseFixture:
         
         for query in schema_queries:
             try:
-                self.kuzu_conn.execute(query)
+                self.ladybug_conn.execute(query)
             except Exception as e:
                 # Schema might already exist
                 if "already exists" not in str(e).lower():
@@ -295,18 +295,18 @@ class RealServiceIntegrationManager:
         
         return client
     
-    async def setup_databases(self) -> Dict[str, Union[kuzu.Connection, redis.Redis, sqlite3.Connection, None]]:
+    async def setup_databases(self) -> Dict[str, Union[lb.Connection, redis.Redis, sqlite3.Connection, None]]:
         """Setup real database connections."""
         db_fixture = RealDatabaseFixture()
         
-        databases: Dict[str, Union[kuzu.Connection, redis.Redis, sqlite3.Connection, None]] = {}
+        databases: Dict[str, Union[lb.Connection, redis.Redis, sqlite3.Connection, None]] = {}
         
-        # Setup Kuzu
+        # Setup LadybugDB
         try:
-            databases["kuzu"] = await db_fixture.setup_kuzu_real_connection()
+            databases["ladybug"] = await db_fixture.setup_ladybug_real_connection()
         except Exception as e:
-            print(f"Warning: Could not setup Kuzu: {e}")
-            databases["kuzu"] = None
+            print(f"Warning: Could not setup LadybugDB: {e}")
+            databases["ladybug"] = None
         
         # Setup Redis
         try:
@@ -353,14 +353,14 @@ class RealServiceIntegrationManager:
         connections = db_service_info["connections"]
         health = {"status": "healthy", "databases": {}}
         
-        # Check Kuzu
-        kuzu_conn = connections.get("kuzu")
-        if kuzu_conn:
+        # Check LadybugDB
+        ladybug_conn = connections.get("ladybug")
+        if ladybug_conn:
             try:
-                kuzu_conn.execute("MATCH (n) RETURN count(n) LIMIT 1")
-                health["databases"]["kuzu"] = {"status": "healthy"}
+                ladybug_conn.execute("MATCH (n) RETURN count(n) LIMIT 1")
+                health["databases"]["ladybug"] = {"status": "healthy"}
             except Exception as e:
-                health["databases"]["kuzu"] = {"status": "unhealthy", "error": str(e)}
+                health["databases"]["ladybug"] = {"status": "unhealthy", "error": str(e)}
         
         # Check Redis
         redis_conn = connections.get("redis")
@@ -454,8 +454,8 @@ def real_service_config() -> None:
             "health_check_endpoint": "/health"
         },
         "databases": {
-            "kuzu": {
-                "path_prefix": "/tmp/integration_test_kuzu",
+            "ladybug": {
+                "path_prefix": "/tmp/integration_test_ladybug",
                 "buffer_pool_size": 64 * 1024 * 1024  # 64MB
             },
             "redis": {

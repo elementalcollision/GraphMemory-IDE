@@ -135,13 +135,13 @@ class DatabaseCleanupManager:
     """Specialized cleanup for database resources."""
     
     def __init__(self) -> None:
-        self.kuzu_databases: List[Path] = []
+        self.ladybug_databases: List[Path] = []
         self.redis_databases: List[int] = []
         self.sqlite_databases: List[Path] = []
     
-    def register_kuzu_database(self, db_path: Path) -> None:
-        """Register Kuzu database for cleanup."""
-        self.kuzu_databases.append(db_path)
+    def register_ladybug_database(self, db_path: Path) -> None:
+        """Register LadybugDB database for cleanup."""
+        self.ladybug_databases.append(db_path)
     
     def register_redis_database(self, db_number: int) -> None:
         """Register Redis database for cleanup."""
@@ -155,14 +155,14 @@ class DatabaseCleanupManager:
         """Cleanup all registered databases."""
         logger.info("Starting database cleanup")
         
-        # Cleanup Kuzu databases
-        for db_path in self.kuzu_databases:
+        # Cleanup LadybugDB databases
+        for db_path in self.ladybug_databases:
             try:
                 if db_path.exists():
                     shutil.rmtree(db_path)
-                    logger.debug(f"Removed Kuzu database: {db_path}")
+                    logger.debug(f"Removed LadybugDB database: {db_path}")
             except Exception as e:
-                logger.warning(f"Failed to remove Kuzu database {db_path}: {e}")
+                logger.warning(f"Failed to remove LadybugDB database {db_path}: {e}")
         
         # Cleanup Redis databases
         await self._cleanup_redis_databases()
@@ -177,7 +177,7 @@ class DatabaseCleanupManager:
                 logger.warning(f"Failed to remove SQLite database {db_path}: {e}")
         
         # Clear registrations
-        self.kuzu_databases.clear()
+        self.ladybug_databases.clear()
         self.redis_databases.clear()
         self.sqlite_databases.clear()
         

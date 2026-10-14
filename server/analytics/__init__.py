@@ -5,7 +5,7 @@ This module provides advanced graph analytics capabilities including:
 - Graph algorithms (centrality, community detection, path analysis)
 - Machine learning for pattern recognition and clustering
 - Real-time analytics processing
-- Integration with Kuzu GraphDB and FastAPI
+- Integration with LadybugDB and FastAPI
 """
 
 from .models import (

@@ -4,7 +4,7 @@ Backup Orchestrator
 Unified backup and recovery orchestrator for GraphMemory-IDE that coordinates:
 - PostgreSQL backup and recovery operations
 - Redis backup and recovery operations  
-- Kuzu graph database backup and recovery operations
+- LadybugDB graph database backup and recovery operations
 - Automated scheduling and monitoring
 - Cross-database consistency and validation
 """
@@ -47,7 +47,7 @@ class BackupJob:
     description: str
     strategy: BackupStrategy
     priority: BackupPriority
-    databases: List[str]  # postgres, redis, kuzu
+    databases: List[str]  # postgres, redis, ladybug
     schedule_cron: str
     retention_days: int
     enabled: bool = True
@@ -80,14 +80,14 @@ class BackupOrchestrator:
     def __init__(self,
                  postgresql_manager=None,
                  redis_manager=None,
-                 kuzu_manager=None,
+                 ladybug_manager=None,
                  backup_jobs_config_path: str = "backups/config/jobs.json",
                  execution_logs_path: str = "backups/logs",
                  metrics_collector=None) -> None:
         
         self.postgresql_manager = postgresql_manager
         self.redis_manager = redis_manager
-        self.kuzu_manager = kuzu_manager
+        self.ladybug_manager = ladybug_manager
         self.metrics = metrics_collector
         
         # Configuration paths
@@ -221,23 +221,23 @@ class BackupOrchestrator:
                     else:
                         execution.error_message = f"Redis backup failed: {e}"
             
-            # Execute Kuzu backup
-            if "kuzu" in job.databases and self.kuzu_manager:
-                logger.info(f"Executing Kuzu backup for job {job_id}")
+            # Execute LadybugDB backup
+            if "ladybug" in job.databases and self.ladybug_manager:
+                logger.info(f"Executing LadybugDB backup for job {job_id}")
                 try:
-                    kuzu_backup = await self.kuzu_manager.create_filesystem_backup(
-                        backup_name=f"{job_id}_kuzu_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+                    ladybug_backup = await self.ladybug_manager.create_filesystem_backup(
+                        backup_name=f"{job_id}_ladybug_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
                     )
-                    backup_results["kuzu"] = kuzu_backup.backup_id
-                    total_size += kuzu_backup.size_bytes
-                    execution.databases_backed_up.append("kuzu")
+                    backup_results["ladybug"] = ladybug_backup.backup_id
+                    total_size += ladybug_backup.size_bytes
+                    execution.databases_backed_up.append("ladybug")
                     
                 except Exception as e:
-                    logger.error(f"Kuzu backup failed for job {job_id}: {e}")
+                    logger.error(f"LadybugDB backup failed for job {job_id}: {e}")
                     if execution.error_message:
-                        execution.error_message += f"; Kuzu backup failed: {e}"
+                        execution.error_message += f"; LadybugDB backup failed: {e}"
                     else:
-                        execution.error_message = f"Kuzu backup failed: {e}"
+                        execution.error_message = f"LadybugDB backup failed: {e}"
             
             # Update execution results
             execution.completed_at = datetime.utcnow()
@@ -319,10 +319,10 @@ class BackupOrchestrator:
                 redis_removed = await self.redis_manager.cleanup_old_backups()
                 cleanup_results["redis"] = redis_removed
             
-            # Clean up Kuzu backups
-            if self.kuzu_manager:
-                kuzu_removed = await self.kuzu_manager.cleanup_old_backups()
-                cleanup_results["kuzu"] = kuzu_removed
+            # Clean up LadybugDB backups
+            if self.ladybug_manager:
+                ladybug_removed = await self.ladybug_manager.cleanup_old_backups()
+                cleanup_results["ladybug"] = ladybug_removed
             
             logger.info(f"Backup cleanup completed: {cleanup_results}")
             return cleanup_results
@@ -368,7 +368,7 @@ class BackupOrchestrator:
             status["system_status"] = {
                 "postgresql_manager": self.postgresql_manager is not None,
                 "redis_manager": self.redis_manager is not None,
-                "kuzu_manager": self.kuzu_manager is not None,
+                "ladybug_manager": self.ladybug_manager is not None,
                 "scheduler_running": self.scheduler.running
             }
             
@@ -474,11 +474,11 @@ class BackupOrchestrator:
                 redis_validation = await self.redis_manager.validate_backup(redis_backup_id)
                 validation_results["redis"] = redis_validation
             
-            # Validate Kuzu backup
-            if "kuzu" in execution.backup_ids and self.kuzu_manager:
-                kuzu_backup_id = execution.backup_ids["kuzu"]
-                kuzu_validation = await self.kuzu_manager.validate_backup(kuzu_backup_id)
-                validation_results["kuzu"] = kuzu_validation
+            # Validate LadybugDB backup
+            if "ladybug" in execution.backup_ids and self.ladybug_manager:
+                ladybug_backup_id = execution.backup_ids["ladybug"]
+                ladybug_validation = await self.ladybug_manager.validate_backup(ladybug_backup_id)
+                validation_results["ladybug"] = ladybug_validation
             
             return validation_results
             

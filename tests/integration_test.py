@@ -144,7 +144,7 @@ def test_integration() -> bool:
             "rate_limiting": settings.security.RATE_LIMIT_PER_MINUTE > 0,
             "monitoring_enabled": settings.monitoring.ENABLE_METRICS,
             "security_headers": hasattr(settings, 'security_headers'),
-            "database_config": len(settings.database.KUZU_DB_PATH) > 0,
+            "database_config": len(settings.database.LADYBUG_DB_PATH) > 0,
         }
         
         working_features = sum(features_test.values())

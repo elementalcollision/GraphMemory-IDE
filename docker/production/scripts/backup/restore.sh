@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # GraphMemory-IDE Database Restoration Script
-# This script provides comprehensive restoration functionality for PostgreSQL and Kuzu databases
+# This script provides comprehensive restoration functionality for PostgreSQL and LadybugDB databases
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -78,8 +78,8 @@ list_backups() {
     echo -e "\nIncremental backups:"
     ls -lht "${BACKUP_DIR}/postgresql/incremental"/ 2>/dev/null | head -5 || echo "No incremental backups found"
     
-    echo -e "\nKuzu backups:"
-    ls -lht "${BACKUP_DIR}/kuzu/full"/*.tar.gz 2>/dev/null | head -10 || echo "No Kuzu backups found"
+    echo -e "\nLadybugDB backups:"
+    ls -lht "${BACKUP_DIR}/ladybug/full"/*.tar.gz 2>/dev/null | head -10 || echo "No LadybugDB backups found"
 }
 
 # Download backup from S3 if needed
@@ -97,10 +97,10 @@ download_from_s3() {
                 aws s3 cp "s3://${S3_BUCKET}/postgresql/${backup_name}.sha256" "${local_path}.sha256" --region "$S3_REGION"
             fi
             
-            # Download Kuzu backup
-            if [[ "$backup_name" == *kuzu* ]]; then
-                aws s3 cp "s3://${S3_BUCKET}/kuzu/${backup_name}" "$local_path" --region "$S3_REGION"
-                aws s3 cp "s3://${S3_BUCKET}/kuzu/${backup_name}.sha256" "${local_path}.sha256" --region "$S3_REGION"
+            # Download LadybugDB backup
+            if [[ "$backup_name" == *ladybug* ]]; then
+                aws s3 cp "s3://${S3_BUCKET}/ladybug/${backup_name}" "$local_path" --region "$S3_REGION"
+                aws s3 cp "s3://${S3_BUCKET}/ladybug/${backup_name}.sha256" "${local_path}.sha256" --region "$S3_REGION"
             fi
             
             log "S3 download completed"
@@ -127,13 +127,13 @@ create_pre_restore_backup() {
         warn "Failed to create pre-restore PostgreSQL backup"
     fi
     
-    # Backup current Kuzu database
-    local kuzu_data_dir="/kuzu/data"
-    if [ -d "$kuzu_data_dir" ]; then
-        if tar -czf "${pre_restore_dir}/pre_restore_kuzu.tar.gz" -C "$(dirname "$kuzu_data_dir")" "$(basename "$kuzu_data_dir")"; then
-            log "✓ Pre-restore Kuzu backup created"
+    # Backup current LadybugDB database
+    local ladybug_data_dir="/ladybug/data"
+    if [ -d "$ladybug_data_dir" ]; then
+        if tar -czf "${pre_restore_dir}/pre_restore_ladybug.tar.gz" -C "$(dirname "$ladybug_data_dir")" "$(basename "$ladybug_data_dir")"; then
+            log "✓ Pre-restore LadybugDB backup created"
         else
-            warn "Failed to create pre-restore Kuzu backup"
+            warn "Failed to create pre-restore LadybugDB backup"
         fi
     fi
     
@@ -217,38 +217,38 @@ restore_postgresql() {
     log "PostgreSQL restore completed"
 }
 
-# Restore Kuzu database
-restore_kuzu() {
+# Restore LadybugDB database
+restore_ladybug() {
     local backup_file="$1"
-    local kuzu_data_dir="/kuzu/data"
+    local ladybug_data_dir="/ladybug/data"
     
-    log "Starting Kuzu restore from: $(basename "$backup_file")"
+    log "Starting LadybugDB restore from: $(basename "$backup_file")"
     
     # Validate backup
     validate_backup "$backup_file"
     
-    # Stop Kuzu service
-    docker-compose stop kuzu 2>/dev/null || warn "Failed to stop Kuzu service"
+    # Stop LadybugDB service
+    docker-compose stop ladybug 2>/dev/null || warn "Failed to stop LadybugDB service"
     
-    # Backup current Kuzu data
-    if [ -d "$kuzu_data_dir" ]; then
-        local backup_current="${kuzu_data_dir}_backup_${DATE}"
-        mv "$kuzu_data_dir" "$backup_current"
-        log "Current Kuzu data backed up to: $backup_current"
+    # Backup current LadybugDB data
+    if [ -d "$ladybug_data_dir" ]; then
+        local backup_current="${ladybug_data_dir}_backup_${DATE}"
+        mv "$ladybug_data_dir" "$backup_current"
+        log "Current LadybugDB data backed up to: $backup_current"
     fi
     
     # Extract backup
-    mkdir -p "$(dirname "$kuzu_data_dir")"
-    if tar -xzf "$backup_file" -C "$(dirname "$kuzu_data_dir")"; then
-        log "Kuzu restore completed"
+    mkdir -p "$(dirname "$ladybug_data_dir")"
+    if tar -xzf "$backup_file" -C "$(dirname "$ladybug_data_dir")"; then
+        log "LadybugDB restore completed"
     else
-        error_exit "Kuzu restore failed"
+        error_exit "LadybugDB restore failed"
     fi
     
-    # Start Kuzu service
-    docker-compose start kuzu 2>/dev/null || warn "Failed to start Kuzu service"
+    # Start LadybugDB service
+    docker-compose start ladybug 2>/dev/null || warn "Failed to start LadybugDB service"
     
-    log "Kuzu restore completed"
+    log "LadybugDB restore completed"
 }
 
 # Verify restore integrity
@@ -263,11 +263,11 @@ verify_restore() {
         error_exit "PostgreSQL restore verification failed"
     fi
     
-    # Test Kuzu database
-    if [ -d "/kuzu/data" ]; then
-        log "✓ Kuzu data directory exists"
+    # Test LadybugDB database
+    if [ -d "/ladybug/data" ]; then
+        log "✓ LadybugDB data directory exists"
     else
-        warn "Kuzu data directory not found"
+        warn "LadybugDB data directory not found"
     fi
     
     log "Restore verification completed"
@@ -298,12 +298,12 @@ select_backup() {
                 ((counter++))
             done < <(find "${BACKUP_DIR}/postgresql/schema" -name "*.gz" -print0 | sort -z)
             ;;
-        kuzu)
+        ladybug)
             while IFS= read -r -d '' backup; do
                 backups+=("$backup")
                 echo "$counter) $(basename "$backup") ($(date -r "$backup" '+%Y-%m-%d %H:%M:%S'))"
                 ((counter++))
-            done < <(find "${BACKUP_DIR}/kuzu/full" -name "*.tar.gz" -print0 | sort -z)
+            done < <(find "${BACKUP_DIR}/ladybug/full" -name "*.tar.gz" -print0 | sort -z)
             ;;
     esac
     
@@ -382,15 +382,15 @@ main() {
             restore_postgresql "$backup_file" "schema"
             verify_restore
             ;;
-        kuzu)
+        ladybug)
             local backup_file="${1:-}"
             if [ -z "$backup_file" ]; then
-                backup_file=$(select_backup "kuzu")
+                backup_file=$(select_backup "ladybug")
             fi
             
-            confirm_restore "$backup_file" "Kuzu"
+            confirm_restore "$backup_file" "LadybugDB"
             create_pre_restore_backup
-            restore_kuzu "$backup_file"
+            restore_ladybug "$backup_file"
             verify_restore
             ;;
         verify)
@@ -403,7 +403,7 @@ main() {
             echo "  list                    - List available backups"
             echo "  postgresql-full [file]  - Restore PostgreSQL full backup"
             echo "  postgresql-schema [file]- Restore PostgreSQL schema only"
-            echo "  kuzu [file]            - Restore Kuzu database"
+            echo "  ladybug [file]            - Restore LadybugDB database"
             echo "  verify                 - Verify current database integrity"
             echo ""
             echo "Options:"
@@ -414,7 +414,7 @@ main() {
             echo "  $0 list"
             echo "  $0 postgresql-full"
             echo "  $0 postgresql-full /backups/postgresql/full/backup.sql.gz"
-            echo "  $0 kuzu --yes"
+            echo "  $0 ladybug --yes"
             exit 1
             ;;
     esac

@@ -12,7 +12,11 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}\"))" && pwd)"
+# NOTE (§3.14 repair): this line had mangled quoting
+# ("${BASH_SOURCE[0]\\"))"" — unbalanced parens) that made the whole script
+# fail `bash -n` with a syntax error reported far away at the case statement.
+# Restored to the canonical idiom.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 CERT_DIR="$PROJECT_ROOT/certs"
 DOCKER_DIR="$PROJECT_ROOT/docker"
@@ -265,7 +269,7 @@ main() {
     # Set default environment variables
     export JWT_ENABLED="${JWT_ENABLED:-true}"
     export MTLS_ENABLED="${MTLS_ENABLED:-false}"
-    export KUZU_READ_ONLY="${KUZU_READ_ONLY:-false}"
+    export LADYBUG_READ_ONLY="${LADYBUG_READ_ONLY:-false}"
     
     # Generate secure JWT secret if not provided
     if [ -z "$JWT_SECRET_KEY" ]; then
@@ -276,7 +280,7 @@ main() {
     echo "Configuration:"
     echo "  JWT_ENABLED: $JWT_ENABLED"
     echo "  MTLS_ENABLED: $MTLS_ENABLED"
-    echo "  KUZU_READ_ONLY: $KUZU_READ_ONLY"
+    echo "  LADYBUG_READ_ONLY: $LADYBUG_READ_ONLY"
     echo ""
     
     # Execute deployment steps
@@ -321,7 +325,7 @@ case "${1:-deploy}" in
         echo "Environment variables:"
         echo "  MTLS_ENABLED=true     - Enable mTLS"
         echo "  JWT_SECRET_KEY=...    - Set JWT secret"
-        echo "  KUZU_READ_ONLY=true   - Enable read-only mode"
+        echo "  LADYBUG_READ_ONLY=true   - Enable read-only mode"
         ;;
     *)
         echo "Unknown command: $1"

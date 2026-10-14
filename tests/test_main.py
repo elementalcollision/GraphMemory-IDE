@@ -1,327 +1,323 @@
 # NOTE: TestClient is required for FastAPI endpoint testing. If linter fails, ensure fastapi is installed in your environment.
+#
+# Phase 9 rewrite: the original version of this file was written against a
+# historical app architecture — it patched `server.main.conn` (an attribute
+# that never existed; handlers use `app.state.ladybug_conn`), mocked five
+# Kuzu vector-extension calls for a Top-K handler that is now a single Cypher
+# query, and asserted pre-2025 response shapes ("status": "ok"). All 21 tests
+# were rewritten against the CURRENT endpoint contracts.
 from fastapi.testclient import TestClient
 from server.main import app
+from server.core.config import get_settings
 from unittest.mock import patch, MagicMock
 from copy import deepcopy
 import json
-import os
 import pytest
 from typing import List, Any
 
-client = TestClient(app)
+# base_url must be an allowed host — the security middleware rejects
+# TestClient's default Host header ("testserver") with 400
+client = TestClient(app, base_url="http://localhost")
+
+
+@pytest.fixture(autouse=True)
+def _no_rate_limit(monkeypatch):
+    """Bypass the security middleware rate limit for tests.
+
+    TestClient requests present client IP 'testclient', which is not in the
+    middleware whitelist (127.0.0.1/::1) — rapid test runs exhaust the
+    20-request burst limit and fail with 429. Report the whitelisted IP
+    instead so rate limiting is skipped entirely.
+    """
+    from server.middleware.security import RateLimitMiddleware
+    monkeypatch.setattr(
+        RateLimitMiddleware, "_get_client_ip", lambda self, request: "127.0.0.1"
+    )
 
 TELEMETRY_EVENT = {
-    "event_type": "file_open",
+    "event_type": "memory_operation",
     "timestamp": "2025-06-01T12:00:00Z",
     "user_id": "user-123",
     "session_id": "sess-456",
     "data": {"filename": "main.py", "language": "python"}
 }
 
+
+def mock_db(**kwargs):
+    """Mock for app.state.ladybug_conn (the attribute handlers actually use)."""
+    m = MagicMock()
+    m.execute = MagicMock(**kwargs)
+    return m
+
+
+class MockQueryResult:
+    """Mimics ladybug.QueryResult (snake_case iteration, list rows)."""
+
+    def __init__(self, rows: List[Any]) -> None:
+        self._rows = rows
+        self._idx = 0
+
+    def has_next(self) -> bool:
+        return self._idx < len(self._rows)
+
+    def get_next(self) -> Any:
+        row = self._rows[self._idx]
+        self._idx += 1
+        return row
+
+
+EVENT_ROW = ("memory_operation", "2025-06-01T12:00:00Z", "user-123", "sess-456",
+            '{"filename": "main.py", "language": "python"}')
+
+
+def with_db(**kwargs):
+    """Patch the app's LadybugDB connection for the duration of a request."""
+    return patch.object(app.state, "ladybug_conn", mock_db(**kwargs))
+
+
+# --- /telemetry/ingest ---
+
 def test_ingest_telemetry_success() -> None:
     """Test successful telemetry ingestion"""
-    with patch("server.main.conn.execute") as mock_execute:
-        mock_execute.return_value = None
+    with with_db() as db:
+        db.execute.return_value = None
         response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
         assert response.status_code == 200
-        assert response.json()["status"] == "ok"
-        assert "Event ingested" in response.json()["message"]
+        body = response.json()
+        assert body["status"] == "success"
+        assert "ingested successfully" in body["message"]
+        assert "event_id" in body
+
 
 def test_ingest_telemetry_db_error() -> None:
     """Test telemetry ingestion with database error"""
-    with patch("server.main.conn.execute", side_effect=Exception("Database error")):
+    with with_db() as db:
+        db.execute.side_effect = Exception("Database error")
         response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
         assert response.status_code == 500
-        assert "Failed to store event" in response.json()["detail"]
+        assert "Failed to ingest telemetry event" in response.json()["detail"]
+
 
 def test_ingest_telemetry_missing_event_type() -> None:
-    """Test telemetry ingestion with missing event type"""
+    """Test telemetry ingestion with missing event type (422 validation)"""
     bad_event = deepcopy(TELEMETRY_EVENT)
     del bad_event["event_type"]
     response = client.post("/telemetry/ingest", json=bad_event)
     assert response.status_code == 422
     assert "event_type" in response.text
 
+
 def test_ingest_telemetry_invalid_timestamp_type() -> None:
-    """Test telemetry ingestion with invalid timestamp type"""
+    """Test telemetry ingestion with invalid timestamp (422 validation)"""
     bad_event = deepcopy(TELEMETRY_EVENT)
-    bad_event["timestamp"] = "invalid-timestamp-format"  # Invalid string format instead of int
+    bad_event["timestamp"] = "invalid-timestamp-format"
     response = client.post("/telemetry/ingest", json=bad_event)
     assert response.status_code == 422
+
 
 def test_ingest_telemetry_missing_data() -> None:
-    """Test telemetry ingestion with missing data"""
-    bad_event = deepcopy(TELEMETRY_EVENT)
-    del bad_event["data"]
-    response = client.post("/telemetry/ingest", json=bad_event)
-    assert response.status_code == 422
-    assert "data" in response.text
-
-def test_ingest_telemetry_empty_data() -> None:
-    """Test telemetry ingestion with empty data"""
-    with patch("server.main.conn.execute") as mock_execute:
+    """data has a default_factory in the current model — missing data is
+    accepted (stored as {}), unlike the pre-2025 model this file assumed."""
+    with with_db() as db:
+        db.execute.return_value = None
         bad_event = deepcopy(TELEMETRY_EVENT)
-        bad_event["data"] = {}
-        mock_execute.return_value = None
+        del bad_event["data"]
         response = client.post("/telemetry/ingest", json=bad_event)
         assert response.status_code == 200
-        assert response.json()["status"] == "ok"
+        assert response.json()["status"] == "success"
+        # the stored params must include the empty-dict default
+        stored = db.execute.call_args[0][1]
+        assert json.loads(stored["data"]) == {}
 
-def make_mock_query_result(rows: List[Any], col_names: List[str]) -> Any:
-    class MockQueryResult:
-        def __init__(self, rows: List[Any], col_names: List[str]) -> None:
-            self._rows = rows
-            self._col_names = col_names
-            self._idx = 0
-        def has_next(self) -> bool:
-            return self._idx < len(self._rows)
-        def get_next(self) -> Any:
-            row = self._rows[self._idx]
-            self._idx += 1
-            return row
-        def get_column_names(self) -> List[str]:
-            return self._col_names
-    return MockQueryResult(rows, col_names)
 
-MOCK_EVENT_ROW = [
-    {
-        "event_type": "file_open",
-        "timestamp": "2025-06-01T12:00:00Z",
-        "user_id": "user-123",
-        "session_id": "sess-456",
-        "data": "{'filename': 'main.py', 'language': 'python'}"
-    }
-]
+def test_ingest_telemetry_empty_data() -> None:
+    """Test telemetry ingestion with empty data dict"""
+    with with_db() as db:
+        db.execute.return_value = None
+        bad_event = deepcopy(TELEMETRY_EVENT)
+        bad_event["data"] = {}
+        response = client.post("/telemetry/ingest", json=bad_event)
+        assert response.status_code == 200
+        assert response.json()["status"] == "success"
 
-MOCK_COL_NAMES = ["e"]
 
-# /telemetry/list success
+# --- /telemetry/list ---
 
 def test_list_telemetry_success() -> None:
     """Test successful telemetry listing"""
-    mock_result = make_mock_query_result([[MOCK_EVENT_ROW[0]]], MOCK_COL_NAMES)
-    
-    with patch("server.main.conn.execute", return_value=mock_result):
+    with with_db() as db:
+        db.execute.return_value = MockQueryResult([list(EVENT_ROW)])
         response = client.get("/telemetry/list")
         assert response.status_code == 200
         events = response.json()
         assert isinstance(events, list)
-        assert events[0]["event_type"] == "file_open"
+        assert events[0]["event_type"] == "memory_operation"
         assert events[0]["data"]["filename"] == "main.py"
 
-# /telemetry/list DB error
 
 def test_list_telemetry_db_error() -> None:
-    with patch("server.main.conn.execute", side_effect=Exception("DB error")):
+    with with_db() as db:
+        db.execute.side_effect = Exception("DB error")
         response = client.get("/telemetry/list")
         assert response.status_code == 500
-        assert "Failed to list events" in response.json()["detail"]
+        assert "Failed to retrieve telemetry events" in response.json()["detail"]
 
-# /telemetry/list empty result
 
 def test_list_telemetry_empty() -> None:
-    mock_result = make_mock_query_result([], MOCK_COL_NAMES)
-    with patch("server.main.conn.execute", return_value=mock_result):
+    with with_db() as db:
+        db.execute.return_value = MockQueryResult([])
         response = client.get("/telemetry/list")
         assert response.status_code == 200
         assert response.json() == []
 
-# /telemetry/query success with filter
+
+# --- /telemetry/query ---
 
 def test_query_telemetry_success() -> None:
-    mock_result = make_mock_query_result([[MOCK_EVENT_ROW[0]]], MOCK_COL_NAMES)
-    with patch("server.main.conn.execute", return_value=mock_result) as mock_exec:
+    with with_db() as db:
+        db.execute.return_value = MockQueryResult([list(EVENT_ROW)])
         response = client.get("/telemetry/query?event_type=file_open")
         assert response.status_code == 200
         events = response.json()
         assert len(events) == 1
-        assert events[0]["event_type"] == "file_open"
-        mock_exec.assert_called()
+        assert events[0]["event_type"] == "memory_operation"
+        db.execute.assert_called()
 
-# /telemetry/query DB error
 
 def test_query_telemetry_db_error() -> None:
-    with patch("server.main.conn.execute", side_effect=Exception("DB error")):
+    with with_db() as db:
+        db.execute.side_effect = Exception("DB error")
         response = client.get("/telemetry/query?event_type=file_open")
         assert response.status_code == 500
-        assert "Failed to query events" in response.json()["detail"]
+        assert "Failed to query telemetry events" in response.json()["detail"]
 
-# /telemetry/query empty result
 
 def test_query_telemetry_empty() -> None:
-    mock_result = make_mock_query_result([], MOCK_COL_NAMES)
-    with patch("server.main.conn.execute", return_value=mock_result):
+    with with_db() as db:
+        db.execute.return_value = MockQueryResult([])
         response = client.get("/telemetry/query?event_type=file_open")
         assert response.status_code == 200
         assert response.json() == []
 
-# /telemetry/query invalid filter value (should just return empty, as FastAPI validates types)
+
 def test_query_telemetry_invalid_filter() -> None:
-    mock_result = make_mock_query_result([], MOCK_COL_NAMES)
-    with patch("server.main.conn.execute", return_value=mock_result):
+    """Unknown event_type value simply matches no rows."""
+    with with_db() as db:
+        db.execute.return_value = MockQueryResult([])
         response = client.get("/telemetry/query?event_type=not_a_real_type")
         assert response.status_code == 200
         assert response.json() == []
 
-# --- Top-K Endpoint Tests ---
-def make_mock_query_result_topk(rows: List[Any], col_names: List[str]) -> Any:
-    class MockQueryResult:
-        def __init__(self, rows: List[Any], col_names: List[str]) -> None:
-            self._rows = rows
-            self._col_names = col_names
-            self._idx = 0
-        def has_next(self) -> bool:
-            return self._idx < len(self._rows)
-        def get_next(self) -> Any:
-            row = self._rows[self._idx]
-            self._idx += 1
-            return row
-        def get_column_names(self) -> List[str]:
-            return self._col_names
-    return MockQueryResult(rows, col_names)
+
+# --- /tools/topk ---
+
+def make_mock_embedding() -> MagicMock:
+    mock_embedding_obj = MagicMock()
+    mock_embedding_obj.tolist.return_value = [0.1] * 384
+    return mock_embedding_obj
+
+
+TOPK_PAYLOAD = {
+    "query_text": "find foo",
+    "k": 2,
+    "table": "Node",
+    "embedding_field": "embedding",
+    "index_name": "node_embedding_idx",
+}
+
 
 def test_topk_success() -> None:
-    mock_embedding = [0.1] * 384
-    mock_embedding_obj = MagicMock()
-    mock_embedding_obj.tolist.return_value = mock_embedding
-    mock_rows = [[{"id": "n1", "snippet": "foo"}, 0.01], [{"id": "n2", "snippet": "bar"}, 0.02]]
-    col_names = ["node", "distance"]
-    with patch("server.main.SentenceTransformer") as MockModel, \
-         patch("server.main.conn") as mock_conn:
-        MockModel.return_value.encode.return_value = mock_embedding_obj
-        # Mock SHOW_INDEXES (no index exists)
-        mock_show_idx = make_mock_query_result_topk([], ["index name", "table name"])
-        # Mock CREATE_VECTOR_INDEX (no-op)
-        mock_conn.execute.side_effect = [None, None, mock_show_idx, None, make_mock_query_result_topk(mock_rows, col_names)]
-        payload = {
-            "query_text": "find foo",
-            "k": 2,
-            "table": "Node",
-            "embedding_field": "embedding",
-            "index_name": "node_embedding_idx"
-        }
-        response = client.post("/tools/topk", json=payload)
-        if response.status_code != 200:
-            print("test_topk_success error:", response.status_code, response.text)
-        assert response.status_code == 200
+    mock_rows = [
+        [{"id": "n1", "snippet": "foo"}, 0.95],
+        [{"id": "n2", "snippet": "bar"}, 0.80],
+    ]
+    with patch("server.main.SentenceTransformer") as MockModel, with_db() as db:
+        MockModel.return_value.encode.return_value = make_mock_embedding()
+        db.execute.return_value = MockQueryResult(mock_rows)
+        response = client.post("/tools/topk", json=TOPK_PAYLOAD)
+        assert response.status_code == 200, response.text
         data = response.json()
         assert len(data) == 2
-        assert data[0]["distance"] <= data[1]["distance"]
+        # current contract: node / similarity / query keys, sorted by the handler
+        assert data[0]["node"]["snippet"] == "foo"
+        assert data[0]["similarity"] >= data[1]["similarity"]
+        assert data[0]["query"] == "find foo"
 
-def test_topk_auto_create_index() -> None:
-    """Test topk query with auto index creation"""
-    col_names = ["index name", "index type"]
-    mock_show_idx = make_mock_query_result_topk([], col_names)
-    mock_embedding = [0.1] * 384
-    mock_embedding_obj = MagicMock()
-    mock_embedding_obj.tolist.return_value = mock_embedding
-    with patch("server.main.SentenceTransformer") as MockModel, \
-         patch("server.main.conn") as mock_conn:
-        MockModel.return_value.encode.return_value = mock_embedding_obj
-        # SHOW_INDEXES, CREATE_VECTOR_INDEX, QUERY_VECTOR_INDEX
-        mock_conn.execute.side_effect = [None, None, mock_show_idx, None, make_mock_query_result_topk([], ["node", "distance"])]
-        payload = {
-            "query_text": "find bar",
-            "k": 1,
-            "table": "Node",
-            "embedding_field": "embedding",
-            "index_name": "node_embedding_idx"
-        }
+
+def test_topk_empty_result() -> None:
+    """k=1 with no matching rows returns an empty list (replaces the obsolete
+    auto-create-index test: the current handler has no vector-index logic)."""
+    with patch("server.main.SentenceTransformer") as MockModel, with_db() as db:
+        MockModel.return_value.encode.return_value = make_mock_embedding()
+        db.execute.return_value = MockQueryResult([])
+        payload = dict(TOPK_PAYLOAD, k=1, query_text="nothing matches")
         response = client.post("/tools/topk", json=payload)
-        if response.status_code != 200:
-            print("test_topk_auto_create_index error:", response.status_code, response.text)
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
+        assert response.json() == []
+
 
 def test_topk_error() -> None:
-    with patch("server.main.SentenceTransformer") as MockModel, \
-         patch("server.main.conn") as mock_conn:
+    with patch("server.main.SentenceTransformer") as MockModel, with_db() as db:
         MockModel.return_value.encode.side_effect = Exception("embedding error")
-        payload = {
-            "query_text": "fail",
-            "k": 1,
-            "table": "Node",
-            "embedding_field": "embedding",
-            "index_name": "node_embedding_idx"
-        }
-        response = client.post("/tools/topk", json=payload)
+        response = client.post("/tools/topk", json=TOPK_PAYLOAD)
         assert response.status_code == 500
         assert "Top-K query failed" in response.text
 
+
 def test_topk_with_filters() -> None:
-    mock_embedding = [0.1] * 384
-    mock_embedding_obj = MagicMock()
-    mock_embedding_obj.tolist.return_value = mock_embedding
-    mock_rows = [[{"id": "n3", "snippet": "baz"}, 0.03]]
-    col_names = ["node", "distance"]
-    with patch("server.main.SentenceTransformer") as MockModel, \
-         patch("server.main.conn") as mock_conn:
-        MockModel.return_value.encode.return_value = mock_embedding_obj
-        # SHOW_INDEXES (index exists)
-        mock_show_idx = make_mock_query_result_topk([["node_embedding_idx", "Node"]], ["index name", "table name"])
-        # Provide 5 side effects: INSTALL VECTOR, LOAD VECTOR, SHOW_INDEXES, PROJECT_GRAPH, QUERY_VECTOR_INDEX
-        mock_conn.execute.side_effect = [None, None, mock_show_idx, None, make_mock_query_result_topk(mock_rows, col_names)]
-        payload = {
-            "query_text": "find baz",
-            "k": 1,
-            "table": "Node",
-            "embedding_field": "embedding",
-            "index_name": "node_embedding_idx",
-            "filters": {"user_id": "user-1"}
-        }
+    """The current handler ignores extra fields like filters (pydantic
+    ignores them); the query still returns the matching node."""
+    mock_rows = [[{"id": "n3", "snippet": "baz"}, 0.42]]
+    with patch("server.main.SentenceTransformer") as MockModel, with_db() as db:
+        MockModel.return_value.encode.return_value = make_mock_embedding()
+        db.execute.return_value = MockQueryResult(mock_rows)
+        payload = dict(TOPK_PAYLOAD, k=1, query_text="find baz",
+                       filters={"user_id": "user-1"})
         response = client.post("/tools/topk", json=payload)
-        if response.status_code != 200:
-            print("test_topk_with_filters error:", response.status_code, response.text)
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         data = response.json()
         assert data[0]["node"]["snippet"] == "baz"
 
-def test_ingest_telemetry_readonly(monkeypatch: Any) -> None:
-    monkeypatch.setenv("KUZU_READ_ONLY", "true")
+
+# --- read-only mode ---
+# NOTE: settings are a cached pydantic singleton and read env vars with the
+# DB_ prefix, so the historical env-var monkeypatch never worked. Patch the
+# settings object attribute directly instead.
+
+@pytest.fixture
+def read_only_mode(monkeypatch):
+    monkeypatch.setattr(get_settings().database, "LADYBUG_READ_ONLY", True)
+    yield
+    monkeypatch.undo()
+
+
+def test_ingest_telemetry_readonly(read_only_mode) -> None:
     response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
     assert response.status_code == 403
     assert "Read-only mode enabled" in response.text
 
-def test_topk_readonly(monkeypatch: Any) -> None:
-    monkeypatch.setenv("KUZU_READ_ONLY", "true")
-    payload = {
-        "query_text": "find foo",
-        "k": 2,
-        "table": "Node",
-        "embedding_field": "embedding",
-        "index_name": "node_embedding_idx"
-    }
-    response = client.post("/tools/topk", json=payload)
+
+def test_topk_readonly(read_only_mode) -> None:
+    response = client.post("/tools/topk", json=TOPK_PAYLOAD)
     assert response.status_code == 403
     assert "Read-only mode enabled" in response.text
 
-def test_ingest_telemetry_not_readonly(monkeypatch: Any) -> None:
-    monkeypatch.setenv("KUZU_READ_ONLY", "false")
-    with patch("server.main.conn.execute") as mock_execute:
-        mock_execute.return_value = None
+
+def test_ingest_telemetry_not_readonly(monkeypatch) -> None:
+    monkeypatch.setattr(get_settings().database, "LADYBUG_READ_ONLY", False)
+    with with_db() as db:
+        db.execute.return_value = None
         response = client.post("/telemetry/ingest", json=TELEMETRY_EVENT)
         assert response.status_code == 200
-        assert response.json()["status"] == "ok"
+        assert response.json()["status"] == "success"
 
-def test_topk_not_readonly(monkeypatch: Any) -> None:
-    monkeypatch.setenv("KUZU_READ_ONLY", "false")
-    mock_embedding = [0.1] * 384
-    mock_embedding_obj = MagicMock()
-    mock_embedding_obj.tolist.return_value = mock_embedding
-    mock_rows = [[{"id": "n1", "snippet": "foo"}, 0.01], [{"id": "n2", "snippet": "bar"}, 0.02]]
-    col_names = ["node", "distance"]
-    with patch("server.main.SentenceTransformer") as MockModel, \
-         patch("server.main.conn") as mock_conn:
-        MockModel.return_value.encode.return_value = mock_embedding_obj
-        mock_show_idx = make_mock_query_result_topk([], ["index name", "table name"])
-        mock_conn.execute.side_effect = [None, None, mock_show_idx, None, make_mock_query_result_topk(mock_rows, col_names)]
-        payload = {
-            "query_text": "find foo",
-            "k": 2,
-            "table": "Node",
-            "embedding_field": "embedding",
-            "index_name": "node_embedding_idx"
-        }
-        response = client.post("/tools/topk", json=payload)
+
+def test_topk_not_readonly(monkeypatch) -> None:
+    monkeypatch.setattr(get_settings().database, "LADYBUG_READ_ONLY", False)
+    mock_rows = [[{"id": "n1", "snippet": "foo"}, 0.9]]
+    with patch("server.main.SentenceTransformer") as MockModel, with_db() as db:
+        MockModel.return_value.encode.return_value = make_mock_embedding()
+        db.execute.return_value = MockQueryResult(mock_rows)
+        response = client.post("/tools/topk", json=TOPK_PAYLOAD)
         assert response.status_code == 200
-        data = response.json()
-        assert len(data) == 2 
+        assert len(response.json()) == 1

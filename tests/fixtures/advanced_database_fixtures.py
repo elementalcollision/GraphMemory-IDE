@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 import pytest
-import kuzu
+import ladybug as lb
 import redis.asyncio as redis
 from databases import Database
 
@@ -59,27 +59,27 @@ class DatabaseConnectionPoolManager:
         self.performance_monitor = DatabasePerformanceMonitor()
         self.active_connections: Dict[str, Dict[str, Any]] = {}
         
-    async def setup_kuzu_pool(self, min_size: int = 5, max_size: int = 20) -> Dict[str, Any]:
-        """Setup Kuzu connection pool with buffer optimization."""
-        pool_id = f"kuzu_pool_{uuid.uuid4().hex[:8]}"
+    async def setup_ladybug_pool(self, min_size: int = 5, max_size: int = 20) -> Dict[str, Any]:
+        """Setup LadybugDB connection pool with buffer optimization."""
+        pool_id = f"ladybug_pool_{uuid.uuid4().hex[:8]}"
         
         # Create test database path
-        db_path = Path(f"/tmp/kuzu_pool_test_{uuid.uuid4().hex[:8]}")
+        db_path = Path(f"/tmp/ladybug_pool_test_{uuid.uuid4().hex[:8]}")
         
         # Create connection pool
         connections = []
         for i in range(min_size):
             try:
-                # Create Kuzu database with only valid parameters
-                db = kuzu.Database(
+                # Create LadybugDB database with only valid parameters
+                db = lb.Database(
                     database_path=str(db_path),
                     buffer_pool_size=128 * 1024 * 1024,  # 128MB buffer pool
                     max_num_threads=8,  # Optimal for testing workload
                 )
-                conn = kuzu.Connection(db)
+                conn = lb.Connection(db)
                 
                 # Initialize basic schema for testing
-                await self._initialize_kuzu_test_schema(conn)
+                await self._initialize_ladybug_test_schema(conn)
                 
                 connections.append({
                     "id": f"{pool_id}_conn_{i}",
@@ -90,16 +90,16 @@ class DatabaseConnectionPoolManager:
                     "usage_count": 0
                 })
             except Exception as e:
-                print(f"Warning: Failed to create Kuzu connection {i}: {e}")
+                print(f"Warning: Failed to create LadybugDB connection {i}: {e}")
         
         pool_config = {
             "pool_id": pool_id,
-            "pool_type": "kuzu",
+            "pool_type": "ladybug",
             "connections": connections,
             "min_size": min_size,
             "max_size": max_size,
             "db_path": db_path,
-            "cleanup_tasks": [lambda: self._cleanup_kuzu_pool(db_path)]
+            "cleanup_tasks": [lambda: self._cleanup_ladybug_pool(db_path)]
         }
         
         self.pools[pool_id] = pool_config
@@ -246,8 +246,8 @@ class DatabaseConnectionPoolManager:
         
         if not available_connections:
             # All connections busy, try to create new one if under max_size
-            if pool["pool_type"] == "kuzu" and len(connections) < pool.get("max_size", 10):
-                new_conn = await self._create_new_kuzu_connection(pool)
+            if pool["pool_type"] == "ladybug" and len(connections) < pool.get("max_size", 10):
+                new_conn = await self._create_new_ladybug_connection(pool)
                 if new_conn:
                     connections.append(new_conn)
                     available_connections = [new_conn]
@@ -300,8 +300,8 @@ class DatabaseConnectionPoolManager:
                         return {"success": False, "error": "No connection available", "duration": 0}
                     
                     # Perform database-specific operation
-                    if pool_type == "kuzu":
-                        result = await self._test_kuzu_operation(conn)
+                    if pool_type == "ladybug":
+                        result = await self._test_ladybug_operation(conn)
                     elif pool_type == "redis":
                         result = await self._test_redis_operation(conn)
                     elif pool_type == "sqlite":
@@ -343,8 +343,8 @@ class DatabaseConnectionPoolManager:
         
         return results
     
-    async def _initialize_kuzu_test_schema(self, conn: kuzu.Connection) -> None:
-        """Initialize Kuzu test schema."""
+    async def _initialize_ladybug_test_schema(self, conn: lb.Connection) -> None:
+        """Initialize LadybugDB test schema."""
         schema_queries = [
             "CREATE NODE TABLE IF NOT EXISTS TestUser(id INT64, name STRING, email STRING, PRIMARY KEY(id))",
             "CREATE NODE TABLE IF NOT EXISTS TestMemory(id INT64, content STRING, type STRING, timestamp TIMESTAMP, PRIMARY KEY(id))",
@@ -357,7 +357,7 @@ class DatabaseConnectionPoolManager:
                 conn.execute(query)
             except Exception as e:
                 if "already exists" not in str(e).lower():
-                    print(f"Warning: Failed to execute Kuzu schema query: {e}")
+                    print(f"Warning: Failed to execute LadybugDB schema query: {e}")
     
     async def _configure_sqlite_connection(self, db: Database, config: Dict[str, Any]) -> None:
         """Configure SQLite connection with optimal settings."""
@@ -403,16 +403,16 @@ class DatabaseConnectionPoolManager:
         except Exception as e:
             print(f"Warning: Failed to initialize SQLite schema: {e}")
     
-    async def _create_new_kuzu_connection(self, pool: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Create new Kuzu connection for pool expansion."""
+    async def _create_new_ladybug_connection(self, pool: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Create new LadybugDB connection for pool expansion."""
         try:
-            db = kuzu.Database(
+            db = lb.Database(
                 database_path=str(pool["db_path"]),
                 buffer_pool_size=128 * 1024 * 1024,
                 max_num_threads=8
             )
-            conn = kuzu.Connection(db)
-            await self._initialize_kuzu_test_schema(conn)
+            conn = lb.Connection(db)
+            await self._initialize_ladybug_test_schema(conn)
             
             connection_id = f"{pool['pool_id']}_conn_{len(pool['connections'])}"
             
@@ -425,16 +425,16 @@ class DatabaseConnectionPoolManager:
                 "usage_count": 0
             }
         except Exception as e:
-            print(f"Warning: Failed to create new Kuzu connection: {e}")
+            print(f"Warning: Failed to create new LadybugDB connection: {e}")
             return None
     
-    async def _test_kuzu_operation(self, conn: Dict[str, Any]) -> Dict[str, Any]:
-        """Test Kuzu database operation."""
+    async def _test_ladybug_operation(self, conn: Dict[str, Any]) -> Dict[str, Any]:
+        """Test LadybugDB database operation."""
         try:
-            kuzu_conn = conn["connection"]
+            ladybug_conn = conn["connection"]
             # Simple count query for testing
-            result = kuzu_conn.execute("MATCH (n) RETURN count(n) AS node_count")
-            return {"success": True, "result": "kuzu_operation_complete"}
+            result = ladybug_conn.execute("MATCH (n) RETURN count(n) AS node_count")
+            return {"success": True, "result": "ladybug_operation_complete"}
         except Exception as e:
             return {"success": False, "error": str(e)}
     
@@ -459,8 +459,8 @@ class DatabaseConnectionPoolManager:
         except Exception as e:
             return {"success": False, "error": str(e)}
     
-    async def _cleanup_kuzu_pool(self, db_path: Path) -> None:
-        """Cleanup Kuzu pool resources."""
+    async def _cleanup_ladybug_pool(self, db_path: Path) -> None:
+        """Cleanup LadybugDB pool resources."""
         try:
             if db_path.exists():
                 import shutil
@@ -581,8 +581,8 @@ class TransactionCoordinator:
             pipeline = redis_conn.pipeline(transaction=True)
             conn["pipeline"] = pipeline
             
-        elif db_type == "kuzu":
-            # Kuzu doesn't have explicit transactions, use connection-level consistency
+        elif db_type == "ladybug":
+            # LadybugDB doesn't have explicit transactions, use connection-level consistency
             pass
     
     async def _commit_all_transactions(self, transaction_context: Dict[str, Any]) -> None:
@@ -862,19 +862,19 @@ async def multi_database_setup(database_pool_manager) -> None:
     """Fixture that sets up all database pools for testing."""
     
     # Setup all database pools
-    kuzu_pool = await database_pool_manager.setup_kuzu_pool(min_size=3, max_size=10)
+    ladybug_pool = await database_pool_manager.setup_ladybug_pool(min_size=3, max_size=10)
     redis_pool = await database_pool_manager.setup_redis_cluster_pool(pool_size=8)
     sqlite_pool = await database_pool_manager.setup_sqlite_wal_pool(pool_size=5)
     
     setup_info = {
         "pool_manager": database_pool_manager,
         "pools": {
-            "kuzu": kuzu_pool,
+            "ladybug": ladybug_pool,
             "redis": redis_pool,
             "sqlite": sqlite_pool
         },
         "performance_benchmarks": {
-            "kuzu": {"max_query_time": 500, "max_connection_time": 100},
+            "ladybug": {"max_query_time": 500, "max_connection_time": 100},
             "redis": {"max_operation_time": 50, "max_pipeline_time": 100},
             "sqlite": {"max_transaction_time": 100, "max_query_time": 200}
         }

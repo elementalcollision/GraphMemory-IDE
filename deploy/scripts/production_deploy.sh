@@ -209,7 +209,7 @@ WORKERS=4
 # Database
 DATABASE_URL=postgresql://graphmemory:${DB_PASSWORD}@localhost:5432/graphmemory_production
 REDIS_URL=redis://localhost:6379/0
-KUZU_DB_PATH=${APP_DIR}/data/kuzu
+LADYBUG_DB_PATH=${APP_DIR}/data/ladybug
 
 # Security Headers
 CORS_ORIGINS=https://${DOMAIN},https://www.${DOMAIN}

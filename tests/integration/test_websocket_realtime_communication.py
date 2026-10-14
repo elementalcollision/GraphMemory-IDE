@@ -651,7 +651,7 @@ class WebSocketMessageOrderTester:
             raise
 
 # Test cases for WebSocket real-time communication
-@pytest_asyncio.async_test
+@pytest.mark.asyncio
 async def test_websocket_bidirectional_communication() -> None:
     """Test bidirectional WebSocket communication"""
     tester = WebSocketCommunicationTester()
@@ -662,7 +662,7 @@ async def test_websocket_bidirectional_communication() -> None:
     assert metrics.connection_stability > 0.95
     assert metrics.error_count == 0
 
-@pytest_asyncio.async_test
+@pytest.mark.asyncio
 async def test_websocket_concurrent_load() -> None:
     """Test WebSocket performance under concurrent load"""
     load_tester = WebSocketLoadTester()
@@ -673,7 +673,7 @@ async def test_websocket_concurrent_load() -> None:
     assert results["average_latency"] < 50
     assert results["messages_per_second"] > 100
 
-@pytest_asyncio.async_test
+@pytest.mark.asyncio
 async def test_websocket_alert_integration() -> None:
     """Test WebSocket integration with real alert system"""
     alert_tester = WebSocketAlertTester()
@@ -684,7 +684,7 @@ async def test_websocket_alert_integration() -> None:
     assert results["average_delivery_latency"] < 100
     assert results["failed_deliveries"] == 0
 
-@pytest_asyncio.async_test
+@pytest.mark.asyncio
 async def test_websocket_message_ordering() -> None:
     """Test WebSocket message ordering guarantees"""
     ordering_tester = WebSocketMessageOrderTester()
