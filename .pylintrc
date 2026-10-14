@@ -28,7 +28,7 @@ load-plugins=pylint.extensions.check_elif,
              pylint.extensions.while_used
 
 # Performance optimization for large codebases
-extension-pkg-whitelist=pydantic,fastapi,kuzu,redis,asyncio
+extension-pkg-whitelist=pydantic,fastapi,ladybug,redis,asyncio
 
 # Integration with existing security tools
 security-source-dirs=server,dashboard,scripts,monitoring
@@ -143,7 +143,7 @@ check-str-concat-over-line-jumps=yes
 generated-members=numpy.*,torch.*,pytest.*
 
 # GraphMemory-IDE specific modules
-ignored-modules=kuzu,redis,fastapi
+ignored-modules=ladybug,redis,fastapi
 
 # Context managers for async patterns
 contextual-decorators=contextlib.contextmanager,asynccontextmanager
@@ -192,7 +192,7 @@ overgeneral-exceptions=Exception,BaseException
 deprecated-modules=optparse,imp
 
 # External dependencies
-known-third-party=fastapi,pydantic,kuzu,redis,asyncio,pytest,numpy,pandas
+known-third-party=fastapi,pydantic,ladybug,redis,asyncio,pytest,numpy,pandas
 
 # Internal modules
 known-first-party=server,dashboard,scripts,monitoring
